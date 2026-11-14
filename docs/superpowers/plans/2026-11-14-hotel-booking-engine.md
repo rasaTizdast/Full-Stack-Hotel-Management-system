@@ -339,10 +339,11 @@ Use test-first implementation for behavior: add a focused failing test, run it t
 
 **Produces:** User-visible tests covering date/price/validation utilities and search, booking, and staff component success/error/loading/empty states.
 
-- [ ] Create the HBE-018 worktree and mark it in progress.
-- [ ] Configure jsdom, Vitest, RTL, jest-dom, coverage, and axe with deterministic test utilities.
-- [ ] Add missing user-behavior tests for keyboard use, accessible names, validation, and all required visible states.
-- [ ] Run the complete web suite and record core behavior coverage.
+- [x] Create the HBE-018 worktree and mark it in progress.
+- [x] Configure V8 coverage reporting and thresholds for core date, availability, booking-schema, and inventory utilities; document the report command.
+- [x] Add keyboard-operated search submission and axe checks for guest search, booking form, confirmation, and availability-conflict states.
+- [x] Run the complete web suite and record core behavior coverage: 85 tests; 91.08% statements, 88.23% branches, 100% functions, and 92.9% lines against configured 88/80/95/90 floors.
+- [x] Run the integrated Playwright suite (32/32 desktop/mobile) and root tests (web 85, API 80), lint, typecheck, format, production build, and React Doctor 100/100.
 - [ ] Mark done, commit `test(HBE-018): add web behavior and accessibility suite`, merge, and remove the worktree and branch.
 
 ### Task 19: HBE-019 — Add backend unit, API e2e, and PostgreSQL integration suite
