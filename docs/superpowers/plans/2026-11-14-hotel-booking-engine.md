@@ -306,10 +306,10 @@ Use test-first implementation for behavior: add a focused failing test, run it t
 **Produces:** Search/filterable booking operations with authorized minimal contact detail, explicit confirmation for risky actions, stale-state/conflict handling, and mobile keyboard access.
 
 - [x] Create the HBE-016 worktree and mark it in progress.
-- [ ] Add action-state/error component tests and a staff processing Playwright flow with axe checks.
-- [ ] Implement list/detail/filter views against HBE-011 and status actions through the API.
-- [ ] Verify UI refreshes from returned server state and reports conflicts without guessing.
-- [ ] Run Vitest, Playwright, and axe checks.
+- [x] Add action-state/error component tests and a staff processing Playwright flow with axe checks.
+- [x] Implement list/detail/filter views against HBE-011 and status actions through the API.
+- [x] Verify UI refreshes from returned server state and reports conflicts without guessing; selecting another booking closes the pending action and the action target is reference-bound.
+- [x] Run Vitest (72/72), full Playwright (26/26, 13 desktop + 13 mobile, including Axe), API unit (79/79), API e2e (56/56), PostgreSQL integration (28/28), lint, typecheck, format, and production build.
 - [ ] Mark done, commit `feat(HBE-016): add staff booking operations UI`, merge, and remove the worktree and branch.
 
 ### Task 17: HBE-017 — Build staff inventory calendar/editor
