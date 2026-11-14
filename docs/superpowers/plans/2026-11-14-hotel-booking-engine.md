@@ -241,18 +241,19 @@ Use test-first implementation for behavior: add a focused failing test, run it t
 
 ### Task 13: HBE-013 — Build date search and availability results UI
 
-- **Worktree:** `../Hotel Booking system-worktrees/HBE-013`
-- **Branch:** `codex/hbe-013-availability-ui`
+- **Worktree:** `C:\hb\HBE-013`
+- **Branch:** `codex/hbe-013-search-ui`
 
 **Files:** Add search components and schemas under `apps/web/src/components/search`; add Jalali/Gregorian date conversion, price formatting, and API query utilities under `apps/web/src/lib`; add Vitest and Playwright search tests.
 
 **Produces:** Accessible date/guest search, Gregorian ISO API requests, availability cards with capacity/amenities/Toman totals, and distinct empty/loading/error/unavailable states.
 
-- [ ] Create the HBE-013 worktree and mark it in progress.
-- [ ] Add failing tests for form validation, Jalali month/year and leap-year boundaries, API date payloads, and visible result/error states.
-- [ ] Implement search UI and date adapter; keep availability and price decisions server-authoritative.
-- [ ] Run Vitest and the Playwright guest search flow at mobile and desktop widths.
-- [ ] Mark done, commit `feat(HBE-013): add Persian availability search`, merge, and remove the worktree and branch.
+- [x] Create the HBE-013 worktree and mark it in progress.
+- [x] Add failing tests for form validation, Jalali month/year and leap-year boundaries, API date payloads, and visible result/error states.
+- [x] Implement the accessible Persian RTL search UI and date adapter; keep availability and price decisions server-authoritative.
+- [x] Run Vitest and the Playwright guest search flow at mobile and desktop widths; all 6 browser tests passed using `hotel_booking_hbe013_test` and ticket-specific web/API ports 3013/4013.
+- [x] Commit `feat(HBE-013): add Persian availability search`.
+- [ ] Rebase onto latest `main`, merge, and remove the worktree and branch (orchestrator integration step).
 
 ### Task 14: HBE-014 — Build guest booking form and confirmation
 

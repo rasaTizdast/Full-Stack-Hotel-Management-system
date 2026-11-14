@@ -263,10 +263,10 @@ Status values: `Not started`, `In progress`, `Blocked`, `Done`.
 - **Priority:** P0
 - **Depends on:** HBE-006, HBE-012
 - **Owner:** Codex
-- **Status:** Not started
-- **Branch/worktree:** —
-- **Code changes:** —
-- **Tests:** —
+- **Status:** Implemented; awaiting integration
+- **Branch/worktree:** `codex/hbe-013-search-ui` / `C:\hb\HBE-013`
+- **Code changes:** Persian RTL date/guest search, tested Jalali/Gregorian adapter, same-origin availability proxy, API-priced room cards, and distinct validation/loading/empty/unavailable/server-error states.
+- **Tests:** Vitest 20/20, API Jest 39/39, Playwright 6/6 across desktop and mobile; lint, typecheck, format check, and production build passed.
 - **Scope:** Date/guest search form, Jalali display adapter, API query, results cards, capacity and total price display.
 
 **Acceptance criteria:**

@@ -360,6 +360,370 @@ h2 {
   margin-inline: auto;
 }
 
+.availability-search {
+  position: relative;
+  width: min(100% - 3rem, 1280px);
+  margin: clamp(2.5rem, 6vw, 5.5rem) auto 0;
+  overflow: hidden;
+  border: 1px solid var(--line);
+  border-block-start: 4px solid var(--jade);
+  padding: clamp(1.4rem, 4.2vw, 3.5rem);
+  background: var(--paper-bright);
+  box-shadow: 0 18px 50px rgb(18 54 49 / 7%);
+}
+
+.availability-search::after {
+  position: absolute;
+  inset-block-start: -108px;
+  inset-inline-start: -110px;
+  width: 230px;
+  height: 230px;
+  border: 1px solid rgb(184 94 73 / 22%);
+  border-radius: 50%;
+  content: '';
+  pointer-events: none;
+}
+
+.availability-search__intro {
+  position: relative;
+  z-index: 1;
+  max-width: 780px;
+  margin-block-end: 1.8rem;
+}
+
+.availability-search__intro h2 {
+  margin-block: 0 0.55rem;
+  color: var(--jade-dark);
+  font-size: clamp(1.9rem, 3.5vw, 3rem);
+}
+
+.availability-search__intro > p:last-child {
+  margin-block-end: 0;
+  color: var(--ink-muted);
+}
+
+.search-form {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  grid-template-columns: minmax(190px, 1.15fr) minmax(190px, 1.15fr) minmax(155px, 0.8fr) auto;
+  align-items: end;
+  gap: 0.75rem;
+  border: 1px solid var(--line);
+  padding: 1rem;
+  background: #f8f5ec;
+}
+
+.search-field {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.3rem;
+}
+
+.search-field label {
+  color: var(--ink);
+  font-size: 0.82rem;
+  font-weight: 750;
+}
+
+.search-field input,
+.search-field select {
+  width: 100%;
+  min-height: 52px;
+  border: 1px solid #b8b8a9;
+  border-radius: 0;
+  padding: 0.65rem 0.8rem;
+  background: var(--paper-bright);
+  color: var(--ink);
+  font: inherit;
+  font-size: 0.94rem;
+}
+
+.search-field input {
+  direction: ltr;
+  text-align: start;
+}
+
+.search-field input[aria-invalid='true'],
+.search-field select[aria-invalid='true'] {
+  border-color: var(--pomegranate);
+  box-shadow: 0 0 0 1px var(--pomegranate);
+}
+
+.search-field input:focus-visible,
+.search-field select:focus-visible {
+  outline: 3px solid var(--saffron);
+  outline-offset: 2px;
+}
+
+.search-field__hint,
+.search-field__error {
+  min-height: 1.35rem;
+  font-size: 0.72rem;
+  line-height: 1.5;
+}
+
+.search-field__hint {
+  color: var(--ink-muted);
+}
+
+.search-field__error {
+  color: #8f382d;
+  font-weight: 650;
+}
+
+.search-form__submit {
+  min-width: 185px;
+  min-height: 52px;
+  margin-block-end: 1.35rem;
+}
+
+.search-form__submit:disabled {
+  opacity: 0.7;
+  cursor: progress;
+}
+
+.availability-search__results {
+  min-height: 3.5rem;
+  border-block-start: 1px solid var(--line);
+  margin-block-start: 1.25rem;
+  padding-block-start: 1rem;
+}
+
+.search-message {
+  border-inline-start: 3px solid var(--saffron);
+  margin-block: 0;
+  padding: 0.75rem 1rem;
+  background: #f8f5ec;
+  color: var(--ink);
+  font-size: 0.9rem;
+}
+
+.search-message--quiet {
+  border-inline-start-color: var(--tile);
+  color: var(--ink-muted);
+}
+
+.search-message--loading {
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+  color: var(--jade);
+}
+
+.search-message--loading .loading-state__ornament {
+  flex: 0 0 28px;
+  width: 28px;
+  height: 28px;
+}
+
+.search-message--unavailable {
+  border-inline-start-color: var(--pomegranate);
+}
+
+.search-message--error {
+  border-inline-start-color: #8f382d;
+  background: #f7e9e5;
+}
+
+.availability-search__cards {
+  display: grid;
+  gap: 1rem;
+}
+
+.availability-search__result-heading {
+  display: flex;
+  align-items: end;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.availability-search__result-heading .eyebrow {
+  margin-block-end: 0.25rem;
+}
+
+.availability-search__result-heading h2 {
+  margin-block-end: 0;
+  color: var(--jade-dark);
+  font-size: clamp(1.4rem, 2.5vw, 2rem);
+}
+
+.availability-search__result-heading > p {
+  margin-block-end: 0.25rem;
+  color: var(--ink-muted);
+  font-size: 0.8rem;
+}
+
+.availability-card-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.85rem;
+}
+
+.availability-card-grid--unavailable {
+  margin-block-start: 0.85rem;
+}
+
+.availability-card {
+  display: grid;
+  min-width: 0;
+  grid-template-columns: 88px minmax(0, 1fr);
+  border: 1px solid var(--line);
+  background: #fffdf8;
+}
+
+.availability-card__motif {
+  position: relative;
+  display: grid;
+  min-height: 100%;
+  place-items: center;
+  overflow: hidden;
+  background: #e2ece4;
+}
+
+.availability-card__motif::before,
+.availability-card__motif::after {
+  position: absolute;
+  width: 150%;
+  height: 1px;
+  background: rgb(23 67 61 / 24%);
+  content: '';
+  transform: rotate(54deg);
+}
+
+.availability-card__motif::after {
+  transform: rotate(-54deg);
+}
+
+.availability-card__motif span {
+  position: relative;
+  z-index: 1;
+  width: 42px;
+  height: 55px;
+  border: 5px double var(--jade);
+  border-block-end: 0;
+  border-radius: 50% 50% 0 0;
+  background: var(--saffron);
+}
+
+.availability-card__body {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  align-items: flex-start;
+  padding: 1rem 1.1rem;
+}
+
+.availability-card__heading {
+  display: flex;
+  width: 100%;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.35rem 0.75rem;
+}
+
+.availability-card__eyebrow {
+  margin-block-end: 0.15rem;
+  color: var(--jade);
+  font-size: 0.69rem;
+  font-weight: 750;
+}
+
+.availability-card__heading h3 {
+  margin-block-end: 0;
+  color: var(--ink);
+  font-family: var(--display-font);
+  font-size: 1.25rem;
+  line-height: 1.5;
+}
+
+.availability-card__capacity {
+  color: var(--ink-muted);
+  font-size: 0.75rem;
+  white-space: nowrap;
+}
+
+.availability-card__description {
+  margin-block: 0.45rem 0.65rem;
+  color: var(--ink-muted);
+  font-size: 0.83rem;
+}
+
+.availability-card .amenity-list {
+  margin-block-end: 0.7rem;
+}
+
+.availability-card__price {
+  display: grid;
+  width: 100%;
+  gap: 0.08rem;
+  border-block-start: 1px solid var(--line);
+  margin-block-start: auto;
+  padding-block-start: 0.75rem;
+}
+
+.availability-card__price > span:first-child,
+.availability-card__stock {
+  color: var(--ink-muted);
+  font-size: 0.72rem;
+}
+
+.availability-card__price strong {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.35rem;
+  color: var(--jade-dark);
+  font-size: clamp(1.15rem, 2vw, 1.55rem);
+  line-height: 1.5;
+}
+
+.availability-card__price strong span {
+  color: var(--ink-muted);
+  font-size: 0.76rem;
+  font-weight: 650;
+}
+
+.availability-card__link {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-block-start: 0.8rem;
+  color: var(--jade);
+  font-size: 0.8rem;
+  font-weight: 750;
+  text-decoration: none;
+}
+
+.availability-card__link:hover {
+  text-decoration: underline;
+  text-underline-offset: 0.2em;
+}
+
+.availability-card--unavailable .availability-card__motif {
+  background: #efe5de;
+}
+
+.availability-card--unavailable .availability-card__motif span {
+  border-color: var(--pomegranate);
+  background: #ead4ca;
+}
+
+.availability-card--unavailable .availability-card__eyebrow,
+.availability-card__unavailable-copy {
+  color: #8f382d;
+}
+
+.availability-card__unavailable-copy {
+  border-block-start: 1px solid var(--line);
+  margin-block: auto 0;
+  padding-block-start: 0.7rem;
+  font-size: 0.8rem;
+}
+
 .room-section {
   padding-block: clamp(4.5rem, 8vw, 7.6rem);
 }
@@ -879,6 +1243,16 @@ h2 {
     grid-column: 2;
   }
 
+  .search-form {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .search-form__submit {
+    grid-column: 1 / -1;
+    width: 100%;
+    margin-block-end: 0;
+  }
+
   .hero {
     grid-template-columns: minmax(0, 1fr) minmax(260px, 0.78fr);
     gap: 2rem;
@@ -901,6 +1275,7 @@ h2 {
 
 @media (width <= 640px) {
   .site-header__inner,
+  .availability-search,
   .room-section,
   .rooms-page,
   .location-strip,
@@ -913,6 +1288,92 @@ h2 {
     grid-template-columns: minmax(0, 1fr) auto;
     gap: 0.4rem 0.6rem;
     padding-block: 0.55rem;
+  }
+
+  .availability-search {
+    width: 100%;
+    margin-block-start: 2.5rem;
+    padding: 1.65rem 1rem 1.25rem;
+  }
+
+  .availability-search::after {
+    inset-block-start: -155px;
+    inset-inline-start: -132px;
+    width: 205px;
+    height: 205px;
+  }
+
+  .availability-search__intro {
+    margin-block-end: 1.2rem;
+  }
+
+  .availability-search__intro h2 {
+    max-width: 13ch;
+    font-size: 2rem;
+  }
+
+  .availability-search__intro > p:last-child {
+    font-size: 0.86rem;
+  }
+
+  .search-form {
+    gap: 0.6rem;
+    padding: 0.7rem;
+  }
+
+  .search-field input,
+  .search-field select {
+    min-height: 48px;
+    padding-inline: 0.6rem;
+    font-size: 0.84rem;
+  }
+
+  .search-field label {
+    font-size: 0.76rem;
+  }
+
+  .search-field__hint,
+  .search-field__error {
+    min-height: 2rem;
+    font-size: 0.67rem;
+  }
+
+  .search-form__submit {
+    align-self: end;
+    min-width: 0;
+    min-height: 48px;
+    padding-inline: 0.55rem;
+    font-size: 0.76rem;
+  }
+
+  .availability-search__results {
+    margin-block-start: 1rem;
+  }
+
+  .availability-search__result-heading {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 0.4rem;
+  }
+
+  .availability-search__result-heading > p {
+    font-size: 0.75rem;
+  }
+
+  .availability-card-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .availability-card {
+    grid-template-columns: 68px minmax(0, 1fr);
+  }
+
+  .availability-card__body {
+    padding: 0.85rem;
+  }
+
+  .availability-card__heading h3 {
+    font-size: 1.1rem;
   }
 
   .brand__mark {
