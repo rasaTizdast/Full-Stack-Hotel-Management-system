@@ -210,18 +210,19 @@ Use test-first implementation for behavior: add a focused failing test, run it t
 
 ### Task 11: HBE-011 — Build staff booking list and management API
 
-- **Worktree:** `../Hotel Booking system-worktrees/HBE-011`
+- **Worktree:** `C:\hb\HBE-011`
 - **Branch:** `codex/hbe-011-staff-bookings-api`
 
 **Files:** Extend `apps/api/src/bookings` with staff list/detail/filter DTOs and routes; add Supertest pagination, privacy, search, and transition cases.
 
 **Produces:** Deterministic pagination, filtering by status/arrival date, search by reference/phone, authorized detail views, and domain-service-backed actions.
 
-- [ ] Create the HBE-011 worktree and mark it in progress.
-- [ ] Write API cases for deterministic pagination, status/date filters, reference/phone search, guest privacy, and conflicts on invalid transitions.
-- [ ] Implement staff-only routes using booking services and minimal response DTOs.
-- [ ] Run the API e2e suite with both staff roles.
-- [ ] Mark done, commit `feat(HBE-011): add staff booking management API`, merge, and remove the worktree and branch.
+- [x] Create the HBE-011 worktree and mark it in progress.
+- [x] Write API cases for deterministic pagination, status/date filters, reference/phone search, guest privacy, and conflicts on invalid transitions.
+- [x] Implement staff-only routes using booking services and minimal response DTOs.
+- [x] Run focused staff-bookings e2e (11 tests), all API unit tests (15 suites/79 tests), all API e2e tests (10 suites/56 tests), and PostgreSQL integration tests (5 suites/22 tests); pass frozen install, migration status, lint, typecheck, Prettier, and production build.
+- [x] Commit `feat(HBE-011): add staff booking management API`.
+- [ ] Rebase/merge into `main`, then remove the branch and worktree (orchestrator-owned).
 
 ### Task 12: HBE-012 — Build Persian RTL public site shell and hotel pages
 

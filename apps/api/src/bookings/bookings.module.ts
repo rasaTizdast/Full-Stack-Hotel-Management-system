@@ -5,10 +5,18 @@ import { BookingRateLimitService } from './booking-rate-limit.service';
 import { BookingsController } from './bookings.controller';
 import { BookingExpiryWorker } from './booking-expiry.worker';
 import { BookingsService } from './bookings.service';
+import { StaffBookingsController } from './staff-bookings.controller';
+import { StaffBookingsService } from './staff-bookings.service';
 
 @Module({
   imports: [PrismaModule],
-  controllers: [BookingsController],
-  providers: [BookingRateLimitGuard, BookingRateLimitService, BookingsService, BookingExpiryWorker],
+  controllers: [BookingsController, StaffBookingsController],
+  providers: [
+    BookingRateLimitGuard,
+    BookingRateLimitService,
+    BookingsService,
+    BookingExpiryWorker,
+    StaffBookingsService,
+  ],
 })
 export class BookingsModule {}
