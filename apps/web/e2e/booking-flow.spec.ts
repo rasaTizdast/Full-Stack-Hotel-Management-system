@@ -34,7 +34,7 @@ async function beginBooking(page: Page, request: APIRequestContext, testInfo: Te
 
 async function fillGuest(page: Page) {
   await page.getByLabel('نام و نام خانوادگی').fill('مریم رضایی');
-  await page.getByLabel('شماره موبایل').fill('۰۹۱۲۳۴۵۶۷۸۹');
+  await page.getByLabel('شماره موبایل').fill('۰۹۱۴۳۴۵۶۷۸۹');
   await page.getByLabel('ایمیل (اختیاری)').fill('maryam@example.test');
 }
 
@@ -64,8 +64,10 @@ test('guest submits a request and sees a safe pending confirmation', async ({
   await expect(page.getByText('مریم رضایی')).toHaveCount(0);
   await expect(page.getByLabel('شماره موبایل')).toHaveCount(0);
   expect(submitted?.headers['idempotency-key']).toMatch(/^[A-Za-z0-9._~-]{16,128}$/);
+  // The API e2e list fixture searches 09123; keep browser test records outside that prefix.
+  expect(submitted?.body.guestPhone).not.toMatch(/^\+989123/);
   expect(submitted?.body).toMatchObject({
-    guestPhone: '+989123456789',
+    guestPhone: '+989143456789',
     guestEmail: 'maryam@example.test',
   });
   expect(submitted?.body).not.toHaveProperty('totalPriceToman');

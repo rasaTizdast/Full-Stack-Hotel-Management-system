@@ -1,5 +1,8 @@
+import { randomUUID } from 'node:crypto';
 import { expect } from '@playwright/test';
 import AxeBuilder from '@axe-core/playwright';
+import { toGregorianIso } from '../src/lib/jalali-date';
+import { findAvailableGardenStay } from './available-stay';
 import { test } from './staff-fixtures';
 
 const apiPort = process.env.HBE_E2E_API_PORT ?? '4016';
@@ -35,6 +38,93 @@ test('admin can inspect and batch-save inventory, and the page meets axe checks'
     .withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa', 'wcag22aa'])
     .analyze();
   expect(results.violations).toEqual([]);
+});
+
+test('inventory editor rejects capacity below a real pending booking hold', async ({
+  page,
+  request,
+}, testInfo) => {
+  const stay = await findAvailableGardenStay(request, testInfo);
+  const checkIn = toGregorianIso(stay.checkInJalali);
+  const checkOut = toGregorianIso(stay.checkOutJalali);
+  if (!checkIn || !checkOut) throw new Error('The available stay dates were invalid.');
+
+  const bookingResponse = await request.post(`${apiBaseUrl}/bookings`, {
+    headers: { 'Idempotency-Key': randomUUID() },
+    data: {
+      roomTypeSlug: 'garden-double',
+      checkIn,
+      checkOut,
+      guestCount: 2,
+      roomQuantity: 1,
+      guestName: 'مریم رضایی؛ آزمون موجودی HBE-020',
+      guestPhone: '+989120000020',
+      guestEmail: 'hbe020-oversell@example.test',
+    },
+  });
+  expect(bookingResponse.status()).toBe(201);
+  const booking = (await bookingResponse.json()) as { reference?: unknown };
+  if (typeof booking.reference !== 'string') {
+    throw new Error('The pending inventory fixture did not return a booking reference.');
+  }
+
+  try {
+    await page.goto('/staff/inventory');
+    const roomType = page.getByRole('combobox', { name: 'نوع اتاق' });
+    await roomType.selectOption({ label: 'اتاق دوتخته باغ' });
+    await page.getByLabel('شروع بازه').fill(stay.checkInJalali);
+    await page.getByLabel('پایان بازه').fill(stay.checkOutJalali);
+    await page.getByRole('button', { name: 'نمایش بازه' }).click();
+
+    const inventoryTable = page.getByRole('table', { name: 'وضعیت ظرفیت و نرخ هر شب' });
+    const rows = inventoryTable.getByRole('row');
+    await expect(rows).toHaveCount(3);
+    const initialCapacities = await Promise.all(
+      [1, 2].map((rowIndex) => rows.nth(rowIndex).getByRole('cell').nth(1).innerText()),
+    );
+    for (const rowIndex of [1, 2]) {
+      await expect(rows.nth(rowIndex).getByRole('cell').nth(3)).toContainText(/[۱-۹]/);
+    }
+
+    const capacity = page.getByLabel('ظرفیت کل اتاق‌ها');
+    await capacity.fill('0');
+    const saveResponsePromise = page.waitForResponse((response) => {
+      const url = new URL(response.url());
+      return url.pathname === '/api/v1/staff/inventory' && response.request().method() === 'PUT';
+    });
+    await page.getByRole('button', { name: 'ذخیره برای همه شب‌ها' }).click();
+    const saveResponse = await saveResponsePromise;
+    expect(saveResponse.status()).toBe(409);
+    expect(await saveResponse.json()).toMatchObject({ code: 'CAPACITY_BELOW_RESERVED' });
+    await expect(capacity).toHaveAttribute('aria-invalid', 'true');
+    await expect(page.locator('#staff-inventory-capacity-error')).toHaveText(
+      'ظرفیت نمی‌تواند از مجموع اتاق‌های در انتظار تأیید و رزروشده کمتر باشد.',
+    );
+
+    await page.getByRole('button', { name: 'نمایش بازه' }).click();
+    await expect(rows).toHaveCount(3);
+    const persistedCapacities = await Promise.all(
+      [1, 2].map((rowIndex) => rows.nth(rowIndex).getByRole('cell').nth(1).innerText()),
+    );
+    expect(persistedCapacities).toEqual(initialCapacities);
+  } finally {
+    const csrfToken = (await page.context().cookies(`${apiBaseUrl}/staff`)).find(
+      (cookie) => cookie.name === 'hotel_staff_csrf',
+    )?.value;
+    if (!csrfToken) throw new Error('The staff session did not have a current CSRF token.');
+    const cleanupResponse = await page.request.post(
+      `${apiBaseUrl}/staff/bookings/${encodeURIComponent(booking.reference)}/reject`,
+      {
+        headers: { 'X-CSRF-Token': csrfToken },
+        data: { internalNote: 'HBE-020 fictional inventory fixture cleanup.' },
+      },
+    );
+    expect(cleanupResponse.status()).toBe(200);
+    expect(await cleanupResponse.json()).toMatchObject({
+      reference: booking.reference,
+      status: 'REJECTED',
+    });
+  }
 });
 
 test('receptionist does not see or request the admin inventory editor', async ({ page }) => {

@@ -180,7 +180,7 @@ test('staff sees a clear server error and can retry the booking list', async ({ 
     },
   );
   await openBookings(page);
-  expect(interceptedListRequest).toBe(true);
+  await expect.poll(() => interceptedListRequest).toBe(true);
 
   const serverError = page
     .getByRole('alert')

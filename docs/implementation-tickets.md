@@ -424,10 +424,10 @@ Status values: `Not started`, `In progress`, `Blocked`, `Done`.
 - **Priority:** P0
 - **Depends on:** HBE-014, HBE-016, HBE-017, HBE-018, HBE-019
 - **Owner:** Codex
-- **Status:** Not started
-- **Branch/worktree:** —
-- **Code changes:** —
-- **Tests:** —
+- **Status:** Implemented; awaiting orchestrator merge
+- **Branch/worktree:** `codex/hbe-020-playwright-e2e` / `C:\hb\HBE-020`
+- **Code changes:** Added a real-hold inventory oversell browser case with staff rejection cleanup; isolated browser guest fixture numbers from the API staff-booking fixture prefix; waited for the asynchronous staff booking-list request before asserting route interception.
+- **Tests:** Full Playwright passed 34/34 (17 desktop + 17 mobile), then API e2e passed 59/59 sequentially against the same fresh `hotel_booking_hbe020_combined_213857_test` database. The browser guest fixture uses `0914`, avoiding the `09123` prefix searched by the API staff-booking fixture; this same-database sequence verifies the suites compose without a reset. PostgreSQL integration passed 28/28 on a separate fresh `hotel_booking_hbe020_pg_214221_test` database. Root `pnpm test` passed (API 15 suites/80 tests; web 21 files/85 tests); frozen install, lint, typecheck, format check, production build, and React Doctor (100/100) passed.
 - **Scope:** Browser tests against the web app, API, and disposable test database.
 
 **Acceptance criteria:**
