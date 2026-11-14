@@ -56,7 +56,7 @@ Use test-first implementation for behavior: add a focused failing test, run it t
 - [x] Scaffold both apps with strict TypeScript and the declared boundaries; keep app source in TS/TSX.
 - [x] Add root workspace scripts and initial setup instructions to README.
 - [x] Run root and app type checks, lint, formatting check, and both production builds.
-- [ ] Mark HBE-001 done, commit `feat(HBE-001): establish monorepo workspace`, merge to `main`, and remove the worktree and branch.
+- [x] Mark HBE-001 done, commit `feat(HBE-001): establish monorepo workspace`, merge to `main`, and remove the worktree and branch.
 
 ### Task 2: HBE-002 — Add local PostgreSQL and environment configuration
 
