@@ -310,7 +310,8 @@ Use test-first implementation for behavior: add a focused failing test, run it t
 - [x] Implement list/detail/filter views against HBE-011 and status actions through the API.
 - [x] Verify UI refreshes from returned server state and reports conflicts without guessing; selecting another booking closes the pending action and the action target is reference-bound.
 - [x] Run Vitest (72/72), full Playwright (26/26, 13 desktop + 13 mobile, including Axe), API unit (79/79), API e2e (56/56), PostgreSQL integration (28/28), lint, typecheck, format, and production build.
-- [ ] Mark done, commit `feat(HBE-016): add staff booking operations UI`, merge, and remove the worktree and branch.
+- [x] Mark done, commit `feat(HBE-016): add staff booking operations UI` plus action-race/auth-fixture and verification docs, merge `1075b4901f1d2f39f642cef618102f6d2337b1e0` into `main`, and remove the worktree registration and branch.
+  - **Cleanup note:** Windows left residual `apps` and `node_modules` folders at `C:\hb\HBE-016`; no recursive deletion was attempted.
 
 ### Task 17: HBE-017 — Build staff inventory calendar/editor
 

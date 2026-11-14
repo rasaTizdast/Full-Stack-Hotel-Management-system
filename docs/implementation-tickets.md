@@ -334,8 +334,8 @@ Status values: `Not started`, `In progress`, `Blocked`, `Done`.
 - **Priority:** P0
 - **Depends on:** HBE-011, HBE-015
 - **Owner:** Codex
-- **Status:** Ready to merge (verified)
-- **Branch/worktree:** `codex/hbe-016-booking-ops-ui` — `C:\hb\HBE-016`
+- **Status:** Completed and merged to `main` (`1075b4901f1d2f39f642cef618102f6d2337b1e0`)
+- **Branch/worktree:** `codex/hbe-016-booking-ops-ui` — removed after merge
 - **Code changes:** Staff booking list/detail/filter/action UI, API client, responsive styles, action-state regression coverage, and shared E2E staff session fixture.
 - **Tests:** Web Vitest 72/72; full Playwright 26/26 (13 desktop + 13 mobile, including Axe); API unit 79/79; API e2e 56/56; PostgreSQL integration 28/28; lint, typecheck, format, build, and diff checks passed.
 - **Scope:** Booking table, filtering, details view, confirm/reject/cancel actions, status feedback.
@@ -349,6 +349,8 @@ Status values: `Not started`, `In progress`, `Blocked`, `Done`.
 - Keyboard navigation and mobile layout work.
 
 **Required tests/checks:** Vitest action/error-state tests, Playwright staff processing flow, and axe check.
+
+**Cleanup note:** Windows left residual `apps` and `node_modules` folders at `C:\hb\HBE-016`; the Git worktree registration and branch were removed.
 
 ## HBE-017 — Build staff inventory calendar/editor
 
