@@ -8,6 +8,7 @@ import { HealthModule } from './health/health.module';
 import { HotelModule } from './hotel/hotel.module';
 import { RoomTypesModule } from './room-types/room-types.module';
 import { AvailabilityModule } from './availability/availability.module';
+import { StaffAuthModule } from './staff-auth/staff-auth.module';
 
 const environmentSchema = Joi.object({
   NODE_ENV: Joi.string().valid('development', 'test', 'production').default('development'),
@@ -15,6 +16,15 @@ const environmentSchema = Joi.object({
   DATABASE_URL: Joi.string()
     .uri({ scheme: ['postgres', 'postgresql'] })
     .required(),
+  WEB_ORIGIN: Joi.when('NODE_ENV', {
+    is: 'production',
+    then: Joi.string()
+      .uri({ scheme: ['https'] })
+      .required(),
+    otherwise: Joi.string()
+      .uri({ scheme: ['http', 'https'] })
+      .default('http://localhost:3000'),
+  }),
 });
 
 @Module({
@@ -29,6 +39,7 @@ const environmentSchema = Joi.object({
     HotelModule,
     RoomTypesModule,
     AvailabilityModule,
+    StaffAuthModule,
   ],
   controllers: [AppController],
   providers: [AppService],

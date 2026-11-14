@@ -18,6 +18,7 @@ Status values: `Not started`, `In progress`, `Blocked`, `Done`.
 - **Scope:** Create root workspace and `apps/web`, `apps/api`, `docs`, and `infra` structure. Scaffold Next.js and NestJS apps. Configure strict TypeScript and root scripts.
 
 **Acceptance criteria:**
+
 - Both apps start independently and from a root development command.
 - App source uses TypeScript/TSX with strict checks enabled.
 - Web styling uses Tailwind CSS.
@@ -38,6 +39,7 @@ Status values: `Not started`, `In progress`, `Blocked`, `Done`.
 - **Scope:** Add Docker Compose for PostgreSQL, environment examples, API database connection, and health/readiness endpoints.
 
 **Acceptance criteria:**
+
 - A developer can start and stop the local database with documented commands.
 - Secrets are not committed.
 - API readiness reports database availability.
@@ -57,6 +59,7 @@ Status values: `Not started`, `In progress`, `Blocked`, `Done`.
 - **Scope:** Add Hotel, RoomType, RoomNightInventory, Booking, BookingNight, and StaffUser schema; constraints, indexes, migrations, and idempotent demo seed.
 
 **Acceptance criteria:**
+
 - Unique room-type/date inventory constraint exists.
 - Inventory count and money constraints are enforced.
 - Seed creates one hotel, multiple room types, future inventory, and a demo admin from environment configuration.
@@ -77,6 +80,7 @@ Status values: `Not started`, `In progress`, `Blocked`, `Done`.
 - **Scope:** Add global validation, consistent error JSON, request IDs, and API version prefix.
 
 **Acceptance criteria:**
+
 - Invalid input is rejected before service operations.
 - Errors include a stable code, message, request ID, and field details where applicable.
 - Unknown or malformed fields cannot silently alter business data.
@@ -96,6 +100,7 @@ Status values: `Not started`, `In progress`, `Blocked`, `Done`.
 - **Scope:** Implement public read-only hotel and active room type endpoints.
 
 **Acceptance criteria:**
+
 - Hotel endpoint returns only public content.
 - Room endpoint returns active room types and safe public fields.
 - Inactive room types are not exposed as bookable.
@@ -115,6 +120,7 @@ Status values: `Not started`, `In progress`, `Blocked`, `Done`.
 - **Scope:** Validate date range and guest count, query each stay night, and return available room types with price breakdown.
 
 **Acceptance criteria:**
+
 - Checkout date is exclusive.
 - Missing inventory or unavailable nights make a room type unavailable for the requested full range.
 - Capacity is checked against guest count.
@@ -128,13 +134,14 @@ Status values: `Not started`, `In progress`, `Blocked`, `Done`.
 - **Priority:** P0
 - **Depends on:** HBE-003, HBE-004
 - **Owner:** Codex
-- **Status:** Not started
-- **Branch/worktree:** —
-- **Code changes:** —
-- **Tests:** —
+- **Status:** Done
+- **Branch/worktree:** `codex/hbe-007-staff-auth` — `../Hotel Booking system-worktrees/HBE-007`
+- **Code changes:** Added staff login/logout/current-user routes, Argon2id verification, persisted opaque sessions with hashed credentials, CSRF and same-origin protections, role guards, bounded login rate limiting, exact-origin credentialed CORS, safe response DTOs, and the forward-only `20261114110051_add_staff_sessions` migration.
+- **Tests:** API unit tests passed (4 suites, 13 tests); API e2e tests passed (5 suites, 22 tests); isolated PostgreSQL tests passed (2 suites, 8 tests). Lint, typecheck, Prettier check, production build, frozen-lockfile install, and migration status passed; the isolated database is up to date.
 - **Scope:** Staff login/logout/current-user endpoints, secure cookie handling, password hashing, CSRF protection, roles, and login rate limiting.
 
 **Acceptance criteria:**
+
 - Unauthenticated requests cannot access staff resources.
 - Receptionist and admin permissions differ as defined in Section 9.
 - No auth token is stored in browser localStorage.
@@ -155,6 +162,7 @@ Status values: `Not started`, `In progress`, `Blocked`, `Done`.
 - **Scope:** Create booking request, nightly price snapshots, inventory holds, public reference, and idempotency handling in one transaction.
 
 **Acceptance criteria:**
+
 - API rechecks every requested date while holding inventory locks.
 - Inventory changes and booking creation either all commit or all roll back.
 - Repeated request with the same idempotency key does not create a duplicate.
@@ -175,6 +183,7 @@ Status values: `Not started`, `In progress`, `Blocked`, `Done`.
 - **Scope:** Confirm, reject, cancel pending/confirmed request, and expire 24-hour pending requests.
 
 **Acceptance criteria:**
+
 - Only allowed transitions from Section 8 are accepted.
 - Every transition and inventory counter update is transactional.
 - Repeating an action does not release inventory twice.
@@ -196,6 +205,7 @@ Status values: `Not started`, `In progress`, `Blocked`, `Done`.
 - **Scope:** Read and batch-update inventory and nightly prices by room type/date range.
 
 **Acceptance criteria:**
+
 - Admin can set capacity and price for a date range.
 - Receptionist cannot mutate inventory.
 - Capacity cannot be lowered below held plus booked rooms.
@@ -216,6 +226,7 @@ Status values: `Not started`, `In progress`, `Blocked`, `Done`.
 - **Scope:** Paginated staff booking list/detail, filters, search, and status actions.
 
 **Acceptance criteria:**
+
 - Staff can filter by status and arrival date and search by reference or phone.
 - Pagination is deterministic.
 - Guest details are available only to authorized staff.
@@ -236,6 +247,7 @@ Status values: `Not started`, `In progress`, `Blocked`, `Done`.
 - **Scope:** Shared layout, Persian locale strings, hotel home/room pages, Tailwind design tokens, responsive nav/footer.
 
 **Acceptance criteria:**
+
 - Document language and RTL direction are correct.
 - Public content is loaded from the API, not hardcoded in page components.
 - Layout works on mobile and desktop.
@@ -256,6 +268,7 @@ Status values: `Not started`, `In progress`, `Blocked`, `Done`.
 - **Scope:** Date/guest search form, Jalali display adapter, API query, results cards, capacity and total price display.
 
 **Acceptance criteria:**
+
 - Form blocks invalid ranges before calling API.
 - API receives Gregorian ISO dates.
 - Every price is labeled as Toman and matches the API response.
@@ -276,6 +289,7 @@ Status values: `Not started`, `In progress`, `Blocked`, `Done`.
 - **Scope:** Room quantity selection, guest contact form, total summary, submit state, duplicate-click prevention, and confirmation display.
 
 **Acceptance criteria:**
+
 - Guest can submit a request without an account.
 - Name and normalized Iranian mobile are validated.
 - Guest sees that staff confirmation is pending.
@@ -297,6 +311,7 @@ Status values: `Not started`, `In progress`, `Blocked`, `Done`.
 - **Scope:** Staff login page, protected route layout, current-user state, navigation, logout, and unauthorized redirect.
 
 **Acceptance criteria:**
+
 - Staff pages are inaccessible when signed out.
 - Login errors are understandable and do not reveal whether a username exists.
 - Admin-only navigation is not shown to receptionists.
@@ -317,6 +332,7 @@ Status values: `Not started`, `In progress`, `Blocked`, `Done`.
 - **Scope:** Booking table, filtering, details view, confirm/reject/cancel actions, status feedback.
 
 **Acceptance criteria:**
+
 - Staff can find a booking by status/date/reference/phone.
 - Guest data is limited to the authorized staff view.
 - Confirm/reject/cancel require a final confirmation step where accidental action is plausible.
@@ -337,6 +353,7 @@ Status values: `Not started`, `In progress`, `Blocked`, `Done`.
 - **Scope:** Room type/date-range inventory editor for room count and nightly price.
 
 **Acceptance criteria:**
+
 - Admin can view and edit date ranges.
 - Receptionist cannot see or submit inventory mutations.
 - UI explains why an edit is rejected when capacity is below reservations.
@@ -357,6 +374,7 @@ Status values: `Not started`, `In progress`, `Blocked`, `Done`.
 - **Scope:** Configure Vitest, React Testing Library, coverage reporting, axe, and user behavior tests.
 
 **Acceptance criteria:**
+
 - Core formatting, date, validation, and capacity utilities have tests.
 - Search, booking, and staff components cover success/error/loading/empty behavior.
 - Tests assert user-visible outcomes rather than implementation details.
@@ -377,6 +395,7 @@ Status values: `Not started`, `In progress`, `Blocked`, `Done`.
 - **Scope:** Configure Jest, Supertest, test database lifecycle, coverage, and concurrency tests.
 
 **Acceptance criteria:**
+
 - Booking rules have unit tests.
 - HTTP validation, error format, auth, permissions, and pagination have API e2e tests.
 - Integration tests use PostgreSQL, not SQLite or repository mocks, for transactional guarantees.
@@ -397,6 +416,7 @@ Status values: `Not started`, `In progress`, `Blocked`, `Done`.
 - **Scope:** Browser tests against the web app, API, and disposable test database.
 
 **Acceptance criteria:**
+
 - Guest can search and submit a request.
 - Staff can sign in and confirm or reject it.
 - Inventory editor rejects overselling capacity.
@@ -417,6 +437,7 @@ Status values: `Not started`, `In progress`, `Blocked`, `Done`.
 - **Scope:** Complete API docs, validate OpenAPI, document setup and architecture, add screenshots and demo flow.
 
 **Acceptance criteria:**
+
 - Swagger/OpenAPI is available in development.
 - README has architecture, prerequisites, setup, seed, test, and troubleshooting instructions.
 - README labels the project as a booking-request system with staff confirmation and no online payment.
@@ -438,6 +459,7 @@ Status values: `Not started`, `In progress`, `Blocked`, `Done`.
 - **Scope:** Configure CI for formatting, lint, type checks, tests, migrations/integration, Playwright, and builds.
 
 **Acceptance criteria:**
+
 - Pull requests cannot pass CI if required checks fail.
 - Test database is isolated and ephemeral.
 - CI does not require production secrets.

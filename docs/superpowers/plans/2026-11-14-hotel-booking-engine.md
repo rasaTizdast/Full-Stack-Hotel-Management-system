@@ -148,11 +148,13 @@ Use test-first implementation for behavior: add a focused failing test, run it t
 
 **Produces:** Login, logout, current-user routes, hashed passwords, immediately invalidatable server-side sessions, CSRF-protected mutations, and ADMIN/RECEPTIONIST authorization.
 
-- [ ] Create the HBE-007 worktree and mark it in progress.
-- [ ] Write policy unit tests and HTTP cases for unauthenticated access, roles, secure cookie flags, CSRF, logout invalidation, and rate limiting.
-- [ ] Implement password verification, opaque persisted sessions, cookie lifecycle, guards, and role policy.
-- [ ] Run auth unit and API e2e tests; verify no token is written to browser storage or logged.
-- [ ] Mark done, commit `feat(HBE-007): add secure staff authentication`, merge, and remove the worktree and branch.
+- [x] Create the HBE-007 worktree and mark it in progress.
+- [x] Write policy unit tests and HTTP cases for unauthenticated access, roles, secure cookie flags, CSRF, logout invalidation, rate limiting, and CORS origin policy.
+- [x] Implement password verification, opaque persisted sessions, cookie lifecycle, guards, and role policy.
+- [x] Run auth unit (4 suites, 13 tests), API e2e (5 suites, 22 tests), and PostgreSQL integration tests (2 suites, 8 tests); verify redaction and session invalidation.
+- [x] Pass frozen-lockfile install, lint, typecheck, format check, production build, and isolated migration status.
+- [x] Mark ticket done and commit `feat(HBE-007): add secure staff authentication`.
+- [ ] Merge and remove the worktree and branch.
 
 ### Task 8: HBE-008 — Implement transactional booking requests and idempotency
 
