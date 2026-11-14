@@ -50,10 +50,10 @@ Status values: `Not started`, `In progress`, `Blocked`, `Done`.
 - **Priority:** P0
 - **Depends on:** HBE-002
 - **Owner:** Codex
-- **Status:** Not started
-- **Branch/worktree:** —
-- **Code changes:** —
-- **Tests:** —
+- **Status:** Done
+- **Branch/worktree:** `codex/hbe-003-schema-seed` — `../Hotel Booking system-worktrees/HBE-003`
+- **Code changes:** Added PostgreSQL models and a forward-only migration with database-enforced inventory, money, booking-date, and quantity checks; added fictional 90-night inventory and environment-configured Argon2id demo admin seed.
+- **Tests:** Fresh `prisma migrate deploy` and `prisma migrate status` passed; PostgreSQL integration suite passed (7 tests); API typecheck, lint, build, unit tests (1), and e2e tests (4) passed.
 - **Scope:** Add Hotel, RoomType, RoomNightInventory, Booking, BookingNight, and StaffUser schema; constraints, indexes, migrations, and idempotent demo seed.
 
 **Acceptance criteria:**

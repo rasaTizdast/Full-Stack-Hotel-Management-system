@@ -83,12 +83,13 @@ Use test-first implementation for behavior: add a focused failing test, run it t
 
 **Produces:** Hotel, RoomType, RoomNightInventory, Booking, BookingNight, and StaffUser tables with the PRD's indexes, foreign keys, uniqueness, and non-negative/count checks; repeat-safe fictional demo seed.
 
-- [ ] Create the HBE-003 worktree and mark it in progress.
-- [ ] Write database integration cases for unique room-type/date inventory, inventory bounds, non-negative Toman prices, and repeat seed behavior.
-- [ ] Implement Prisma schema and create a forward-only initial migration.
-- [ ] Seed one hotel, multiple room types, future inventory, and an admin whose credentials come from environment configuration.
-- [ ] Apply migrations to a fresh PostgreSQL database, inspect migration status, run the seed twice, and run all constraint cases.
-- [ ] Mark done, commit `feat(HBE-003): add hotel booking schema and seed`, merge, and remove the worktree and branch.
+- [x] Create the HBE-003 worktree and mark it in progress.
+- [x] Write database integration cases for unique room-type/date inventory, inventory bounds, non-negative Toman prices, and repeat seed behavior.
+- [x] Implement Prisma schema and create a forward-only initial migration.
+- [x] Seed one hotel, multiple room types, future inventory, and an admin whose credentials come from environment configuration.
+- [x] Apply migrations to a fresh PostgreSQL database, inspect migration status, run the seed twice, and run all constraint cases.
+- [x] Mark done and commit `feat(HBE-003): add hotel booking schema and seed`.
+- [ ] Merge after orchestrator review, then remove the worktree and branch.
 
 ### Task 4: HBE-004 — Define API errors and request validation
 
