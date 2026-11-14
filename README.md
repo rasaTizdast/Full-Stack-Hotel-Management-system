@@ -85,6 +85,8 @@ pnpm dev:api
 
 In development and test, Swagger UI is available at [http://localhost:4000/api/docs](http://localhost:4000/api/docs). The OpenAPI JSON document is at [http://localhost:4000/api/docs-json](http://localhost:4000/api/docs-json). API docs are not registered in production.
 
+Swagger is an API reference for staff login; its Try it out request is expected to receive `403` because the docs page is served from the API origin while the login guard allows only the configured `WEB_ORIGIN`. Use `/staff/login` for interactive browser sign-in. A non-browser client must send both `Origin` and `Referer` matching `WEB_ORIGIN`.
+
 Health endpoints remain outside the versioned prefix: `GET /health/live` checks the process and `GET /health/ready` checks the database. Readiness returns a sanitized `503` response with setup guidance when PostgreSQL is unavailable.
 
 ## API overview

@@ -384,7 +384,7 @@ Use test-first implementation for behavior: add a focused failing test, run it t
 
 ### Task 21: HBE-021 — Add OpenAPI, contract checks, README, and demo materials
 
-- **Worktree:** `C:\\hb\\HBE-021`
+- **Worktree:** `C:\hb\HBE-021`
 - **Branch:** `codex/hbe-021-openapi-docs`
 
 **Files:** Complete Swagger decorators/configuration and OpenAPI validation; update `README.md`; add demo instructions and reviewed screenshots under `docs/screenshots`.
@@ -395,8 +395,9 @@ Use test-first implementation for behavior: add a focused failing test, run it t
 - [x] Generate and validate the OpenAPI document against implemented routes and DTOs.
 - [x] Follow the README from a clean checkout using documented prerequisites, setup, seed, test, and troubleshooting steps.
 - [x] Capture public and staff screenshots using fictional seeded data and inspect for secrets/PII.
-- [ ] Run the documented release-gate commands.
-- [ ] Mark done, commit `docs(HBE-021): document API and demo flows`, merge, and remove the worktree and branch.
+- [x] Run the documented release-gate commands, including `pnpm check` after rebasing onto HBE-022.
+- [x] Mark HBE-021 done and commit `docs(HBE-021): document API and demo flows` plus the verification record.
+- [ ] Merge into `main` and remove the worktree and branch (orchestrator follow-up).
 
 ### Task 22: HBE-022 — Add CI quality and release gates
 

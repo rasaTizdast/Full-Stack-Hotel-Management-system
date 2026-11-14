@@ -57,7 +57,7 @@ export class StaffAuthController {
   @ApiOperation({
     summary: 'Sign in a staff user.',
     description:
-      'Development credentials are configured with DEMO_ADMIN_EMAIL and DEMO_ADMIN_PASSWORD.',
+      'Login enforces same-origin checks against WEB_ORIGIN. Because Swagger UI is served from the API origin, browser Try it out requests are expected to receive 403. Use the web app at /staff/login for interactive browser sign-in; non-browser clients must set both Origin and Referer to WEB_ORIGIN. Development credentials are configured with DEMO_ADMIN_EMAIL and DEMO_ADMIN_PASSWORD.',
   })
   @ApiHeader({ name: 'Origin', required: true, example: 'http://localhost:3000' })
   @ApiHeader({ name: 'Referer', required: true, example: 'http://localhost:3000/staff/login' })

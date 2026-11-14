@@ -104,6 +104,10 @@ describe('OpenAPI documentation (e2e)', () => {
       { staffSession: [] },
     ]);
     expect(rawDocument.paths['/api/v1/staff/auth/login']?.post?.security).toBeUndefined();
+    const loginDescription = rawDocument.paths['/api/v1/staff/auth/login']?.post?.description;
+    expect(loginDescription).toContain('browser Try it out requests are expected to receive 403');
+    expect(loginDescription).toContain('/staff/login');
+    expect(loginDescription).toContain('WEB_ORIGIN');
     expect(rawDocument.components?.securitySchemes?.staffSession).toMatchObject({
       type: 'apiKey',
       in: 'cookie',
