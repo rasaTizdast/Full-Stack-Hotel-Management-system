@@ -70,10 +70,10 @@ Status values: `Not started`, `In progress`, `Blocked`, `Done`.
 - **Priority:** P0
 - **Depends on:** HBE-001
 - **Owner:** Codex
-- **Status:** Not started
-- **Branch/worktree:** —
-- **Code changes:** —
-- **Tests:** —
+- **Status:** Done
+- **Branch/worktree:** `codex/hbe-004-api-validation` — `../Hotel Booking system-worktrees/HBE-004`
+- **Code changes:** `apps/api/src/common/configure-api-application.ts`, `apps/api/src/common/api-exception.filter.ts`, `apps/api/src/main.ts`, API e2e tests, API dependencies, and setup documentation. Health routes remain unprefixed for monitoring.
+- **Tests:** `apps/api/test/validation.e2e-spec.ts` covers valid/invalid DTOs, unknown fields, malformed JSON, safe internal errors, request IDs, field details, and redaction. Full API e2e: 3 suites/10 tests passed. `pnpm lint`, `pnpm typecheck`, `pnpm format:check`, and `pnpm build` passed.
 - **Scope:** Add global validation, consistent error JSON, request IDs, and API version prefix.
 
 **Acceptance criteria:**
