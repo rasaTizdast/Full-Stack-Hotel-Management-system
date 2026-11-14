@@ -72,7 +72,7 @@ Use test-first implementation for behavior: add a focused failing test, run it t
 - [x] Configure PostgreSQL health checks and a persistent local volume in Compose; keep credentials in local environment variables.
 - [x] Wire Nest configuration and Prisma connection lifecycle; keep readiness distinct from liveness.
 - [x] Run the required readiness integration cases and document the Compose workflow.
-- [ ] Mark done, commit `feat(HBE-002): configure local PostgreSQL`, merge, and remove the worktree and branch.
+- [x] Mark done, commit `feat(HBE-002): configure local PostgreSQL`, merge, and remove the worktree and branch.
 
 ### Task 3: HBE-003 — Create schema, migrations, and fictional seed data
 
@@ -89,7 +89,7 @@ Use test-first implementation for behavior: add a focused failing test, run it t
 - [x] Seed one hotel, multiple room types, future inventory, and an admin whose credentials come from environment configuration.
 - [x] Apply migrations to a fresh PostgreSQL database, inspect migration status, run the seed twice, and run all constraint cases.
 - [x] Mark done and commit `feat(HBE-003): add hotel booking schema and seed`.
-- [ ] Merge after orchestrator review, then remove the worktree and branch.
+- [x] Merge after orchestrator review, then remove the worktree and branch.
 
 ### Task 4: HBE-004 — Define API errors and request validation
 
@@ -104,7 +104,7 @@ Use test-first implementation for behavior: add a focused failing test, run it t
 - [x] Add API e2e tests for valid and invalid input, malformed/unknown fields, error codes, request IDs, field details, and absence of sensitive data in logs/responses.
 - [x] Implement global validation and the exception filter without changing domain behavior.
 - [x] Run the API e2e suite and confirm every error path uses the stable response shape; lint, typecheck, format, and build checks also pass.
-- [ ] Mark done, commit `feat(HBE-004): standardize API validation and errors`, merge, and remove the worktree and branch.
+- [x] Mark done, commit `feat(HBE-004): standardize API validation and errors`, merge, and remove the worktree and branch.
 
 ### Task 5: HBE-005 — Build public hotel and room-type endpoints
 
@@ -120,7 +120,7 @@ Use test-first implementation for behavior: add a focused failing test, run it t
 - [x] Implement versioned GET endpoints and explicit public response DTOs.
 - [x] Run service unit tests and API e2e checks against PostgreSQL seed data.
 - [x] Mark done and commit `feat(HBE-005): expose public hotel and rooms`.
-- [ ] Merge after orchestrator review, then remove the worktree and branch.
+- [x] Merge after orchestrator review, then remove the worktree and branch.
 
 ### Task 6: HBE-006 — Implement availability and server-side price preview
 
@@ -137,7 +137,7 @@ Use test-first implementation for behavior: add a focused failing test, run it t
 - [x] Implement validated availability queries and server-calculated totals using integer arithmetic.
 - [x] Run unit, PostgreSQL e2e/integration tests, strict install, lint, typecheck, format, and build checks.
 - [x] Mark done and commit `feat(HBE-006): add availability search` after all required checks pass.
-- [ ] Merge after orchestrator review, then remove the worktree and branch.
+- [x] Merge after orchestrator review, then remove the worktree and branch.
 
 ### Task 7: HBE-007 — Implement staff authentication and authorization
 
@@ -413,7 +413,7 @@ Use test-first implementation for behavior: add a focused failing test, run it t
 - [x] Add root `pnpm check`; the script labels each package command and exits on the first failing gate.
 - [x] Run the release gates locally: format, lint, typecheck, API/web unit tests, PostgreSQL migrations/integration/coverage, seed, web coverage, Playwright 34/34, API e2e/OpenAPI 59/59, and production builds all passed. Local Playwright used installed Chrome because the managed Chromium download stalled; final config uses managed Chromium and its install plan was verified with `playwright install --dry-run chromium`.
 - [x] Validate `.github/workflows/ci.yml` with actionlint and verify the no-channel Playwright config lists all 34 browser cases; the hosted GitHub Actions run remains unavailable from this local branch.
-- [ ] Commit `ci(HBE-022): enforce project quality gates`, then hand off merge and worktree cleanup to the orchestrator.
+- [x] Commit `ci(HBE-022): enforce project quality gates`, merge into `main` as `023cea8`, and remove the worktree registration and branch. Windows left residual `apps` and `node_modules` folders under `C:\hb\HBE-022`.
 
 ## Plan self-review
 
