@@ -399,6 +399,7 @@ Status values: `Not started`, `In progress`, `Blocked`, `Done`.
 - **Owner:** Codex
 - **Status:** Done
 - **Branch/worktree:** `codex/hbe-019-api-test-suite` — `C:\hb\HBE-019`
+- **Merge/cleanup:** Merged to `main` in `fc2d0bd`; branch and Git worktree registration removed. Windows left residual `apps` and `node_modules` folders at the former worktree path.
 - **Code changes:** Fixed the seed test so it verifies existing bookings are preserved and cleans only its own fixtures. Added `_test` database URL validation, safe create-if-missing setup, additive migration preparation, and repeatable booking/inventory branch-coverage gates.
 - **Tests:** API unit tests passed (15 suites/79 tests), API e2e passed (10 suites/56 tests), PostgreSQL integration tests passed (6 suites/28 tests), and the combined coverage suite passed (21 suites/107 tests). Branch coverage: BookingsService 81.25%, StaffInventoryService 83.33%. Frozen install, migration status, lint, typecheck, Prettier check, production build, and diff checks passed. Database preparation was verified against the isolated `hotel_booking_hbe019_test`; no reset/drop was run.
 - **Scope:** Repeatable backend checks, isolated test database guard and preparation, fixture cleanup, coverage, and concurrency tests.
