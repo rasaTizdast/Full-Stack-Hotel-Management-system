@@ -334,8 +334,8 @@ Status values: `Not started`, `In progress`, `Blocked`, `Done`.
 - **Priority:** P0
 - **Depends on:** HBE-011, HBE-015
 - **Owner:** Codex
-- **Status:** Not started
-- **Branch/worktree:** —
+- **Status:** In progress
+- **Branch/worktree:** `codex/hbe-016-booking-ops-ui` — `C:\hb\HBE-016`
 - **Code changes:** —
 - **Tests:** —
 - **Scope:** Booking table, filtering, details view, confirm/reject/cancel actions, status feedback.
@@ -355,8 +355,8 @@ Status values: `Not started`, `In progress`, `Blocked`, `Done`.
 - **Priority:** P1
 - **Depends on:** HBE-010, HBE-015
 - **Owner:** Codex
-- **Status:** Not started
-- **Branch/worktree:** —
+- **Status:** In progress
+- **Branch/worktree:** `codex/hbe-017-inventory-ui` — `C:\hb\HBE-017`
 - **Code changes:** —
 - **Tests:** —
 - **Scope:** Room type/date-range inventory editor for room count and nightly price.

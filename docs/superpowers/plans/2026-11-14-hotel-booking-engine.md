@@ -298,14 +298,14 @@ Use test-first implementation for behavior: add a focused failing test, run it t
 
 ### Task 16: HBE-016 — Build staff booking operations UI
 
-- **Worktree:** `../Hotel Booking system-worktrees/HBE-016`
+- **Worktree:** `C:\hb\HBE-016`
 - **Branch:** `codex/hbe-016-booking-ops-ui`
 
 **Files:** Add staff booking list/detail/action components under `apps/web/src/components/staff/bookings`; add filters, confirmation dialogs, status feedback, Vitest, Playwright, and axe cases.
 
 **Produces:** Search/filterable booking operations with authorized minimal contact detail, explicit confirmation for risky actions, stale-state/conflict handling, and mobile keyboard access.
 
-- [ ] Create the HBE-016 worktree and mark it in progress.
+- [x] Create the HBE-016 worktree and mark it in progress.
 - [ ] Add action-state/error component tests and a staff processing Playwright flow with axe checks.
 - [ ] Implement list/detail/filter views against HBE-011 and status actions through the API.
 - [ ] Verify UI refreshes from returned server state and reports conflicts without guessing.
@@ -314,14 +314,14 @@ Use test-first implementation for behavior: add a focused failing test, run it t
 
 ### Task 17: HBE-017 — Build staff inventory calendar/editor
 
-- **Worktree:** `../Hotel Booking system-worktrees/HBE-017`
+- **Worktree:** `C:\hb\HBE-017`
 - **Branch:** `codex/hbe-017-inventory-ui`
 
 **Files:** Add inventory calendar/range editor under `apps/web/src/components/staff/inventory`; add role-aware dashboard navigation, date/price schemas, component/API behavior tests, Playwright, and accessibility checks.
 
 **Produces:** Admin range editing for room counts and nightly prices, clear reservation-bound errors, multi-date results, and no inventory controls for receptionists.
 
-- [ ] Create the HBE-017 worktree and mark it in progress.
+- [x] Create the HBE-017 worktree and mark it in progress.
 - [ ] Add editor validation and API behavior tests for capacity below held/booked rooms and unchanged booking snapshots.
 - [ ] Implement admin-only range reads and batch saves through HBE-010.
 - [ ] Add browser coverage proving admin edits succeed and receptionist edits are absent/denied.
