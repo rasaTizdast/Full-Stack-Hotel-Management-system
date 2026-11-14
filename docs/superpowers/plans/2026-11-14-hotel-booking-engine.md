@@ -291,7 +291,8 @@ Use test-first implementation for behavior: add a focused failing test, run it t
 - [x] Verify API guards still deny forbidden requests when called outside the UI.
 - [x] Run component and Playwright tests.
 - [x] Mark done and commit `feat(HBE-015): add protected staff dashboard shell`.
-- [ ] Parent orchestrator rebases, merges, and removes the worktree and branch.
+- [x] Parent orchestrator rebases, merges `520e507` to `main`, and removes the worktree registration and branch.
+  - **Cleanup note:** Windows left residual `apps` and `node_modules` folders at the former worktree path; no recursive deletion was attempted.
 
 ### Task 16: HBE-016 — Build staff booking operations UI
 
