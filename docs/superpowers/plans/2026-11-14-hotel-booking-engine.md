@@ -323,10 +323,10 @@ Use test-first implementation for behavior: add a focused failing test, run it t
 **Produces:** Admin range editing for room counts and nightly prices, clear reservation-bound errors, multi-date results, and no inventory controls for receptionists.
 
 - [x] Create the HBE-017 worktree and mark it in progress.
-- [ ] Add editor validation and API behavior tests for capacity below held/booked rooms and unchanged booking snapshots.
-- [ ] Implement admin-only range reads and batch saves through HBE-010.
-- [ ] Add browser coverage proving admin edits succeed and receptionist edits are absent/denied.
-- [ ] Run component/API behavior tests, Playwright, and accessibility checks.
+- [x] Add editor validation and API behavior tests for capacity below held/booked rooms and unchanged booking snapshots.
+- [x] Implement admin-only range reads and batch saves through HBE-010; expose all inventory room types only to admins, including inactive types marked clearly in the picker.
+- [x] Add browser coverage proving admin edits succeed and receptionist edits are absent/denied, using the shared worker-scoped session fixture without persisted cookies.
+- [x] Run unit tests (API 80, web 85), API e2e (59/59), PostgreSQL integration (28/28), Playwright (32/32, 16 desktop + 16 mobile, including Axe), lint, typecheck, format, build, and React Doctor 100/100 on `hotel_booking_hbe017_final_20261114_test`.
 - [ ] Mark done, commit `feat(HBE-017): add staff inventory editor`, merge, and remove the worktree and branch.
 
 ### Task 18: HBE-018 — Add frontend unit/component and accessibility suite
