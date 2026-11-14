@@ -179,8 +179,9 @@ Status values: `Not started`, `In progress`, `Blocked`, `Done`.
 - **Owner:** Codex
 - **Status:** Done
 - **Branch/worktree:** `codex/hbe-009-booking-lifecycle` — `C:\hb\HBE-009`
-- **Code changes:** —
-- **Tests:** Strict frozen install passed; API unit tests passed (15 suites/79 tests); API e2e tests passed (9 suites/45 tests); isolated PostgreSQL tests passed (5 suites/22 tests), including status/counter transitions, repeated expiry, and staff-confirmation-versus-expiry concurrency. Four migrations applied and status is up to date; lint, typecheck, Prettier check, and production build passed.
+- **Code changes:** Added transaction-locked status transitions with inventory conversion/release, idempotent 60-second expiry scans with safe error logging, and internal cancellation/note fields. Documented the single-API-instance worker limit.
+- **Tests:** After rebasing onto current `main`, API unit tests passed (15 suites/79 tests); API e2e tests passed (9 suites/45 tests); isolated PostgreSQL tests passed (5 suites/22 tests), including status/counter transitions, repeated expiry, and staff-confirmation-versus-expiry concurrency. Four migrations applied and status is up to date; lint, typecheck, Prettier check, and production build passed.
+- **Merge/cleanup:** Merged to `main` in `c99005d`; branch and Git worktree registration removed. Windows left residual `apps` and `node_modules` folders at the former worktree path.
 - **Scope:** Confirm, reject, cancel pending/confirmed request, and expire 24-hour pending requests.
 
 **Acceptance criteria:**

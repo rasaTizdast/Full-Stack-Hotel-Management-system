@@ -187,9 +187,10 @@ Use test-first implementation for behavior: add a focused failing test, run it t
 - [x] Create the HBE-009 worktree and mark it in progress.
 - [x] Write state-machine cases for allowed/disallowed transitions and database tests for idempotency, counter updates, and expiry races.
 - [x] Implement transaction-locked transitions and an idempotent expiry scan that records no guest PII.
-- [x] Run API unit tests (15 suites/79 tests), API e2e tests (9 suites/45 tests), PostgreSQL tests (5 suites/22 tests), migration status, lint/typecheck/format, and production build.
+- [x] After rebasing onto current `main`, run API unit tests (15 suites/79 tests), API e2e tests (9 suites/45 tests), PostgreSQL tests (5 suites/22 tests), migration status, lint/typecheck/format, and production build.
 - [x] Mark done and commit `feat(HBE-009): add booking lifecycle and expiry`.
-- [ ] Merge to `main`, remove the Git worktree registration, and delete the branch.
+- [x] Merge to `main` (`c99005d`), remove the Git worktree registration, and delete the branch.
+  - **Cleanup note:** Windows left residual `apps` and `node_modules` folders at the former worktree path; no recursive deletion was attempted.
 
 ### Task 10: HBE-010 — Build staff inventory API
 
