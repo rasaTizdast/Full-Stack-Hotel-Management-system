@@ -1,5 +1,13 @@
 import { expect, test, type APIRequestContext, type Page, type TestInfo } from '@playwright/test';
+import AxeBuilder from '@axe-core/playwright';
 import { findAvailableGardenStay } from './available-stay';
+
+async function expectAxeClean(page: Page) {
+  const accessibility = await new AxeBuilder({ page })
+    .withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa', 'wcag22aa'])
+    .analyze();
+  expect(accessibility.violations).toEqual([]);
+}
 
 async function beginBooking(page: Page, request: APIRequestContext, testInfo: TestInfo) {
   await page.goto('/');
@@ -44,11 +52,14 @@ test('guest submits a request and sees a safe pending confirmation', async ({
     }
   });
   await beginBooking(page, request, testInfo);
+  await expectAxeClean(page);
   await fillGuest(page);
+  await expectAxeClean(page);
   await page.getByRole('button', { name: 'ثبت درخواست اقامت' }).click();
 
   await expect(page.getByRole('heading', { name: 'درخواست اقامت شما ثبت شد' })).toBeVisible();
   await expect(page.getByText('در انتظار تأیید پذیرش')).toBeVisible();
+  await expectAxeClean(page);
   await expect(page.getByText(/کد پیگیری/)).toBeVisible();
   await expect(page.getByText('مریم رضایی')).toHaveCount(0);
   await expect(page.getByLabel('شماره موبایل')).toHaveCount(0);
@@ -79,6 +90,7 @@ test('availability change replaces submit with a fresh-search recovery action', 
   await expect(page.locator('p[role="alert"]')).toContainText(
     'این اتاق دیگر برای تمام شب‌های انتخاب‌شده در دسترس نیست.',
   );
+  await expectAxeClean(page);
   await expect(page.getByRole('link', { name: 'جستجوی دوباره' })).toHaveAttribute(
     'href',
     '/#stay-search',

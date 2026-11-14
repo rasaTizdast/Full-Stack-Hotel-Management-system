@@ -19,5 +19,22 @@ export default defineConfig({
     fileParallelism: false,
     maxWorkers: 1,
     isolate: true,
+    coverage: {
+      provider: 'v8',
+      include: [
+        'src/lib/availability.ts',
+        'src/lib/booking-form-schema.ts',
+        'src/lib/jalali-date.ts',
+        'src/lib/staff-inventory.ts',
+      ],
+      reporter: ['text', 'json-summary', 'html'],
+      reportsDirectory: resolve(webRoot, './coverage'),
+      thresholds: {
+        statements: 88,
+        branches: 80,
+        functions: 95,
+        lines: 90,
+      },
+    },
   },
 });

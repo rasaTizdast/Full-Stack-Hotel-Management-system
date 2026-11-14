@@ -1,4 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
+import AxeBuilder from '@axe-core/playwright';
 import { findAvailableGardenStay } from './available-stay';
 
 async function expectNoHorizontalOverflow(page: Page) {
@@ -27,7 +28,14 @@ test('guests search Persian dates and see API-priced available rooms', async ({
   await expectNoHorizontalOverflow(page);
   await page.getByLabel('تاریخ ورود').fill(stay.checkInJalali);
   await page.getByLabel('تاریخ خروج').fill(stay.checkOutJalali);
-  await page.getByRole('button', { name: 'بررسی اتاق‌های موجود' }).click();
+  const guestCount = page.getByLabel('تعداد مهمان');
+  const searchButton = page.getByRole('button', { name: 'بررسی اتاق‌های موجود' });
+  await page.getByLabel('تاریخ خروج').focus();
+  await page.keyboard.press('Tab');
+  await expect(guestCount).toBeFocused();
+  await page.keyboard.press('Tab');
+  await expect(searchButton).toBeFocused();
+  await page.keyboard.press('Enter');
 
   await expect(page.getByRole('heading', { name: 'اتاق‌های مناسب شما' })).toBeVisible();
   const firstRoom = page.locator('.availability-card').first();
@@ -35,6 +43,11 @@ test('guests search Persian dates and see API-priced available rooms', async ({
   await expect(firstRoom).toContainText('حداکثر');
   await expect(firstRoom).toContainText('تومان');
   await expect(firstRoom).toContainText('اتاق در دسترس');
+
+  const accessibility = await new AxeBuilder({ page })
+    .withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa', 'wcag22aa'])
+    .analyze();
+  expect(accessibility.violations).toEqual([]);
 
   expect(availabilityRequests).toHaveLength(1);
   expect(availabilityRequests[0].pathname).toBe('/api/availability');
