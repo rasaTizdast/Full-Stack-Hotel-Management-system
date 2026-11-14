@@ -26,6 +26,20 @@ describe('PostgreSQL schema and fictional seed', () => {
     }
 
     await pool.query(
+      `DELETE FROM booking_nights
+       WHERE booking_id IN (
+         SELECT b.id FROM bookings b
+         JOIN room_types rt ON rt.id = b.room_type_id
+         WHERE rt.hotel_id = ANY($1::uuid[])
+       )`,
+      [fixtureHotelIds],
+    );
+    await pool.query(
+      `DELETE FROM bookings
+       WHERE room_type_id IN (SELECT id FROM room_types WHERE hotel_id = ANY($1::uuid[]))`,
+      [fixtureHotelIds],
+    );
+    await pool.query(
       `DELETE FROM room_night_inventory
        WHERE room_type_id IN (SELECT id FROM room_types WHERE hotel_id = ANY($1::uuid[]))`,
       [fixtureHotelIds],
@@ -107,6 +121,17 @@ describe('PostgreSQL schema and fictional seed', () => {
     );
   }
 
+  async function createExistingBooking(roomTypeId: string): Promise<void> {
+    await pool.query(
+      `INSERT INTO bookings
+         (id, public_reference, status, check_in, check_out, guest_count, room_type_id,
+          room_quantity, guest_name, guest_phone, total_price_toman, expires_at)
+       VALUES ($1, $2, 'PENDING_CONFIRMATION', '2099-05-17', '2099-05-18', 1, $3, 1,
+               'Fictional existing guest', '+989121234567', 1000, now() + interval '1 day')`,
+      [randomUUID(), randomUUID().replaceAll('-', '').slice(0, 16), roomTypeId],
+    );
+  }
+
   it('keeps one inventory row per room type and Gregorian stay date', async () => {
     const { roomTypeId, stayDate } = await createInventoryFixture();
     await insertInventory(roomTypeId, stayDate);
@@ -130,12 +155,17 @@ describe('PostgreSQL schema and fictional seed', () => {
     });
   });
 
-  it('seeds one fictional hotel, future inventory, and an environment-configured Argon2id admin repeatably', async () => {
+  it('seeds repeatably without changing existing bookings', async () => {
+    const fixture = await createInventoryFixture();
+    await createExistingBooking(fixture.roomTypeId);
     const email = process.env.DEMO_ADMIN_EMAIL;
     const password = process.env.DEMO_ADMIN_PASSWORD;
     expect(email).toBeTruthy();
     expect(password).toBeTruthy();
 
+    const bookingsBeforeSeed = await pool.query<{ booking_count: string }>(
+      'SELECT count(*) AS booking_count FROM bookings',
+    );
     runSeed();
     const first = await pool.query<{
       hotel_count: string;
@@ -161,7 +191,7 @@ describe('PostgreSQL schema and fictional seed', () => {
     expect(first.rows[0].password_hash).toMatch(/^\$argon2id\$/);
     expect(first.rows[0].password_hash).not.toBe(password);
     expect(await argon2.verify(first.rows[0].password_hash!, password!)).toBe(true);
-    expect(Number(first.rows[0].booking_count)).toBe(0);
+    expect(first.rows[0].booking_count).toBe(bookingsBeforeSeed.rows[0].booking_count);
 
     runSeed();
     const second = await pool.query(
@@ -169,7 +199,8 @@ describe('PostgreSQL schema and fictional seed', () => {
          (SELECT count(*) FROM hotels WHERE slug = 'shiraz-garden-house') AS hotel_count,
          (SELECT count(*) FROM room_types rt JOIN hotels h ON h.id = rt.hotel_id WHERE h.slug = 'shiraz-garden-house') AS room_type_count,
          (SELECT count(*) FROM room_night_inventory i JOIN room_types rt ON rt.id = i.room_type_id JOIN hotels h ON h.id = rt.hotel_id WHERE h.slug = 'shiraz-garden-house') AS inventory_count,
-         (SELECT count(*) FROM staff_users WHERE email = $1) AS admin_count`,
+         (SELECT count(*) FROM staff_users WHERE email = $1) AS admin_count,
+         (SELECT count(*) FROM bookings) AS booking_count`,
       [email],
     );
     expect(second.rows[0]).toEqual({
@@ -177,6 +208,7 @@ describe('PostgreSQL schema and fictional seed', () => {
       room_type_count: first.rows[0].room_type_count,
       inventory_count: first.rows[0].future_inventory_count,
       admin_count: first.rows[0].admin_count,
+      booking_count: bookingsBeforeSeed.rows[0].booking_count,
     });
   });
 });

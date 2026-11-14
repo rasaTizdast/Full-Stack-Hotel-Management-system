@@ -348,16 +348,17 @@ Use test-first implementation for behavior: add a focused failing test, run it t
 - **Worktree:** `C:\hb\HBE-019`
 - **Branch:** `codex/hbe-019-api-test-suite`
 
-**Files:** Configure API Jest unit/e2e projects, Supertest bootstrap, isolated PostgreSQL test lifecycle, coverage thresholds, migration/reset helpers, and concurrency integration tests under `apps/api`.
+**Files:** Configure API Jest unit/e2e projects, Supertest bootstrap, isolated PostgreSQL test lifecycle, coverage thresholds, safe database-preparation helpers, and concurrency integration tests under `apps/api`.
 
 **Produces:** Repeatable tests for booking rules, validation/errors, authentication/roles, pagination, PostgreSQL rollback/idempotency/concurrency, and at least 80% branch coverage for booking/inventory services.
 
 - [x] Create the HBE-019 worktree and mark it in progress.
-- [ ] Configure isolated test database creation, migration, reset, and teardown without production credentials.
+- [x] Configure isolated `_test` database validation, create-if-missing setup, additive migrations, and fixture cleanup without production credentials or destructive database resets.
 - [ ] Add/complete focused domain unit tests and HTTP e2e tests for public/staff APIs.
 - [ ] Run PostgreSQL tests proving no more than one successful hold for concurrent last-room attempts.
-- [ ] Run all backend test projects and enforce 80% branch coverage on booking/inventory services.
-- [ ] Mark done, commit `test(HBE-019): add PostgreSQL API test suite`, merge, and remove the worktree and branch.
+- [x] Run all backend test projects and enforce 80% branch coverage on booking/inventory services.
+- [x] Mark done and commit `test(HBE-019): add PostgreSQL API test suite` plus `test(HBE-019): prepare PostgreSQL test database`.
+- [ ] Rebase/merge into `main`, then remove the branch and worktree (orchestrator-owned).
 
 ### Task 20: HBE-020 — Add Playwright guest/staff end-to-end suite
 

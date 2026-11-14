@@ -1,0 +1,27 @@
+{
+  "rootDir": "..",
+  "testEnvironment": "node",
+  "testRegex": "(src/.*\\.spec\\.ts$|test/.*\\.database-spec\\.ts$)",
+  "moduleNameMapper": {
+    "^(\\.{1,2}/.*)\\.js$": "$1"
+  },
+  "setupFiles": ["<rootDir>/test/setup-database.ts"],
+  "transform": {
+    "^.+\\.(t|j)s$": "ts-jest"
+  },
+  "testTimeout": 30000,
+  "collectCoverageFrom": [
+    "src/bookings/bookings.service.ts",
+    "src/staff-inventory/staff-inventory.service.ts"
+  ],
+  "coverageDirectory": "coverage/api-branch",
+  "coverageReporters": ["text", "lcov"],
+  "coverageThreshold": {
+    "./src/bookings/bookings.service.ts": {
+      "branches": 80
+    },
+    "./src/staff-inventory/staff-inventory.service.ts": {
+      "branches": 80
+    }
+  }
+}
