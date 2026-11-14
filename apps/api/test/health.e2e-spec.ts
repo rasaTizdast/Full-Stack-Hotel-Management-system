@@ -4,6 +4,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { App } from 'supertest/types';
 import request from 'supertest';
 import { AppModule } from '../src/app.module';
+import { configureApiApplication } from '../src/common/configure-api-application';
 import { PrismaService } from '../src/database/prisma.service';
 
 describe('Health endpoints (e2e)', () => {
@@ -22,7 +23,8 @@ describe('Health endpoints (e2e)', () => {
       .useValue(prisma)
       .compile();
 
-    app = moduleFixture.createNestApplication();
+    app = moduleFixture.createNestApplication({ bodyParser: false });
+    configureApiApplication(app);
     await app.init();
   });
 
@@ -58,7 +60,8 @@ describe('Health endpoints (e2e)', () => {
       .useValue(unavailablePrisma)
       .compile();
 
-    app = moduleFixture.createNestApplication();
+    app = moduleFixture.createNestApplication({ bodyParser: false });
+    configureApiApplication(app);
     await app.init();
 
     const response = await request(app.getHttpServer()).get('/health/ready').expect(503);

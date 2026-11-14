@@ -35,7 +35,7 @@ pnpm dev:web
 pnpm dev:api
 ```
 
-The API stays live when PostgreSQL is unavailable. `GET /health/live` checks the process; `GET /health/ready` runs a database query and returns HTTP 503 with setup guidance when the database is unavailable.
+The API serves product endpoints under `/api/v1`. Health checks remain unprefixed for monitoring: `GET /health/live` checks the process; `GET /health/ready` runs a database query and returns HTTP 503 with setup guidance when the database is unavailable. API request errors include a stable code, message, and request ID; DTO validation rejects unknown fields.
 
 ## Quality checks
 

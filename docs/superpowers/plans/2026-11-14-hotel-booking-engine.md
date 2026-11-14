@@ -99,10 +99,10 @@ Use test-first implementation for behavior: add a focused failing test, run it t
 
 **Produces:** `/api/v1` prefix, global whitelist/forbid validation, stable error JSON, request IDs, and safe logging behavior.
 
-- [ ] Create the HBE-004 worktree and mark it in progress.
-- [ ] Add API e2e tests for valid and invalid input, malformed/unknown fields, error codes, request IDs, field details, and absence of sensitive data in logs/responses.
-- [ ] Implement global validation and the exception filter without changing domain behavior.
-- [ ] Run the API e2e suite and confirm every error path uses the stable response shape.
+- [x] Create the HBE-004 worktree and mark it in progress.
+- [x] Add API e2e tests for valid and invalid input, malformed/unknown fields, error codes, request IDs, field details, and absence of sensitive data in logs/responses.
+- [x] Implement global validation and the exception filter without changing domain behavior.
+- [x] Run the API e2e suite and confirm every error path uses the stable response shape; lint, typecheck, format, and build checks also pass.
 - [ ] Mark done, commit `feat(HBE-004): standardize API validation and errors`, merge, and remove the worktree and branch.
 
 ### Task 5: HBE-005 — Build public hotel and room-type endpoints
