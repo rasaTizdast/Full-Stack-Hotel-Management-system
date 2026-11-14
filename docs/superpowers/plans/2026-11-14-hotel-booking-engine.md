@@ -344,7 +344,8 @@ Use test-first implementation for behavior: add a focused failing test, run it t
 - [x] Add keyboard-operated search submission and axe checks for guest search, booking form, confirmation, and availability-conflict states.
 - [x] Run the complete web suite and record core behavior coverage: 85 tests; 91.08% statements, 88.23% branches, 100% functions, and 92.9% lines against configured 88/80/95/90 floors.
 - [x] Run the integrated Playwright suite (32/32 desktop/mobile) and root tests (web 85, API 80), lint, typecheck, format, production build, and React Doctor 100/100.
-- [ ] Mark done, commit `test(HBE-018): add web behavior and accessibility suite`, merge, and remove the worktree and branch.
+- [x] Mark done, commit `test(HBE-018): add web behavior and accessibility suite` plus validation docs, merge `eeab44bca362c7aae0746d4f349de37584a229b1` into `main`, and remove the worktree registration and branch.
+  - **Cleanup note:** Windows left residual `apps` and `node_modules` folders at `C:\hb\HBE-018`; no recursive deletion was attempted.
 
 ### Task 19: HBE-019 — Add backend unit, API e2e, and PostgreSQL integration suite
 
