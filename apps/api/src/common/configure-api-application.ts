@@ -7,6 +7,8 @@ import {
   RequestMethod,
   ValidationPipe,
 } from '@nestjs/common';
+import type { CustomOrigin } from '@nestjs/common/interfaces/external/cors-options.interface';
+import { ConfigService } from '@nestjs/config';
 import { ValidationError } from 'class-validator';
 import { ApiExceptionFilter } from './api-exception.filter';
 
@@ -68,6 +70,17 @@ function flattenValidationErrors(
 }
 
 export function configureApiApplication(app: INestApplication): void {
+  const webOrigin = new URL(app.get(ConfigService).getOrThrow<string>('WEB_ORIGIN')).origin;
+  const allowConfiguredOrigin: CustomOrigin = (requestOrigin, callback) => {
+    callback(null, requestOrigin === webOrigin ? webOrigin : false);
+  };
+  app.enableCors({
+    origin: allowConfiguredOrigin,
+    credentials: true,
+    methods: ['GET', 'HEAD', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['content-type', 'x-csrf-token', 'idempotency-key'],
+    exposedHeaders: ['x-request-id'],
+  });
   app.setGlobalPrefix('api/v1', {
     exclude: [{ path: 'health/(.*)', method: RequestMethod.ALL }],
   });
