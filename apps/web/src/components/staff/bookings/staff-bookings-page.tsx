@@ -103,6 +103,7 @@ export function StaffBookingsPage() {
   const [detailState, setDetailState] = useState<DetailState>('idle');
   const [detailError, setDetailError] = useState<string | null>(null);
   const [actionDraft, setActionDraft] = useState<BookingAction | null>(null);
+  const [actionTargetReference, setActionTargetReference] = useState<string | null>(null);
   const [internalNote, setInternalNote] = useState('');
   const [cancellationReason, setCancellationReason] = useState('');
   const [actionError, setActionError] = useState<string | null>(null);
@@ -223,23 +224,35 @@ export function StaffBookingsPage() {
   }
 
   function openAction(action: BookingAction, trigger: HTMLButtonElement) {
+    if (!detail || detail.reference !== selectedReference) return;
     triggerRef.current = trigger;
     setActionError(null);
     setActionMessage(null);
     setInternalNote('');
     setCancellationReason('');
+    setActionTargetReference(detail.reference);
     setActionDraft(action);
   }
 
   function closeAction() {
     setActionDraft(null);
+    setActionTargetReference(null);
     setActionError(null);
     triggerRef.current?.focus();
   }
 
   async function submitAction(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    if (!detail || !actionDraft) return;
+    if (!detail || !actionDraft || !actionTargetReference) return;
+    if (actionTargetReference !== detail.reference || actionTargetReference !== selectedReference) {
+      setActionDraft(null);
+      setActionTargetReference(null);
+      setActionError(null);
+      setInternalNote('');
+      setCancellationReason('');
+      setActionMessage('رزرو انتخاب‌شده تغییر کرده است؛ تصمیم را دوباره بررسی کنید.');
+      return;
+    }
     if (!csrfToken) {
       setActionError('نشست کارکنان معتبر نیست. دوباره وارد شوید.');
       return;
@@ -251,19 +264,20 @@ export function StaffBookingsPage() {
     try {
       const result =
         actionDraft === 'confirm'
-          ? await confirmStaffBooking(detail.reference, csrfToken, {
+          ? await confirmStaffBooking(actionTargetReference, csrfToken, {
               ...(internalNote.trim() ? { internalNote: internalNote.trim() } : {}),
             })
           : actionDraft === 'reject'
-            ? await rejectStaffBooking(detail.reference, csrfToken, {
+            ? await rejectStaffBooking(actionTargetReference, csrfToken, {
                 ...(internalNote.trim() ? { internalNote: internalNote.trim() } : {}),
               })
-            : await cancelStaffBooking(detail.reference, csrfToken, {
+            : await cancelStaffBooking(actionTargetReference, csrfToken, {
                 reason: cancellationReason.trim(),
               });
 
       setDetail(result);
       setActionDraft(null);
+      setActionTargetReference(null);
       setInternalNote('');
       setCancellationReason('');
       setActionMessage(SUCCESS_MESSAGES[actionDraft]);
@@ -271,8 +285,9 @@ export function StaffBookingsPage() {
       window.requestAnimationFrame(() => detailHeadingRef.current?.focus());
     } catch (cause) {
       if (cause instanceof StaffApiError && cause.status === 409) {
-        const reference = detail.reference;
+        const reference = actionTargetReference;
         setActionDraft(null);
+        setActionTargetReference(null);
         setActionMessage('در حال دریافت آخرین وضعیت درخواست…');
         setDetail(null);
         setDetailState('loading');
@@ -453,11 +468,18 @@ export function StaffBookingsPage() {
                     className={`${styles.bookingCard} ${selectedReference === item.reference ? styles.bookingCardSelected : ''}`}
                     type="button"
                     aria-pressed={selectedReference === item.reference}
+                    disabled={acting}
                     onClick={() => {
                       setSelectedReference(item.reference);
                       setDetail(null);
                       setDetailState('loading');
                       setDetailError(null);
+                      setActionDraft(null);
+                      setActionTargetReference(null);
+                      setActionError(null);
+                      setInternalNote('');
+                      setCancellationReason('');
+                      triggerRef.current = null;
                       setActionMessage(null);
                     }}
                   >
@@ -638,38 +660,39 @@ export function StaffBookingsPage() {
                 </section>
               )}
 
-              {isActionable(detail) && !actionDraft && (
-                <div className={styles.bookingActions} aria-label="اقدام‌های رزرو">
-                  {detail.status === 'PENDING_CONFIRMATION' ? (
-                    <>
-                      <button
-                        className={styles.primaryButton}
-                        type="button"
-                        onClick={(event) => openAction('confirm', event.currentTarget)}
-                      >
-                        تأیید رزرو
-                      </button>
+              {isActionable(detail) &&
+                (!actionDraft || actionTargetReference !== detail.reference) && (
+                  <div className={styles.bookingActions} aria-label="اقدام‌های رزرو">
+                    {detail.status === 'PENDING_CONFIRMATION' ? (
+                      <>
+                        <button
+                          className={styles.primaryButton}
+                          type="button"
+                          onClick={(event) => openAction('confirm', event.currentTarget)}
+                        >
+                          تأیید رزرو
+                        </button>
+                        <button
+                          className={styles.rejectButton}
+                          type="button"
+                          onClick={(event) => openAction('reject', event.currentTarget)}
+                        >
+                          رد درخواست
+                        </button>
+                      </>
+                    ) : (
                       <button
                         className={styles.rejectButton}
                         type="button"
-                        onClick={(event) => openAction('reject', event.currentTarget)}
+                        onClick={(event) => openAction('cancel', event.currentTarget)}
                       >
-                        رد درخواست
+                        لغو رزرو
                       </button>
-                    </>
-                  ) : (
-                    <button
-                      className={styles.rejectButton}
-                      type="button"
-                      onClick={(event) => openAction('cancel', event.currentTarget)}
-                    >
-                      لغو رزرو
-                    </button>
-                  )}
-                </div>
-              )}
+                    )}
+                  </div>
+                )}
 
-              {actionDraft && (
+              {actionDraft && actionTargetReference === detail.reference && (
                 <section className={styles.actionPanel} aria-labelledby="booking-action-title">
                   <h3 id="booking-action-title" ref={actionHeadingRef} tabIndex={-1}>
                     {ACTION_LABELS[actionDraft]}

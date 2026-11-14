@@ -52,6 +52,19 @@ const bookingDetail: StaffBookingDetail = {
   ],
 };
 
+const secondBooking: StaffBookingListItem = {
+  ...booking,
+  reference: 'HB-26-CD',
+  guestName: 'سارا نادری',
+  guestPhone: '+989111112222',
+};
+
+const secondBookingDetail: StaffBookingDetail = {
+  ...bookingDetail,
+  ...secondBooking,
+  guestEmail: 'sara@example.test',
+};
+
 function pageOf(items: StaffBookingListItem[] = [booking]): StaffBookingPage {
   return {
     items,
@@ -204,6 +217,29 @@ describe('StaffBookingsPage', () => {
     });
     expect(await screen.findByText('رزرو تأیید شد.')).toBeInTheDocument();
     expect(screen.getAllByText('تأییدشده').length).toBeGreaterThan(0);
+  });
+
+  it('closes a booking confirmation when staff selects a different booking', async () => {
+    const { requests } = setupApi({
+      lists: [pageOf([booking, secondBooking])],
+      details: [bookingDetail, secondBookingDetail],
+    });
+    fireEvent.click(await screen.findByRole('button', { name: /نمایش جزئیات رزرو HB-26-AB/ }));
+    expect(
+      await screen.findByRole('heading', { name: 'جزئیات رزرو HB-26-AB' }),
+    ).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: 'تأیید رزرو' }));
+    expect(screen.getByRole('heading', { name: 'تأیید نهایی رزرو' })).toBeInTheDocument();
+
+    fireEvent.click(await screen.findByRole('button', { name: /نمایش جزئیات رزرو HB-26-CD/ }));
+
+    expect(
+      await screen.findByRole('heading', { name: 'جزئیات رزرو HB-26-CD' }),
+    ).toBeInTheDocument();
+    expect(screen.queryByRole('heading', { name: 'تأیید نهایی رزرو' })).not.toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'تأیید رزرو' })).toBeInTheDocument();
+    expect(requests.some((request) => request.init?.method === 'POST')).toBe(false);
   });
 
   it('requires a cancellation reason and a final click before canceling', async () => {

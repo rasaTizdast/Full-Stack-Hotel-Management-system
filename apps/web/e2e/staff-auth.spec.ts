@@ -1,7 +1,8 @@
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
-import { expect, test } from '@playwright/test';
+import { expect } from '@playwright/test';
 import AxeBuilder from '@axe-core/playwright';
+import { test } from './staff-fixtures';
 
 const apiPort = process.env.HBE_E2E_API_PORT ?? '4015';
 const webPort = process.env.HBE_E2E_WEB_PORT ?? '3015';
@@ -100,8 +101,9 @@ test('allows staff to sign in and log out with the server session', async ({ pag
 
 test('returns to sign-in after the current-user endpoint reports an expired session', async ({
   page,
+  staffCookies,
 }) => {
-  await signIn(page);
+  await page.context().addCookies(staffCookies);
   await page.route(`${apiBaseUrl}/staff/auth/me`, (route) =>
     route.fulfill({
       status: 401,
@@ -110,7 +112,7 @@ test('returns to sign-in after the current-user endpoint reports an expired sess
     }),
   );
 
-  await page.reload();
+  await page.goto('/staff');
   await expect(page).toHaveURL(/\/staff\/login$/);
   await expect(page.getByRole('heading', { name: 'به پنل خوش آمدید' })).toBeVisible();
 });
