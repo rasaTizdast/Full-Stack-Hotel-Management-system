@@ -222,10 +222,10 @@ Status values: `Not started`, `In progress`, `Blocked`, `Done`.
 - **Priority:** P0
 - **Depends on:** HBE-007, HBE-009
 - **Owner:** Codex
-- **Status:** In progress
+- **Status:** Done
 - **Branch/worktree:** `codex/hbe-011-staff-bookings-api` — `C:\hb\HBE-011`
 - **Code changes:** Added role-protected staff list/detail and confirm/reject/cancel routes, validated filters and deterministic pagination, phone/reference search, and explicit list/detail DTOs that limit guest information to staff views. Actions delegate to the booking transition service and return the current booking state.
-- **Tests:** Focused staff-bookings API e2e passed (11 tests); full API unit tests passed (15 suites/79 tests), API e2e passed (10 suites/56 tests), and isolated PostgreSQL integration tests passed (5 suites/22 tests). Frozen install, migration status (4 migrations; up to date), lint, typecheck, Prettier check, and production build passed.
+- **Tests:** After rebase, web unit tests passed (16 files/58 tests), API unit tests passed (15 suites/79 tests), API e2e passed (10 suites/56 tests), and PostgreSQL integration tests passed (5 suites/22 tests) on fresh isolated database `hotel_booking_hbe011_db_test`. Frozen install, migration status (4 migrations; up to date), lint, typecheck, Prettier check, production build, and diff checks passed.
 - **Scope:** Paginated staff booking list/detail, filters, search, and status actions.
 
 **Acceptance criteria:**
