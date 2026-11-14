@@ -263,10 +263,11 @@ Status values: `Not started`, `In progress`, `Blocked`, `Done`.
 - **Priority:** P0
 - **Depends on:** HBE-006, HBE-012
 - **Owner:** Codex
-- **Status:** Implemented; awaiting integration
+- **Status:** Done
 - **Branch/worktree:** `codex/hbe-013-search-ui` / `C:\hb\HBE-013`
 - **Code changes:** Persian RTL date/guest search, tested Jalali/Gregorian adapter, same-origin availability proxy, API-priced room cards, and distinct validation/loading/empty/unavailable/server-error states.
-- **Tests:** Vitest 20/20, API Jest 39/39, Playwright 6/6 across desktop and mobile; lint, typecheck, format check, and production build passed.
+- **Tests:** After rebasing onto current `main`, web Vitest passed (20/20), API unit tests passed (13 suites/59 tests), API e2e passed (9 suites/45 tests), PostgreSQL integration passed (4 suites/14 tests), and Playwright passed (6/6 across desktop and mobile). Frozen install, isolated migration deploy/status, lint, typecheck, format, and production build passed.
+- **Merge/cleanup:** Merged to `main` in `8226c67`; branch and Git worktree registration removed. Windows left residual `apps` and `node_modules` folders at the former worktree path.
 - **Scope:** Date/guest search form, Jalali display adapter, API query, results cards, capacity and total price display.
 
 **Acceptance criteria:**

@@ -251,9 +251,10 @@ Use test-first implementation for behavior: add a focused failing test, run it t
 - [x] Create the HBE-013 worktree and mark it in progress.
 - [x] Add failing tests for form validation, Jalali month/year and leap-year boundaries, API date payloads, and visible result/error states.
 - [x] Implement the accessible Persian RTL search UI and date adapter; keep availability and price decisions server-authoritative.
-- [x] Run Vitest and the Playwright guest search flow at mobile and desktop widths; all 6 browser tests passed using `hotel_booking_hbe013_test` and ticket-specific web/API ports 3013/4013.
+- [x] After rebasing onto current `main`, run web Vitest (20/20), API unit (13 suites/59 tests), API e2e (9 suites/45 tests), PostgreSQL integration (4 suites/14 tests), and Playwright (6/6 across desktop/mobile) using `hotel_booking_hbe013_test` and ticket-specific web/API ports 3013/4013; frozen install, migration deploy/status, lint, typecheck, format, and production build pass.
 - [x] Commit `feat(HBE-013): add Persian availability search`.
-- [ ] Rebase onto latest `main`, merge, and remove the worktree and branch (orchestrator integration step).
+- [x] Merge to `main` (`8226c67`), remove the Git worktree registration, and delete the branch.
+  - **Cleanup note:** Windows left residual `apps` and `node_modules` folders at the former worktree path; no recursive deletion was attempted.
 
 ### Task 14: HBE-014 — Build guest booking form and confirmation
 
