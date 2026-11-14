@@ -309,10 +309,10 @@ Status values: `Not started`, `In progress`, `Blocked`, `Done`.
 - **Priority:** P0
 - **Depends on:** HBE-007, HBE-012
 - **Owner:** Codex
-- **Status:** Not started
-- **Branch/worktree:** —
-- **Code changes:** —
-- **Tests:** —
+- **Status:** Done
+- **Branch/worktree:** `codex/hbe-015-staff-shell` — `C:\hb\HBE-015`
+- **Code changes:** Added a Persian staff sign-in page and session-gated dashboard shell; credentialed API requests keep the session in an HttpOnly cookie and the CSRF token in memory. Added receptionist/admin navigation, logout, expiry redirect, responsive RTL styling in a staff-scoped CSS module, production API URL validation, and consistent demo-hotel branding.
+- **Tests:** Frozen install passed. Web unit/component tests passed (16 files, 58 tests); Playwright passed (18 tests across desktop and mobile), including signed-out route and direct API denial, login/logout, role navigation, session expiry, keyboard flow, and axe WCAG A/AA. API unit tests passed (79), API e2e passed (45), and PostgreSQL integration tests passed (22) on a fresh isolated test database. Web/API lint, typecheck, production build, repository format check, and React Doctor (100/100) passed. Four Prisma migrations were applied and the test schema was up to date.
 - **Scope:** Staff login page, protected route layout, current-user state, navigation, logout, and unauthorized redirect.
 
 **Acceptance criteria:**
@@ -322,6 +322,8 @@ Status values: `Not started`, `In progress`, `Blocked`, `Done`.
 - Admin-only navigation is not shown to receptionists.
 - API authorization remains enforced if a user manually calls an endpoint.
 - Session expiry is handled cleanly.
+- Production staff API requests require an explicitly configured HTTPS base URL; invalid configuration must not send credentials.
+- Private staff data must stay behind guarded staff APIs until a server-aware page guard is available; the current anonymous staff page response contains only the generic shell.
 
 **Required tests/checks:** component tests and Playwright login/role/expired-session flows.
 

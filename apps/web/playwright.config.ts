@@ -2,7 +2,11 @@ import { defineConfig, devices } from '@playwright/test';
 import { resolve } from 'node:path';
 
 const workspaceRoot = resolve(process.cwd(), '../..');
-const reuseExistingServer = !process.env.CI;
+const webPort = process.env.HBE_E2E_WEB_PORT ?? '3015';
+const apiPort = process.env.HBE_E2E_API_PORT ?? '4015';
+const webOrigin = `http://localhost:${webPort}`;
+const apiBaseUrl = `http://localhost:${apiPort}/api/v1`;
+const reuseExistingServer = process.env.HBE_E2E_REUSE_SERVER === 'true';
 
 export default defineConfig({
   testDir: './e2e',
@@ -14,7 +18,7 @@ export default defineConfig({
   expect: { timeout: 15_000 },
   reporter: 'list',
   use: {
-    baseURL: 'http://localhost:3014',
+    baseURL: webOrigin,
     trace: 'retain-on-failure',
     screenshot: 'only-on-failure',
   },
@@ -36,20 +40,21 @@ export default defineConfig({
     {
       command: 'pnpm --filter @hotel/api dev',
       cwd: workspaceRoot,
-      url: 'http://127.0.0.1:4014/health/ready',
+      url: `http://localhost:${apiPort}/health/ready`,
       reuseExistingServer,
       timeout: 120_000,
-      env: { NODE_ENV: 'test', PORT: '4014' },
+      env: { NODE_ENV: 'test', PORT: apiPort, WEB_ORIGIN: webOrigin },
     },
     {
-      command: 'pnpm --filter @hotel/web exec next dev --port 3014',
+      command: 'pnpm --filter @hotel/web dev',
       cwd: workspaceRoot,
-      url: 'http://localhost:3014/favicon.ico',
+      url: webOrigin,
       reuseExistingServer,
       timeout: 120_000,
       env: {
-        HOTEL_API_BASE_URL: 'http://127.0.0.1:4014/api/v1',
-        PORT: '3014',
+        PORT: webPort,
+        HOTEL_API_BASE_URL: apiBaseUrl,
+        NEXT_PUBLIC_HOTEL_API_BASE_URL: apiBaseUrl,
       },
     },
   ],

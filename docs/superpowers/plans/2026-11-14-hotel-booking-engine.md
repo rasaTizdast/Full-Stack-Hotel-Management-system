@@ -278,19 +278,20 @@ Use test-first implementation for behavior: add a focused failing test, run it t
 
 ### Task 15: HBE-015 — Build staff login and protected dashboard shell
 
-- **Worktree:** `../Hotel Booking system-worktrees/HBE-015`
+- **Worktree:** `C:\hb\HBE-015`
 - **Branch:** `codex/hbe-015-staff-shell`
 
 **Files:** Add staff login and protected route groups under `apps/web/src/app/staff`; add typed staff API/session utilities, navigation, role-aware views, and component/Playwright tests.
 
 **Produces:** Sign-in, current-user state, logout, protected staff routes, unauthorized redirect, role-specific navigation, and graceful session expiry handling.
 
-- [ ] Create the HBE-015 worktree and mark it in progress.
-- [ ] Add component and browser tests for signed-out access, successful login, receptionist/admin navigation, and expired session.
-- [ ] Implement cookie-based session handling without localStorage token storage.
-- [ ] Verify API guards still deny forbidden requests when called outside the UI.
-- [ ] Run component and Playwright tests.
-- [ ] Mark done, commit `feat(HBE-015): add protected staff dashboard shell`, merge, and remove the worktree and branch.
+- [x] Create the HBE-015 worktree and mark it in progress.
+- [x] Add component and browser tests for signed-out access, successful login, receptionist/admin navigation, and expired session.
+- [x] Implement cookie-based session handling without localStorage token storage.
+- [x] Verify API guards still deny forbidden requests when called outside the UI.
+- [x] Run component and Playwright tests.
+- [x] Mark done and commit `feat(HBE-015): add protected staff dashboard shell`.
+- [ ] Parent orchestrator rebases, merges, and removes the worktree and branch.
 
 ### Task 16: HBE-016 — Build staff booking operations UI
 
