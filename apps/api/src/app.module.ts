@@ -7,6 +7,7 @@ import { AppService } from './app.service';
 import { HealthModule } from './health/health.module';
 import { HotelModule } from './hotel/hotel.module';
 import { RoomTypesModule } from './room-types/room-types.module';
+import { AvailabilityModule } from './availability/availability.module';
 
 const environmentSchema = Joi.object({
   NODE_ENV: Joi.string().valid('development', 'test', 'production').default('development'),
@@ -27,6 +28,7 @@ const environmentSchema = Joi.object({
     HealthModule,
     HotelModule,
     RoomTypesModule,
+    AvailabilityModule,
   ],
   controllers: [AppController],
   providers: [AppService],

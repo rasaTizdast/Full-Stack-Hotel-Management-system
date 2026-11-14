@@ -25,6 +25,19 @@ const SAFE_MESSAGES: Record<number, { code: string; message: string }> = {
   503: { code: 'SERVICE_UNAVAILABLE', message: 'The service is temporarily unavailable.' },
 };
 
+const SAFE_DOMAIN_ERRORS: Record<string, { statusCode: number; message: string }> = {
+  INVALID_DATE_RANGE: {
+    statusCode: 400,
+    message: 'Use valid Gregorian YYYY-MM-DD dates and checkout after check-in.',
+  },
+  CHECK_IN_IN_PAST: { statusCode: 400, message: 'Check-in date must be today or later.' },
+  STAY_TOO_LONG: { statusCode: 400, message: 'Stay cannot exceed 30 nights.' },
+  INVALID_GUEST_COUNT: {
+    statusCode: 400,
+    message: 'Guest count must be an integer from 1 to 20.',
+  },
+};
+
 @Catch()
 export class ApiExceptionFilter implements ExceptionFilter {
   private readonly logger = new Logger(ApiExceptionFilter.name);
@@ -69,6 +82,18 @@ export class ApiExceptionFilter implements ExceptionFilter {
               'Database unavailable. Check DATABASE_URL and start PostgreSQL with pnpm db:up.',
             requestId,
           };
+        }
+
+        if (typeof payload.code === 'string') {
+          const safeDomainError = SAFE_DOMAIN_ERRORS[payload.code];
+          if (safeDomainError?.statusCode === statusCode) {
+            return {
+              statusCode,
+              code: payload.code,
+              message: safeDomainError.message,
+              requestId,
+            };
+          }
         }
       }
     }

@@ -124,19 +124,20 @@ Use test-first implementation for behavior: add a focused failing test, run it t
 
 ### Task 6: HBE-006 — Implement availability and server-side price preview
 
-- **Worktree:** `../Hotel Booking system-worktrees/HBE-006`
+- **Worktree:** `C:\hb\HBE-006` (short Windows path to support reliable cleanup)
 - **Branch:** `codex/hbe-006-availability`
 
 **Files:** Add `apps/api/src/availability` query DTOs, response DTOs, service, controller, date/price utilities, unit tests, and PostgreSQL-backed API integration tests.
 
 **Produces:** Availability for every night in a requested stay, capacity validation, and integer-Toman price breakdown using exclusive checkout semantics.
 
-- [ ] Create the HBE-006 worktree and mark it in progress.
-- [ ] Write unit cases for date boundaries, missing rows, capacity, nightly multiplication, totals, invalid/past dates, and the 30-night limit.
-- [ ] Write PostgreSQL API integration cases for full-range availability and checkout exclusivity.
-- [ ] Implement validated availability queries and server-calculated totals using integer arithmetic.
-- [ ] Run utility tests and PostgreSQL-backed API integration tests.
-- [ ] Mark done, commit `feat(HBE-006): add availability search`, merge, and remove the worktree and branch.
+- [x] Create the HBE-006 worktree and mark it in progress.
+- [x] Write unit cases for date boundaries, missing rows, capacity, nightly multiplication, totals, invalid/past dates, and the 30-night limit.
+- [x] Write PostgreSQL API integration cases for full-range availability and checkout exclusivity.
+- [x] Implement validated availability queries and server-calculated totals using integer arithmetic.
+- [x] Run unit, PostgreSQL e2e/integration tests, strict install, lint, typecheck, format, and build checks.
+- [x] Mark done and commit `feat(HBE-006): add availability search` after all required checks pass.
+- [ ] Merge after orchestrator review, then remove the worktree and branch.
 
 ### Task 7: HBE-007 — Implement staff authentication and authorization
 

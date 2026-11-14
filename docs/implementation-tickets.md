@@ -108,10 +108,10 @@ Status values: `Not started`, `In progress`, `Blocked`, `Done`.
 - **Priority:** P0
 - **Depends on:** HBE-005
 - **Owner:** Codex
-- **Status:** Not started
-- **Branch/worktree:** —
-- **Code changes:** —
-- **Tests:** —
+- **Status:** Done
+- **Branch/worktree:** `codex/hbe-006-availability` — `C:\hb\HBE-006`
+- **Code changes:** Added the versioned availability endpoint, strict Gregorian date-range handling in the hotel timezone, per-night inventory/capacity checks, a 1–20 guest limit, exact integer-Toman price strings, explicit response DTOs, and a narrow safe error allowlist.
+- **Tests:** API unit tests passed (6 suites/27 tests), API e2e passed (5 suites/17 tests), and PostgreSQL integration passed (7 tests). Migration status is up to date. Frozen install, lint, typecheck, formatting, and build passed; e2e refuses non-`_test` databases.
 - **Scope:** Validate date range and guest count, query each stay night, and return available room types with price breakdown.
 
 **Acceptance criteria:**
