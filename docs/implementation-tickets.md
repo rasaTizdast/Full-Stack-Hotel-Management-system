@@ -240,10 +240,10 @@ Status values: `Not started`, `In progress`, `Blocked`, `Done`.
 - **Priority:** P0
 - **Depends on:** HBE-001, HBE-005
 - **Owner:** Codex
-- **Status:** Not started
-- **Branch/worktree:** —
-- **Code changes:** —
-- **Tests:** —
+- **Status:** Done
+- **Branch/worktree:** `codex/hbe-012-public-site` — `C:\hb\HBE-012`
+- **Code changes:** Persian RTL home, room list/detail pages, shared public shell, typed server-side API client, loading/error/not-found states, local fonts, and responsive visual system.
+- **Tests:** Vitest 6/6; Playwright 4/4 across desktop and mobile; format, lint, typecheck, and production build pass.
 - **Scope:** Shared layout, Persian locale strings, hotel home/room pages, Tailwind design tokens, responsive nav/footer.
 
 **Acceptance criteria:**
