@@ -220,19 +220,19 @@ Use test-first implementation for behavior: add a focused failing test, run it t
 
 ### Task 12: HBE-012 — Build Persian RTL public site shell and hotel pages
 
-- **Worktree:** `../Hotel Booking system-worktrees/HBE-012`
+- **Worktree:** `C:\hb\HBE-012` (short Windows path to support reliable cleanup)
 - **Branch:** `codex/hbe-012-public-site`
 
 **Files:** Build `apps/web/src/app/layout.tsx`, public home/room routes, Tailwind tokens in `globals.css`, reusable layout/navigation/footer components, typed public API client, Vitest tests, and Playwright smoke coverage.
 
 **Produces:** Persian RTL shell with API-loaded hotel/room content, responsive navigation/footer, accessible focus/heading structure, and loading/error/not-found states.
 
-- [ ] Create the HBE-012 worktree and mark it in progress.
-- [ ] Add component tests for content states and semantic/accessible navigation.
-- [ ] Implement the RTL layout and typed server-side data fetching from HBE-005 endpoints.
-- [ ] Add responsive public page smoke checks for narrow and wide viewports.
-- [ ] Run Vitest and the public Playwright smoke test.
-- [ ] Mark done, commit `feat(HBE-012): build Persian public site`, merge, and remove the worktree and branch.
+- [x] Create the HBE-012 worktree and mark it in progress.
+  - [x] Add component and API-client tests for content states and semantic/accessible navigation (Vitest: 6 passed).
+  - [x] Implement the RTL layout and typed server-side data fetching from HBE-005 endpoints.
+  - [x] Add responsive public page smoke checks for narrow and wide viewports (Playwright: 4 passed across desktop and mobile).
+  - [x] Run Vitest and the public Playwright smoke test; format, lint, typecheck, and production build pass.
+  - [x] Commit `feat(HBE-012): build Persian public site`; merge and worktree removal remain with the orchestrator after review.
 
 ### Task 13: HBE-013 — Build date search and availability results UI
 
