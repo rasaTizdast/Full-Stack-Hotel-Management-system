@@ -27,13 +27,12 @@ export default defineConfig({
       name: 'desktop-chromium',
       use: {
         ...devices['Desktop Chrome'],
-        channel: 'chrome',
         viewport: { width: 1440, height: 960 },
       },
     },
     {
       name: 'mobile-chrome',
-      use: { ...devices['iPhone 13'], browserName: 'chromium', channel: 'chrome' },
+      use: { ...devices['iPhone 13'], browserName: 'chromium' },
     },
   ],
   webServer: [

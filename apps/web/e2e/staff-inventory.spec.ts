@@ -11,7 +11,7 @@ import {
 } from './staff-fixtures';
 import type { Page } from '@playwright/test';
 
-const apiPort = process.env.HBE_E2E_API_PORT ?? '4016';
+const apiPort = process.env.HBE_E2E_API_PORT ?? '4015';
 const apiBaseUrl = `http://localhost:${apiPort}/api/v1`;
 
 test.beforeEach(async ({ page, staffCookies }) => {

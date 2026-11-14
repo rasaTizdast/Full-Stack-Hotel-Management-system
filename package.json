@@ -18,7 +18,8 @@
     "typecheck": "pnpm --recursive --if-present run typecheck",
     "format:check": "prettier --check .",
     "format": "prettier --write .",
-    "test": "pnpm --recursive --if-present run test"
+    "test": "pnpm --recursive --if-present run test",
+    "check": "node scripts/check.mjs"
   },
   "devDependencies": {
     "prettier": "3.10.1"

@@ -446,10 +446,10 @@ Status values: `Not started`, `In progress`, `Blocked`, `Done`.
 - **Priority:** P0
 - **Depends on:** HBE-005 through HBE-020
 - **Owner:** Codex
-- **Status:** Not started
-- **Branch/worktree:** —
-- **Code changes:** —
-- **Tests:** —
+- **Status:** Implemented; awaiting orchestrator merge
+- **Branch/worktree:** `codex/hbe-022-ci-gates` / `C:\hb\HBE-022`
+- **Code changes:** Added a pull-request/push GitHub Actions release-gate job with a per-job PostgreSQL 18 service, fictional CI-only credentials, read-only repository permissions, managed Chromium installation, and failure-only Playwright artifact upload. Added a root `pnpm check` runner that prints each package command and stops on the first failure. Aligned Playwright ports across config and staff fixtures and removed the system-Chrome channel so CI uses Playwright-managed Chromium.
+- **Tests:** `pnpm install --frozen-lockfile`; `pnpm check` passed formatting, lint, types, API/web unit tests, API PostgreSQL migration/integration/coverage (21 suites/108 tests; booking branch 81.25%, inventory 83.33%), seed, web coverage (21 files/85 tests; 91.08% statements, 88.23% branches, 100% functions, 92.9% lines), Playwright 34/34, API e2e/OpenAPI 59/59, and production builds. Local Playwright used the installed-Chrome fallback because the managed Chromium download stalled at about 10%; the final no-channel config listed all 34 projects/tests and `playwright install --dry-run chromium` resolved the CI browser. `actionlint` and final format/diff checks passed. No live GitHub Actions run or branch-protection setting was available locally.
 - **Scope:** Complete API docs, validate OpenAPI, document setup and architecture, add screenshots and demo flow.
 
 **Acceptance criteria:**

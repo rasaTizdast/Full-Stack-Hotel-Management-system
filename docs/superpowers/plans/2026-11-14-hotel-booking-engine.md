@@ -400,18 +400,19 @@ Use test-first implementation for behavior: add a focused failing test, run it t
 
 ### Task 22: HBE-022 — Add CI quality and release gates
 
-- **Worktree:** `../Hotel Booking system-worktrees/HBE-022`
+- **Worktree:** `C:\hb\HBE-022`
 - **Branch:** `codex/hbe-022-ci-gates`
 
 **Files:** Add `.github/workflows/ci.yml`; align root scripts and README commands; configure ephemeral PostgreSQL, browser installation, test artifacts, and build/test job dependencies.
 
 **Produces:** Pull-request CI for formatting, lint, strict types, unit/API/PostgreSQL/Playwright tests, migrations, and production builds without production secrets; root `check` mirrors documented gates.
 
-- [ ] Create the HBE-022 worktree and mark it in progress.
-- [ ] Add CI jobs with isolated PostgreSQL and no production credentials.
-- [ ] Run each release-gate script locally and ensure workflow failure output names the package and command.
-- [ ] Verify the workflow on a clean branch and inspect all required job definitions.
-- [ ] Mark done, commit `ci(HBE-022): enforce project quality gates`, merge, and remove the worktree and branch.
+- [x] Create the HBE-022 worktree on `codex/hbe-022-ci-gates`.
+- [x] Add a CI release-gate job with an ephemeral PostgreSQL service, fictional CI-only credentials, read-only repository permissions, Playwright-managed Chromium, and failure-only browser artifacts.
+- [x] Add root `pnpm check`; the script labels each package command and exits on the first failing gate.
+- [x] Run the release gates locally: format, lint, typecheck, API/web unit tests, PostgreSQL migrations/integration/coverage, seed, web coverage, Playwright 34/34, API e2e/OpenAPI 59/59, and production builds all passed. Local Playwright used installed Chrome because the managed Chromium download stalled; final config uses managed Chromium and its install plan was verified with `playwright install --dry-run chromium`.
+- [x] Validate `.github/workflows/ci.yml` with actionlint and verify the no-channel Playwright config lists all 34 browser cases; the hosted GitHub Actions run remains unavailable from this local branch.
+- [ ] Commit `ci(HBE-022): enforce project quality gates`, then hand off merge and worktree cleanup to the orchestrator.
 
 ## Plan self-review
 

@@ -4,7 +4,7 @@ import AxeBuilder from '@axe-core/playwright';
 import { isAvailabilityResult } from '../src/lib/availability';
 import { test, withStaffBookingCleanup } from './staff-fixtures';
 
-const apiPort = process.env.HBE_E2E_API_PORT ?? '4016';
+const apiPort = process.env.HBE_E2E_API_PORT ?? '4015';
 const apiBaseUrl = `http://localhost:${apiPort}/api/v1`;
 
 test.beforeEach(async ({ page, staffCookies }) => {
