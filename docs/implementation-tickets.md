@@ -11,10 +11,10 @@ Status values: `Not started`, `In progress`, `Blocked`, `Done`.
 - **Priority:** P0
 - **Depends on:** None
 - **Owner:** Codex
-- **Status:** Not started
-- **Branch/worktree:** —
-- **Code changes:** —
-- **Tests:** —
+- **Status:** Done
+- **Branch/worktree:** `codex/hbe-001-workspace` — `../Hotel Booking system-worktrees/HBE-001`
+- **Code changes:** `apps/web/`, `apps/api/`, root pnpm/TypeScript/Prettier configuration, `README.md`, and `docs/decisions/ADR-001-framework-versions.md`.
+- **Tests:** `pnpm install --frozen-lockfile --strict-peer-dependencies`, `pnpm lint`, `pnpm typecheck`, `pnpm format:check`, `pnpm test`, `pnpm --filter @hotel/api test:e2e`, and `pnpm build` passed. Independent and combined dev-server smoke checks returned HTTP 200 from the Persian web app and API.
 - **Scope:** Create root workspace and `apps/web`, `apps/api`, `docs`, and `infra` structure. Scaffold Next.js and NestJS apps. Configure strict TypeScript and root scripts.
 
 **Acceptance criteria:**

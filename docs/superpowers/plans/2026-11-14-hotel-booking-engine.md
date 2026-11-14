@@ -52,10 +52,10 @@ Use test-first implementation for behavior: add a focused failing test, run it t
 
 **Produces:** Root `dev`, per-app development, `lint`, `typecheck`, `format:check`, and `build` commands; independently runnable Next.js and NestJS applications; strict TypeScript; Tailwind CSS in the web app; a committed root `pnpm-lock.yaml`.
 
-- [ ] Create the HBE-001 worktree and mark HBE-001 in progress.
-- [ ] Scaffold both apps with strict TypeScript and the declared boundaries; keep app source in TS/TSX.
-- [ ] Add root workspace scripts and initial setup instructions to README.
-- [ ] Run root and app type checks, lint, formatting check, and both production builds.
+- [x] Create the HBE-001 worktree and mark HBE-001 in progress.
+- [x] Scaffold both apps with strict TypeScript and the declared boundaries; keep app source in TS/TSX.
+- [x] Add root workspace scripts and initial setup instructions to README.
+- [x] Run root and app type checks, lint, formatting check, and both production builds.
 - [ ] Mark HBE-001 done, commit `feat(HBE-001): establish monorepo workspace`, merge to `main`, and remove the worktree and branch.
 
 ### Task 2: HBE-002 — Add local PostgreSQL and environment configuration

@@ -1,0 +1,12 @@
+prd.md
+docs/implementation-tickets.md
+docs/superpowers/
+.agents/
+apps/web/AGENTS.md
+node_modules/
+**/node_modules/
+**/.next/
+**/dist/
+coverage/
+pnpm-lock.yaml
+skills-lock.json

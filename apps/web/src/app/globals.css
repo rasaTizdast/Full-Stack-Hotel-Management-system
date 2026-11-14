@@ -1,0 +1,17 @@
+@import 'tailwindcss';
+
+:root {
+  color-scheme: light;
+  font-family: Arial, 'Segoe UI', sans-serif;
+  background: #faf9f6;
+  color: #171717;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  min-height: 100vh;
+  margin: 0;
+}
