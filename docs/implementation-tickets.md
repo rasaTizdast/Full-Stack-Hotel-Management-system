@@ -357,8 +357,8 @@ Status values: `Not started`, `In progress`, `Blocked`, `Done`.
 - **Priority:** P1
 - **Depends on:** HBE-010, HBE-015
 - **Owner:** Codex
-- **Status:** Ready to merge (verified)
-- **Branch/worktree:** `codex/hbe-017-inventory-ui` — `C:\hb\HBE-017`
+- **Status:** Completed and merged to `main` (`0972ce9f5c56e9f5ee411e5ac5d9ace6cea52332`)
+- **Branch/worktree:** `codex/hbe-017-inventory-ui` — removed after merge
 - **Code changes:** Admin range editor and API; admin-only room-type options include inactive types with an explicit label; shared worker-scoped E2E staff fixture.
 - **Tests:** Unit 165 total (API 80, web 85); API e2e 59/59; PostgreSQL integration 28/28; Playwright 32/32 (16 desktop + 16 mobile, including Axe); lint, typecheck, format, build, and React Doctor 100/100 passed.
 - **Scope:** Room type/date-range inventory editor for room count and nightly price.
@@ -372,6 +372,8 @@ Status values: `Not started`, `In progress`, `Blocked`, `Done`.
 - Existing bookings are not repriced.
 
 **Required tests/checks:** component/API behavior tests, Playwright admin-versus-receptionist test, accessibility check.
+
+**Cleanup note:** Windows left residual `apps` and `node_modules` folders at `C:\hb\HBE-017`; the Git worktree registration and branch were removed.
 
 ## HBE-018 — Add frontend unit/component and accessibility suite
 

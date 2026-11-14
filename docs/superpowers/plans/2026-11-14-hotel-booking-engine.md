@@ -327,7 +327,8 @@ Use test-first implementation for behavior: add a focused failing test, run it t
 - [x] Implement admin-only range reads and batch saves through HBE-010; expose all inventory room types only to admins, including inactive types marked clearly in the picker.
 - [x] Add browser coverage proving admin edits succeed and receptionist edits are absent/denied, using the shared worker-scoped session fixture without persisted cookies.
 - [x] Run unit tests (API 80, web 85), API e2e (59/59), PostgreSQL integration (28/28), Playwright (32/32, 16 desktop + 16 mobile, including Axe), lint, typecheck, format, build, and React Doctor 100/100 on `hotel_booking_hbe017_final_20261114_test`.
-- [ ] Mark done, commit `feat(HBE-017): add staff inventory editor`, merge, and remove the worktree and branch.
+- [x] Mark done, commit `feat(HBE-017): add staff inventory editor` plus inclusive room-type selector/auth-fixture fixes and verification docs, merge `0972ce9f5c56e9f5ee411e5ac5d9ace6cea52332` into `main`, and remove the worktree registration and branch.
+  - **Cleanup note:** Windows left residual `apps` and `node_modules` folders at `C:\hb\HBE-017`; no recursive deletion was attempted.
 
 ### Task 18: HBE-018 — Add frontend unit/component and accessibility suite
 
