@@ -4,6 +4,10 @@ export class StaffInventoryRoomTypeDto {
   slug!: string;
 }
 
+export class StaffInventoryRoomTypeOptionDto extends StaffInventoryRoomTypeDto {
+  isActive!: boolean;
+}
+
 export class StaffInventoryNightDto {
   stayDate!: string;
   totalRooms!: number | null;

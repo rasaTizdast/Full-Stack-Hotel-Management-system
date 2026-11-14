@@ -686,3 +686,332 @@
     animation: none;
   }
 }
+
+.staffScope :global(.staff-inventory),
+.staffScope :global(.staff-inventory-denied) {
+  display: grid;
+  width: min(100%, 1160px);
+  gap: 1.5rem;
+  margin-inline: auto;
+}
+
+.staffScope :global(.staff-inventory),
+.staffScope :global(.staff-inventory-denied) {
+  --staff-inventory-muted: #59645e;
+  --staff-inventory-accent: #8a3928;
+}
+
+.staffScope :global(.staff-inventory__header) {
+  max-width: 760px;
+  padding-block: 0.4rem 0.5rem;
+}
+
+.staffScope :global(.staff-inventory__eyebrow) {
+  margin: 0 0 0.35rem;
+  color: var(--staff-inventory-accent);
+  font-size: 0.76rem;
+  font-weight: 750;
+  letter-spacing: 0.015em;
+}
+
+.staffScope :global(.staff-inventory__header) h1,
+.staffScope :global(.staff-inventory-denied) h1 {
+  margin: 0 0 0.55rem;
+  color: var(--jade-dark);
+  font-size: clamp(2.1rem, 4.5vw, 3.35rem);
+}
+
+.staffScope :global(.staff-inventory__header) > p:last-child,
+.staffScope :global(.staff-inventory-denied) > p:last-child {
+  max-width: 58ch;
+  margin: 0;
+  color: var(--staff-inventory-muted);
+}
+
+.staffScope :global(.staff-inventory__snapshot-note) {
+  display: flex;
+  align-items: center;
+  gap: 0.9rem;
+  border-inline-start: 3px solid var(--saffron);
+  background: #eeeadf;
+  padding: 0.85rem 1rem;
+}
+
+.staffScope :global(.staff-inventory__note-mark) {
+  display: grid;
+  width: 34px;
+  flex: 0 0 34px;
+  aspect-ratio: 1;
+  place-items: center;
+  border: 1px solid var(--saffron);
+  color: var(--jade);
+}
+
+.staffScope :global(.staff-inventory__snapshot-note) p {
+  margin: 0;
+  color: var(--staff-inventory-muted);
+  font-size: 0.88rem;
+}
+
+.staffScope :global(.staff-inventory__range-form),
+.staffScope :global(.staff-inventory__overview),
+.staffScope :global(.staff-inventory__edit-form) {
+  border: 1px solid var(--line);
+  border-block-start: 3px solid var(--jade);
+  background: var(--paper-bright);
+  padding: clamp(1rem, 2vw, 1.5rem);
+}
+
+.staffScope :global(.staff-inventory__range-heading),
+.staffScope :global(.staff-inventory__edit-heading) {
+  display: flex;
+  align-items: end;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-block-end: 1.1rem;
+}
+
+.staffScope :global(.staff-inventory__range-heading) h2,
+.staffScope :global(.staff-inventory__edit-heading) h2,
+.staffScope :global(.staff-inventory__overview-heading) h2 {
+  margin: 0;
+  color: var(--jade-dark);
+  font-family: var(--body-font);
+  font-size: clamp(1.05rem, 1.8vw, 1.3rem);
+}
+
+.staffScope :global(.staff-inventory__range-fields) {
+  display: grid;
+  grid-template-columns: minmax(190px, 1.2fr) repeat(2, minmax(150px, 0.85fr)) auto;
+  align-items: end;
+  gap: 0.9rem;
+}
+
+.staffScope :global(.staff-inventory__edit-fields) {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr)) auto;
+  align-items: end;
+  gap: 1rem;
+}
+
+.staffScope :global(.staff-inventory__field) {
+  display: grid;
+  min-width: 0;
+  gap: 0.35rem;
+}
+
+.staffScope :global(.staff-inventory__field) label {
+  color: var(--ink);
+  font-size: 0.82rem;
+  font-weight: 700;
+}
+
+.staffScope :global(.staff-inventory__field) input,
+.staffScope :global(.staff-inventory__field) select {
+  width: 100%;
+  min-height: 48px;
+  border: 1px solid #bdbbad;
+  border-radius: 0;
+  background: #fffefa;
+  padding: 0.55rem 0.7rem;
+  color: var(--ink);
+  font: inherit;
+  font-size: 0.9rem;
+}
+
+.staffScope :global(.staff-inventory__field) input[aria-invalid='true'],
+.staffScope :global(.staff-inventory__field) select[aria-invalid='true'] {
+  border-color: #a84536;
+  box-shadow: inset -3px 0 0 #a84536;
+}
+
+.staffScope :global(.staff-inventory__field) input:focus-visible,
+.staffScope :global(.staff-inventory__field) select:focus-visible,
+.staffScope :global(.staff-inventory__table-scroll):focus-visible {
+  outline: 3px solid var(--pomegranate);
+  outline-offset: 3px;
+}
+
+.staffScope :global(.staff-inventory__hint) {
+  min-height: 1.25rem;
+  color: var(--staff-inventory-muted);
+  font-size: 0.72rem;
+  line-height: 1.5;
+}
+
+.staffScope :global(.staff-inventory__field-error) {
+  color: #8e2f25;
+  font-size: 0.76rem;
+  line-height: 1.5;
+}
+
+.staffScope :global(.staff-inventory__load),
+.staffScope :global(.staff-inventory__save) {
+  min-height: 48px;
+  border: 0;
+  padding: 0.65rem 1rem;
+  font: inherit;
+  font-size: 0.85rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.staffScope :global(.staff-inventory__load:disabled),
+.staffScope :global(.staff-inventory__save:disabled) {
+  cursor: wait;
+  opacity: 0.58;
+}
+
+.staffScope :global(.staff-inventory__overview) {
+  display: grid;
+  gap: 1rem;
+}
+
+.staffScope :global(.staff-inventory__overview-heading) {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.staffScope :global(.staff-inventory__night-count) {
+  border-inline-start: 1px solid var(--saffron);
+  padding-inline-start: 0.8rem;
+  color: var(--staff-inventory-muted);
+  font-size: 0.8rem;
+  white-space: nowrap;
+}
+
+.staffScope :global(.staff-inventory__table-scroll) {
+  overflow-x: auto;
+  border: 1px solid var(--line);
+  scrollbar-color: var(--tile) #eeeadf;
+}
+
+.staffScope :global(.staff-inventory__table-scroll) table {
+  width: 100%;
+  min-width: 730px;
+  border-collapse: collapse;
+  text-align: start;
+  font-size: 0.82rem;
+}
+
+.staffScope :global(.staff-inventory__table-scroll) th,
+.staffScope :global(.staff-inventory__table-scroll) td {
+  border-block-end: 1px solid var(--line);
+  padding: 0.7rem 0.8rem;
+  white-space: nowrap;
+}
+
+.staffScope :global(.staff-inventory__table-scroll) thead th {
+  background: #efede4;
+  color: var(--staff-inventory-muted);
+  font-size: 0.73rem;
+  font-weight: 700;
+}
+
+.staffScope :global(.staff-inventory__table-scroll) tbody th {
+  color: var(--jade-dark);
+  font-weight: 750;
+}
+
+.staffScope :global(.staff-inventory__table-scroll) tbody tr:last-child th,
+.staffScope :global(.staff-inventory__table-scroll) tbody tr:last-child td {
+  border-block-end: 0;
+}
+
+.staffScope :global(.staff-inventory__table-scroll) tbody tr:nth-child(even) {
+  background: #f7f4eb;
+}
+
+.staffScope :global(.staff-inventory__edit-heading) > p {
+  max-width: 35ch;
+  margin: 0;
+  color: var(--staff-inventory-muted);
+  font-size: 0.78rem;
+}
+
+.staffScope :global(.staff-inventory__message),
+.staffScope :global(.staff-inventory__loading),
+.staffScope :global(.staff-inventory__empty) {
+  margin: 0;
+  border-inline-start: 3px solid var(--tile);
+  background: var(--paper-bright);
+  padding: 0.85rem 1rem;
+  color: var(--staff-inventory-muted);
+  font-size: 0.86rem;
+}
+
+.staffScope :global(.staff-inventory__message--error) {
+  border-inline-start-color: #a84536;
+  color: #702e21;
+}
+
+.staffScope :global(.staff-inventory__message--success) {
+  border-inline-start-color: var(--jade);
+  color: var(--jade-dark);
+}
+
+.staffScope :global(.staff-inventory-denied) > p[role='alert'] {
+  margin: 0;
+  border-inline-start: 3px solid var(--pomegranate);
+  background: var(--paper-bright);
+  padding: 0.9rem 1rem;
+  color: #702e21;
+}
+
+@media (width <= 960px) {
+  .staffScope :global(.staff-inventory__range-fields) {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .staffScope :global(.staff-inventory__field--room) {
+    grid-column: 1 / -1;
+  }
+
+  .staffScope :global(.staff-inventory__load) {
+    align-self: end;
+  }
+}
+
+@media (width <= 760px) {
+  .staffScope :global(.staff-inventory),
+  .staffScope :global(.staff-inventory-denied) {
+    gap: 1rem;
+  }
+
+  .staffScope :global(.staff-inventory__range-form),
+  .staffScope :global(.staff-inventory__overview),
+  .staffScope :global(.staff-inventory__edit-form) {
+    padding: 1rem;
+  }
+
+  .staffScope :global(.staff-inventory__range-heading),
+  .staffScope :global(.staff-inventory__edit-heading) {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 0.35rem;
+  }
+
+  .staffScope :global(.staff-inventory__range-fields),
+  .staffScope :global(.staff-inventory__edit-fields) {
+    grid-template-columns: 1fr;
+  }
+
+  .staffScope :global(.staff-inventory__field--room) {
+    grid-column: auto;
+  }
+
+  .staffScope :global(.staff-inventory__load),
+  .staffScope :global(.staff-inventory__save) {
+    width: 100%;
+  }
+
+  .staffScope :global(.staff-inventory__table-scroll) {
+    margin-inline: -0.25rem;
+  }
+
+  .staffScope :global(.staff-inventory__table-scroll) table {
+    min-width: 680px;
+  }
+}

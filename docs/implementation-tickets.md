@@ -357,10 +357,10 @@ Status values: `Not started`, `In progress`, `Blocked`, `Done`.
 - **Priority:** P1
 - **Depends on:** HBE-010, HBE-015
 - **Owner:** Codex
-- **Status:** In progress
+- **Status:** Ready to merge (verified)
 - **Branch/worktree:** `codex/hbe-017-inventory-ui` — `C:\hb\HBE-017`
-- **Code changes:** —
-- **Tests:** —
+- **Code changes:** Admin range editor and API; admin-only room-type options include inactive types with an explicit label; shared worker-scoped E2E staff fixture.
+- **Tests:** Unit 165 total (API 80, web 85); API e2e 59/59; PostgreSQL integration 28/28; Playwright 32/32 (16 desktop + 16 mobile, including Axe); lint, typecheck, format, build, and React Doctor 100/100 passed.
 - **Scope:** Room type/date-range inventory editor for room count and nightly price.
 
 **Acceptance criteria:**

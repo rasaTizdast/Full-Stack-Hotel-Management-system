@@ -40,6 +40,8 @@ describe('Staff inventory API (e2e)', () => {
   let app: INestApplication<App>;
   let prisma: PrismaService;
   let roomTypeId: string;
+  let orderedRoomTypeId: string;
+  let inactiveRoomTypeId: string;
   let admin: { cookie: string; csrfToken: string };
   let receptionist: { cookie: string; csrfToken: string };
 
@@ -97,9 +99,35 @@ describe('Staff inventory API (e2e)', () => {
         name: 'Inventory fixture room',
         description: 'Fictional API test room.',
         maxGuestsPerRoom: 4,
+        displayOrder: 2,
+        isActive: true,
       },
     });
     roomTypeId = roomType.id;
+    const orderedRoomType = await prisma.roomType.create({
+      data: {
+        hotelId,
+        slug: `inventory-first-${suffix}`,
+        name: 'Inventory fixture first room',
+        description: 'Fictional API test room.',
+        maxGuestsPerRoom: 4,
+        displayOrder: 1,
+        isActive: true,
+      },
+    });
+    orderedRoomTypeId = orderedRoomType.id;
+    const inactiveRoomType = await prisma.roomType.create({
+      data: {
+        hotelId,
+        slug: `inventory-inactive-${suffix}`,
+        name: 'Inventory fixture inactive room',
+        description: 'Fictional API test room.',
+        maxGuestsPerRoom: 4,
+        displayOrder: 0,
+        isActive: false,
+      },
+    });
+    inactiveRoomTypeId = inactiveRoomType.id;
     admin = await createStaffUser(adminId, 'ADMIN');
     receptionist = await createStaffUser(receptionistId, 'RECEPTIONIST');
   }, 30000);
@@ -170,6 +198,43 @@ describe('Staff inventory API (e2e)', () => {
       .get('/api/v1/staff/inventory')
       .query({ roomTypeId, startDate: '2027-01-02', endDate: '2027-01-04' })
       .expect(401);
+  });
+
+  it('lists active and inactive room type options for admins with a stable order and safe fields', async () => {
+    const response = await request(app.getHttpServer())
+      .get('/api/v1/staff/inventory/room-types')
+      .set('Cookie', admin.cookie)
+      .expect(200);
+
+    const options = response.body as Array<Record<string, unknown>>;
+    const orderedIndex = options.findIndex((option) => option.id === orderedRoomTypeId);
+    const roomIndex = options.findIndex((option) => option.id === roomTypeId);
+    const inactiveRoomType = options.find((option) => option.id === inactiveRoomTypeId);
+    expect(orderedIndex).toBeGreaterThanOrEqual(0);
+    expect(roomIndex).toBeGreaterThan(orderedIndex);
+    expect(inactiveRoomType).toMatchObject({ id: inactiveRoomTypeId, isActive: false });
+    expect(options[orderedIndex]).toEqual({
+      id: orderedRoomTypeId,
+      name: 'Inventory fixture first room',
+      slug: `inventory-first-${suffix}`,
+      isActive: true,
+    });
+    expect(
+      options.every((option) => Object.keys(option).sort().join(',') === 'id,isActive,name,slug'),
+    ).toBe(true);
+  });
+
+  it('forbids receptionists from listing room type edit targets', async () => {
+    const response = await request(app.getHttpServer())
+      .get('/api/v1/staff/inventory/room-types')
+      .set('Cookie', receptionist.cookie)
+      .expect(403);
+
+    expect(errorBody(response).code).toBe('FORBIDDEN');
+  });
+
+  it('requires authentication to list room type edit targets', async () => {
+    await request(app.getHttpServer()).get('/api/v1/staff/inventory/room-types').expect(401);
   });
 
   it('requires CSRF proof for inventory mutations', async () => {

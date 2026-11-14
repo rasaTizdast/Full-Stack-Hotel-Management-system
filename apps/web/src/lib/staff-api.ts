@@ -11,10 +11,54 @@ export interface StaffSessionResponse {
   csrfToken: string;
 }
 
+export interface StaffInventoryRoomType {
+  id: string;
+  name: string;
+  slug: string;
+}
+
+export interface StaffInventoryRoomTypeOption extends StaffInventoryRoomType {
+  isActive: boolean;
+}
+
+export interface StaffInventoryRangeQuery {
+  roomTypeId: string;
+  startDate: string;
+  endDate: string;
+}
+
+export interface StaffInventoryRangeUpdate extends StaffInventoryRangeQuery {
+  totalRooms: number;
+  nightlyPriceToman: string;
+}
+
+export interface StaffInventoryNight {
+  stayDate: string;
+  totalRooms: number | null;
+  heldRooms: number | null;
+  bookedRooms: number | null;
+  availableRooms: number | null;
+  nightlyPriceToman: string | null;
+}
+
+export interface StaffInventoryRangeResponse {
+  roomType: StaffInventoryRoomType;
+  startDate: string;
+  endDate: string;
+  nights: StaffInventoryNight[];
+}
+
+export interface StaffApiFieldError {
+  field: string;
+  messages: string[];
+}
+
 export class StaffApiError extends Error {
   constructor(
     message: string,
     readonly status: number,
+    readonly code?: string,
+    readonly fields?: StaffApiFieldError[],
   ) {
     super(message);
     this.name = 'StaffApiError';
@@ -78,20 +122,34 @@ export async function requestStaffApi<T>(
 
   if (!response.ok) {
     let message = 'درخواست انجام نشد. دوباره تلاش کنید.';
+    let code: string | undefined;
+    let fields: StaffApiFieldError[] | undefined;
     try {
       const body: unknown = await response.json();
-      if (
-        typeof body === 'object' &&
-        body !== null &&
-        'message' in body &&
-        typeof body.message === 'string'
-      ) {
-        message = body.message;
+      if (typeof body === 'object' && body !== null && !Array.isArray(body)) {
+        if ('message' in body && typeof body.message === 'string') message = body.message;
+        if ('code' in body && typeof body.code === 'string') code = body.code;
+        if ('fields' in body && Array.isArray(body.fields)) {
+          fields = body.fields.flatMap((field): StaffApiFieldError[] => {
+            if (
+              typeof field !== 'object' ||
+              field === null ||
+              !('field' in field) ||
+              typeof field.field !== 'string' ||
+              !('messages' in field) ||
+              !Array.isArray(field.messages) ||
+              !field.messages.every((fieldMessage: unknown) => typeof fieldMessage === 'string')
+            ) {
+              return [];
+            }
+            return [{ field: field.field, messages: field.messages }];
+          });
+        }
       }
     } catch {
       // Use the stable fallback for non-JSON responses.
     }
-    throw new StaffApiError(message, response.status);
+    throw new StaffApiError(message, response.status, code, fields);
   }
 
   if (response.status === 204) {
@@ -121,5 +179,31 @@ export function logoutStaff(csrfToken: string): Promise<void> {
   return requestStaffApi<void>('auth/logout', {
     method: 'POST',
     headers: { 'X-CSRF-Token': csrfToken },
+  });
+}
+
+export function getStaffInventoryRoomTypes(): Promise<StaffInventoryRoomTypeOption[]> {
+  return requestStaffApi<StaffInventoryRoomTypeOption[]>('inventory/room-types');
+}
+
+export function getStaffInventoryRange(
+  query: StaffInventoryRangeQuery,
+): Promise<StaffInventoryRangeResponse> {
+  const params = new URLSearchParams({
+    roomTypeId: query.roomTypeId,
+    startDate: query.startDate,
+    endDate: query.endDate,
+  });
+  return requestStaffApi<StaffInventoryRangeResponse>(`inventory?${params.toString()}`);
+}
+
+export function updateStaffInventoryRange(
+  update: StaffInventoryRangeUpdate,
+  csrfToken: string,
+): Promise<StaffInventoryRangeResponse> {
+  return requestStaffApi<StaffInventoryRangeResponse>('inventory', {
+    method: 'PUT',
+    headers: { 'X-CSRF-Token': csrfToken },
+    body: JSON.stringify(update),
   });
 }
