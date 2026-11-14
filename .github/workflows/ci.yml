@@ -1,0 +1,103 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  release-gates:
+    name: Release gates
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    env:
+      NODE_ENV: test
+      PORT: '4000'
+      WEB_ORIGIN: http://localhost:3000
+      POSTGRES_DB: hotel_booking_ci_test
+      POSTGRES_USER: hotel_ci
+      POSTGRES_PASSWORD: ci-only-not-a-secret
+      POSTGRES_PORT: '5432'
+      DATABASE_URL: postgresql://hotel_ci:ci-only-not-a-secret@127.0.0.1:5432/hotel_booking_ci_test?schema=public
+      HOTEL_API_BASE_URL: http://localhost:4000/api/v1
+      NEXT_PUBLIC_HOTEL_API_BASE_URL: http://localhost:4000/api/v1
+      DEMO_ADMIN_EMAIL: admin@example.invalid
+      DEMO_ADMIN_PASSWORD: ci-only-demo-password-not-for-reuse
+      HBE_E2E_WEB_PORT: '3015'
+      HBE_E2E_API_PORT: '4015'
+      HBE_E2E_REUSE_SERVER: 'false'
+    services:
+      postgres:
+        image: postgres:18-alpine
+        env:
+          POSTGRES_DB: hotel_booking_ci_test
+          POSTGRES_USER: hotel_ci
+          POSTGRES_PASSWORD: ci-only-not-a-secret
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U hotel_ci -d hotel_booking_ci_test"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+
+      - name: Set up pnpm
+        uses: pnpm/action-setup@v6
+        with:
+          version: 10.26.2
+          run_install: false
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version: 22.12.0
+          cache: pnpm
+          cache-dependency-path: pnpm-lock.yaml
+
+      - name: Install locked workspace dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Create isolated CI environment
+        run: |
+          cat > .env <<EOF
+          NODE_ENV=${NODE_ENV}
+          PORT=${PORT}
+          WEB_ORIGIN=${WEB_ORIGIN}
+          POSTGRES_DB=${POSTGRES_DB}
+          POSTGRES_USER=${POSTGRES_USER}
+          POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+          POSTGRES_PORT=${POSTGRES_PORT}
+          DATABASE_URL=${DATABASE_URL}
+          HOTEL_API_BASE_URL=${HOTEL_API_BASE_URL}
+          NEXT_PUBLIC_HOTEL_API_BASE_URL=${NEXT_PUBLIC_HOTEL_API_BASE_URL}
+          DEMO_ADMIN_EMAIL=${DEMO_ADMIN_EMAIL}
+          DEMO_ADMIN_PASSWORD=${DEMO_ADMIN_PASSWORD}
+          EOF
+
+      - name: Install Playwright Chromium and system dependencies
+        run: pnpm --filter @hotel/web exec playwright install --with-deps chromium
+
+      - name: Run release gates — pnpm check
+        run: pnpm check
+
+      - name: Upload Playwright traces and screenshots on failure
+        if: failure()
+        uses: actions/upload-artifact@v6
+        with:
+          name: playwright-failure-artifacts
+          path: output/playwright
+          if-no-files-found: ignore
+          retention-days: 7

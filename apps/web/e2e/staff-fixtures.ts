@@ -2,8 +2,8 @@ import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { expect, request as playwrightRequest, test as base, type Page } from '@playwright/test';
 
-const apiPort = process.env.HBE_E2E_API_PORT ?? '4016';
-const webPort = process.env.HBE_E2E_WEB_PORT ?? '3016';
+const apiPort = process.env.HBE_E2E_API_PORT ?? '4015';
+const webPort = process.env.HBE_E2E_WEB_PORT ?? '3015';
 const apiBaseUrl = `http://localhost:${apiPort}/api/v1`;
 const webOrigin = `http://localhost:${webPort}`;
 
