@@ -31,10 +31,10 @@ Status values: `Not started`, `In progress`, `Blocked`, `Done`.
 - **Priority:** P0
 - **Depends on:** HBE-001
 - **Owner:** Codex
-- **Status:** Not started
-- **Branch/worktree:** —
-- **Code changes:** —
-- **Tests:** —
+- **Status:** Done
+- **Branch/worktree:** `codex/hbe-002-postgres-config` — `../Hotel Booking system-worktrees/HBE-002`
+- **Code changes:** `infra/docker-compose.yml`, `.env.example`, root database scripts and setup docs, API ConfigModule/Joi validation, Prisma 7 PostgreSQL adapter/client lifecycle, `/health/live`, `/health/ready`, API e2e coverage, and cross-platform Prettier line-ending configuration.
+- **Tests:** Frozen strict-peer install, lint, typecheck, format check, unit tests, API e2e (2 suites/4 tests), and production builds passed. PostgreSQL 18 Compose health passed; live API readiness returned 200 with PostgreSQL running, returned sanitized 503 guidance when stopped, and recovered after restart. Liveness remained 200 during the outage.
 - **Scope:** Add Docker Compose for PostgreSQL, environment examples, API database connection, and health/readiness endpoints.
 
 **Acceptance criteria:**
