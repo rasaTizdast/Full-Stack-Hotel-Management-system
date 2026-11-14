@@ -86,6 +86,25 @@ describe('AvailabilitySearch', () => {
     expect(screen.getByRole('status')).toHaveTextContent('بازهٔ اقامت خود را بررسی کنید');
   });
 
+  it('passes only the selected room and stay details to the booking form', async () => {
+    const bookingDates = {
+      checkIn: toGregorianIso(initialStay.checkIn)!,
+      checkOut: toGregorianIso(initialStay.checkOut)!,
+    };
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(Response.json(result(bookingDates))));
+    render(<AvailabilitySearch roomTypes={roomTypes} initialStay={initialStay} />);
+
+    fireEvent.click(screen.getByRole('button', { name: 'بررسی اتاق‌های موجود' }));
+    const bookingLink = await screen.findByRole('link', { name: 'درخواست اقامت' });
+    const query = new URL(bookingLink.getAttribute('href')!, 'http://localhost').searchParams;
+
+    expect(query.get('roomType')).toBe('garden-double');
+    expect(query.get('checkIn')).toBe(bookingDates.checkIn);
+    expect(query.get('checkOut')).toBe(bookingDates.checkOut);
+    expect(query.get('guestCount')).toBe('2');
+    expect(query.has('totalPriceToman')).toBe(false);
+  });
+
   it('distinguishes no room types, unavailable dates, and server errors', async () => {
     const fetchMock = vi.fn();
     vi.stubGlobal('fetch', fetchMock);
