@@ -9,6 +9,7 @@ import { HotelModule } from './hotel/hotel.module';
 import { RoomTypesModule } from './room-types/room-types.module';
 import { AvailabilityModule } from './availability/availability.module';
 import { StaffAuthModule } from './staff-auth/staff-auth.module';
+import { StaffInventoryModule } from './staff-inventory/staff-inventory.module';
 
 const environmentSchema = Joi.object({
   NODE_ENV: Joi.string().valid('development', 'test', 'production').default('development'),
@@ -40,6 +41,7 @@ const environmentSchema = Joi.object({
     RoomTypesModule,
     AvailabilityModule,
     StaffAuthModule,
+    StaffInventoryModule,
   ],
   controllers: [AppController],
   providers: [AppService],
