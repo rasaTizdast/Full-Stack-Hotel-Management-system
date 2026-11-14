@@ -397,8 +397,8 @@ Status values: `Not started`, `In progress`, `Blocked`, `Done`.
 - **Priority:** P0
 - **Depends on:** HBE-006 through HBE-011
 - **Owner:** Codex
-- **Status:** Not started
-- **Branch/worktree:** —
+- **Status:** In progress
+- **Branch/worktree:** `codex/hbe-019-api-test-suite` — `C:\hb\HBE-019`
 - **Code changes:** —
 - **Tests:** —
 - **Scope:** Configure Jest, Supertest, test database lifecycle, coverage, and concurrency tests.

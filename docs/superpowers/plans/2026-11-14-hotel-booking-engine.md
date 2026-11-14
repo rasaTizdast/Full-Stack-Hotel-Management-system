@@ -345,14 +345,14 @@ Use test-first implementation for behavior: add a focused failing test, run it t
 
 ### Task 19: HBE-019 — Add backend unit, API e2e, and PostgreSQL integration suite
 
-- **Worktree:** `../Hotel Booking system-worktrees/HBE-019`
+- **Worktree:** `C:\hb\HBE-019`
 - **Branch:** `codex/hbe-019-api-test-suite`
 
 **Files:** Configure API Jest unit/e2e projects, Supertest bootstrap, isolated PostgreSQL test lifecycle, coverage thresholds, migration/reset helpers, and concurrency integration tests under `apps/api`.
 
 **Produces:** Repeatable tests for booking rules, validation/errors, authentication/roles, pagination, PostgreSQL rollback/idempotency/concurrency, and at least 80% branch coverage for booking/inventory services.
 
-- [ ] Create the HBE-019 worktree and mark it in progress.
+- [x] Create the HBE-019 worktree and mark it in progress.
 - [ ] Configure isolated test database creation, migration, reset, and teardown without production credentials.
 - [ ] Add/complete focused domain unit tests and HTTP e2e tests for public/staff APIs.
 - [ ] Run PostgreSQL tests proving no more than one successful hold for concurrent last-room attempts.
