@@ -397,7 +397,7 @@ Use test-first implementation for behavior: add a focused failing test, run it t
 - [x] Capture public and staff screenshots using fictional seeded data and inspect for secrets/PII.
 - [x] Run the documented release-gate commands, including `pnpm check` after rebasing onto HBE-022.
 - [x] Mark HBE-021 done and commit `docs(HBE-021): document API and demo flows` plus the verification record.
-- [ ] Merge into `main` and remove the worktree and branch (orchestrator follow-up).
+- [x] Merge into `main` as `fe4b6db` and remove the worktree registration and branch; Windows left residual `apps` and `node_modules` folders under `C:\hb\HBE-021`.
 
 ### Task 22: HBE-022 — Add CI quality and release gates
 

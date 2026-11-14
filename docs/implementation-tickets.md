@@ -447,9 +447,10 @@ Status values: `Not started`, `In progress`, `Blocked`, `Done`.
 - **Depends on:** HBE-005 through HBE-020
 - **Owner:** Codex
 - **Status:** Done
-- **Branch/worktree:** `codex/hbe-021-openapi-docs` — `C:\hb\HBE-021`
+- **Branch/worktree:** `codex/hbe-021-openapi-docs` — `C:\hb\HBE-021` (merged as `fe4b6db`; Git branch and worktree registration removed)
 - **Code changes:** Registered development/test-only Swagger UI, JSON, and YAML from DTO metadata; documented implemented public, booking, health, and staff routes, schemas, cookie auth, CSRF, idempotency headers, and the expected 403 from Swagger login Try it out due to the `WEB_ORIGIN` guard. Rewrote the README with architecture, clean setup, seed, demo, troubleshooting, release-check guidance, and the browser login note. Added a reproducible screenshot capture script and reviewed Persian RTL guest and staff screenshots.
 - **Tests:** After rebasing onto `main` at `8c73a9e`, full `pnpm check` passed all 10 gates: format, lint, typecheck, unit tests (API 80; web 85), API PostgreSQL coverage (108 tests; booking branch coverage 81.25%, inventory 83.33%), API seed, web coverage (85 tests; 91.08% statements / 88.23% branches), Playwright desktop/mobile (34/34), API e2e and OpenAPI contract (60/60), and API/web production builds. OpenAPI contract test passed separately (1/1) after asserting the login-origin guidance. Live Swagger UI and JSON returned HTTP 200; the JSON listed 16 paths. Prisma migrations and seed passed on isolated `hotel_booking_hbe021_readme_test`. The Playwright-managed Chromium download stalled locally; for both full checks, a temporary backed-up config selected installed Chrome and restored the managed-Chromium config in `finally`. README setup and screenshots were reviewed; no secrets or real guest data were included.
+- **Cleanup:** Windows left residual `apps` and `node_modules` folders at `C:\hb\HBE-021` after Git removed the worktree registration. These leftovers were not recursively deleted.
 - **Scope:** Complete API docs, validate OpenAPI, document setup and architecture, add screenshots and demo flow.
 
 **Acceptance criteria:**
