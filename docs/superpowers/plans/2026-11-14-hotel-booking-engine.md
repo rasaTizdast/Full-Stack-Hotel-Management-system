@@ -271,9 +271,10 @@ Use test-first implementation for behavior: add a focused failing test, run it t
 - [x] Add schema/component tests and Playwright success/recovery cases; exercise duplicate-click protection in the component suite.
 - [x] Implement accessible form states, normalized Iranian mobile input, capacity-aware room quantity, server-priced totals, stable idempotency keys, and the HBE-008 booking contract.
 - [x] Filter the booking proxy response to the public confirmation fields; verify no guest PII or internal IDs are shown or forwarded to the browser.
-- [x] Run web Vitest (12 files/46 tests), API unit tests (13 suites/59 tests), Playwright (10/10 desktop/mobile) against guarded `hotel_booking_hbe014_test`, frozen install, typecheck, lint, format, build, and diff checks.
+- [x] After rebasing onto current `main`, run web Vitest (12 files/46 tests), API unit tests (15 suites/79 tests), API e2e (9 suites/45 tests), PostgreSQL integration (5 suites/22 tests on fresh `hotel_booking_hbe014_db_test`), and Playwright (10/10 desktop/mobile) against guarded `hotel_booking_hbe014_test`; frozen install, migration deploy/status, typecheck, lint, format, production build, and diff checks pass.
 - [x] Commit `feat(HBE-014): add guest booking flow`.
-- [ ] Rebase/integrate on latest `main`, then remove the worktree and branch.
+- [x] Merge to `main` (`2244183`), remove the Git worktree registration, and delete the branch.
+  - **Cleanup note:** Windows left residual `apps` and `node_modules` folders at the former worktree path; no recursive deletion was attempted.
 
 ### Task 15: HBE-015 — Build staff login and protected dashboard shell
 

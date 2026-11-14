@@ -286,10 +286,11 @@ Status values: `Not started`, `In progress`, `Blocked`, `Done`.
 - **Priority:** P0
 - **Depends on:** HBE-008, HBE-013
 - **Owner:** Codex
-- **Status:** Ready for integration
+- **Status:** Done
 - **Branch/worktree:** `codex/hbe-014-booking-flow` / `C:\hb\HBE-014`
 - **Code changes:** `/booking` request/confirmation page, accessible guest form, validation/idempotency client, privacy-filtering booking proxy, and search-to-book link.
-- **Tests:** Web Vitest 46/46; API unit 13 suites/59 tests; Playwright 10/10 on desktop/mobile with `hotel_booking_hbe014_test`; root typecheck, lint, format, production build, frozen install, and diff checks pass.
+- **Tests:** After rebasing onto current `main`, web Vitest passed (46/46), API unit tests passed (15 suites/79 tests), API e2e passed (9 suites/45 tests), PostgreSQL integration passed (5 suites/22 tests on a fresh isolated `hotel_booking_hbe014_db_test`), and Playwright passed (10/10 on desktop/mobile using guarded `hotel_booking_hbe014_test`). Frozen install, migration deploy/status, lint, typecheck, format, production build, and diff checks passed.
+- **Merge/cleanup:** Merged to `main` in `2244183`; branch and Git worktree registration removed. Windows left residual `apps` and `node_modules` folders at the former worktree path.
 - **Scope:** Room quantity selection, guest contact form, total summary, submit state, duplicate-click prevention, and confirmation display.
 
 **Acceptance criteria:**
