@@ -3,11 +3,12 @@ import { PrismaModule } from '../database/prisma.module';
 import { BookingRateLimitGuard } from './booking-rate-limit.guard';
 import { BookingRateLimitService } from './booking-rate-limit.service';
 import { BookingsController } from './bookings.controller';
+import { BookingExpiryWorker } from './booking-expiry.worker';
 import { BookingsService } from './bookings.service';
 
 @Module({
   imports: [PrismaModule],
   controllers: [BookingsController],
-  providers: [BookingRateLimitGuard, BookingRateLimitService, BookingsService],
+  providers: [BookingRateLimitGuard, BookingRateLimitService, BookingsService, BookingExpiryWorker],
 })
 export class BookingsModule {}

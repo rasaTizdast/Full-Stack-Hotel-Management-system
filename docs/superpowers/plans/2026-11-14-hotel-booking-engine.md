@@ -177,18 +177,19 @@ Use test-first implementation for behavior: add a focused failing test, run it t
 
 ### Task 9: HBE-009 — Implement booking transitions and expiry
 
-- **Worktree:** `../Hotel Booking system-worktrees/HBE-009`
+- **Worktree:** `C:\hb\HBE-009`
 - **Branch:** `codex/hbe-009-booking-lifecycle`
 
 **Files:** Extend `apps/api/src/bookings` with a status state machine and transactional counter transitions; add a scheduled expiry provider and unit/PostgreSQL race tests.
 
 **Produces:** Allowed pending/confirmed/rejected/cancelled/expired transitions, exactly-once inventory release/conversion, and repeat-safe 24-hour expiry.
 
-- [ ] Create the HBE-009 worktree and mark it in progress.
-- [ ] Write state-machine cases for every allowed/disallowed transition and database tests for idempotency, counter updates, and expiry races.
-- [ ] Implement transaction-locked transitions and an idempotent expiry scan that records no guest PII.
-- [ ] Run state-machine unit tests, database integration tests, and the staff-action-versus-expiry race cases.
-- [ ] Mark done, commit `feat(HBE-009): add booking lifecycle and expiry`, merge, and remove the worktree and branch.
+- [x] Create the HBE-009 worktree and mark it in progress.
+- [x] Write state-machine cases for allowed/disallowed transitions and database tests for idempotency, counter updates, and expiry races.
+- [x] Implement transaction-locked transitions and an idempotent expiry scan that records no guest PII.
+- [x] Run API unit tests (15 suites/79 tests), API e2e tests (9 suites/45 tests), PostgreSQL tests (5 suites/22 tests), migration status, lint/typecheck/format, and production build.
+- [x] Mark done and commit `feat(HBE-009): add booking lifecycle and expiry`.
+- [ ] Merge to `main`, remove the Git worktree registration, and delete the branch.
 
 ### Task 10: HBE-010 — Build staff inventory API
 

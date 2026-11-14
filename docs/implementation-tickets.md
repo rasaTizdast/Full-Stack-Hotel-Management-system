@@ -177,10 +177,10 @@ Status values: `Not started`, `In progress`, `Blocked`, `Done`.
 - **Priority:** P0
 - **Depends on:** HBE-008, HBE-007
 - **Owner:** Codex
-- **Status:** Not started
-- **Branch/worktree:** —
+- **Status:** Done
+- **Branch/worktree:** `codex/hbe-009-booking-lifecycle` — `C:\hb\HBE-009`
 - **Code changes:** —
-- **Tests:** —
+- **Tests:** Strict frozen install passed; API unit tests passed (15 suites/79 tests); API e2e tests passed (9 suites/45 tests); isolated PostgreSQL tests passed (5 suites/22 tests), including status/counter transitions, repeated expiry, and staff-confirmation-versus-expiry concurrency. Four migrations applied and status is up to date; lint, typecheck, Prettier check, and production build passed.
 - **Scope:** Confirm, reject, cancel pending/confirmed request, and expire 24-hour pending requests.
 
 **Acceptance criteria:**

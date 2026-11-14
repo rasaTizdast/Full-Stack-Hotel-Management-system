@@ -64,6 +64,31 @@ const SAFE_DOMAIN_ERRORS: Record<string, { statusCode: number; message: string }
     statusCode: 409,
     message: 'Use a new idempotency key when submitting different booking details.',
   },
+  BOOKING_NOT_FOUND: { statusCode: 404, message: 'The booking was not found.' },
+  BOOKING_STATUS_CONFLICT: {
+    statusCode: 409,
+    message: 'This booking cannot be changed from its current status.',
+  },
+  BOOKING_EXPIRED: {
+    statusCode: 409,
+    message: 'The booking request has expired and can no longer be processed.',
+  },
+  BOOKING_STAY_STARTED: {
+    statusCode: 409,
+    message: 'A confirmed booking cannot be cancelled after check-in begins.',
+  },
+  CANCELLATION_REASON_REQUIRED: {
+    statusCode: 400,
+    message: 'A cancellation reason is required for confirmed bookings.',
+  },
+  CANCELLATION_REASON_INVALID: {
+    statusCode: 400,
+    message: 'The cancellation reason is invalid or exceeds its maximum length.',
+  },
+  INTERNAL_NOTE_INVALID: {
+    statusCode: 400,
+    message: 'The internal note is invalid or exceeds its maximum length.',
+  },
 };
 
 @Catch()
