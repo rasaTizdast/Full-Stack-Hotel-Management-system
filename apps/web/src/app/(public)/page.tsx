@@ -1,9 +1,11 @@
 import Link from 'next/link';
+import { AvailabilitySearch } from '@/components/search/availability-search';
 import { HotelHero } from '@/components/public/hotel-hero';
 import { PublicSiteFrame } from '@/components/public/public-site-frame';
 import { RoomCard } from '@/components/public/room-card';
 import { getPublicRoomTypes } from '@/lib/public-api';
 import { requirePublicHotel } from '@/lib/public-page-data';
+import { getDefaultStayInput } from '@/lib/jalali-date';
 
 export const dynamic = 'force-dynamic';
 
@@ -13,6 +15,8 @@ export default async function HomePage() {
   return (
     <PublicSiteFrame hotel={hotel}>
       <HotelHero hotel={hotel} />
+
+      <AvailabilitySearch roomTypes={roomTypes} initialStay={getDefaultStayInput()} />
 
       <section className="room-section" id="rooms" aria-labelledby="rooms-heading">
         <div className="section-heading">
