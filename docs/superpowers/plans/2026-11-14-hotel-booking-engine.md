@@ -380,7 +380,7 @@ Use test-first implementation for behavior: add a focused failing test, run it t
 - [x] Keep trace and screenshots failure-only; browser test data is fictional and no storage-state file is required.
 - [x] Run all 34 browser cases, then API e2e on the same fresh `hotel_booking_hbe020_combined_213857_test` database (34/34 Playwright, 59/59 API e2e); run PostgreSQL integration separately on fresh `hotel_booking_hbe020_pg_214221_test` (28/28).
 - [x] Follow up with failure-safe guest/staff booking transitions, inventory snapshot restoration, and staff-session logout; rerun Playwright twice (34/34 each) and API e2e (59/59) on the same `hotel_booking_hbe020_followup_215950_test` database without reset/drop.
-- [x] Commit `test(HBE-020): add guest and staff browser flows`; hand off rebase/merge and worktree cleanup to the orchestrator.
+- [x] Commit `test(HBE-020): add guest and staff browser flows` and `test(HBE-020): make browser fixtures repeat-safe`; merge as `10594d4` and remove the Git worktree registration and ticket branch.
 
 ### Task 21: HBE-021 — Add OpenAPI, contract checks, README, and demo materials
 
