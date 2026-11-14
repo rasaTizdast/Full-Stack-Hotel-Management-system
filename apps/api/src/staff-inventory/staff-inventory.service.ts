@@ -8,7 +8,7 @@ import { PrismaService } from '../database/prisma.service';
 import { StaffInventoryRangeQueryDto } from './dto/staff-inventory-range-query.dto';
 import {
   StaffInventoryResponseDto,
-  StaffInventoryRoomTypeDto,
+  StaffInventoryRoomTypeOptionDto,
 } from './dto/staff-inventory-response.dto';
 import { UpdateStaffInventoryDto } from './dto/update-staff-inventory.dto';
 import { parseStaffInventoryDateRange } from './date-range';
@@ -24,11 +24,10 @@ type LockedInventoryRow = {
 export class StaffInventoryService {
   constructor(private readonly prisma: PrismaService) {}
 
-  async findActiveRoomTypes(): Promise<StaffInventoryRoomTypeDto[]> {
+  async findRoomTypeOptions(): Promise<StaffInventoryRoomTypeOptionDto[]> {
     return this.prisma.roomType.findMany({
-      where: { isActive: true },
       orderBy: [{ displayOrder: 'asc' }, { name: 'asc' }, { id: 'asc' }],
-      select: { id: true, name: true, slug: true },
+      select: { id: true, name: true, slug: true, isActive: true },
     });
   }
 

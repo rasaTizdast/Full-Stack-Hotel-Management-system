@@ -1,4 +1,4 @@
-import { fireEvent, render, screen } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { StaffInventoryPage } from './staff-inventory-page';
 import { StaffApiError } from '@/lib/staff-api';
@@ -40,6 +40,14 @@ const roomType = {
   slug: 'garden-room',
 };
 
+const roomTypeOption = { ...roomType, isActive: true };
+const inactiveRoomTypeOption = {
+  id: 'c98b4e61-1221-4d27-a1a2-c42bcfb84057',
+  name: 'اتاق در حال تعمیر',
+  slug: 'maintenance-room',
+  isActive: false,
+};
+
 const response = {
   roomType,
   startDate: '2027-01-02',
@@ -78,7 +86,7 @@ describe('StaffInventoryPage', () => {
     inventoryApi.getStaffInventoryRoomTypes.mockReset();
     inventoryApi.getStaffInventoryRange.mockReset();
     inventoryApi.updateStaffInventoryRange.mockReset();
-    inventoryApi.getStaffInventoryRoomTypes.mockResolvedValue([roomType]);
+    inventoryApi.getStaffInventoryRoomTypes.mockResolvedValue([roomTypeOption]);
     inventoryApi.getStaffInventoryRange.mockResolvedValue(response);
     inventoryApi.updateStaffInventoryRange.mockResolvedValue(response);
   });
@@ -93,6 +101,10 @@ describe('StaffInventoryPage', () => {
   });
 
   it('loads range rows and shows the existing-booking price snapshot notice to admins', async () => {
+    inventoryApi.getStaffInventoryRoomTypes.mockResolvedValue([
+      roomTypeOption,
+      inactiveRoomTypeOption,
+    ]);
     session.current = {
       ...session.current,
       staff: { ...session.current.staff, role: 'ADMIN' },
@@ -104,11 +116,22 @@ describe('StaffInventoryPage', () => {
       await screen.findByRole('table', { name: 'وضعیت ظرفیت و نرخ هر شب' }),
     ).toBeInTheDocument();
     expect(screen.getByRole('option', { name: 'اتاق باغ' })).toBeInTheDocument();
+    expect(screen.getByRole('option', { name: 'اتاق در حال تعمیر (غیرفعال)' })).toBeInTheDocument();
     expect(screen.getByText('رزروهای ثبت‌شده با قیمت فعلی خود باقی می‌مانند.')).toBeInTheDocument();
     expect(screen.getAllByText('۳٬۵۰۰٬۰۰۰')).toHaveLength(2);
     expect(inventoryApi.getStaffInventoryRange).toHaveBeenCalledWith(
       expect.objectContaining({ roomTypeId: roomType.id }),
     );
+
+    fireEvent.change(screen.getByLabelText('نوع اتاق'), {
+      target: { value: inactiveRoomTypeOption.id },
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'نمایش بازه' }));
+    await waitFor(() => {
+      expect(inventoryApi.getStaffInventoryRange).toHaveBeenLastCalledWith(
+        expect.objectContaining({ roomTypeId: inactiveRoomTypeOption.id }),
+      );
+    });
   });
 
   it('shows capacity conflicts on the capacity field', async () => {

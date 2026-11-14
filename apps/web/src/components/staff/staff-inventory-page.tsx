@@ -7,7 +7,7 @@ import {
   getStaffInventoryRoomTypes,
   updateStaffInventoryRange,
   type StaffInventoryRangeResponse,
-  type StaffInventoryRoomType,
+  type StaffInventoryRoomTypeOption,
 } from '@/lib/staff-api';
 import { formatPersianInteger } from '@/lib/jalali-date';
 import {
@@ -46,7 +46,7 @@ function validationMessageForApiField(field: string): string | undefined {
 export function StaffInventoryPage() {
   const { status, staff, csrfToken } = useStaffSession();
   const [defaultRange] = useState(() => getDefaultInventoryRangeInput());
-  const [roomTypes, setRoomTypes] = useState<StaffInventoryRoomType[]>([]);
+  const [roomTypes, setRoomTypes] = useState<StaffInventoryRoomTypeOption[]>([]);
   const [selectedRoomTypeId, setSelectedRoomTypeId] = useState('');
   const [rangeInput, setRangeInput] = useState<InventoryRangeInput>(defaultRange);
   const [inventory, setInventory] = useState<StaffInventoryRangeResponse | null>(null);

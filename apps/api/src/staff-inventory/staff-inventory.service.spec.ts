@@ -17,7 +17,7 @@ describe('StaffInventoryService', () => {
   let service: StaffInventoryService;
   let moduleFixture: TestingModule;
   let prisma: {
-    roomType: { findUnique: jest.Mock };
+    roomType: { findMany: jest.Mock; findUnique: jest.Mock };
     roomNightInventory: {
       findMany: jest.Mock;
       createMany: jest.Mock;
@@ -46,7 +46,18 @@ describe('StaffInventoryService', () => {
       ]),
     };
     prisma = {
-      roomType: { findUnique: jest.fn().mockResolvedValue(roomType) },
+      roomType: {
+        findMany: jest.fn().mockResolvedValue([
+          { ...roomType, isActive: true },
+          {
+            id: '50cd1675-e815-42b2-91ed-037bd00553f5',
+            name: 'Closed',
+            slug: 'closed',
+            isActive: false,
+          },
+        ]),
+        findUnique: jest.fn().mockResolvedValue(roomType),
+      },
       roomNightInventory: {
         findMany: jest.fn().mockResolvedValue([
           {
@@ -75,6 +86,22 @@ describe('StaffInventoryService', () => {
 
   afterEach(async () => {
     await moduleFixture.close();
+  });
+
+  it('lists active and inactive room types as ordered inventory options', async () => {
+    await expect(service.findRoomTypeOptions()).resolves.toEqual([
+      { ...roomType, isActive: true },
+      {
+        id: '50cd1675-e815-42b2-91ed-037bd00553f5',
+        name: 'Closed',
+        slug: 'closed',
+        isActive: false,
+      },
+    ]);
+    expect(prisma.roomType.findMany).toHaveBeenCalledWith({
+      orderBy: [{ displayOrder: 'asc' }, { name: 'asc' }, { id: 'asc' }],
+      select: { id: true, name: true, slug: true, isActive: true },
+    });
   });
 
   it('returns a per-night range and represents missing inventory explicitly', async () => {

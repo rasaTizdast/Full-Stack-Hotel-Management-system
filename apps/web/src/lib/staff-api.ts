@@ -17,6 +17,10 @@ export interface StaffInventoryRoomType {
   slug: string;
 }
 
+export interface StaffInventoryRoomTypeOption extends StaffInventoryRoomType {
+  isActive: boolean;
+}
+
 export interface StaffInventoryRangeQuery {
   roomTypeId: string;
   startDate: string;
@@ -178,8 +182,8 @@ export function logoutStaff(csrfToken: string): Promise<void> {
   });
 }
 
-export function getStaffInventoryRoomTypes(): Promise<StaffInventoryRoomType[]> {
-  return requestStaffApi<StaffInventoryRoomType[]>('inventory/room-types');
+export function getStaffInventoryRoomTypes(): Promise<StaffInventoryRoomTypeOption[]> {
+  return requestStaffApi<StaffInventoryRoomTypeOption[]>('inventory/room-types');
 }
 
 export function getStaffInventoryRange(

@@ -19,7 +19,15 @@ afterEach(() => {
 
 describe('staff inventory API client', () => {
   it('loads minimal room type options using the authenticated staff API', async () => {
-    const options = [{ id: range.roomTypeId, name: 'اتاق باغ', slug: 'garden-room' }];
+    const options = [
+      { id: range.roomTypeId, name: 'اتاق باغ', slug: 'garden-room', isActive: true },
+      {
+        id: 'e9136419-2536-4f43-9f2f-2b2b3c4b0e3d',
+        name: 'اتاق بسته',
+        slug: 'closed-room',
+        isActive: false,
+      },
+    ];
     const fetchMock = vi
       .fn()
       .mockResolvedValue(new Response(JSON.stringify(options), { status: 200 }));

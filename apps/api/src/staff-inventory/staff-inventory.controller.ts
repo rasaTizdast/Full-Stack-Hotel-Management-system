@@ -3,7 +3,7 @@ import { RequireStaffRoles } from '../staff-auth/require-staff-roles.decorator';
 import { StaffInventoryRangeQueryDto } from './dto/staff-inventory-range-query.dto';
 import {
   StaffInventoryResponseDto,
-  StaffInventoryRoomTypeDto,
+  StaffInventoryRoomTypeOptionDto,
 } from './dto/staff-inventory-response.dto';
 import { UpdateStaffInventoryDto } from './dto/update-staff-inventory.dto';
 import { StaffInventoryService } from './staff-inventory.service';
@@ -14,8 +14,8 @@ export class StaffInventoryController {
 
   @RequireStaffRoles('ADMIN')
   @Get('room-types')
-  findActiveRoomTypes(): Promise<StaffInventoryRoomTypeDto[]> {
-    return this.staffInventory.findActiveRoomTypes();
+  findRoomTypeOptions(): Promise<StaffInventoryRoomTypeOptionDto[]> {
+    return this.staffInventory.findRoomTypeOptions();
   }
 
   @RequireStaffRoles('ADMIN', 'RECEPTIONIST')

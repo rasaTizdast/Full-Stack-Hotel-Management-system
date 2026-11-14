@@ -200,7 +200,7 @@ describe('Staff inventory API (e2e)', () => {
       .expect(401);
   });
 
-  it('lists active room type options for admins with a stable order and minimal fields', async () => {
+  it('lists active and inactive room type options for admins with a stable order and safe fields', async () => {
     const response = await request(app.getHttpServer())
       .get('/api/v1/staff/inventory/room-types')
       .set('Cookie', admin.cookie)
@@ -209,17 +209,19 @@ describe('Staff inventory API (e2e)', () => {
     const options = response.body as Array<Record<string, unknown>>;
     const orderedIndex = options.findIndex((option) => option.id === orderedRoomTypeId);
     const roomIndex = options.findIndex((option) => option.id === roomTypeId);
+    const inactiveRoomType = options.find((option) => option.id === inactiveRoomTypeId);
     expect(orderedIndex).toBeGreaterThanOrEqual(0);
     expect(roomIndex).toBeGreaterThan(orderedIndex);
-    expect(options.some((option) => option.id === inactiveRoomTypeId)).toBe(false);
+    expect(inactiveRoomType).toMatchObject({ id: inactiveRoomTypeId, isActive: false });
     expect(options[orderedIndex]).toEqual({
       id: orderedRoomTypeId,
       name: 'Inventory fixture first room',
       slug: `inventory-first-${suffix}`,
+      isActive: true,
     });
-    expect(options.every((option) => Object.keys(option).sort().join(',') === 'id,name,slug')).toBe(
-      true,
-    );
+    expect(
+      options.every((option) => Object.keys(option).sort().join(',') === 'id,isActive,name,slug'),
+    ).toBe(true);
   });
 
   it('forbids receptionists from listing room type edit targets', async () => {
