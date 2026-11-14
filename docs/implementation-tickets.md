@@ -446,10 +446,10 @@ Status values: `Not started`, `In progress`, `Blocked`, `Done`.
 - **Priority:** P0
 - **Depends on:** HBE-005 through HBE-020
 - **Owner:** Codex
-- **Status:** Not started
-- **Branch/worktree:** —
-- **Code changes:** —
-- **Tests:** —
+- **Status:** In progress
+- **Branch/worktree:** `codex/hbe-021-openapi-docs` — `C:\\hb\\HBE-021`
+- **Code changes:** Registered development/test-only Swagger UI, JSON, and YAML from DTO metadata; documented implemented public, booking, health, and staff routes, schemas, cookie auth, CSRF, and idempotency headers. Rewrote the README with architecture, clean setup, seed, demo, troubleshooting, and release-check guidance. Added a reproducible screenshot capture script and reviewed Persian RTL guest and staff screenshots.
+- **Tests:** Frozen strict-peer install, Prisma generation, isolated `hotel_booking_hbe021_readme_test` migrations and seed, OpenAPI contract e2e (1/1), full API e2e (60/60), root lint, typecheck, and format check passed. Live Swagger UI and JSON returned HTTP 200; the JSON listed 16 paths. Screenshots were reviewed for RTL layout, fictional demo data, and absence of development overlays. Playwright-managed Chromium download stalled locally, so capture used installed Chrome; the committed script defaults to Playwright-managed Chromium. Full `pnpm check` remains for the orchestrator after rebasing onto current `main`.
 - **Scope:** Complete API docs, validate OpenAPI, document setup and architecture, add screenshots and demo flow.
 
 **Acceptance criteria:**

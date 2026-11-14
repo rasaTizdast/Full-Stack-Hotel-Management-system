@@ -1,4 +1,5 @@
 import { Transform } from 'class-transformer';
+import { ApiPropertyOptional } from '@nestjs/swagger';
 import { IsOptional, IsString, MaxLength, MinLength } from 'class-validator';
 
 function trimOptionalText(value: unknown): unknown {
@@ -8,6 +9,7 @@ function trimOptionalText(value: unknown): unknown {
 }
 
 export class StaffBookingActionDto {
+  @ApiPropertyOptional({ maxLength: 1000, example: 'Inventory has been confirmed by the hotel.' })
   @Transform(({ value }: { value: unknown }) => trimOptionalText(value))
   @IsOptional()
   @IsString()
@@ -16,6 +18,11 @@ export class StaffBookingActionDto {
 }
 
 export class CancelStaffBookingDto {
+  @ApiPropertyOptional({
+    minLength: 1,
+    maxLength: 500,
+    example: 'Cancelled at the guest’s request.',
+  })
   @Transform(({ value }: { value: unknown }) => trimOptionalText(value))
   @IsOptional()
   @IsString()
