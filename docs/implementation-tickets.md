@@ -158,7 +158,8 @@ Status values: `Not started`, `In progress`, `Blocked`, `Done`.
 - **Status:** Done
 - **Branch/worktree:** `codex/hbe-008-booking-requests` — `C:\hb\HBE-008`
 - **Code changes:** Added `POST /api/v1/bookings` with validated guest inputs, Iranian mobile normalization, bounded public rate limiting, idempotency-key request fingerprints, chronological PostgreSQL inventory row locks, transactional holds and booking-night price snapshots, random public references, and a PII-limited response projection. Added a forward-only migration for idempotency request hashes and safe availability/capacity/idempotency error codes.
-- **Tests:** API unit tests passed (11 suites, 50 tests); API e2e tests passed (8 suites, 35 tests); isolated PostgreSQL tests passed (3 suites, 12 tests). Root frozen-lockfile install, lint, typecheck, Prettier check, production build, and isolated migration status passed.
+- **Tests:** After rebasing onto current `main`, API unit tests passed (13 suites, 59 tests); API e2e tests passed (9 suites, 45 tests); isolated PostgreSQL tests passed (4 suites, 14 tests). Frozen-lockfile install, isolated migration deploy/status, lint, typecheck, Prettier check, and production build passed.
+- **Merge/cleanup:** Merged to `main` in `ccf819b`; branch and Git worktree registration removed. Windows left residual `apps` and `node_modules` folders at the former worktree path.
 - **Scope:** Create booking request, nightly price snapshots, inventory holds, public reference, and idempotency handling in one transaction.
 
 **Acceptance criteria:**
@@ -202,6 +203,7 @@ Status values: `Not started`, `In progress`, `Blocked`, `Done`.
 - **Branch/worktree:** `codex/hbe-010-inventory-api` — `C:\hb\HBE-010`
 - **Code changes:** Added authenticated staff inventory range reads and admin-only atomic range updates, strict date/value validation, row locks and capacity protection, stable `CAPACITY_BELOW_RESERVED` errors, and safe per-night response DTOs. Booking price snapshots remain unchanged.
 - **Tests:** After rebasing onto current `main`, API unit tests passed (11 suites/48 tests), API e2e tests passed (8 suites/39 tests), and isolated PostgreSQL tests passed (3 suites/10 tests), including database constraint and range rollback coverage. Frozen install, migration status, lint, typecheck, Prettier, and production build passed.
+- **Merge/cleanup:** Merged to `main` in `6ff4223`; branch and Git worktree registration removed. Windows left residual `apps` and `node_modules` folders at the former worktree path.
 - **Scope:** Read and batch-update inventory and nightly prices by room type/date range.
 
 **Acceptance criteria:**

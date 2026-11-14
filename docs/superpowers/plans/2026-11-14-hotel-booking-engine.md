@@ -170,9 +170,10 @@ Use test-first implementation for behavior: add a focused failing test, run it t
 - [x] Add unit cases for input/capacity/total rules and PostgreSQL tests for rollback, snapshots, duplicate retries, and concurrent last-room attempts.
 - [x] Implement one transaction that locks inventory nights in chronological order, re-reads availability, increments holds, and inserts booking snapshots.
 - [x] Ensure unavailable inventory returns an availability-changed error and leaves no partial writes.
-- [x] After rebasing onto current `main`, run API unit tests (11 suites, 50 tests), API e2e tests (8 suites, 35 tests), PostgreSQL integration tests (3 suites, 12 tests), and root install/lint/typecheck/format/build checks.
+- [x] After rebasing onto current `main`, run API unit tests (13 suites, 59 tests), API e2e tests (9 suites, 45 tests), PostgreSQL integration tests (4 suites, 14 tests), frozen install, isolated migration deploy/status, lint/typecheck/format, and production build.
 - [x] Mark done and commit `feat(HBE-008): add atomic booking requests`.
-- [ ] Merge to `main`, remove the Git worktree registration, and delete the branch.
+- [x] Merge to `main` (`ccf819b`), remove the Git worktree registration, and delete the branch.
+  - **Cleanup note:** Windows left residual `apps` and `node_modules` folders at the former worktree path; no recursive deletion was attempted.
 
 ### Task 9: HBE-009 — Implement booking transitions and expiry
 
@@ -202,7 +203,8 @@ Use test-first implementation for behavior: add a focused failing test, run it t
 - [x] Write HTTP role tests and PostgreSQL cases for capacity bounds, unchanged booking snapshots, and full-batch rollback.
 - [x] Implement date-range inventory queries and updates inside a transaction with field-level validation errors.
 - [x] After rebasing onto current `main`, run API unit tests (11 suites/48 tests), API e2e tests (8 suites/39 tests), and PostgreSQL integration tests (3 suites/10 tests); pass frozen install, migration status, lint, typecheck, Prettier, and production build.
-- [x] Mark done and commit `feat(HBE-010): add staff inventory API`; orchestrator review, merge, branch deletion, and worktree removal are pending.
+- [x] Mark done and commit `feat(HBE-010): add staff inventory API`; merge to `main` (`6ff4223`), delete the branch, and remove the Git worktree registration.
+  - **Cleanup note:** Windows left residual `apps` and `node_modules` folders at the former worktree path; no recursive deletion was attempted.
 
 ### Task 11: HBE-011 — Build staff booking list and management API
 
