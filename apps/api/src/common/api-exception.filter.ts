@@ -40,6 +40,30 @@ const SAFE_DOMAIN_ERRORS: Record<string, { statusCode: number; message: string }
     statusCode: 400,
     message: 'Guest count must be an integer from 1 to 20.',
   },
+  BOOKING_CAPACITY_EXCEEDED: {
+    statusCode: 400,
+    message: 'Guest count exceeds the selected room capacity.',
+  },
+  IDEMPOTENCY_KEY_REQUIRED: {
+    statusCode: 400,
+    message: 'The Idempotency-Key header is required.',
+  },
+  IDEMPOTENCY_KEY_INVALID: {
+    statusCode: 400,
+    message: 'The idempotency key must be 16 to 128 valid characters.',
+  },
+  ROOM_TYPE_NOT_FOUND: {
+    statusCode: 404,
+    message: 'The selected room type is no longer available.',
+  },
+  AVAILABILITY_CHANGED: {
+    statusCode: 409,
+    message: 'Availability changed. Search again before submitting.',
+  },
+  IDEMPOTENCY_KEY_REUSED: {
+    statusCode: 409,
+    message: 'Use a new idempotency key when submitting different booking details.',
+  },
 };
 
 @Catch()
