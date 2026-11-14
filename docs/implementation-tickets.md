@@ -89,10 +89,10 @@ Status values: `Not started`, `In progress`, `Blocked`, `Done`.
 - **Priority:** P0
 - **Depends on:** HBE-003, HBE-004
 - **Owner:** Codex
-- **Status:** Not started
-- **Branch/worktree:** —
-- **Code changes:** —
-- **Tests:** —
+- **Status:** Done
+- **Branch/worktree:** `codex/hbe-005-public-catalog-api` — `../Hotel Booking system-worktrees/HBE-005`
+- **Code changes:** Added public hotel and active room-type modules, response DTOs, and privacy-limited Prisma queries. Added a direct Express dependency required by the shared request middleware, plus a safe `_test`-only API e2e environment loader.
+- **Tests:** Service unit tests verify safe fields and active-room query behavior. PostgreSQL-backed API e2e tests verify public serialization and inactive-room filtering (4 suites/12 tests passed). API unit suite (3 suites/5 tests), database suite (7 tests), lint, typecheck, format check, build, and frozen-lockfile install passed. E2e setup rejected a non-test database URL before connecting.
 - **Scope:** Implement public read-only hotel and active room type endpoints.
 
 **Acceptance criteria:**

@@ -115,11 +115,12 @@ Use test-first implementation for behavior: add a focused failing test, run it t
 
 **Produces:** Public read-only hotel details and active room types; no guest, staff, or internal database fields leak through response DTOs.
 
-- [ ] Create the HBE-005 worktree and mark it in progress.
-- [ ] Write service tests and HTTP cases for public fields, inactive rooms, and serialization privacy.
-- [ ] Implement versioned GET endpoints and explicit public response DTOs.
-- [ ] Run service unit tests and API e2e checks against PostgreSQL seed data.
-- [ ] Mark done, commit `feat(HBE-005): expose public hotel and rooms`, merge, and remove the worktree and branch.
+- [x] Create the HBE-005 worktree and mark it in progress.
+- [x] Write service tests and HTTP cases for public fields, inactive rooms, and serialization privacy.
+- [x] Implement versioned GET endpoints and explicit public response DTOs.
+- [x] Run service unit tests and API e2e checks against PostgreSQL seed data.
+- [x] Mark done and commit `feat(HBE-005): expose public hotel and rooms`.
+- [ ] Merge after orchestrator review, then remove the worktree and branch.
 
 ### Task 6: HBE-006 — Implement availability and server-side price preview
 

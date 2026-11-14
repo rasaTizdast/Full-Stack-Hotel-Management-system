@@ -5,6 +5,8 @@ import { resolve } from 'node:path';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { HealthModule } from './health/health.module';
+import { HotelModule } from './hotel/hotel.module';
+import { RoomTypesModule } from './room-types/room-types.module';
 
 const environmentSchema = Joi.object({
   NODE_ENV: Joi.string().valid('development', 'test', 'production').default('development'),
@@ -23,6 +25,8 @@ const environmentSchema = Joi.object({
       validationOptions: { allowUnknown: true, abortEarly: false },
     }),
     HealthModule,
+    HotelModule,
+    RoomTypesModule,
   ],
   controllers: [AppController],
   providers: [AppService],
