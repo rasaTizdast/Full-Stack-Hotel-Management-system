@@ -154,7 +154,8 @@ Use test-first implementation for behavior: add a focused failing test, run it t
 - [x] After rebasing onto current `main`, run API unit tests (9 suites, 39 tests), API e2e tests (7 suites, 29 tests), and PostgreSQL integration tests (2 suites, 8 tests); verify redaction and session invalidation.
 - [x] Pass frozen-lockfile install, lint, typecheck, format check, production build, and isolated migration status.
 - [x] Mark ticket done and commit `feat(HBE-007): add secure staff authentication`.
-- [ ] Merge and remove the worktree and branch.
+- [x] Merge to `main`, delete the branch, and remove its Git worktree registration.
+- **Cleanup note:** Windows left residual `apps` and `node_modules` folders at the former worktree path; no recursive deletion was attempted.
 
 ### Task 8: HBE-008 — Implement transactional booking requests and idempotency
 
