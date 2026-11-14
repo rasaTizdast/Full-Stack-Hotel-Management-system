@@ -424,10 +424,10 @@ Status values: `Not started`, `In progress`, `Blocked`, `Done`.
 - **Priority:** P0
 - **Depends on:** HBE-014, HBE-016, HBE-017, HBE-018, HBE-019
 - **Owner:** Codex
-- **Status:** Not started
-- **Branch/worktree:** —
-- **Code changes:** —
-- **Tests:** —
+- **Status:** Implemented; awaiting orchestrator merge
+- **Branch/worktree:** `codex/hbe-020-playwright-e2e` / `C:\hb\HBE-020`
+- **Code changes:** Added a real-hold inventory oversell browser case with staff rejection cleanup; isolated browser guest, staff, and inventory fixture phones from the API staff-booking fixture prefix; made guest/staff booking cleanup failure-safe with exact-phone fallback lookup, rejected pending/cancelled confirmed fixtures, restored inventory snapshots, and revoked staff worker sessions after refreshing CSRF; waited for the asynchronous staff booking-list request before asserting route interception.
+- **Tests:** The original full Playwright run passed 34/34 (17 desktop + 17 mobile), then API e2e passed 59/59 against the same fresh `hotel_booking_hbe020_combined_213857_test` database. The cleanup follow-up passed two consecutive full Playwright reruns (34/34 each) and API e2e 59/59 against the same `hotel_booking_hbe020_followup_215950_test` database without database reset/drop. The browser guest/staff/inventory fixtures use separate `0914`/`0915`/`0916` prefixes, avoiding the `09123` prefix searched by API staff-booking tests. PostgreSQL integration passed 28/28 on a separate fresh `hotel_booking_hbe020_pg_214221_test` database. Final root `pnpm test` passed (API 15 suites/80 tests; web 21 files/85 tests); lint, typecheck, full format check, production build, and React Doctor (100/100) passed.
 - **Scope:** Browser tests against the web app, API, and disposable test database.
 
 **Acceptance criteria:**

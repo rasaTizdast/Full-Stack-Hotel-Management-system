@@ -367,19 +367,20 @@ Use test-first implementation for behavior: add a focused failing test, run it t
 
 ### Task 20: HBE-020 — Add Playwright guest/staff end-to-end suite
 
-- **Worktree:** `../Hotel Booking system-worktrees/HBE-020`
+- **Worktree:** `C:\hb\HBE-020`
 - **Branch:** `codex/hbe-020-playwright-e2e`
 
 **Files:** Add root/app Playwright configuration, fictional-data fixtures, browser tests, web/API/database startup scripts, and failure-only trace/screenshot artifacts.
 
 **Produces:** Browser proof for guest search/request, staff login/confirm or reject, inventory capacity rejection, and mobile/desktop RTL paths with order-independent resettable data.
 
-- [ ] Create the HBE-020 worktree and mark it in progress.
-- [ ] Configure Playwright projects, app/API readiness waits, isolated database reset, and fictional fixtures.
-- [ ] Add guest and staff journeys plus inventory oversell rejection at mobile and desktop viewport sizes.
-- [ ] Configure trace and screenshots to retain only on failure and contain fictional data only.
-- [ ] Run the full browser suite from a clean test database.
-- [ ] Mark done, commit `test(HBE-020): add guest and staff browser flows`, merge, and remove the worktree and branch.
+- [x] Create the HBE-020 worktree on its ticket branch.
+- [x] Use Playwright projects, app/API readiness waits, a guarded disposable `_test` database, additive migrations/seed, and fictional fixtures.
+- [x] Cover guest search/request, staff booking processing, and inventory oversell rejection at desktop and mobile viewports.
+- [x] Keep trace and screenshots failure-only; browser test data is fictional and no storage-state file is required.
+- [x] Run all 34 browser cases, then API e2e on the same fresh `hotel_booking_hbe020_combined_213857_test` database (34/34 Playwright, 59/59 API e2e); run PostgreSQL integration separately on fresh `hotel_booking_hbe020_pg_214221_test` (28/28).
+- [x] Follow up with failure-safe guest/staff booking transitions, inventory snapshot restoration, and staff-session logout; rerun Playwright twice (34/34 each) and API e2e (59/59) on the same `hotel_booking_hbe020_followup_215950_test` database without reset/drop.
+- [x] Commit `test(HBE-020): add guest and staff browser flows`; hand off rebase/merge and worktree cleanup to the orchestrator.
 
 ### Task 21: HBE-021 — Add OpenAPI, contract checks, README, and demo materials
 
