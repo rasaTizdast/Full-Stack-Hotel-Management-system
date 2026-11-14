@@ -1,0 +1,23 @@
+{
+  "name": "hotel-booking-engine",
+  "version": "0.1.0",
+  "private": true,
+  "packageManager": "pnpm@10.26.2",
+  "engines": {
+    "node": ">=22.12.0"
+  },
+  "scripts": {
+    "dev": "pnpm --recursive --parallel --if-present run dev",
+    "dev:web": "pnpm --filter @hotel/web run dev",
+    "dev:api": "pnpm --filter @hotel/api run dev",
+    "build": "pnpm --recursive --if-present run build",
+    "lint": "pnpm --recursive --if-present run lint",
+    "typecheck": "pnpm --recursive --if-present run typecheck",
+    "format:check": "prettier --check .",
+    "format": "prettier --write .",
+    "test": "pnpm --recursive --if-present run test"
+  },
+  "devDependencies": {
+    "prettier": "3.10.1"
+  }
+}
