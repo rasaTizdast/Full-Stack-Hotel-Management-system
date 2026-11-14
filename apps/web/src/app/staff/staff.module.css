@@ -1,4 +1,6 @@
 .staffScope {
+  --ink-muted: #536059;
+
   min-height: 100vh;
 }
 

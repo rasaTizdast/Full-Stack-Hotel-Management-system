@@ -51,7 +51,7 @@ function staffApiUrl(path: string): string {
   return `${baseUrl}/staff/${path.replace(/^\//, '')}`;
 }
 
-async function requestStaffApi<T>(
+export async function requestStaffApi<T>(
   path: string,
   options: RequestInit = {},
   redirectOnUnauthorized = true,

@@ -334,10 +334,10 @@ Status values: `Not started`, `In progress`, `Blocked`, `Done`.
 - **Priority:** P0
 - **Depends on:** HBE-011, HBE-015
 - **Owner:** Codex
-- **Status:** In progress
+- **Status:** Ready to merge (verified)
 - **Branch/worktree:** `codex/hbe-016-booking-ops-ui` — `C:\hb\HBE-016`
-- **Code changes:** —
-- **Tests:** —
+- **Code changes:** Staff booking list/detail/filter/action UI, API client, responsive styles, action-state regression coverage, and shared E2E staff session fixture.
+- **Tests:** Web Vitest 72/72; full Playwright 26/26 (13 desktop + 13 mobile, including Axe); API unit 79/79; API e2e 56/56; PostgreSQL integration 28/28; lint, typecheck, format, build, and diff checks passed.
 - **Scope:** Booking table, filtering, details view, confirm/reject/cancel actions, status feedback.
 
 **Acceptance criteria:**

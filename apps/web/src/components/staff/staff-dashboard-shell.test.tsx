@@ -31,7 +31,9 @@ describe('StaffDashboardShell', () => {
       </StaffDashboardShell>,
     );
 
-    expect(screen.getByRole('link', { name: 'پنل خانه‌باغ نارنج، خانه' })).toBeInTheDocument();
+    expect(
+      screen.getByRole('link', { name: /^خانه‌باغ نارنج\s*پنل کارکنان$/ }),
+    ).toBeInTheDocument();
     expect(screen.getByText('شیراز · خانه‌باغ نارنج')).toBeInTheDocument();
   });
 

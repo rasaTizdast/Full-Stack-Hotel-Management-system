@@ -27,7 +27,7 @@ export function StaffDashboardShell({
         رفتن به محتوای اصلی
       </a>
       <header className="staff-topbar">
-        <Link className="staff-brand" href="/staff" aria-label="پنل خانه‌باغ نارنج، خانه">
+        <Link className="staff-brand" href="/staff">
           <span className="staff-brand__mark" aria-hidden="true">
             ن
           </span>
