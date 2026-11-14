@@ -23,6 +23,7 @@
     "test:debug": "node --inspect-brk -r tsconfig-paths/register -r ts-node/register node_modules/.bin/jest --runInBand",
     "test:e2e": "node --experimental-vm-modules ./node_modules/jest/bin/jest.js --config ./test/jest-e2e.json",
     "test:database": "pnpm prisma:generate && node --experimental-vm-modules ./node_modules/jest/bin/jest.js --config ./test/jest-database.json --runInBand",
+    "test:coverage": "pnpm prisma:generate && node --experimental-vm-modules ./node_modules/jest/bin/jest.js --config ./test/jest-coverage.json --runInBand --coverage",
     "prisma:generate": "prisma generate",
     "prisma:migrate:dev": "prisma migrate dev",
     "prisma:migrate:deploy": "prisma migrate deploy",
