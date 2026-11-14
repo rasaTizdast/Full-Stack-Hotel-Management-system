@@ -155,10 +155,10 @@ Status values: `Not started`, `In progress`, `Blocked`, `Done`.
 - **Priority:** P0
 - **Depends on:** HBE-006
 - **Owner:** Codex
-- **Status:** Not started
-- **Branch/worktree:** —
-- **Code changes:** —
-- **Tests:** —
+- **Status:** Done
+- **Branch/worktree:** `codex/hbe-008-booking-requests` — `C:\hb\HBE-008`
+- **Code changes:** Added `POST /api/v1/bookings` with validated guest inputs, Iranian mobile normalization, bounded public rate limiting, idempotency-key request fingerprints, chronological PostgreSQL inventory row locks, transactional holds and booking-night price snapshots, random public references, and a PII-limited response projection. Added a forward-only migration for idempotency request hashes and safe availability/capacity/idempotency error codes.
+- **Tests:** API unit tests passed (11 suites, 50 tests); API e2e tests passed (8 suites, 35 tests); isolated PostgreSQL tests passed (3 suites, 12 tests). Root frozen-lockfile install, lint, typecheck, Prettier check, production build, and isolated migration status passed.
 - **Scope:** Create booking request, nightly price snapshots, inventory holds, public reference, and idempotency handling in one transaction.
 
 **Acceptance criteria:**

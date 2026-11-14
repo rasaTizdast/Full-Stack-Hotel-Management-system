@@ -159,19 +159,20 @@ Use test-first implementation for behavior: add a focused failing test, run it t
 
 ### Task 8: HBE-008 — Implement transactional booking requests and idempotency
 
-- **Worktree:** `../Hotel Booking system-worktrees/HBE-008`
+- **Worktree:** `C:\hb\HBE-008`
 - **Branch:** `codex/hbe-008-booking-requests`
 
 **Files:** Add booking request DTOs/controller/service and transactional persistence under `apps/api/src/bookings`; add database integration tests for rollback, price snapshots, retry, and concurrent last-room requests.
 
 **Produces:** One booking request for one room type and quantity, random public reference, per-night price snapshots, temporary holds, and stable idempotency-key behavior.
 
-- [ ] Create the HBE-008 worktree and mark it in progress.
-- [ ] Add unit cases for input/capacity/total rules and PostgreSQL tests for rollback, snapshots, duplicate retries, and concurrent last-room attempts.
-- [ ] Implement one transaction that locks inventory nights in chronological order, re-reads availability, increments holds, and inserts booking snapshots.
-- [ ] Ensure unavailable inventory returns an availability-changed error and leaves no partial writes.
-- [ ] Run the required unit and PostgreSQL integration tests, including the concurrent request test.
-- [ ] Mark done, commit `feat(HBE-008): add atomic booking requests`, merge, and remove the worktree and branch.
+- [x] Create the HBE-008 worktree and mark it in progress.
+- [x] Add unit cases for input/capacity/total rules and PostgreSQL tests for rollback, snapshots, duplicate retries, and concurrent last-room attempts.
+- [x] Implement one transaction that locks inventory nights in chronological order, re-reads availability, increments holds, and inserts booking snapshots.
+- [x] Ensure unavailable inventory returns an availability-changed error and leaves no partial writes.
+- [x] After rebasing onto current `main`, run API unit tests (11 suites, 50 tests), API e2e tests (8 suites, 35 tests), PostgreSQL integration tests (3 suites, 12 tests), and root install/lint/typecheck/format/build checks.
+- [x] Mark done and commit `feat(HBE-008): add atomic booking requests`.
+- [ ] Merge to `main`, remove the Git worktree registration, and delete the branch.
 
 ### Task 9: HBE-009 — Implement booking transitions and expiry
 
