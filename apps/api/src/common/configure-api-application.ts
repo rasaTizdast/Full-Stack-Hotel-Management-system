@@ -9,6 +9,7 @@ import {
 } from '@nestjs/common';
 import type { CustomOrigin } from '@nestjs/common/interfaces/external/cors-options.interface';
 import { ConfigService } from '@nestjs/config';
+import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { ValidationError } from 'class-validator';
 import { ApiExceptionFilter } from './api-exception.filter';
 
@@ -102,4 +103,20 @@ export function configureApiApplication(app: INestApplication): void {
     }),
   );
   app.useGlobalFilters(new ApiExceptionFilter());
+
+  if (app.get(ConfigService).get<string>('NODE_ENV') !== 'production') {
+    const openApiConfig = new DocumentBuilder()
+      .setTitle('Hotel Booking Engine API')
+      .setDescription(
+        'Persian-first hotel booking request API. Every request requires staff confirmation; the service does not process online payments.',
+      )
+      .setVersion('1.0.0')
+      .addCookieAuth('hotel_staff_session', { type: 'apiKey', in: 'cookie' }, 'staffSession')
+      .build();
+    const documentFactory = () => SwaggerModule.createDocument(app, openApiConfig);
+    SwaggerModule.setup('api/docs', app, documentFactory, {
+      jsonDocumentUrl: 'api/docs-json',
+      yamlDocumentUrl: 'api/docs-yaml',
+    });
+  }
 }
