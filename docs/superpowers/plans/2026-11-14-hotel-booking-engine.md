@@ -232,7 +232,9 @@ Use test-first implementation for behavior: add a focused failing test, run it t
   - [x] Implement the RTL layout and typed server-side data fetching from HBE-005 endpoints.
   - [x] Add responsive public page smoke checks for narrow and wide viewports (Playwright: 4 passed across desktop and mobile).
   - [x] Run Vitest and the public Playwright smoke test; format, lint, typecheck, and production build pass.
-  - [x] Commit `feat(HBE-012): build Persian public site`; merge and worktree removal remain with the orchestrator after review.
+  - [x] Commit `feat(HBE-012): build Persian public site` and merge to `main`.
+  - [x] Delete the branch and remove its Git worktree registration.
+  - **Cleanup note:** Windows left residual `apps` and `node_modules` folders at the former worktree path; no recursive deletion was attempted.
 
 ### Task 13: HBE-013 — Build date search and availability results UI
 
