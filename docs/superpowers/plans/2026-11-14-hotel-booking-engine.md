@@ -222,7 +222,8 @@ Use test-first implementation for behavior: add a focused failing test, run it t
 - [x] Implement staff-only routes using booking services and minimal response DTOs.
 - [x] Run focused staff-bookings e2e (11 tests), all API unit tests (15 suites/79 tests), all API e2e tests (10 suites/56 tests), and PostgreSQL integration tests (5 suites/22 tests); pass frozen install, migration status, lint, typecheck, Prettier, and production build.
 - [x] Commit `feat(HBE-011): add staff booking management API`.
-- [ ] Rebase/merge into `main`, then remove the branch and worktree (orchestrator-owned).
+- [x] Rebase/merge `410fc6e` into `main`, then remove the branch and worktree (orchestrator-owned).
+  - **Cleanup note:** Windows left residual `apps` and `node_modules` folders at the former worktree path; no recursive deletion was attempted.
 
 ### Task 12: HBE-012 — Build Persian RTL public site shell and hotel pages
 
