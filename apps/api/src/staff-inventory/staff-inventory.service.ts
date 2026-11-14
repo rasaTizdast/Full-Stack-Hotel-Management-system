@@ -6,7 +6,10 @@ import {
 } from '@nestjs/common';
 import { PrismaService } from '../database/prisma.service';
 import { StaffInventoryRangeQueryDto } from './dto/staff-inventory-range-query.dto';
-import { StaffInventoryResponseDto } from './dto/staff-inventory-response.dto';
+import {
+  StaffInventoryResponseDto,
+  StaffInventoryRoomTypeDto,
+} from './dto/staff-inventory-response.dto';
 import { UpdateStaffInventoryDto } from './dto/update-staff-inventory.dto';
 import { parseStaffInventoryDateRange } from './date-range';
 
@@ -20,6 +23,14 @@ type LockedInventoryRow = {
 @Injectable()
 export class StaffInventoryService {
   constructor(private readonly prisma: PrismaService) {}
+
+  async findActiveRoomTypes(): Promise<StaffInventoryRoomTypeDto[]> {
+    return this.prisma.roomType.findMany({
+      where: { isActive: true },
+      orderBy: [{ displayOrder: 'asc' }, { name: 'asc' }, { id: 'asc' }],
+      select: { id: true, name: true, slug: true },
+    });
+  }
 
   async findRange(query: StaffInventoryRangeQueryDto): Promise<StaffInventoryResponseDto> {
     const range = parseStaffInventoryDateRange(query);
