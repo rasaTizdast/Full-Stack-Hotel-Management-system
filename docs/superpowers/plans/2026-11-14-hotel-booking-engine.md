@@ -190,18 +190,18 @@ Use test-first implementation for behavior: add a focused failing test, run it t
 
 ### Task 10: HBE-010 — Build staff inventory API
 
-- **Worktree:** `../Hotel Booking system-worktrees/HBE-010`
-- **Branch:** `codex/hbe-010-staff-inventory-api`
+- **Worktree:** `C:\hb\HBE-010`
+- **Branch:** `codex/hbe-010-inventory-api`
 
 **Files:** Add `apps/api/src/staff-inventory` DTOs/controller/service and PostgreSQL/API tests for roles, constraints, atomic batches, and booking snapshots.
 
 **Produces:** Admin-only range reads and atomic batch updates of nightly prices and capacity; receptionists cannot mutate inventory.
 
-- [ ] Create the HBE-010 worktree and mark it in progress.
-- [ ] Write HTTP role tests and PostgreSQL cases for capacity bounds, unchanged booking snapshots, and full-batch rollback.
-- [ ] Implement date-range inventory queries and updates inside a transaction with field-level validation errors.
-- [ ] Run API e2e and PostgreSQL integration cases.
-- [ ] Mark done, commit `feat(HBE-010): add staff inventory API`, merge, and remove the worktree and branch.
+- [x] Create the HBE-010 worktree and mark it in progress.
+- [x] Write HTTP role tests and PostgreSQL cases for capacity bounds, unchanged booking snapshots, and full-batch rollback.
+- [x] Implement date-range inventory queries and updates inside a transaction with field-level validation errors.
+- [x] After rebasing onto current `main`, run API unit tests (11 suites/48 tests), API e2e tests (8 suites/39 tests), and PostgreSQL integration tests (3 suites/10 tests); pass frozen install, migration status, lint, typecheck, Prettier, and production build.
+- [x] Mark done and commit `feat(HBE-010): add staff inventory API`; orchestrator review, merge, branch deletion, and worktree removal are pending.
 
 ### Task 11: HBE-011 — Build staff booking list and management API
 

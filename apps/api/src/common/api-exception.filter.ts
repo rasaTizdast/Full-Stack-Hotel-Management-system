@@ -26,6 +26,10 @@ const SAFE_MESSAGES: Record<number, { code: string; message: string }> = {
 };
 
 const SAFE_DOMAIN_ERRORS: Record<string, { statusCode: number; message: string }> = {
+  CAPACITY_BELOW_RESERVED: {
+    statusCode: 409,
+    message: 'Capacity cannot be lower than held plus booked rooms.',
+  },
   INVALID_DATE_RANGE: {
     statusCode: 400,
     message: 'Use valid Gregorian YYYY-MM-DD dates and checkout after check-in.',
