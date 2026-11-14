@@ -15,8 +15,12 @@ The repository is being implemented against the [product requirements](prd.md). 
 ```powershell
 corepack enable
 corepack prepare pnpm@10.26.2 --activate
+Copy-Item .env.example .env
 pnpm install
+pnpm db:up
 ```
+
+`.env.example` contains local-only example credentials. Change `POSTGRES_PASSWORD` and the matching password in `DATABASE_URL` before using this setup on a shared machine. The example database publishes on port `5433` to avoid colliding with a PostgreSQL service already listening on `5432`; set `POSTGRES_PORT` if that port is also taken.
 
 ## Run the applications
 
@@ -31,13 +35,23 @@ pnpm dev:web
 pnpm dev:api
 ```
 
+The API stays live when PostgreSQL is unavailable. `GET /health/live` checks the process; `GET /health/ready` runs a database query and returns HTTP 503 with setup guidance when the database is unavailable.
+
 ## Quality checks
 
 ```powershell
 pnpm lint
 pnpm typecheck
 pnpm format:check
+pnpm test
+pnpm --filter @hotel/api run test:e2e
 pnpm build
 ```
 
-Database, seed, test, API documentation, and demo instructions will be added with their respective implementation tickets.
+Stop the local database with:
+
+```powershell
+pnpm db:down
+```
+
+The named PostgreSQL volume remains available after `db:down`, so local data is preserved when the container stops.

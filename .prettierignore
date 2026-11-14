@@ -7,6 +7,8 @@ node_modules/
 **/node_modules/
 **/.next/
 **/dist/
+apps/api/src/generated/prisma/
+**/next-env.d.ts
 coverage/
 pnpm-lock.yaml
 skills-lock.json

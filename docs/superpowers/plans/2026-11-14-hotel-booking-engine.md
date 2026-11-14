@@ -67,11 +67,11 @@ Use test-first implementation for behavior: add a focused failing test, run it t
 
 **Produces:** Documented database start/stop commands, validated environment configuration, Prisma connectivity, liveness and database readiness endpoints, and actionable database-unavailable responses.
 
-- [ ] Create the HBE-002 worktree after HBE-001 merges and mark the ticket in progress.
-- [ ] Write readiness success and database-unavailable integration tests before implementation.
-- [ ] Configure PostgreSQL health checks and a persistent local volume in Compose; keep credentials in local environment variables.
-- [ ] Wire Nest configuration and Prisma connection lifecycle; keep readiness distinct from liveness.
-- [ ] Run the required readiness integration cases and document the Compose workflow.
+- [x] Create the HBE-002 worktree after HBE-001 merges and mark the ticket in progress.
+- [x] Write readiness success and database-unavailable integration tests before implementation.
+- [x] Configure PostgreSQL health checks and a persistent local volume in Compose; keep credentials in local environment variables.
+- [x] Wire Nest configuration and Prisma connection lifecycle; keep readiness distinct from liveness.
+- [x] Run the required readiness integration cases and document the Compose workflow.
 - [ ] Mark done, commit `feat(HBE-002): configure local PostgreSQL`, merge, and remove the worktree and branch.
 
 ### Task 3: HBE-003 — Create schema, migrations, and fictional seed data
