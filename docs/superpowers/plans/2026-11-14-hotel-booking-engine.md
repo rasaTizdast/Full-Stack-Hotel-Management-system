@@ -151,7 +151,7 @@ Use test-first implementation for behavior: add a focused failing test, run it t
 - [x] Create the HBE-007 worktree and mark it in progress.
 - [x] Write policy unit tests and HTTP cases for unauthenticated access, roles, secure cookie flags, CSRF, logout invalidation, rate limiting, and CORS origin policy.
 - [x] Implement password verification, opaque persisted sessions, cookie lifecycle, guards, and role policy.
-- [x] Run auth unit (4 suites, 13 tests), API e2e (5 suites, 22 tests), and PostgreSQL integration tests (2 suites, 8 tests); verify redaction and session invalidation.
+- [x] After rebasing onto current `main`, run API unit tests (9 suites, 39 tests), API e2e tests (7 suites, 29 tests), and PostgreSQL integration tests (2 suites, 8 tests); verify redaction and session invalidation.
 - [x] Pass frozen-lockfile install, lint, typecheck, format check, production build, and isolated migration status.
 - [x] Mark ticket done and commit `feat(HBE-007): add secure staff authentication`.
 - [ ] Merge and remove the worktree and branch.

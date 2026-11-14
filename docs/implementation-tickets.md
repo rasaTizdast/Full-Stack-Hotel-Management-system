@@ -137,7 +137,7 @@ Status values: `Not started`, `In progress`, `Blocked`, `Done`.
 - **Status:** Done
 - **Branch/worktree:** `codex/hbe-007-staff-auth` — `../Hotel Booking system-worktrees/HBE-007`
 - **Code changes:** Added staff login/logout/current-user routes, Argon2id verification, persisted opaque sessions with hashed credentials, CSRF and same-origin protections, role guards, bounded login rate limiting, exact-origin credentialed CORS, safe response DTOs, and the forward-only `20261114110051_add_staff_sessions` migration.
-- **Tests:** API unit tests passed (4 suites, 13 tests); API e2e tests passed (5 suites, 22 tests); isolated PostgreSQL tests passed (2 suites, 8 tests). Lint, typecheck, Prettier check, production build, frozen-lockfile install, and migration status passed; the isolated database is up to date.
+- **Tests:** After rebasing onto current `main`, API unit tests passed (9 suites, 39 tests), API e2e tests passed (7 suites, 29 tests), and isolated PostgreSQL tests passed (2 suites, 8 tests). Lint, typecheck, Prettier check, production build, frozen-lockfile install, and migration status passed; the isolated database is up to date.
 - **Scope:** Staff login/logout/current-user endpoints, secure cookie handling, password hashing, CSRF protection, roles, and login rate limiting.
 
 **Acceptance criteria:**
