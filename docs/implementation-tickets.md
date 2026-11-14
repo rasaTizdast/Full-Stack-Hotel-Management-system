@@ -309,10 +309,10 @@ Status values: `Not started`, `In progress`, `Blocked`, `Done`.
 - **Priority:** P0
 - **Depends on:** HBE-007, HBE-012
 - **Owner:** Codex
-- **Status:** Not started
-- **Branch/worktree:** —
-- **Code changes:** —
-- **Tests:** —
+- **Status:** Done
+- **Branch/worktree:** `codex/hbe-015-staff-shell` — `C:\hb\HBE-015`
+- **Code changes:** Added a Persian staff sign-in page and session-gated dashboard shell; credentialed API requests keep the session in an HttpOnly cookie and the CSRF token in memory. Added receptionist/admin navigation, logout, expiry redirect, responsive RTL styling in a staff-scoped CSS module, and browser/component coverage.
+- **Tests:** Frozen install passed. Web unit/component tests passed (7 files, 15 tests); Playwright passed (12 tests across desktop and mobile), including signed-out route and direct API denial, login/logout, role navigation, session expiry, keyboard flow, and axe WCAG A/AA. Web lint, typecheck, production build, and repository format check passed.
 - **Scope:** Staff login page, protected route layout, current-user state, navigation, logout, and unauthorized redirect.
 
 **Acceptance criteria:**
