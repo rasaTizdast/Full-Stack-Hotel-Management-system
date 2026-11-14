@@ -260,19 +260,20 @@ Use test-first implementation for behavior: add a focused failing test, run it t
 
 ### Task 14: HBE-014 — Build guest booking form and confirmation
 
-- **Worktree:** `../Hotel Booking system-worktrees/HBE-014`
-- **Branch:** `codex/hbe-014-guest-booking-ui`
+- **Worktree:** `C:\hb\HBE-014`
+- **Branch:** `codex/hbe-014-booking-flow`
 
 **Files:** Add booking form/confirmation routes and components under `apps/web/src`; add Zod/RHF validation, Iranian mobile normalization, idempotency client, and Vitest/Playwright guest journey cases.
 
 **Produces:** No-account guest submission, capacity-aware room quantity, contact validation, duplicate-submit protection, availability-changed recovery, and privacy-safe pending confirmation page.
 
-- [ ] Create the HBE-014 worktree and mark it in progress.
-- [ ] Add form/schema tests and Playwright success, duplicate-click, and API-error cases.
-- [ ] Implement accessible form states and call HBE-008 with a stable idempotency key.
-- [ ] Verify confirmation reveals only the public reference, status, stay, room, guest count, and price summary.
-- [ ] Run Vitest and the Playwright guest booking flow.
-- [ ] Mark done, commit `feat(HBE-014): add guest booking flow`, merge, and remove the worktree and branch.
+- [x] Create the HBE-014 worktree and mark it in progress.
+- [x] Add schema/component tests and Playwright success/recovery cases; exercise duplicate-click protection in the component suite.
+- [x] Implement accessible form states, normalized Iranian mobile input, capacity-aware room quantity, server-priced totals, stable idempotency keys, and the HBE-008 booking contract.
+- [x] Filter the booking proxy response to the public confirmation fields; verify no guest PII or internal IDs are shown or forwarded to the browser.
+- [x] Run web Vitest (12 files/46 tests), API unit tests (13 suites/59 tests), Playwright (10/10 desktop/mobile) against guarded `hotel_booking_hbe014_test`, frozen install, typecheck, lint, format, build, and diff checks.
+- [x] Commit `feat(HBE-014): add guest booking flow`.
+- [ ] Rebase/integrate on latest `main`, then remove the worktree and branch.
 
 ### Task 15: HBE-015 — Build staff login and protected dashboard shell
 

@@ -286,10 +286,10 @@ Status values: `Not started`, `In progress`, `Blocked`, `Done`.
 - **Priority:** P0
 - **Depends on:** HBE-008, HBE-013
 - **Owner:** Codex
-- **Status:** Not started
-- **Branch/worktree:** —
-- **Code changes:** —
-- **Tests:** —
+- **Status:** Ready for integration
+- **Branch/worktree:** `codex/hbe-014-booking-flow` / `C:\hb\HBE-014`
+- **Code changes:** `/booking` request/confirmation page, accessible guest form, validation/idempotency client, privacy-filtering booking proxy, and search-to-book link.
+- **Tests:** Web Vitest 46/46; API unit 13 suites/59 tests; Playwright 10/10 on desktop/mobile with `hotel_booking_hbe014_test`; root typecheck, lint, format, production build, frozen install, and diff checks pass.
 - **Scope:** Room quantity selection, guest contact form, total summary, submit state, duplicate-click prevention, and confirmation display.
 
 **Acceptance criteria:**

@@ -1,4 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
+import { findAvailableGardenStay } from './available-stay';
 
 async function expectNoHorizontalOverflow(page: Page) {
   const horizontalOverflow = await page.evaluate(
@@ -7,7 +8,11 @@ async function expectNoHorizontalOverflow(page: Page) {
   expect(horizontalOverflow).toBe(false);
 }
 
-test('guests search Persian dates and see API-priced available rooms', async ({ page }) => {
+test('guests search Persian dates and see API-priced available rooms', async ({
+  page,
+  request,
+}, testInfo) => {
+  const stay = await findAvailableGardenStay(request, testInfo);
   const availabilityRequests: URL[] = [];
   page.on('request', (request) => {
     if (request.url().includes('/api/availability?')) {
@@ -20,6 +25,8 @@ test('guests search Persian dates and see API-priced available rooms', async ({ 
     page.getByRole('heading', { level: 2, name: 'قرارِ اقامتتان را پیدا کنید' }),
   ).toBeVisible();
   await expectNoHorizontalOverflow(page);
+  await page.getByLabel('تاریخ ورود').fill(stay.checkInJalali);
+  await page.getByLabel('تاریخ خروج').fill(stay.checkOutJalali);
   await page.getByRole('button', { name: 'بررسی اتاق‌های موجود' }).click();
 
   await expect(page.getByRole('heading', { name: 'اتاق‌های مناسب شما' })).toBeVisible();

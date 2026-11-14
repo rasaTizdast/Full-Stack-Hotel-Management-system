@@ -74,7 +74,7 @@ function isAvailabilityRoomType(value: unknown): value is AvailabilityRoomType {
   );
 }
 
-function isAvailabilityResult(value: unknown): value is AvailabilityResult {
+export function isAvailabilityResult(value: unknown): value is AvailabilityResult {
   return (
     isRecord(value) &&
     typeof value.checkIn === 'string' &&

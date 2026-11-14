@@ -1,4 +1,5 @@
 import { cache } from 'react';
+import { isAvailabilityResult, type AvailabilityResult } from './availability';
 
 export type PublicHotel = {
   slug: string;
@@ -129,3 +130,18 @@ async function loadPublicRoomTypes(): Promise<PublicRoomType[]> {
 
 export const getPublicHotel = cache(loadPublicHotel);
 export const getPublicRoomTypes = cache(loadPublicRoomTypes);
+
+export async function getPublicAvailability(query: {
+  checkIn: string;
+  checkOut: string;
+  guests: number;
+}): Promise<AvailabilityResult> {
+  const params = new URLSearchParams({
+    checkIn: query.checkIn,
+    checkOut: query.checkOut,
+    guests: String(query.guests),
+  });
+  const value = await requestPublicJson(`/availability?${params.toString()}`);
+  if (!isAvailabilityResult(value)) throw new PublicApiError('invalid-response');
+  return value;
+}

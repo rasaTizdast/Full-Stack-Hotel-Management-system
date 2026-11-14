@@ -37,11 +37,19 @@ function AvailabilityRoomCard({
   room,
   details,
   numberOfNights,
+  stay,
 }: {
   room: AvailabilityResult['roomTypes'][number];
   details?: PublicRoomType;
   numberOfNights: number;
+  stay: Pick<AvailabilityResult, 'checkIn' | 'checkOut' | 'guests'>;
 }) {
+  const bookingQuery = new URLSearchParams({
+    roomType: room.slug,
+    checkIn: stay.checkIn,
+    checkOut: stay.checkOut,
+    guestCount: String(stay.guests),
+  });
   return (
     <article
       className={`availability-card${room.isAvailable ? '' : ' availability-card--unavailable'}`}
@@ -87,9 +95,19 @@ function AvailabilityRoomCard({
             برای تاریخ‌های انتخاب‌شده موجود نیست.
           </p>
         )}
-        <Link className="availability-card__link" href={`/rooms/${encodeURIComponent(room.slug)}`}>
-          جزئیات اتاق <span aria-hidden="true">←</span>
-        </Link>
+        <div className="availability-card__actions">
+          <Link
+            className="availability-card__link"
+            href={`/rooms/${encodeURIComponent(room.slug)}`}
+          >
+            جزئیات اتاق <span aria-hidden="true">←</span>
+          </Link>
+          {room.isAvailable && room.totalPriceToman !== null ? (
+            <Link className="availability-card__link" href={`/booking?${bookingQuery.toString()}`}>
+              درخواست اقامت <span aria-hidden="true">←</span>
+            </Link>
+          ) : null}
+        </div>
       </div>
     </article>
   );
@@ -270,6 +288,7 @@ export function AvailabilitySearch({ roomTypes, initialStay }: AvailabilitySearc
                   room={room}
                   details={roomDetails.get(room.slug)}
                   numberOfNights={result.numberOfNights}
+                  stay={result}
                 />
               ))}
             </div>
@@ -283,6 +302,7 @@ export function AvailabilitySearch({ roomTypes, initialStay }: AvailabilitySearc
                 room={room}
                 details={roomDetails.get(room.slug)}
                 numberOfNights={result.numberOfNights}
+                stay={result}
               />
             ))}
           </div>
