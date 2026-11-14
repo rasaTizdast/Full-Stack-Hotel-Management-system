@@ -24,6 +24,17 @@ describe('StaffDashboardShell', () => {
     expect(screen.getByText('صفحه امن')).toBeInTheDocument();
   });
 
+  it('uses the demo hotel name in the staff brand', () => {
+    render(
+      <StaffDashboardShell staff={receptionist} onLogout={vi.fn()}>
+        <p>صفحه امن</p>
+      </StaffDashboardShell>,
+    );
+
+    expect(screen.getByRole('link', { name: 'پنل خانه‌باغ نارنج، خانه' })).toBeInTheDocument();
+    expect(screen.getByText('شیراز · خانه‌باغ نارنج')).toBeInTheDocument();
+  });
+
   it('shows inventory navigation to administrators', () => {
     render(
       <StaffDashboardShell staff={{ ...receptionist, role: 'ADMIN' }} onLogout={vi.fn()}>

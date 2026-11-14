@@ -27,12 +27,12 @@ export function StaffDashboardShell({
         رفتن به محتوای اصلی
       </a>
       <header className="staff-topbar">
-        <Link className="staff-brand" href="/staff" aria-label="پنل اقامتگاه آینه، خانه">
+        <Link className="staff-brand" href="/staff" aria-label="پنل خانه‌باغ نارنج، خانه">
           <span className="staff-brand__mark" aria-hidden="true">
-            آ
+            ن
           </span>
           <span>
-            <strong>اقامتگاه آینه</strong>
+            <strong>خانه‌باغ نارنج</strong>
             <small>پنل کارکنان</small>
           </span>
         </Link>
@@ -86,7 +86,7 @@ export function StaffDashboardShell({
             </p>
           )}
           <div className="staff-sidebar__note">
-            <span aria-hidden="true">شیراز · اقامتگاه آینه</span>
+            <span aria-hidden="true">شیراز · خانه‌باغ نارنج</span>
             <span className="staff-sidebar__rule" />
             <span>امروز را با آرامش مدیریت کنید.</span>
           </div>

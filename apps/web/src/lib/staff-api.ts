@@ -26,9 +26,28 @@ export const STAFF_SESSION_EXPIRED_EVENT = 'hotel:staff-session-expired';
 let currentStaffRequest: Promise<StaffSessionResponse> | null = null;
 
 function staffApiUrl(path: string): string {
-  const baseUrl = (
-    process.env.NEXT_PUBLIC_HOTEL_API_BASE_URL ?? 'http://localhost:4000/api/v1'
-  ).replace(/\/$/, '');
+  const configuredBaseUrl = process.env.NEXT_PUBLIC_HOTEL_API_BASE_URL?.trim();
+  const isProduction = process.env.NODE_ENV === 'production';
+
+  if (isProduction && !configuredBaseUrl) {
+    throw new StaffApiError('نشانی امن سامانه کارکنان پیکربندی نشده است.', 0);
+  }
+
+  const baseUrl = (configuredBaseUrl || 'http://localhost:4000/api/v1').replace(/\/$/, '');
+
+  if (isProduction) {
+    let apiUrl: URL;
+    try {
+      apiUrl = new URL(baseUrl);
+    } catch {
+      throw new StaffApiError('نشانی امن سامانه کارکنان پیکربندی نشده است.', 0);
+    }
+
+    if (apiUrl.protocol !== 'https:') {
+      throw new StaffApiError('نشانی سامانه کارکنان باید از اتصال امن استفاده کند.', 0);
+    }
+  }
+
   return `${baseUrl}/staff/${path.replace(/^\//, '')}`;
 }
 
@@ -48,7 +67,8 @@ async function requestStaffApi<T>(
         ...options.headers,
       },
     });
-  } catch {
+  } catch (cause) {
+    if (cause instanceof StaffApiError) throw cause;
     throw new StaffApiError('ارتباط با سامانه برقرار نشد. دوباره تلاش کنید.', 0);
   }
 
