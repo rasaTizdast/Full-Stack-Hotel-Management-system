@@ -380,10 +380,10 @@ Status values: `Not started`, `In progress`, `Blocked`, `Done`.
 - **Priority:** P0
 - **Depends on:** HBE-012, HBE-013, HBE-014
 - **Owner:** Codex
-- **Status:** Not started
-- **Branch/worktree:** —
-- **Code changes:** —
-- **Tests:** —
+- **Status:** Done; branch ready for root integration
+- **Branch/worktree:** `codex/hbe-018-web-test-suite` — `C:\hb\HBE-018`
+- **Code changes:** Added V8 coverage reporting and aggregate floors for the core availability, Jalali/date, booking-schema, and inventory/capacity utilities; documented root `pnpm test` and the web coverage command. Added axe scans and keyboard search submission to the existing guest browser flows. Axe exposed two public color-token contrast failures, fixed by reusing the accessible staff token values. ESLint now ignores generated coverage reports.
+- **Tests:** Web Vitest passed (21 files/85 tests); core coverage: 91.08% statements, 88.23% branches, 100% functions, 92.9% lines (floors 88/80/95/90). Root `pnpm test` passed (web 85, API 15 suites/80). Playwright passed 32/32 desktop/mobile cases, including guest search/booking axe checks and staff journeys, on isolated `hotel_booking_hbe018_full_test`. Lint, typecheck, format check, API/web production builds, and React Doctor (100/100) passed.
 - **Scope:** Configure Vitest, React Testing Library, coverage reporting, axe, and user behavior tests.
 
 **Acceptance criteria:**

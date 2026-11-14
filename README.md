@@ -48,6 +48,8 @@ pnpm --filter @hotel/api run test:e2e
 pnpm build
 ```
 
+`pnpm test` runs the web and API unit/component suites across the workspace. To generate the web core-utility coverage summary and HTML report, run `pnpm --filter @hotel/web test:coverage`; the report is written to `apps/web/coverage/`.
+
 Stop the local database with:
 
 ```powershell
