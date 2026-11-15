@@ -112,7 +112,6 @@ export function StaffInventoryPage() {
   if (staff.role !== 'ADMIN') {
     return (
       <section className="staff-inventory-denied" aria-labelledby="staff-inventory-denied-title">
-        <p className="staff-inventory__eyebrow">مدیریت اقامتگاه</p>
         <h1 id="staff-inventory-denied-title">دسترسی به مدیریت موجودی</h1>
         <p role="alert">این بخش فقط برای مدیر اقامتگاه در دسترس است.</p>
       </section>
@@ -246,7 +245,6 @@ export function StaffInventoryPage() {
   return (
     <section className="staff-inventory" aria-labelledby="staff-inventory-title">
       <header className="staff-inventory__header">
-        <p className="staff-inventory__eyebrow">نظم هر شب، از همین‌جا</p>
         <h1 id="staff-inventory-title">ظرفیت و نرخ‌ها</h1>
         <p>برای هر اتاق، ظرفیت و نرخ شبانه را در یک بازه بررسی و یک‌جا ویرایش کنید.</p>
       </header>

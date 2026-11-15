@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import type { ReactNode } from 'react';
+import { HotelLogo } from '@/components/brand/hotel-logo';
 import type { StaffMember } from '@/lib/staff-api';
 
 interface StaffDashboardShellProps {
@@ -28,55 +29,102 @@ export function StaffDashboardShell({
       </a>
       <header className="staff-topbar">
         <Link className="staff-brand" href="/staff">
-          <span className="staff-brand__mark" aria-hidden="true">
-            ن
-          </span>
-          <span>
+          <HotelLogo size={44} className="staff-brand__mark" />
+          <span className="staff-brand__copy">
             <strong>خانه‌باغ نارنج</strong>
             <small>پنل کارکنان</small>
           </span>
         </Link>
-        <div className="staff-identity">
-          <span className="staff-identity__role">
-            {staff.role === 'ADMIN' ? 'مدیر اقامتگاه' : 'پذیرش'}
+        <div className="staff-topbar__right">
+          <span className="staff-property-label">
+            <span className="staff-property-label__dot" aria-hidden="true" />
+            شیراز · خانه‌باغ نارنج
           </span>
-          <span className="staff-identity__email" dir="ltr">
-            {staff.email}
-          </span>
-          <button className="staff-logout" type="button" onClick={onLogout} disabled={isLoggingOut}>
-            {isLoggingOut ? 'در حال خروج…' : 'خروج از پنل'}
+          <div className="staff-identity">
+            <span className="staff-identity__avatar" aria-hidden="true">
+              {staff.username.slice(0, 1)}
+            </span>
+            <span className="staff-identity__copy">
+              <strong>{staff.username}</strong>
+              <small className="staff-identity__role">
+                {staff.role === 'ADMIN' ? 'مدیر اقامتگاه' : 'پذیرش'}
+              </small>
+            </span>
+            {staff.email.toLowerCase() !== staff.username.trim().toLowerCase() && (
+              <span className="staff-identity__email" dir="ltr">
+                {staff.email}
+              </span>
+            )}
+          </div>
+          <button
+            aria-label="خروج از پنل"
+            className="staff-logout"
+            type="button"
+            onClick={onLogout}
+            disabled={isLoggingOut}
+          >
+            <svg viewBox="0 0 20 20" fill="none" aria-hidden="true">
+              <path d="M8 4H4.5v12H8M11 6l4 4-4 4M7 10h8" />
+            </svg>
+            <span>{isLoggingOut ? 'در حال خروج…' : 'خروج'}</span>
           </button>
         </div>
       </header>
 
       <div className="staff-layout">
         <aside className="staff-sidebar">
-          <p className="staff-sidebar__label">کارهای روزانه</p>
+          <div className="staff-sidebar__heading">
+            <p className="staff-sidebar__label">فضای کاری</p>
+            <span>شیراز · ایران</span>
+          </div>
           <nav aria-label="منوی پنل کارکنان" className="staff-nav">
-            <Link href="/staff" aria-current={currentPath === '/staff' ? 'page' : undefined}>
+            <Link
+              href="/staff"
+              aria-current={currentPath === '/staff' ? 'page' : undefined}
+              aria-label="نمای کلی"
+            >
               <span className="staff-nav__glyph" aria-hidden="true">
-                ◇
+                <svg viewBox="0 0 24 24" fill="none">
+                  <path d="M4 11.5 12 5l8 6.5M6.5 10v9h11v-9M9.5 19v-5.5h5V19" />
+                </svg>
               </span>
-              نمای کلی
+              <span className="staff-nav__copy">
+                <strong>نمای کلی</strong>
+                <small>شروع و دسترسی سریع</small>
+              </span>
             </Link>
             <Link
               href="/staff/bookings"
               aria-current={currentPath.startsWith('/staff/bookings') ? 'page' : undefined}
+              aria-label="درخواست‌های رزرو"
             >
               <span className="staff-nav__glyph" aria-hidden="true">
-                ▤
+                <svg viewBox="0 0 24 24" fill="none">
+                  <rect x="4.5" y="5" width="15" height="14" rx="2" />
+                  <path d="M8 9h8M8 12h8M8 15h5" />
+                </svg>
               </span>
-              درخواست‌های رزرو
+              <span className="staff-nav__copy">
+                <strong>درخواست‌های رزرو</strong>
+                <small>بررسی و پاسخ به مهمانان</small>
+              </span>
             </Link>
             {staff.role === 'ADMIN' && (
               <Link
                 href="/staff/inventory"
                 aria-current={currentPath.startsWith('/staff/inventory') ? 'page' : undefined}
+                aria-label="ظرفیت و نرخ‌ها"
               >
                 <span className="staff-nav__glyph" aria-hidden="true">
-                  ▦
+                  <svg viewBox="0 0 24 24" fill="none">
+                    <path d="M4.5 7.5 12 4l7.5 3.5L12 11 4.5 7.5Z" />
+                    <path d="M4.5 12 12 15.5 19.5 12M4.5 16.5 12 20l7.5-3.5" />
+                  </svg>
                 </span>
-                ظرفیت و نرخ‌ها
+                <span className="staff-nav__copy">
+                  <strong>ظرفیت و نرخ‌ها</strong>
+                  <small>تنظیم برنامه اتاق‌ها</small>
+                </span>
               </Link>
             )}
           </nav>
@@ -86,9 +134,11 @@ export function StaffDashboardShell({
             </p>
           )}
           <div className="staff-sidebar__note">
-            <span aria-hidden="true">شیراز · خانه‌باغ نارنج</span>
-            <span className="staff-sidebar__rule" />
-            <span>امروز را با آرامش مدیریت کنید.</span>
+            <HotelLogo size={38} className="staff-sidebar__note-mark" />
+            <div>
+              <strong>خانه‌باغ نارنج</strong>
+              <span>پنل مدیریت اقامتگاه نمونه</span>
+            </div>
           </div>
         </aside>
 

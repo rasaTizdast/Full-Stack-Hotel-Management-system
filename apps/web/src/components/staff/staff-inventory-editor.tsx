@@ -185,7 +185,6 @@ function RangePicker({
       aria-label="انتخاب بازه ظرفیت"
     >
       <div className="staff-inventory__range-heading">
-        <span className="staff-inventory__eyebrow">نمای شبانه</span>
         <h2>یک بازه را برای بررسی انتخاب کنید</h2>
       </div>
 
@@ -283,7 +282,6 @@ function InventoryOverview({
     <section className="staff-inventory__overview" aria-labelledby="staff-inventory-overview-title">
       <div className="staff-inventory__overview-heading">
         <div>
-          <p className="staff-inventory__eyebrow">وضعیت بازه</p>
           <h2 id="staff-inventory-overview-title">{roomTypeName}</h2>
         </div>
         <span className="staff-inventory__night-count">
@@ -348,7 +346,6 @@ function InventoryEditForm({
     >
       <div className="staff-inventory__edit-heading">
         <div>
-          <p className="staff-inventory__eyebrow">اعمال یکسان به همه شب‌ها</p>
           <h2>ویرایش بازه</h2>
         </div>
         <p>مقدارهای تازه برای همه شب‌های انتخاب‌شده ذخیره می‌شوند.</p>

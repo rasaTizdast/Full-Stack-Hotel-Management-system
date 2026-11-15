@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
+import { HotelLogo } from '@/components/brand/hotel-logo';
 import { StaffLoginForm } from '@/components/staff/staff-login-form';
 
 export const metadata: Metadata = {
@@ -16,15 +17,13 @@ export default function StaffLoginPage() {
             <span>خانه‌باغ نارنج</span>
             <span>شیراز · ایران</span>
           </div>
-          <div className="staff-login-card__courtyard">
-            <span className="staff-login-card__moon" />
-            <span className="staff-login-card__arch staff-login-card__arch--outer" />
-            <span className="staff-login-card__arch staff-login-card__arch--inner" />
-            <span className="staff-login-card__pool" />
-            <span className="staff-login-card__tile staff-login-card__tile--one" />
-            <span className="staff-login-card__tile staff-login-card__tile--two" />
+          <span className="staff-login-card__art-seal" aria-hidden="true">
+            <HotelLogo size={112} />
+          </span>
+          <div className="staff-login-card__art-caption">
+            <p>اقامت آرام، رسیدگی دقیق</p>
+            <small>تصویرسازی مفهومی از یک اقامتگاه نمونه</small>
           </div>
-          <p className="staff-login-card__art-caption">اقامت آرام، رسیدگی دقیق</p>
         </div>
 
         <div className="staff-login-card__content">
@@ -32,7 +31,6 @@ export default function StaffLoginPage() {
             <span aria-hidden="true">→</span> بازگشت به وب‌سایت
           </Link>
           <div className="staff-login-card__heading">
-            <p className="staff-login-card__eyebrow">دسترسی کارکنان</p>
             <h1 id="staff-login-title">به پنل خوش آمدید</h1>
             <p>برای مدیریت درخواست‌های اقامت، با حساب کاری خود وارد شوید.</p>
           </div>

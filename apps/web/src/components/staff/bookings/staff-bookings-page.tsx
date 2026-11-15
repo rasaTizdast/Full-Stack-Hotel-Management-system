@@ -321,7 +321,6 @@ export function StaffBookingsPage() {
   return (
     <section className={styles.page} aria-labelledby="staff-bookings-title" dir="rtl">
       <header className={styles.pageHeader}>
-        <p className={styles.eyebrow}>میز کار کارکنان</p>
         <div className={styles.headingRow}>
           <div>
             <h1 id="staff-bookings-title">درخواست‌های اقامت</h1>
@@ -422,7 +421,6 @@ export function StaffBookingsPage() {
         <section className={styles.listPanel} aria-labelledby="booking-list-title">
           <div className={styles.panelHeading}>
             <div>
-              <p className={styles.eyebrow}>پیگیری و پاسخ</p>
               <h2 id="booking-list-title">فهرست رزروها</h2>
             </div>
             {listState === 'ready' && (
@@ -569,7 +567,6 @@ export function StaffBookingsPage() {
             <div className={styles.detailContent}>
               <div className={styles.detailHeading}>
                 <div>
-                  <p className={styles.eyebrow}>اطلاعات مجاز کارکنان</p>
                   <h2 id="booking-detail-title" ref={detailHeadingRef} tabIndex={-1}>
                     جزئیات رزرو <bdi dir="ltr">{detail.reference}</bdi>
                   </h2>

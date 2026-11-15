@@ -47,6 +47,7 @@ export function StaffLoginForm() {
           name="email"
           onChange={(event) => setEmail(event.target.value)}
           required
+          spellCheck={false}
           type="email"
           value={email}
         />
