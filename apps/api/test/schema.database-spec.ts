@@ -279,8 +279,9 @@ describe('PostgreSQL schema and fictional seed', () => {
       hotel_count: string;
       room_type_count: string;
       demo_room_count: string;
-      demo_room_not_inspected_count: string;
+      demo_explicit_inspected_room_count: string;
       demo_generated_room_count: string;
+      demo_generated_dirty_room_count: string;
       future_inventory_count: string;
       admin_count: string;
       password_hash: string | null;
@@ -290,8 +291,9 @@ describe('PostgreSQL schema and fictional seed', () => {
          (SELECT count(*) FROM hotels WHERE slug = 'shiraz-garden-house') AS hotel_count,
          (SELECT count(*) FROM room_types rt JOIN hotels h ON h.id = rt.hotel_id WHERE h.slug = 'shiraz-garden-house') AS room_type_count,
          (SELECT count(*) FROM rooms r JOIN hotels h ON h.id = r.hotel_id WHERE h.slug = 'shiraz-garden-house') AS demo_room_count,
-         (SELECT count(*) FROM rooms r JOIN hotels h ON h.id = r.hotel_id WHERE h.slug = 'shiraz-garden-house' AND r.housekeeping_status <> 'INSPECTED') AS demo_room_not_inspected_count,
+         (SELECT count(*) FROM rooms r JOIN hotels h ON h.id = r.hotel_id WHERE h.slug = 'shiraz-garden-house' AND r.is_generated = false AND r.housekeeping_status = 'INSPECTED') AS demo_explicit_inspected_room_count,
          (SELECT count(*) FROM rooms r JOIN hotels h ON h.id = r.hotel_id WHERE h.slug = 'shiraz-garden-house' AND r.is_generated = true) AS demo_generated_room_count,
+         (SELECT count(*) FROM rooms r JOIN hotels h ON h.id = r.hotel_id WHERE h.slug = 'shiraz-garden-house' AND r.is_generated = true AND r.housekeeping_status = 'DIRTY') AS demo_generated_dirty_room_count,
          (SELECT count(*) FROM room_night_inventory i JOIN room_types rt ON rt.id = i.room_type_id JOIN hotels h ON h.id = rt.hotel_id WHERE h.slug = 'shiraz-garden-house' AND i.stay_date > CURRENT_DATE) AS future_inventory_count,
          (SELECT count(*) FROM staff_users WHERE email = $1) AS admin_count,
          (SELECT password_hash FROM staff_users WHERE email = $1) AS password_hash,
@@ -300,9 +302,13 @@ describe('PostgreSQL schema and fictional seed', () => {
     );
     expect(Number(first.rows[0].hotel_count)).toBe(1);
     expect(Number(first.rows[0].room_type_count)).toBeGreaterThanOrEqual(2);
-    expect(Number(first.rows[0].demo_room_count)).toBe(11);
-    expect(Number(first.rows[0].demo_room_not_inspected_count)).toBe(0);
-    expect(Number(first.rows[0].demo_generated_room_count)).toBe(0);
+    expect(Number(first.rows[0].demo_explicit_inspected_room_count)).toBe(11);
+    expect(Number(first.rows[0].demo_generated_dirty_room_count)).toBe(
+      Number(first.rows[0].demo_generated_room_count),
+    );
+    expect(Number(first.rows[0].demo_room_count)).toBeGreaterThanOrEqual(
+      Number(first.rows[0].demo_explicit_inspected_room_count),
+    );
     expect(Number(first.rows[0].future_inventory_count)).toBeGreaterThan(0);
     expect(Number(first.rows[0].admin_count)).toBe(1);
     expect(first.rows[0].password_hash).toMatch(/^\$argon2id\$/);
@@ -310,22 +316,109 @@ describe('PostgreSQL schema and fictional seed', () => {
     expect(await argon2.verify(first.rows[0].password_hash!, password!)).toBe(true);
     expect(first.rows[0].booking_count).toBe(bookingsBeforeSeed.rows[0].booking_count);
 
-    runSeed();
-    const second = await pool.query(
-      `SELECT
-         (SELECT count(*) FROM hotels WHERE slug = 'shiraz-garden-house') AS hotel_count,
-         (SELECT count(*) FROM room_types rt JOIN hotels h ON h.id = rt.hotel_id WHERE h.slug = 'shiraz-garden-house') AS room_type_count,
-         (SELECT count(*) FROM room_night_inventory i JOIN room_types rt ON rt.id = i.room_type_id JOIN hotels h ON h.id = rt.hotel_id WHERE h.slug = 'shiraz-garden-house') AS inventory_count,
-         (SELECT count(*) FROM staff_users WHERE email = $1) AS admin_count,
-         (SELECT count(*) FROM bookings) AS booking_count`,
-      [email],
+    const demoRoom = await pool.query<{ id: string; room_type_id: string }>(
+      `SELECT r.id, r.room_type_id
+       FROM rooms r
+       JOIN hotels h ON h.id = r.hotel_id
+       WHERE h.slug = 'shiraz-garden-house' AND r.is_active = true
+       ORDER BY r.room_number
+       LIMIT 1`,
     );
-    expect(second.rows[0]).toEqual({
-      hotel_count: first.rows[0].hotel_count,
-      room_type_count: first.rows[0].room_type_count,
-      inventory_count: first.rows[0].future_inventory_count,
-      admin_count: first.rows[0].admin_count,
-      booking_count: bookingsBeforeSeed.rows[0].booking_count,
-    });
+    expect(demoRoom.rows).toHaveLength(1);
+    const stayDate = new Date();
+    stayDate.setUTCHours(0, 0, 0, 0);
+    stayDate.setUTCDate(stayDate.getUTCDate() + 10);
+    const originalInventory = await pool.query<{
+      id: string;
+      total_rooms: number;
+      blocked_rooms: number;
+      held_rooms: number;
+      booked_rooms: number;
+      nightly_price_toman: string;
+      created_at: Date;
+      updated_at: Date;
+    }>(
+      `SELECT id, total_rooms, blocked_rooms, held_rooms, booked_rooms,
+              nightly_price_toman::text, created_at, updated_at
+       FROM room_night_inventory
+       WHERE room_type_id = $1 AND stay_date = $2::date`,
+      [demoRoom.rows[0].room_type_id, stayDate],
+    );
+    expect(originalInventory.rows).toHaveLength(1);
+    const blockId = randomUUID();
+    await pool.query(
+      'DELETE FROM room_night_inventory WHERE room_type_id = $1 AND stay_date = $2::date',
+      [demoRoom.rows[0].room_type_id, stayDate],
+    );
+    await pool.query(
+      `INSERT INTO room_blocks
+         (id, room_id, start_date, end_date, kind, reason, is_active, created_at, updated_at)
+       VALUES ($1, $2, $3::date, $3::date + 1, 'CAPACITY_CLOSED', 'Fictional seed snapshot test', true, now(), now())`,
+      [blockId, demoRoom.rows[0].id, stayDate],
+    );
+
+    try {
+      runSeed();
+      const seededSnapshot = await pool.query<{
+        total_rooms: number;
+        blocked_rooms: number;
+        active_rooms: string;
+      }>(
+        `SELECT
+           inventory.total_rooms,
+           inventory.blocked_rooms,
+           (SELECT count(*)::text FROM rooms WHERE room_type_id = inventory.room_type_id AND is_active = true) AS active_rooms
+         FROM room_night_inventory inventory
+         WHERE inventory.room_type_id = $1 AND inventory.stay_date = $2::date`,
+        [demoRoom.rows[0].room_type_id, stayDate],
+      );
+      expect(seededSnapshot.rows).toHaveLength(1);
+      expect(seededSnapshot.rows[0].blocked_rooms).toBe(1);
+      expect(seededSnapshot.rows[0].total_rooms + seededSnapshot.rows[0].blocked_rooms).toBe(
+        Number(seededSnapshot.rows[0].active_rooms),
+      );
+
+      const second = await pool.query(
+        `SELECT
+           (SELECT count(*) FROM hotels WHERE slug = 'shiraz-garden-house') AS hotel_count,
+           (SELECT count(*) FROM room_types rt JOIN hotels h ON h.id = rt.hotel_id WHERE h.slug = 'shiraz-garden-house') AS room_type_count,
+           (SELECT count(*) FROM room_night_inventory i JOIN room_types rt ON rt.id = i.room_type_id JOIN hotels h ON h.id = rt.hotel_id WHERE h.slug = 'shiraz-garden-house') AS inventory_count,
+           (SELECT count(*) FROM staff_users WHERE email = $1) AS admin_count,
+           (SELECT count(*) FROM bookings) AS booking_count`,
+        [email],
+      );
+      expect(second.rows[0]).toEqual({
+        hotel_count: first.rows[0].hotel_count,
+        room_type_count: first.rows[0].room_type_count,
+        inventory_count: first.rows[0].future_inventory_count,
+        admin_count: first.rows[0].admin_count,
+        booking_count: bookingsBeforeSeed.rows[0].booking_count,
+      });
+    } finally {
+      await pool.query('DELETE FROM room_blocks WHERE id = $1', [blockId]);
+      await pool.query(
+        'DELETE FROM room_night_inventory WHERE room_type_id = $1 AND stay_date = $2::date',
+        [demoRoom.rows[0].room_type_id, stayDate],
+      );
+      const original = originalInventory.rows[0];
+      await pool.query(
+        `INSERT INTO room_night_inventory
+           (id, room_type_id, stay_date, total_rooms, blocked_rooms, held_rooms,
+            booked_rooms, nightly_price_toman, created_at, updated_at)
+         VALUES ($1, $2, $3::date, $4, $5, $6, $7, $8::bigint, $9, $10)`,
+        [
+          original.id,
+          demoRoom.rows[0].room_type_id,
+          stayDate,
+          original.total_rooms,
+          original.blocked_rooms,
+          original.held_rooms,
+          original.booked_rooms,
+          original.nightly_price_toman,
+          original.created_at,
+          original.updated_at,
+        ],
+      );
+    }
   });
 });

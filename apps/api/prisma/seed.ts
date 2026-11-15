@@ -188,6 +188,7 @@ export async function seedDemoData(
           roomTypeId: roomType.id,
           stayDate,
           totalRooms: Math.max(0, (activeRoomCounts.get(roomType.id) ?? 0) - blockedRoomIds.size),
+          blockedRooms: blockedRoomIds.size,
           heldRooms: 0,
           bookedRooms: 0,
           nightlyPriceToman: roomType.nightlyPriceToman,
