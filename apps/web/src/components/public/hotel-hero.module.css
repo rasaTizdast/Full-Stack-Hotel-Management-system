@@ -1,8 +1,13 @@
+/* Hallmark · checked: 2026-11-15 · genre: editorial (inferred)
+ * floor: 1 FAIL · fixed: 9 (25,26a,63,F3,F5,F6,F7,F15,F19)
+ * structural: 6 printed (44c,44d,58,77,78,79)
+ * built: the project · redesign: polish · v2.0.0 */
 .hero {
+  --hero-column-gap: var(--layout-column-gap);
   display: grid;
   grid-template-columns: minmax(0, 0.92fr) minmax(0, 1.08fr);
   align-items: center;
-  gap: clamp(2.5rem, 7vw, 7.5rem);
+  gap: var(--hero-column-gap);
   width: min(100% - 2 * var(--page-gutter), var(--content-width));
   min-height: min(48rem, calc(100svh - 7rem));
   margin-inline: auto;
@@ -24,6 +29,7 @@
   font-weight: 600;
   letter-spacing: -0.045em;
   line-height: 1.18;
+  text-wrap: balance;
 }
 
 .titleMask {
@@ -67,17 +73,17 @@
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: 1rem 1.5rem;
+  gap: 1rem var(--hero-column-gap);
 }
 
 .primaryAction {
   display: inline-flex;
   min-height: 3.6rem;
   align-items: center;
-  gap: 0.9rem;
+  justify-content: center;
   border-radius: var(--radius-pill);
   background: var(--primary);
-  padding: 0.45rem 0.5rem 0.45rem 1.3rem;
+  padding: 0.65rem 1.2rem;
   color: var(--primary-foreground);
   font-weight: 700;
   text-decoration: none;
@@ -93,21 +99,6 @@
 
 .primaryAction:active {
   transform: scale(0.985);
-}
-
-.actionIcon {
-  display: grid;
-  width: 2.6rem;
-  aspect-ratio: 1;
-  place-items: center;
-  border-radius: 50%;
-  background: rgb(255 253 248 / 15%);
-  font-size: var(--text-subheading);
-  transition: transform 240ms var(--motion-out);
-}
-
-.primaryAction:hover .actionIcon {
-  transform: translateX(-3px);
 }
 
 .secondaryAction {

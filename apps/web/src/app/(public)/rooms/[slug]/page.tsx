@@ -86,19 +86,15 @@ export default async function RoomDetailPage({ params }: { params: Promise<{ slu
 
             <div className={styles.actions}>
               <Link className={styles.primaryAction} href="/#stay-search">
-                <span>بررسی تاریخ و ظرفیت</span>
-                <span aria-hidden="true">←</span>
+                بررسی تاریخ و ظرفیت
               </Link>
               <p>تأیید نهایی درخواست پس از بررسی کارکنان انجام می‌شود.</p>
             </div>
-          </ScrollReveal>
-        </div>
 
-        <div className={styles.bottomLink}>
-          <span>گزینه‌های دیگر را هم ببینید</span>
-          <Link href="/rooms">
-            بازگشت به همهٔ اتاق‌ها <span aria-hidden="true">←</span>
-          </Link>
+            <div className={styles.bottomLink}>
+              <Link href="/rooms">دیدن همهٔ اتاق‌ها</Link>
+            </div>
+          </ScrollReveal>
         </div>
       </article>
     </PublicSiteFrame>

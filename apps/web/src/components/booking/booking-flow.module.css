@@ -1,3 +1,7 @@
+/* Hallmark · checked: 2026-11-15 · genre: editorial (inferred)
+ * floor: 1 FAIL · fixed: 9 (25,26a,63,F3,F5,F6,F7,F15,F19)
+ * structural: 6 printed (44c,44d,58,77,78,79)
+ * built: the project · redesign: polish · v2.0.0 */
 .booking,
 .confirmation,
 .pageMessage {
@@ -19,6 +23,7 @@
   font-size: clamp(2rem, 4.8vw, 3.5rem);
   font-weight: 700;
   line-height: 1.35;
+  text-wrap: balance;
 }
 
 .intro > p:last-child,
@@ -54,6 +59,7 @@
 .fields {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
+  align-items: start;
   gap: 1.1rem 1rem;
   min-width: 0;
   margin: 0;
@@ -73,32 +79,35 @@
 .field {
   display: grid;
   min-width: 0;
+  align-content: start;
   gap: 0.4rem;
 }
 
 .field label {
   color: var(--foreground);
   font-size: var(--text-body);
-  font-weight: 750;
+  font-weight: 700;
 }
 
 .field label span,
 .hint {
   color: var(--muted-foreground);
   font-size: var(--text-body);
-  font-weight: 450;
+  font-weight: 400;
 }
 
 .field input,
 .field select {
   width: 100%;
-  min-height: 3.25rem;
-  border: 1px solid var(--border);
+  min-height: 3rem;
+  align-self: start;
+  border: 1px solid var(--field-border);
   border-radius: var(--radius-control);
   background: var(--surface);
   padding: 0.7rem 0.85rem;
   color: var(--foreground);
   font: inherit;
+  line-height: 1.5;
   font-size: var(--text-body);
   transition:
     border-color 220ms var(--motion-out),
@@ -112,9 +121,9 @@
 
 .field input:focus-visible,
 .field select:focus-visible {
-  border-color: var(--primary);
-  outline: 3px solid color-mix(in srgb, var(--primary) 22%, transparent);
-  outline-offset: 1px;
+  border-color: var(--focus);
+  outline: 3px solid var(--focus);
+  outline-offset: 3px;
 }
 
 .field input[aria-invalid='true'],
@@ -125,7 +134,7 @@
 
 .field input[aria-invalid='true']:focus-visible,
 .field select[aria-invalid='true']:focus-visible {
-  outline-color: color-mix(in srgb, var(--destructive) 25%, transparent);
+  outline-color: var(--destructive);
 }
 
 .fieldError,
@@ -183,19 +192,18 @@
 
 .submit {
   display: inline-flex;
-  min-height: 3.4rem;
+  min-height: 3.1rem;
   align-items: center;
-  justify-content: space-between;
-  gap: 1rem;
+  justify-content: center;
   margin-block-start: 1.2rem;
   border: 1px solid var(--primary);
   border-radius: var(--radius-pill);
   background: var(--primary);
-  padding: 0.45rem 0.55rem 0.45rem 1.15rem;
+  padding: 0.65rem 1.25rem;
   color: var(--primary-foreground);
   font: inherit;
   font-size: var(--text-body);
-  font-weight: 750;
+  font-weight: 700;
   cursor: pointer;
   transition:
     background-color 240ms var(--motion-out),
@@ -216,29 +224,15 @@
 .submit:focus-visible,
 .backLink:focus-visible,
 .pageMessageLink:focus-visible {
-  outline: 3px solid color-mix(in srgb, var(--accent) 55%, transparent);
+  outline: 3px solid var(--focus);
   outline-offset: 3px;
 }
 
 .submit:disabled {
-  opacity: 0.7;
-  cursor: wait;
-}
-
-.submitArrow {
-  display: grid;
-  width: 2.3rem;
-  height: 2.3rem;
-  flex: 0 0 2.3rem;
-  place-items: center;
-  border-radius: var(--radius-pill);
-  background: color-mix(in srgb, var(--primary-foreground) 15%, transparent);
-  font-size: var(--text-lead);
-  transition: transform 240ms var(--motion-out);
-}
-
-.submit:hover:not(:disabled) .submitArrow {
-  transform: translateX(-3px);
+  border-color: var(--border);
+  background: var(--surface-soft);
+  color: var(--muted-foreground);
+  cursor: not-allowed;
 }
 
 .aside {
@@ -278,9 +272,9 @@
   inset-inline-start: 0.85rem;
   inset-block-end: 0.75rem;
   border-radius: var(--radius-pill);
-  background: rgb(18 37 31 / 72%);
+  background: color-mix(in srgb, var(--primary-strong) 82%, transparent);
   padding: 0.35rem 0.65rem;
-  color: white;
+  color: var(--primary-foreground);
   font-size: var(--text-small);
 }
 
@@ -321,7 +315,7 @@
 .summaryTotal dt {
   color: var(--primary);
   font-size: var(--text-body);
-  font-weight: 750;
+  font-weight: 700;
 }
 
 .summaryTotal dd {
@@ -352,7 +346,7 @@
 
 .error a {
   color: var(--destructive);
-  font-weight: 800;
+  font-weight: 700;
   text-underline-offset: 0.2em;
 }
 
@@ -369,7 +363,7 @@
   place-items: center;
   border-radius: 50%;
   background: var(--success);
-  color: white;
+  color: var(--primary-foreground);
   font-size: var(--text-body);
 }
 
@@ -390,7 +384,7 @@
   padding: 0.35rem 0.75rem;
   color: var(--success);
   font-size: var(--text-caption);
-  font-weight: 750;
+  font-weight: 700;
 }
 
 .confirmation > .roomImage {
@@ -458,7 +452,7 @@
   padding: 0.55rem 1rem;
   color: var(--primary-foreground);
   font-size: var(--text-small);
-  font-weight: 750;
+  font-weight: 700;
   text-decoration: none;
   transition:
     background-color 220ms var(--motion-out),
@@ -530,7 +524,6 @@
   .field input,
   .field select,
   .submit,
-  .submitArrow,
   .backLink,
   .pageMessageLink {
     transition-duration: 0.01ms;

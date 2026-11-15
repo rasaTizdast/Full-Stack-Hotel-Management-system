@@ -63,7 +63,7 @@ function BookingMessage({ kind }: { kind: 'invalid' | 'unavailable' | 'server-er
       <h1 id="booking-message-title">{content.title}</h1>
       <p>{content.body}</p>
       <Link className={styles.pageMessageLink} href="/#stay-search">
-        جستجوی دوباره <span aria-hidden="true">←</span>
+        جستجوی دوباره
       </Link>
     </section>
   );

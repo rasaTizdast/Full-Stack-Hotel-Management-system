@@ -33,8 +33,7 @@ function LocationSection({ hotel }: { hotel: PublicHotel }) {
           پیش از ثبت درخواست، اتاق‌ها و ظرفیت تاریخ دلخواهتان را بررسی کنید.
         </p>
         <Link className={styles.locationLink} href="/#stay-search">
-          <span>رفتن به جستجوی اقامت</span>
-          <span aria-hidden="true">←</span>
+          رفتن به جستجوی اقامت
         </Link>
       </ScrollReveal>
     </section>
@@ -53,12 +52,11 @@ export default async function HomePage() {
       <section className={styles.roomsSection} id="rooms" aria-labelledby="rooms-heading">
         <div className={styles.sectionHeading}>
           <ScrollReveal>
-            <h2 id="rooms-heading">جایی برای مکث و آسودن</h2>
+            <h2 id="rooms-heading">اتاق‌های اقامتگاه</h2>
           </ScrollReveal>
           <ScrollReveal delay={90}>
             <Link className={styles.allRoomsLink} href="/rooms">
-              <span>دیدن همهٔ اتاق‌ها</span>
-              <span aria-hidden="true">←</span>
+              دیدن همهٔ اتاق‌ها
             </Link>
           </ScrollReveal>
         </div>

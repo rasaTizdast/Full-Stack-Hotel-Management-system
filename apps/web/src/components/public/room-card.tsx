@@ -60,10 +60,7 @@ export function RoomCard({ room, headingLevel = 'h2' }: RoomCardProps) {
         ) : null}
 
         <Link className={styles.link} href={`/rooms/${encodeURIComponent(room.slug)}`}>
-          <span>جزئیات {room.name}</span>
-          <span className={styles.linkIcon} aria-hidden="true">
-            ←
-          </span>
+          جزئیات {room.name}
         </Link>
       </div>
     </article>

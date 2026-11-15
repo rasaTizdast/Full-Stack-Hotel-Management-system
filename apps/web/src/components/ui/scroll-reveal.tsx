@@ -14,6 +14,7 @@ export function ScrollReveal({ children, className, delay = 0 }: ScrollRevealPro
   useEffect(() => {
     const element = elementRef.current;
     if (!element || !('IntersectionObserver' in window)) return;
+    document.documentElement.classList.add('js');
 
     const observer = new IntersectionObserver(
       ([entry]) => {

@@ -1,3 +1,7 @@
+/* Hallmark · checked: 2026-11-15 · genre: editorial (inferred)
+ * floor: 1 FAIL · fixed: 9 (25,26a,63,F3,F5,F6,F7,F15,F19)
+ * structural: 6 printed (44c,44d,58,77,78,79)
+ * built: the project · redesign: polish · v2.0.0 */
 .search {
   width: min(calc(100% - var(--page-gutter) - var(--page-gutter)), var(--content-width));
   margin: clamp(3rem, 7vw, 6.5rem) auto var(--section-space);
@@ -20,10 +24,11 @@
   font-size: clamp(1.8rem, 4vw, 3rem);
   font-weight: 700;
   line-height: 1.35;
+  text-wrap: balance;
 }
 
 .intro > p:last-child {
-  max-width: 56ch;
+  max-width: 45ch;
   margin-block: 0.7rem 0;
   color: var(--muted-foreground);
   font-size: var(--text-body);
@@ -49,19 +54,20 @@
 .field label {
   color: var(--foreground);
   font-size: var(--text-ui);
-  font-weight: 750;
+  font-weight: 700;
 }
 
 .field input,
 .field select {
   width: 100%;
-  min-height: 3.3rem;
-  border: 1px solid var(--border);
+  min-height: 3rem;
+  border: 1px solid var(--field-border);
   border-radius: var(--radius-control);
   background: var(--surface);
   padding: 0.7rem 0.85rem;
   color: var(--foreground);
   font: inherit;
+  line-height: 1.5;
   font-size: var(--text-compact);
   transition:
     border-color 220ms var(--motion-out),
@@ -75,9 +81,9 @@
 
 .field input:focus-visible,
 .field select:focus-visible {
-  border-color: var(--primary);
-  outline: 3px solid color-mix(in srgb, var(--primary) 22%, transparent);
-  outline-offset: 1px;
+  border-color: var(--focus);
+  outline: 3px solid var(--focus);
+  outline-offset: 3px;
 }
 
 .field input[aria-invalid='true'],
@@ -88,7 +94,7 @@
 
 .field input[aria-invalid='true']:focus-visible,
 .field select[aria-invalid='true']:focus-visible {
-  outline-color: color-mix(in srgb, var(--destructive) 25%, transparent);
+  outline-color: var(--destructive);
 }
 
 .hint {
@@ -107,18 +113,19 @@
 .submit {
   display: inline-flex;
   min-width: 12.4rem;
-  min-height: 3.3rem;
+  min-height: 3rem;
   align-items: center;
-  justify-content: space-between;
+  justify-content: center;
   gap: 0.9rem;
   border: 1px solid var(--primary);
   border-radius: var(--radius-pill);
   background: var(--primary);
-  padding: 0.45rem 0.55rem 0.45rem 1.15rem;
+  padding: 0.6rem 1.15rem;
   color: var(--primary-foreground);
   font: inherit;
+  line-height: 1.5;
   font-size: var(--text-ui);
-  font-weight: 750;
+  font-weight: 700;
   cursor: pointer;
   transition:
     background-color 240ms var(--motion-out),
@@ -139,29 +146,15 @@
 .submit:focus-visible,
 .bookingLink:focus-visible,
 .detailsLink:focus-visible {
-  outline: 3px solid color-mix(in srgb, var(--accent) 55%, transparent);
+  outline: 3px solid var(--focus);
   outline-offset: 3px;
 }
 
 .submit:disabled {
-  opacity: 0.72;
-  cursor: progress;
-}
-
-.submitArrow {
-  display: grid;
-  width: 2.25rem;
-  height: 2.25rem;
-  flex: 0 0 2.25rem;
-  place-items: center;
-  border-radius: var(--radius-pill);
-  background: color-mix(in srgb, var(--primary-foreground) 15%, transparent);
-  font-size: var(--text-body);
-  transition: transform 240ms var(--motion-out);
-}
-
-.submit:hover:not(:disabled) .submitArrow {
-  transform: translateX(-3px);
+  border-color: var(--border);
+  background: var(--surface-soft);
+  color: var(--muted-foreground);
+  cursor: not-allowed;
 }
 
 .results {
@@ -174,8 +167,8 @@
   min-height: 3.2rem;
   align-items: center;
   gap: 0.8rem;
-  border-inline-start: 3px solid var(--highlight);
-  border-radius: 0 var(--radius-control) var(--radius-control) 0;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-control);
   margin: 0;
   background: var(--surface-soft);
   padding: 0.8rem 1rem;
@@ -189,13 +182,13 @@
 }
 
 .messageLoading {
-  border-inline-start-color: var(--primary);
+  border-color: color-mix(in srgb, var(--primary) 30%, var(--border));
   color: var(--primary-strong);
 }
 
 .messageUnavailable,
 .messageError {
-  border-inline-start-color: var(--destructive);
+  border-color: color-mix(in srgb, var(--destructive) 35%, var(--border));
   background: color-mix(in srgb, var(--destructive) 7%, var(--surface));
   color: var(--destructive);
 }
@@ -234,7 +227,7 @@
 }
 
 .resultHeading > p {
-  max-width: 32ch;
+  max-width: 45ch;
   margin: 0 0 0.2rem;
   color: var(--muted-foreground);
   font-size: var(--text-caption);
@@ -282,11 +275,6 @@
 
 .roomImage :global(img) {
   object-fit: cover;
-  transition: transform 600ms var(--motion-out);
-}
-
-.roomCard:hover .roomImage :global(img) {
-  transform: scale(1.035);
 }
 
 .roomImageFallback {
@@ -307,21 +295,13 @@
   display: inline-flex;
   align-items: center;
   gap: 0.45rem;
-  border: 1px solid rgb(255 255 255 / 45%);
+  border: 1px solid var(--border);
   border-radius: var(--radius-pill);
-  background: rgb(255 253 248 / 92%);
+  background: var(--surface);
   padding: 0.42rem 0.75rem;
   color: var(--success);
   font-size: var(--text-caption);
-  font-weight: 750;
-  backdrop-filter: blur(10px);
-}
-
-.availabilityBadge > span {
-  width: 0.42rem;
-  height: 0.42rem;
-  border-radius: 50%;
-  background: currentColor;
+  font-weight: 700;
 }
 
 .unavailableBadge {
@@ -403,6 +383,7 @@
   color: var(--primary-strong);
   font-size: clamp(1.15rem, 2vw, 1.55rem);
   line-height: 1.5;
+  font-variant-numeric: tabular-nums;
 }
 
 .price > span {
@@ -444,7 +425,7 @@
   padding: 0.45rem 0.85rem;
   color: var(--primary);
   font-size: var(--text-caption);
-  font-weight: 750;
+  font-weight: 700;
   text-decoration: none;
   transition:
     background-color 220ms var(--motion-out),
@@ -465,17 +446,6 @@
 .bookingLink:hover {
   transform: translateY(-1px);
   background: var(--primary-strong);
-}
-
-.detailsLink span,
-.bookingLink span {
-  font-size: var(--text-body);
-  transition: transform 220ms var(--motion-out);
-}
-
-.detailsLink:hover span,
-.bookingLink:hover span {
-  transform: translateX(-2px);
 }
 
 @media (max-width: 900px) {
@@ -533,13 +503,9 @@
   }
 
   .submit,
-  .submitArrow,
   .roomCard,
-  .roomImage :global(img),
   .detailsLink,
-  .bookingLink,
-  .detailsLink span,
-  .bookingLink span {
+  .bookingLink {
     transition-duration: 0.01ms;
   }
 }

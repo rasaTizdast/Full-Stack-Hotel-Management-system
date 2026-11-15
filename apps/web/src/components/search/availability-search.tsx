@@ -17,6 +17,7 @@ import {
   validateAvailabilitySearch,
 } from '@/lib/jalali-date';
 import type { PublicRoomType } from '@/lib/public-api';
+import { getRoomImage } from '@/components/public/room-imagery';
 import styles from './availability-search.module.css';
 
 type AvailabilitySearchProps = {
@@ -46,12 +47,7 @@ function AvailabilityRoomCard({
   numberOfNights: number;
   stay: Pick<AvailabilityResult, 'checkIn' | 'checkOut' | 'guests'>;
 }) {
-  const imageSrc =
-    room.slug === 'garden-double'
-      ? '/images/hotel/garden-double.webp'
-      : room.slug === 'family-suite'
-        ? '/images/hotel/family-suite.webp'
-        : null;
+  const image = getRoomImage(room);
   const bookingQuery = new URLSearchParams({
     roomType: room.slug,
     checkIn: stay.checkIn,
@@ -63,10 +59,10 @@ function AvailabilityRoomCard({
       className={`${styles.roomCard}${room.isAvailable ? '' : ` ${styles.roomCardUnavailable}`}`}
     >
       <div className={styles.roomImage}>
-        {imageSrc ? (
+        {image.src ? (
           <Image
-            src={imageSrc}
-            alt={`نمای اتاق ${room.name}`}
+            src={image.src}
+            alt={image.alt}
             fill
             sizes="(max-width: 760px) 100vw, 50vw"
           />
@@ -78,7 +74,6 @@ function AvailabilityRoomCard({
         <span
           className={`${styles.availabilityBadge}${room.isAvailable ? '' : ` ${styles.unavailableBadge}`}`}
         >
-          <span aria-hidden="true" />
           {room.isAvailable ? 'آمادهٔ پذیرش' : 'ظرفیت تکمیل است'}
         </span>
       </div>
@@ -117,11 +112,11 @@ function AvailabilityRoomCard({
         )}
         <div className={styles.roomActions}>
           <Link className={styles.detailsLink} href={`/rooms/${encodeURIComponent(room.slug)}`}>
-            جزئیات اتاق <span aria-hidden="true">←</span>
+            جزئیات اتاق
           </Link>
           {room.isAvailable && room.totalPriceToman !== null ? (
             <Link className={styles.bookingLink} href={`/booking?${bookingQuery.toString()}`}>
-              درخواست اقامت <span aria-hidden="true">←</span>
+              درخواست اقامت
             </Link>
           ) : null}
         </div>
@@ -242,9 +237,6 @@ export function AvailabilitySearch({ roomTypes, initialStay }: AvailabilitySearc
         </div>
         <button className={styles.submit} type="submit" disabled={state === 'loading'}>
           {state === 'loading' ? 'در حال بررسی…' : 'بررسی اتاق‌های موجود'}
-          <span className={styles.submitArrow} aria-hidden="true">
-            ←
-          </span>
         </button>
       </form>
 

@@ -19,10 +19,7 @@ export function HotelHero({ hotel }: HotelHeroProps) {
         <p className={styles.description}>{hotel.description}</p>
         <div className={styles.actions}>
           <Link className={styles.primaryAction} href="/#stay-search">
-            <span>بررسی ظرفیت اقامت</span>
-            <span className={styles.actionIcon} aria-hidden="true">
-              ←
-            </span>
+            بررسی ظرفیت اقامت
           </Link>
           <Link className={styles.secondaryAction} href="/rooms">
             دیدن اتاق‌ها

@@ -1,3 +1,7 @@
+/* Hallmark · checked: 2026-11-15 · genre: editorial (inferred)
+ * floor: 1 FAIL · fixed: 9 (25,26a,63,F3,F5,F6,F7,F15,F19)
+ * structural: 6 printed (44c,44d,58,77,78,79)
+ * built: the project · redesign: polish · v2.0.0 */
 .header {
   position: relative;
   z-index: 5;
@@ -8,7 +12,7 @@
   display: grid;
   grid-template-columns: minmax(12rem, 1fr) auto minmax(12rem, 1fr);
   align-items: center;
-  gap: 1.5rem;
+  gap: var(--layout-column-gap);
   width: min(100%, var(--content-width));
   min-height: 5.3rem;
   margin-inline: auto;
@@ -84,13 +88,12 @@
   min-height: 2.8rem;
   align-items: center;
   justify-self: end;
-  gap: 0.7rem;
   border-radius: var(--radius-pill);
   background: var(--surface-soft);
   padding: 0.45rem 0.9rem 0.45rem 1rem;
   color: var(--primary-strong);
   font-size: var(--text-ui);
-  font-weight: 750;
+  font-weight: 700;
   text-decoration: none;
   transition:
     color 220ms var(--motion-out),
@@ -103,15 +106,6 @@
   border-color: var(--primary);
   background: var(--primary);
   color: var(--primary-foreground);
-}
-
-.cta > span:last-child {
-  font-size: var(--text-body);
-  transition: transform 220ms var(--motion-out);
-}
-
-.cta:hover > span:last-child {
-  transform: translateX(-2px);
 }
 
 @media (max-width: 860px) {
@@ -135,6 +129,10 @@
 
   .nav a {
     flex: 0 0 auto;
+  }
+
+  .nav a:focus-visible {
+    outline-offset: -3px;
   }
 
   .cta {

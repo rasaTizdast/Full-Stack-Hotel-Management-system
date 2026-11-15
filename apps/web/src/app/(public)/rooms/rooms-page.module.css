@@ -1,3 +1,7 @@
+/* Hallmark · checked: 2026-11-15 · genre: editorial (inferred)
+ * floor: 1 FAIL · fixed: 9 (25,26a,63,F3,F5,F6,F7,F15,F19)
+ * structural: 6 printed (44c,44d,58,77,78,79)
+ * built: the project · redesign: polish · v2.0.0 */
 .page {
   width: min(100% - 2 * var(--page-gutter), var(--content-width));
   margin-inline: auto;
@@ -8,7 +12,7 @@
   display: grid;
   grid-template-columns: minmax(0, 0.88fr) minmax(20rem, 1.12fr);
   align-items: center;
-  gap: clamp(2rem, 6vw, 6rem);
+  gap: var(--layout-column-gap);
   margin-block-end: clamp(3.5rem, 8vw, 7.5rem);
 }
 
@@ -23,10 +27,11 @@
   font-size: clamp(3rem, 6vw, 5.7rem);
   font-weight: 600;
   line-height: 1.22;
+  text-wrap: balance;
 }
 
 .introCopy > p {
-  max-width: 40ch;
+  max-width: 45ch;
   margin-block-end: 1.4rem;
   color: var(--muted-foreground);
   line-height: 2;
@@ -37,33 +42,9 @@
   display: inline-flex;
   min-height: 3rem;
   align-items: center;
-  gap: 0.8rem;
   color: var(--primary-strong);
-  font-weight: 750;
+  font-weight: 700;
   text-decoration: none;
-}
-
-.searchLink > span,
-.backLink > span {
-  display: grid;
-  width: 2.2rem;
-  aspect-ratio: 1;
-  place-items: center;
-  border: 1px solid var(--border);
-  border-radius: 50%;
-  transition:
-    transform 220ms var(--motion-out),
-    background-color 220ms var(--motion-out),
-    color 220ms var(--motion-out),
-    border-color 220ms var(--motion-out);
-}
-
-.searchLink:hover > span,
-.backLink:hover > span {
-  transform: translateX(-2px);
-  border-color: var(--primary);
-  background: var(--primary);
-  color: var(--primary-foreground);
 }
 
 .introImage {
@@ -115,6 +96,7 @@
   margin-block-end: 0.5rem;
   color: var(--primary-strong);
   font-size: 2rem;
+  text-wrap: balance;
 }
 
 .emptyPanel > p {

@@ -1,8 +1,12 @@
+/* Hallmark · checked: 2026-11-15 · genre: editorial (inferred)
+ * floor: 1 FAIL · fixed: 9 (25,26a,63,F3,F5,F6,F7,F15,F19)
+ * structural: 6 printed (44c,44d,58,77,78,79)
+ * built: the project · redesign: polish · v2.0.0 */
 .card {
   display: grid;
   grid-template-columns: minmax(0, 1.08fr) minmax(17rem, 0.92fr);
   align-items: stretch;
-  gap: clamp(1.2rem, 3vw, 2.7rem);
+  gap: var(--layout-column-gap);
   overflow: hidden;
   border-radius: var(--radius-feature);
   background: var(--surface);
@@ -10,11 +14,6 @@
   transition:
     border-color 280ms var(--motion-out),
     transform 280ms var(--motion-out);
-}
-
-.card:hover {
-  transform: translateY(-3px);
-  border-color: rgb(23 67 61 / 22%);
 }
 
 .card:nth-child(even) .imageLink {
@@ -45,11 +44,6 @@
 
 .image {
   object-fit: cover;
-  transition: transform 650ms var(--motion-out);
-}
-
-.card:hover .image {
-  transform: scale(1.035);
 }
 
 .body {
@@ -129,33 +123,11 @@
   display: inline-flex;
   min-height: 2.75rem;
   align-items: center;
-  gap: 0.7rem;
   margin-block-start: auto;
   color: var(--primary-strong);
   font-size: var(--text-small);
-  font-weight: 750;
+  font-weight: 700;
   text-decoration: none;
-}
-
-.linkIcon {
-  display: grid;
-  width: 2.1rem;
-  aspect-ratio: 1;
-  place-items: center;
-  border: 1px solid var(--border);
-  border-radius: 50%;
-  transition:
-    color 220ms var(--motion-out),
-    background-color 220ms var(--motion-out),
-    border-color 220ms var(--motion-out),
-    transform 220ms var(--motion-out);
-}
-
-.link:hover .linkIcon {
-  transform: translateX(-2px);
-  border-color: var(--primary);
-  background: var(--primary);
-  color: var(--primary-foreground);
 }
 
 @media (max-width: 760px) {

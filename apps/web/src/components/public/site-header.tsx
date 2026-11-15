@@ -22,8 +22,7 @@ export function SiteHeader({ hotel }: { hotel: PublicHotel }) {
         </nav>
 
         <Link className={styles.cta} href="/#stay-search">
-          <span>جستجوی اقامت</span>
-          <span aria-hidden="true">←</span>
+          جستجوی اقامت
         </Link>
       </div>
     </header>

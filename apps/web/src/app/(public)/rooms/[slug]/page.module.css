@@ -1,3 +1,7 @@
+/* Hallmark · checked: 2026-11-15 · genre: editorial (inferred)
+ * floor: 1 FAIL · fixed: 9 (25,26a,63,F3,F5,F6,F7,F15,F19)
+ * structural: 6 printed (44c,44d,58,77,78,79)
+ * built: the project · redesign: polish · v2.0.0 */
 .page {
   width: min(100% - 2 * var(--page-gutter), var(--content-width));
   margin-inline: auto;
@@ -35,7 +39,7 @@
   display: grid;
   grid-template-columns: minmax(0, 1.08fr) minmax(20rem, 0.92fr);
   align-items: center;
-  gap: clamp(2rem, 7vw, 7rem);
+  gap: var(--layout-column-gap);
 }
 
 .visual {
@@ -65,6 +69,7 @@
   font-size: clamp(2.8rem, 5vw, 5rem);
   font-weight: 600;
   line-height: 1.28;
+  text-wrap: balance;
 }
 
 .description {
@@ -120,12 +125,13 @@
   color: var(--primary-strong);
   font-family: var(--type-body);
   font-size: var(--text-body);
-  font-weight: 750;
+  font-weight: 700;
+  text-wrap: balance;
 }
 
 .amenities {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 0.75rem;
   margin: 0;
   padding: 0;
@@ -167,7 +173,7 @@
   background: var(--primary);
   padding: 0.5rem 1rem 0.5rem 1.35rem;
   color: var(--primary-foreground);
-  font-weight: 750;
+  font-weight: 700;
   text-decoration: none;
   transition:
     transform 220ms var(--motion-out),
@@ -183,15 +189,6 @@
   transform: scale(0.985);
 }
 
-.primaryAction > span:last-child {
-  display: grid;
-  width: 2.25rem;
-  aspect-ratio: 1;
-  place-items: center;
-  border-radius: 50%;
-  background: rgb(255 253 248 / 15%);
-}
-
 .actions > p {
   margin-block: 0.8rem 0;
   color: var(--muted-foreground);
@@ -201,11 +198,7 @@
 .bottomLink {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  gap: 1rem;
-  margin-block-start: clamp(3rem, 6vw, 5.5rem);
-  padding-block-start: 0.5rem;
-  color: var(--muted-foreground);
+  margin-block-start: 1.1rem;
   font-size: var(--text-ui);
 }
 
@@ -214,7 +207,7 @@
   align-items: center;
   gap: 0.6rem;
   color: var(--primary-strong);
-  font-weight: 750;
+  font-weight: 700;
   text-decoration: none;
 }
 
@@ -242,8 +235,7 @@
   }
 
   .bottomLink {
-    align-items: flex-start;
-    flex-direction: column;
+    margin-block-start: 1rem;
   }
 }
 

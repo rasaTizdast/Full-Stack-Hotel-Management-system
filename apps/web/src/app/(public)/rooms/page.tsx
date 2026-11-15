@@ -23,7 +23,7 @@ export default async function RoomsPage() {
               کنید.
             </p>
             <Link className={styles.searchLink} href="/#stay-search">
-              بررسی ظرفیت اقامت <span aria-hidden="true">←</span>
+              بررسی ظرفیت اقامت
             </Link>
           </ScrollReveal>
           <ScrollReveal className={styles.introImage} delay={110}>
@@ -39,7 +39,7 @@ export default async function RoomsPage() {
         </div>
 
         <ScrollReveal className={styles.listHeading}>
-          <p>انتخاب آگاهانه</p>
+          <p>فهرست اتاق‌ها</p>
           <span>{roomTypes.length.toLocaleString('fa-IR')} نوع اتاق</span>
         </ScrollReveal>
 
@@ -56,7 +56,7 @@ export default async function RoomsPage() {
             <h2>اتاقی برای نمایش آماده نیست</h2>
             <p>لطفاً کمی بعد دوباره سر بزنید.</p>
             <Link href="/" className={styles.backLink}>
-              بازگشت به صفحهٔ اصلی <span aria-hidden="true">←</span>
+              بازگشت به صفحهٔ اصلی
             </Link>
           </div>
         )}

@@ -4,6 +4,10 @@ import { HotelLogo } from '@/components/brand/hotel-logo';
 import styles from './site-footer.module.css';
 
 export function SiteFooter({ hotel }: { hotel: PublicHotel }) {
+  const contactEmail = hotel.contactEmail?.trim() ?? '';
+  const hasContactEmail =
+    contactEmail.length > 0 && !contactEmail.toLowerCase().endsWith('.invalid');
+
   return (
     <footer className={styles.footer}>
       <div className={styles.main}>
@@ -22,10 +26,10 @@ export function SiteFooter({ hotel }: { hotel: PublicHotel }) {
               {hotel.contactPhone}
             </a>
           ) : null}
-          {hotel.contactEmail ? (
-            <a href={`mailto:${hotel.contactEmail}`}>{hotel.contactEmail}</a>
+          {hasContactEmail ? (
+            <a href={`mailto:${hotel.contactEmail}`}>{contactEmail}</a>
           ) : null}
-          {!hotel.contactPhone && !hotel.contactEmail ? (
+          {!hotel.contactPhone && !hasContactEmail ? (
             <p>اطلاعات تماس هنوز ثبت نشده است.</p>
           ) : null}
         </div>
@@ -40,7 +44,7 @@ export function SiteFooter({ hotel }: { hotel: PublicHotel }) {
       <div className={styles.bottom}>
         <span>درخواست اقامت پس از بررسی کارکنان قطعی می‌شود.</span>
         <a href="#top">
-          بازگشت به بالا <span aria-hidden="true">↑</span>
+          بازگشت به بالا
         </a>
       </div>
     </footer>
