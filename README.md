@@ -13,6 +13,15 @@ The product scope and behavior are defined in [prd.md](prd.md); completed and ac
 
 This is a booking-request workflow, not instant booking: staff confirmation is required, and no payment is collected.
 
+## Interface
+
+The Persian RTL interface uses a warm stone palette, deep garden-green accents, one Vazirmatn Variable font family, shared responsive typography and spacing tokens, and clear focus states across guest and staff pages. A generated courtyard-and-orange-blossom emblem is shared by the guest site, staff workspace, footer, favicon, and Apple touch icon.
+
+- **Guests** can explore the property, search by dates and party size, compare available rooms and prices, review a room, and submit a stay request. The request page explains that reception must confirm it and that no payment is taken online.
+- **Staff** use a separate sign-in and operational workspace for the overview, booking requests, and room-night inventory. Receptionists handle requests; administrators can also edit nightly capacity and prices.
+
+The four WebP images and `hotel-mark.png` in `apps/web/public/images/hotel/` are generated conceptual artwork for the fictional Shiraz demo property. The same emblem supplies the browser and Apple icons in `apps/web/src/app/`. Replace the artwork with approved property photography and brand assets before using the site for a real hotel.
+
 ## Architecture
 
 ```mermaid
@@ -118,22 +127,43 @@ The seeded account and demo data are for local testing only. This app is not a p
 
 ## Screenshots
 
-These screenshots show the Persian RTL guest and staff workflows using fictional local seed data.
+These screenshots show the refreshed Persian RTL guest and staff journeys using fictional local seed data and generated conceptual hotel imagery.
 
-![Persian guest homepage and stay search](docs/screenshots/public-home.png)
+### Guest experience
 
-![Persian availability results with room prices](docs/screenshots/public-availability.png)
+![Guest homepage and stay search](docs/screenshots/public-home.png)
 
-![Persian staff inventory editor](docs/screenshots/staff-inventory.png)
+![Availability results and room prices](docs/screenshots/public-availability.png)
 
-To regenerate the screenshots, start the apps, create the local `.env`, install the Playwright Chromium browser once, and run:
+![Guest stay request form and room summary](docs/screenshots/public-booking.png)
+
+Room detail: [garden double](docs/screenshots/public-room-detail.png). Mobile: [homepage](docs/screenshots/public-home-mobile.png), [availability results](docs/screenshots/public-results-mobile.png), and [booking form](docs/screenshots/public-booking-mobile.png).
+
+### Staff workspace
+
+![Staff sign-in](docs/screenshots/staff-login.png)
+
+![Staff booking requests](docs/screenshots/staff-requests.png)
+
+![Staff inventory editor](docs/screenshots/staff-inventory.png)
+
+Mobile inventory: [staff inventory view](docs/screenshots/staff-inventory-mobile.png).
+
+To regenerate the screenshots, start the apps, seed the fictional local staff account, install Playwright Chromium, and run:
 
 ```powershell
 pnpm --filter @hotel/web exec playwright install chromium
 pnpm --filter @hotel/web exec node scripts/capture-demo-screenshots.mjs
 ```
 
-The script reads the development staff credentials from process environment or `.env`, does not print them, captures only the guest catalog/search and staff inventory pages, and revokes its temporary staff session when finished.
+If Playwright's Chromium is unavailable but Chrome is installed, set its executable path before running the script:
+
+```powershell
+$env:DEMO_BROWSER_EXECUTABLE = 'C:\Program Files\Google\Chrome\Application\chrome.exe'
+pnpm --filter @hotel/web exec node scripts/capture-demo-screenshots.mjs
+```
+
+The script reads development staff credentials from process environment or `.env` without printing them. It captures the guest homepage, availability, room detail, booking request, staff sign-in, requests, and inventory pages, along with mobile views for the main guest and inventory flows. It revokes its temporary staff session when finished.
 
 ## Tests and release checks
 
