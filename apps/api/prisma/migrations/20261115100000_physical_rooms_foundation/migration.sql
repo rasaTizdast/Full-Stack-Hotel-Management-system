@@ -96,6 +96,7 @@ ALTER TABLE "room_assignments"
 
 -- Materialize the legacy room-type capacities as physical demo units. Mark
 -- their labels so a deployment can replace them with the property's real rooms.
+-- Keep their housekeeping state DIRTY until staff verifies the real rooms.
 WITH type_capacity AS (
   SELECT
     room_type."id" AS room_type_id,
@@ -121,7 +122,7 @@ SELECT
   room_slots.hotel_id,
   room_slots.room_type_id,
   'GEN-' || left(replace(room_slots.room_type_id::text, '-', ''), 8) || '-' || lpad(room_slots.room_slot::text, 10, '0'),
-  'INSPECTED'::"housekeeping_status",
+  'DIRTY'::"housekeeping_status",
   true,
   true,
   CURRENT_TIMESTAMP,
@@ -156,6 +157,15 @@ WHERE split_part(room."room_number", '-', 3)::integer > inventory."total_rooms";
 -- rewritten by this migration.
 DO $$
 BEGIN
+  IF EXISTS (
+    SELECT 1
+    FROM "rooms"
+    WHERE "is_generated" = true
+      AND "housekeeping_status" <> 'DIRTY'::"housekeeping_status"
+  ) THEN
+    RAISE EXCEPTION 'Generated placeholder rooms must require housekeeping verification.';
+  END IF;
+
   IF EXISTS (
     SELECT 1
     FROM "room_night_inventory" AS inventory

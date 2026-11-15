@@ -170,6 +170,9 @@ describe('PostgreSQL schema and fictional seed', () => {
     const first = await pool.query<{
       hotel_count: string;
       room_type_count: string;
+      demo_room_count: string;
+      demo_room_not_inspected_count: string;
+      demo_generated_room_count: string;
       future_inventory_count: string;
       admin_count: string;
       password_hash: string | null;
@@ -178,6 +181,9 @@ describe('PostgreSQL schema and fictional seed', () => {
       `SELECT
          (SELECT count(*) FROM hotels WHERE slug = 'shiraz-garden-house') AS hotel_count,
          (SELECT count(*) FROM room_types rt JOIN hotels h ON h.id = rt.hotel_id WHERE h.slug = 'shiraz-garden-house') AS room_type_count,
+         (SELECT count(*) FROM rooms r JOIN hotels h ON h.id = r.hotel_id WHERE h.slug = 'shiraz-garden-house') AS demo_room_count,
+         (SELECT count(*) FROM rooms r JOIN hotels h ON h.id = r.hotel_id WHERE h.slug = 'shiraz-garden-house' AND r.housekeeping_status <> 'INSPECTED') AS demo_room_not_inspected_count,
+         (SELECT count(*) FROM rooms r JOIN hotels h ON h.id = r.hotel_id WHERE h.slug = 'shiraz-garden-house' AND r.is_generated = true) AS demo_generated_room_count,
          (SELECT count(*) FROM room_night_inventory i JOIN room_types rt ON rt.id = i.room_type_id JOIN hotels h ON h.id = rt.hotel_id WHERE h.slug = 'shiraz-garden-house' AND i.stay_date > CURRENT_DATE) AS future_inventory_count,
          (SELECT count(*) FROM staff_users WHERE email = $1) AS admin_count,
          (SELECT password_hash FROM staff_users WHERE email = $1) AS password_hash,
@@ -186,6 +192,9 @@ describe('PostgreSQL schema and fictional seed', () => {
     );
     expect(Number(first.rows[0].hotel_count)).toBe(1);
     expect(Number(first.rows[0].room_type_count)).toBeGreaterThanOrEqual(2);
+    expect(Number(first.rows[0].demo_room_count)).toBe(11);
+    expect(Number(first.rows[0].demo_room_not_inspected_count)).toBe(0);
+    expect(Number(first.rows[0].demo_generated_room_count)).toBe(0);
     expect(Number(first.rows[0].future_inventory_count)).toBeGreaterThan(0);
     expect(Number(first.rows[0].admin_count)).toBe(1);
     expect(first.rows[0].password_hash).toMatch(/^\$argon2id\$/);
