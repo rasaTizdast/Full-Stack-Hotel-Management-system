@@ -152,6 +152,7 @@ model RoomNightInventory {
   roomTypeId        String   @map("room_type_id") @db.Uuid
   stayDate          DateTime @map("stay_date") @db.Date
   totalRooms        Int      @map("total_rooms")
+  blockedRooms      Int      @default(0) @map("blocked_rooms")
   heldRooms         Int      @default(0) @map("held_rooms")
   bookedRooms       Int      @default(0) @map("booked_rooms")
   nightlyPriceToman BigInt   @map("nightly_price_toman")

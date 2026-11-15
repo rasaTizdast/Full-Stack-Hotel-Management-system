@@ -7,6 +7,7 @@ export type RoomCapacityProjection = {
   inventoryId: string;
   stayDate: Date;
   totalRooms: number;
+  storedBlockedRooms: number;
   heldRooms: number;
   bookedRooms: number;
   activeRooms: number;
@@ -19,6 +20,20 @@ export type DateCapacityProjection = {
   blockedRooms: number;
 };
 
+export function hotelBusinessDate(timeZone: string, now = new Date()): Date {
+  const parts = new Intl.DateTimeFormat('en-US', {
+    timeZone,
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+  }).formatToParts(now);
+  const values = new Map(parts.map((part) => [part.type, part.value]));
+  const year = Number(values.get('year'));
+  const month = Number(values.get('month'));
+  const day = Number(values.get('day'));
+  return new Date(Date.UTC(year, month - 1, day));
+}
+
 function capacityConflict(): ConflictException {
   return new ConflictException({
     code: 'CAPACITY_BELOW_RESERVED',
@@ -28,6 +43,19 @@ function capacityConflict(): ConflictException {
 
 @Injectable()
 export class RoomCapacityService {
+  async getHotelBusinessDate(
+    transaction: TransactionClient,
+    roomTypeId: string,
+  ): Promise<Date | null> {
+    const rows = await transaction.$queryRaw<Array<{ timeZone: string }>>`
+      SELECT hotel."timezone" AS "timeZone"
+      FROM "room_types" AS room_type
+      JOIN "hotels" AS hotel ON hotel."id" = room_type."hotel_id"
+      WHERE room_type."id" = ${roomTypeId}::uuid
+    `;
+    return rows[0] ? hotelBusinessDate(rows[0].timeZone) : null;
+  }
+
   async lockRoomType(transaction: TransactionClient, roomTypeId: string): Promise<boolean> {
     const rows = await transaction.$queryRaw<Array<{ id: string }>>`
       SELECT "id"
@@ -87,12 +115,15 @@ export class RoomCapacityService {
   async lockAndProjectInventory(
     transaction: TransactionClient,
     roomTypeId: string,
+    startDate: Date,
+    endDate?: Date,
   ): Promise<RoomCapacityProjection[]> {
     const rows = await transaction.$queryRaw<RoomCapacityProjection[]>`
       SELECT
         inventory."id" AS "inventoryId",
         inventory."stay_date" AS "stayDate",
         inventory."total_rooms" AS "totalRooms",
+        inventory."blocked_rooms" AS "storedBlockedRooms",
         inventory."held_rooms" AS "heldRooms",
         inventory."booked_rooms" AS "bookedRooms",
         (
@@ -113,6 +144,8 @@ export class RoomCapacityService {
         ) AS "blockedRooms"
       FROM "room_night_inventory" AS inventory
       WHERE inventory."room_type_id" = ${roomTypeId}::uuid
+        AND inventory."stay_date" >= ${startDate}::date
+        AND (${endDate ?? null}::date IS NULL OR inventory."stay_date" < ${endDate ?? null}::date)
       ORDER BY inventory."stay_date" ASC
       FOR UPDATE OF inventory
     `;
@@ -128,10 +161,10 @@ export class RoomCapacityService {
       if (projectedRooms < row.heldRooms + row.bookedRooms) {
         throw capacityConflict();
       }
-      if (row.totalRooms !== projectedRooms) {
+      if (row.totalRooms !== projectedRooms || row.storedBlockedRooms !== row.blockedRooms) {
         await transaction.roomNightInventory.update({
           where: { id: row.inventoryId },
-          data: { totalRooms: projectedRooms },
+          data: { totalRooms: projectedRooms, blockedRooms: row.blockedRooms },
         });
       }
     }

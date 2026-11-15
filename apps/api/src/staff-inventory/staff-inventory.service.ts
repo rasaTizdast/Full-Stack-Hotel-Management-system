@@ -39,6 +39,11 @@ export class StaffInventoryService {
           select: { id: true, name: true, slug: true },
         });
         if (!roomType) throw new NotFoundException('Room type not found.');
+        const businessDate = await this.capacity.getHotelBusinessDate(
+          transaction,
+          query.roomTypeId,
+        );
+        if (!businessDate) throw new NotFoundException('Room type not found.');
 
         const inventory = await transaction.roomNightInventory.findMany({
           where: {
@@ -48,23 +53,30 @@ export class StaffInventoryService {
           orderBy: { stayDate: 'asc' },
           select: {
             stayDate: true,
+            totalRooms: true,
+            blockedRooms: true,
             heldRooms: true,
             bookedRooms: true,
             nightlyPriceToman: true,
           },
         });
-        const projection = await this.capacity.projectDateRange(
-          transaction,
-          query.roomTypeId,
-          range.start,
-          range.end,
-        );
+        const projectionStart = range.start < businessDate ? businessDate : range.start;
+        const projection =
+          projectionStart < range.end
+            ? await this.capacity.projectDateRange(
+                transaction,
+                query.roomTypeId,
+                projectionStart,
+                range.end,
+              )
+            : [];
         const inventoryByDate = new Map(
           inventory.map((night) => [night.stayDate.toISOString().slice(0, 10), night]),
         );
         const projectionByDate = new Map(
           projection.map((night) => [night.stayDate.toISOString().slice(0, 10), night]),
         );
+        const businessDateString = businessDate.toISOString().slice(0, 10);
 
         return {
           roomType,
@@ -72,6 +84,32 @@ export class StaffInventoryService {
           endDate: range.endDate,
           nights: range.nights.map(({ dateString }) => {
             const night = inventoryByDate.get(dateString);
+            if (dateString < businessDateString) {
+              if (!night) {
+                return {
+                  stayDate: dateString,
+                  capacitySource: 'UNAVAILABLE' as const,
+                  totalRooms: null,
+                  heldRooms: null,
+                  bookedRooms: null,
+                  blockedRooms: null,
+                  availableRooms: null,
+                  nightlyPriceToman: null,
+                };
+              }
+
+              return {
+                stayDate: dateString,
+                capacitySource: 'HISTORICAL' as const,
+                totalRooms: night.totalRooms,
+                heldRooms: night.heldRooms,
+                bookedRooms: night.bookedRooms,
+                blockedRooms: night.blockedRooms,
+                availableRooms: night.totalRooms - night.heldRooms - night.bookedRooms,
+                nightlyPriceToman: night.nightlyPriceToman.toString(),
+              };
+            }
+
             const dateCapacity = projectionByDate.get(dateString);
             const heldRooms = night?.heldRooms ?? 0;
             const bookedRooms = night?.bookedRooms ?? 0;
@@ -79,6 +117,7 @@ export class StaffInventoryService {
             const totalRooms = Math.max(0, (dateCapacity?.activeRooms ?? 0) - blockedRooms);
             return {
               stayDate: dateString,
+              capacitySource: 'PROJECTED' as const,
               totalRooms,
               heldRooms,
               bookedRooms,
@@ -113,6 +152,14 @@ export class StaffInventoryService {
       if (!(await this.capacity.lockRoomType(transaction, dto.roomTypeId))) {
         throw new NotFoundException('Room type not found.');
       }
+      const businessDate = await this.capacity.getHotelBusinessDate(transaction, dto.roomTypeId);
+      if (!businessDate) throw new NotFoundException('Room type not found.');
+      if (range.start < businessDate) {
+        throw new ConflictException({
+          code: 'HISTORICAL_INVENTORY_READ_ONLY',
+          message: 'Historical capacity can only be changed by an authorized correction workflow.',
+        });
+      }
 
       const projection = await this.capacity.projectDateRange(
         transaction,
@@ -125,6 +172,7 @@ export class StaffInventoryService {
           roomTypeId: dto.roomTypeId,
           stayDate,
           totalRooms: Math.max(0, activeRooms - blockedRooms),
+          blockedRooms,
           heldRooms: 0,
           bookedRooms: 0,
           nightlyPriceToman: 0n,
@@ -135,6 +183,8 @@ export class StaffInventoryService {
       const lockedInventory = await this.capacity.lockAndProjectInventory(
         transaction,
         dto.roomTypeId,
+        range.start,
+        range.end,
       );
       if (lockedInventory.length < range.nights.length) {
         throw new ConflictException('Inventory range could not be locked. Retry the update.');

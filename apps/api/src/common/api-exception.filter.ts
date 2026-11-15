@@ -30,6 +30,10 @@ const SAFE_DOMAIN_ERRORS: Record<string, { statusCode: number; message: string }
     statusCode: 409,
     message: 'Capacity cannot be lower than held plus booked rooms.',
   },
+  HISTORICAL_INVENTORY_READ_ONLY: {
+    statusCode: 409,
+    message: 'Historical inventory requires an authorized correction workflow.',
+  },
   INVALID_DATE_RANGE: {
     statusCode: 400,
     message: 'Use valid Gregorian YYYY-MM-DD dates and checkout after check-in.',

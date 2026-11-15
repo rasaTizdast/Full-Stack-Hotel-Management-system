@@ -5,7 +5,7 @@ import { CreateRoomDto } from './dto/create-room.dto';
 import { StaffRoomsQueryDto } from './dto/staff-rooms-query.dto';
 import { StaffRoomDto, StaffRoomListDto } from './dto/staff-room-response.dto';
 import { UpdateRoomDto } from './dto/update-room.dto';
-import { RoomCapacityService } from './room-capacity.service';
+import { hotelBusinessDate, RoomCapacityService } from './room-capacity.service';
 
 const roomSelect = {
   id: true,
@@ -38,20 +38,6 @@ function domainConflict(code: string): ConflictException {
     code,
     message: 'The room change conflicts with current hotel operations.',
   });
-}
-
-function propertyDate(timeZone: string, now = new Date()): Date {
-  const parts = new Intl.DateTimeFormat('en-US', {
-    timeZone,
-    year: 'numeric',
-    month: '2-digit',
-    day: '2-digit',
-  }).formatToParts(now);
-  const values = new Map(parts.map((part) => [part.type, part.value]));
-  const year = Number(values.get('year'));
-  const month = Number(values.get('month'));
-  const day = Number(values.get('day'));
-  return new Date(Date.UTC(year, month - 1, day));
 }
 
 @Injectable()
@@ -91,7 +77,12 @@ export class RoomsService {
       }
       const roomType = await transaction.roomType.findUnique({
         where: { id: dto.roomTypeId },
-        select: { id: true, hotelId: true, isActive: true },
+        select: {
+          id: true,
+          hotelId: true,
+          isActive: true,
+          hotel: { select: { timezone: true } },
+        },
       });
       if (!roomType) throw new NotFoundException({ code: 'ROOM_TYPE_NOT_FOUND' });
       if (!roomType.isActive) throw domainConflict('ROOM_TYPE_INACTIVE');
@@ -115,7 +106,11 @@ export class RoomsService {
         throw error;
       }
 
-      const inventory = await this.capacity.lockAndProjectInventory(transaction, roomType.id);
+      const inventory = await this.capacity.lockAndProjectInventory(
+        transaction,
+        roomType.id,
+        hotelBusinessDate(roomType.hotel.timezone),
+      );
       await this.capacity.persistProjection(transaction, inventory);
       return toRoomDto(room);
     });
@@ -184,19 +179,23 @@ export class RoomsService {
         return toRoomDto(existing);
       }
 
-      const today = propertyDate(room.timeZone);
+      const today = hotelBusinessDate(room.timeZone);
       const assignments = await transaction.$queryRaw<Array<{ id: string }>>`
         SELECT "id"
         FROM "room_assignments"
         WHERE "room_id" = ${roomId}::uuid
           AND "is_active" = true
-          AND "end_date" > ${today}::date
+          AND "end_date" >= ${today}::date
         LIMIT 1
       `;
       if (assignments.length > 0) throw domainConflict('ROOM_HAS_ACTIVE_ASSIGNMENTS');
 
       await transaction.room.update({ where: { id: roomId }, data: { isActive: false } });
-      const inventory = await this.capacity.lockAndProjectInventory(transaction, room.roomTypeId);
+      const inventory = await this.capacity.lockAndProjectInventory(
+        transaction,
+        room.roomTypeId,
+        today,
+      );
       await this.capacity.persistProjection(transaction, inventory);
       const updated = await transaction.room.findUniqueOrThrow({
         where: { id: roomId },
@@ -216,20 +215,27 @@ export class RoomsService {
       await this.capacity.lockRoomType(transaction, initialRoom.roomTypeId);
 
       const lockedRoom = await transaction.$queryRaw<
-        Array<{ id: string; roomTypeId: string; isActive: boolean }>
+        Array<{ id: string; roomTypeId: string; isActive: boolean; timeZone: string }>
       >`
-        SELECT "id", "room_type_id" AS "roomTypeId", "is_active" AS "isActive"
-        FROM "rooms"
-        WHERE "id" = ${roomId}::uuid
-        FOR UPDATE
+        SELECT room."id", room."room_type_id" AS "roomTypeId", room."is_active" AS "isActive",
+               hotel."timezone" AS "timeZone"
+        FROM "rooms" AS room
+        JOIN "hotels" AS hotel ON hotel."id" = room."hotel_id"
+        WHERE room."id" = ${roomId}::uuid
+        FOR UPDATE OF room
       `;
       const room = lockedRoom[0];
       if (!room) throw new NotFoundException({ code: 'ROOM_NOT_FOUND' });
+      const today = hotelBusinessDate(room.timeZone);
       if (!room.isActive) {
         await transaction.room.update({ where: { id: roomId }, data: { isActive: true } });
       }
 
-      const inventory = await this.capacity.lockAndProjectInventory(transaction, room.roomTypeId);
+      const inventory = await this.capacity.lockAndProjectInventory(
+        transaction,
+        room.roomTypeId,
+        today,
+      );
       await this.capacity.persistProjection(transaction, inventory);
       const updated = await transaction.room.findUniqueOrThrow({
         where: { id: roomId },

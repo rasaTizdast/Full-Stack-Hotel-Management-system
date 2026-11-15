@@ -186,6 +186,16 @@ describe('PostgreSQL schema and fictional seed', () => {
       );
       await client.query(physicalMigration);
 
+      const historicalSnapshotsMigration = readFileSync(
+        resolve(
+          migrationsDirectory,
+          '20261116100000_historical_inventory_snapshots',
+          'migration.sql',
+        ),
+        'utf8',
+      );
+      await client.query(historicalSnapshotsMigration);
+
       const upgraded = await client.query<{
         room_count: string;
         generated_count: string;
@@ -201,7 +211,7 @@ describe('PostgreSQL schema and fictional seed', () => {
           (SELECT count(*) FROM rooms WHERE room_type_id = '20000000-0000-4000-8000-000000000001' AND is_generated) AS generated_count,
           (SELECT count(*) FROM rooms WHERE room_type_id = '20000000-0000-4000-8000-000000000001' AND is_generated AND housekeeping_status = 'DIRTY') AS generated_dirty_count,
           (SELECT count(*) FROM room_blocks WHERE start_date = DATE '2099-05-18') AS reduced_night_blocks,
-          (SELECT string_agg(total_rooms || ':' || held_rooms || ':' || booked_rooms || ':' || nightly_price_toman, ',' ORDER BY stay_date) FROM room_night_inventory WHERE room_type_id = '20000000-0000-4000-8000-000000000001') AS inventory_snapshot,
+          (SELECT string_agg(total_rooms || ':' || blocked_rooms || ':' || held_rooms || ':' || booked_rooms || ':' || nightly_price_toman, ',' ORDER BY stay_date) FROM room_night_inventory WHERE room_type_id = '20000000-0000-4000-8000-000000000001') AS inventory_snapshot,
           (SELECT count(*) FROM bookings) AS booking_count,
           (SELECT count(*) FROM booking_nights) AS booking_night_count,
           (SELECT string_agg(nightly_price_toman::text, ',' ORDER BY nightly_price_toman) FROM booking_nights) AS booking_snapshot_prices
@@ -211,7 +221,7 @@ describe('PostgreSQL schema and fictional seed', () => {
         generated_count: '3',
         generated_dirty_count: '3',
         reduced_night_blocks: '2',
-        inventory_snapshot: '3:1:1:5000,1:0:1:6000',
+        inventory_snapshot: '3:0:1:1:5000,1:2:0:1:6000',
         booking_count: '4',
         booking_night_count: '4',
         booking_snapshot_prices: '5000,5100,5200,5300',

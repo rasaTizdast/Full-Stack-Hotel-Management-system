@@ -22,11 +22,12 @@ type RoomsApiResponse = { items: RoomApiResponse[] };
 type InventoryApiResponse = {
   nights: Array<{
     stayDate: string;
-    totalRooms: number;
-    heldRooms: number;
-    bookedRooms: number;
-    blockedRooms: number;
-    availableRooms: number;
+    capacitySource: 'PROJECTED' | 'HISTORICAL' | 'UNAVAILABLE';
+    totalRooms: number | null;
+    heldRooms: number | null;
+    bookedRooms: number | null;
+    blockedRooms: number | null;
+    availableRooms: number | null;
     nightlyPriceToman: string | null;
   }>;
 };
@@ -49,6 +50,23 @@ function csrfTokenFrom(response: { body: unknown }): string {
   const csrfToken = (response.body as Record<string, unknown>).csrfToken;
   if (typeof csrfToken !== 'string') throw new Error('Staff login did not return a CSRF token.');
   return csrfToken;
+}
+
+function propertyDate(timeZone: string, now = new Date()): Date {
+  const parts = new Intl.DateTimeFormat('en-US', {
+    timeZone,
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+  }).formatToParts(now);
+  const values = new Map(parts.map((part) => [part.type, part.value]));
+  return new Date(
+    Date.UTC(
+      Number(values.get('year')),
+      Number(values.get('month')) - 1,
+      Number(values.get('day')),
+    ),
+  );
 }
 
 describe('Staff physical room API (e2e)', () => {
@@ -350,6 +368,114 @@ describe('Staff physical room API (e2e)', () => {
     expect(persisted[0].is_active).toBe(true);
   }, 30000);
 
+  it('keeps a room assigned through its checkout business date until checkout clears it', async () => {
+    const room = await prisma.room.create({
+      data: { hotelId, roomTypeId, roomNumber: 'CHECKOUT-TODAY' },
+    });
+    const today = propertyDate('Asia/Tehran');
+    const yesterday = new Date(today);
+    yesterday.setUTCDate(yesterday.getUTCDate() - 1);
+    const booking = await prisma.booking.create({
+      data: {
+        publicReference: `TD${suffix.slice(0, 12)}`,
+        status: 'CONFIRMED',
+        checkIn: yesterday,
+        checkOut: today,
+        guestCount: 1,
+        roomTypeId,
+        roomQuantity: 1,
+        guestName: 'Fictional Checkout Guest',
+        guestPhone: '+989121234567',
+        totalPriceToman: 100n,
+        expiresAt: new Date(Date.now() + 86_400_000),
+      },
+    });
+    const assignment = await prisma.roomAssignment.create({
+      data: {
+        bookingId: booking.id,
+        roomId: room.id,
+        roomTypeId,
+        startDate: yesterday,
+        endDate: today,
+        isActive: true,
+      },
+    });
+
+    const blocked = await request(app.getHttpServer())
+      .post(`/api/v1/staff/rooms/${room.id}/deactivate`)
+      .set('Cookie', admin.cookie)
+      .set('X-CSRF-Token', admin.csrfToken)
+      .expect(409);
+    expect(errorBody(blocked).code).toBe('ROOM_HAS_ACTIVE_ASSIGNMENTS');
+
+    await prisma.roomAssignment.update({
+      where: { id: assignment.id },
+      data: { isActive: false },
+    });
+    await request(app.getHttpServer())
+      .post(`/api/v1/staff/rooms/${room.id}/deactivate`)
+      .set('Cookie', admin.cookie)
+      .set('X-CSRF-Token', admin.csrfToken)
+      .expect(200);
+  }, 30000);
+
+  it('deactivates against current and future capacity without changing booked history', async () => {
+    const rooms = await Promise.all(
+      ['HIST-1', 'HIST-2', 'HIST-3'].map((roomNumber) =>
+        prisma.room.create({ data: { hotelId, roomTypeId, roomNumber } }),
+      ),
+    );
+    const pastDate = new Date('2020-01-10T00:00:00.000Z');
+    await prisma.roomBlock.create({
+      data: {
+        roomId: rooms[2].id,
+        startDate: pastDate,
+        endDate: new Date('2020-01-11T00:00:00.000Z'),
+        reason: 'Fictional historical block',
+      },
+    });
+    await prisma.roomNightInventory.create({
+      data: {
+        roomTypeId,
+        stayDate: pastDate,
+        totalRooms: 2,
+        blockedRooms: 1,
+        heldRooms: 0,
+        bookedRooms: 2,
+        nightlyPriceToman: 3500n,
+      },
+    });
+
+    await request(app.getHttpServer())
+      .post(`/api/v1/staff/rooms/${rooms[0].id}/deactivate`)
+      .set('Cookie', admin.cookie)
+      .set('X-CSRF-Token', admin.csrfToken)
+      .expect(200);
+
+    const historic = await prisma.roomNightInventory.findUniqueOrThrow({
+      where: { roomTypeId_stayDate: { roomTypeId, stayDate: pastDate } },
+    });
+    expect(historic).toMatchObject({
+      totalRooms: 2,
+      blockedRooms: 1,
+      bookedRooms: 2,
+      nightlyPriceToman: 3500n,
+    });
+
+    const historical = await request(app.getHttpServer())
+      .get('/api/v1/staff/inventory')
+      .set('Cookie', admin.cookie)
+      .query({ roomTypeId, startDate: '2020-01-10', endDate: '2020-01-11' })
+      .expect(200);
+    expect(bodyAs<InventoryApiResponse>(historical).nights[0]).toMatchObject({
+      capacitySource: 'HISTORICAL',
+      totalRooms: 2,
+      blockedRooms: 1,
+      bookedRooms: 2,
+      availableRooms: 0,
+    });
+  }, 30000);
+
   it('returns projected capacity and zero counters even when no rate row exists', async () => {
     await request(app.getHttpServer())
       .post('/api/v1/staff/rooms')
@@ -374,6 +500,7 @@ describe('Staff physical room API (e2e)', () => {
     expect(bodyAs<InventoryApiResponse>(response).nights).toEqual([
       {
         stayDate: '2027-07-01',
+        capacitySource: 'PROJECTED',
         totalRooms: 2,
         heldRooms: 0,
         bookedRooms: 0,

@@ -26,11 +26,11 @@ The following tickets extend the original booking engine into the single-propert
 - **Priority:** P0
 - **Depends on:** HPM-000
 - **Owner:** Backend senior + Front-end design master
-- **Status:** Not started
+- **Status:** In progress
 - **Branch/worktree:** `codex/hpm-001-physical-rooms` — `../Hotel Booking system-worktrees/HPM-001`
 - **Plan:** `docs/superpowers/plans/2026-11-15-hotel-pms-inventory-and-front-desk.md`
-- **Acceptance criteria:** Physical room records are unique within the hotel; Hotel has configurable check-in/out wall times; a minimal dated RoomBlock model exists for assignment conflicts; migration preserves every existing nightly capacity by backfilling generated units and date blocks; active room counts minus distinct active blocks project atomically to every existing/new nightly row; capacity cannot fall below holds/bookings; room deactivation rejects active assignments under the same room-row lock used by assignment/check-in; inventory UI edits rates only and displays derived capacity; staff can manage room units.
-- **Required tests:** Fresh/upgrade migrations, seed repeatability, PostgreSQL projection/rollback constraints, API roles, web unit and Playwright.
+- **Acceptance criteria:** Physical room records are unique within the hotel; generated labels are explicitly marked and can be replaced; rooms can be safely deactivated/reactivated; Hotel has configurable check-in/out wall times; dated RoomBlock and RoomAssignment persistence foundations exist; migration preserves every existing nightly capacity by backfilling generated units and date blocks and backfills the `blocked_rooms` snapshot; current/future capacity projections update atomically from the business date forward and cannot fall below holds/bookings; past total/blocked/held/booked snapshots remain unchanged by current room/block changes, and missing past rows report `UNAVAILABLE`; historical rate writes are rejected; room deactivation rejects active assignments with checkout today or later under the same room-row lock used by assignment/check-in; inventory reads show projected capacity for current/future dates even when a nightly rate is unset, writes accept rates only, and the UI displays derived capacity; staff can manage room units.
+- **Required tests:** Fresh/upgrade migrations, seed repeatability, PostgreSQL projection/rollback constraints, active-assignment deactivation rejection, room-number uniqueness/replacement, deactivate/reactivate projection, missing-rate capacity reads, capacity-write rejection, API roles, web unit and Playwright. HPM-003 owns concurrency proof against real assignment operations.
 
 ### HPM-002 — Staff roles, account administration, and audit events
 
@@ -51,7 +51,7 @@ The following tickets extend the original booking engine into the single-propert
 - **Status:** Not started
 - **Branch/worktree:** `codex/hpm-003-room-board-assignment` — `../Hotel Booking system-worktrees/HPM-003`
 - **Plan:** `docs/superpowers/plans/2026-11-15-hotel-pms-inventory-and-front-desk.md`
-- **Acceptance criteria:** Staff see all rooms with occupancy, assignments, housekeeping state, and blocks; board defaults to business date, refreshes every 30 seconds, shows last updated/stale state and explicit combinations; distinct room units are assigned per booking; assignments match room type and stay dates and cannot overlap assignments/blocks; multi-room arrivals require enough distinct rooms.
+- **Acceptance criteria:** Staff see all rooms with occupancy, assignments, housekeeping state, and blocks; board defaults to business date, refreshes every 30 seconds, shows last updated/stale state and explicit combinations; HPM-003 adds assignment operations on the persistence foundation created by HPM-001; distinct room units are assigned per booking; assignments match room type and stay dates and cannot overlap assignments/blocks; multi-room arrivals require enough distinct rooms; assignment/check-in share HPM-001's room-row lock, and transactions needing both room type and room locks acquire them in room-type-then-room order.
 - **Required tests:** PostgreSQL concurrent assignment, overlap, wrong room type, invalid date range, block conflict, multi-room, access/redaction, API e2e, web unit, desktop/mobile Playwright.
 
 ### HPM-004 — Front-desk stay operations

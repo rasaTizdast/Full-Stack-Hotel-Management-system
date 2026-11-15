@@ -19,6 +19,7 @@ describe('StaffInventoryService', () => {
   };
   let capacity: {
     lockRoomType: jest.Mock;
+    getHotelBusinessDate: jest.Mock;
     projectDateRange: jest.Mock;
     lockAndProjectInventory: jest.Mock;
     persistProjection: jest.Mock;
@@ -39,6 +40,8 @@ describe('StaffInventoryService', () => {
         findMany: jest.fn().mockResolvedValue([
           {
             stayDate: firstDate,
+            totalRooms: 2,
+            blockedRooms: 1,
             heldRooms: 1,
             bookedRooms: 0,
             nightlyPriceToman: 3_500_000n,
@@ -66,6 +69,7 @@ describe('StaffInventoryService', () => {
     };
     capacity = {
       lockRoomType: jest.fn().mockResolvedValue(true),
+      getHotelBusinessDate: jest.fn().mockResolvedValue(new Date('2026-11-15T00:00:00.000Z')),
       projectDateRange: jest.fn().mockResolvedValue([
         { stayDate: firstDate, activeRooms: 3, blockedRooms: 1 },
         { stayDate: secondDate, activeRooms: 3, blockedRooms: 0 },
@@ -75,6 +79,7 @@ describe('StaffInventoryService', () => {
           inventoryId: 'inventory-1',
           stayDate: firstDate,
           totalRooms: 2,
+          storedBlockedRooms: 1,
           heldRooms: 1,
           bookedRooms: 0,
           activeRooms: 3,
@@ -84,6 +89,7 @@ describe('StaffInventoryService', () => {
           inventoryId: 'inventory-2',
           stayDate: secondDate,
           totalRooms: 3,
+          storedBlockedRooms: 0,
           heldRooms: 0,
           bookedRooms: 0,
           activeRooms: 3,
@@ -136,6 +142,7 @@ describe('StaffInventoryService', () => {
     expect(result.nights).toEqual([
       {
         stayDate: '2027-01-02',
+        capacitySource: 'PROJECTED',
         totalRooms: 2,
         heldRooms: 1,
         bookedRooms: 0,
@@ -145,6 +152,7 @@ describe('StaffInventoryService', () => {
       },
       {
         stayDate: '2027-01-03',
+        capacitySource: 'PROJECTED',
         totalRooms: 3,
         heldRooms: 0,
         bookedRooms: 0,
@@ -175,6 +183,7 @@ describe('StaffInventoryService', () => {
           roomTypeId: roomType.id,
           stayDate: firstDate,
           totalRooms: 2,
+          blockedRooms: 1,
           heldRooms: 0,
           bookedRooms: 0,
           nightlyPriceToman: 0n,
@@ -183,6 +192,7 @@ describe('StaffInventoryService', () => {
           roomTypeId: roomType.id,
           stayDate: secondDate,
           totalRooms: 3,
+          blockedRooms: 0,
           heldRooms: 0,
           bookedRooms: 0,
           nightlyPriceToman: 0n,
@@ -191,6 +201,12 @@ describe('StaffInventoryService', () => {
       skipDuplicates: true,
     });
     expect(capacity.persistProjection).toHaveBeenCalledTimes(1);
+    expect(capacity.lockAndProjectInventory).toHaveBeenCalledWith(
+      transaction,
+      roomType.id,
+      firstDate,
+      new Date('2027-01-04T00:00:00.000Z'),
+    );
     expect(transaction.roomNightInventory.updateMany).toHaveBeenCalledWith({
       where: {
         roomTypeId: roomType.id,
@@ -224,5 +240,45 @@ describe('StaffInventoryService', () => {
 
     await expect(service.findRange(query)).rejects.toBeInstanceOf(NotFoundException);
     expect(transaction.roomNightInventory.findMany).not.toHaveBeenCalled();
+  });
+
+  it('marks past dates without a snapshot unavailable instead of using current room counts', async () => {
+    transaction.roomNightInventory.findMany.mockResolvedValueOnce([]);
+    const query: StaffInventoryRangeQueryDto = {
+      roomTypeId: roomType.id,
+      startDate: '2020-01-10',
+      endDate: '2020-01-11',
+    };
+
+    await expect(service.findRange(query)).resolves.toMatchObject({
+      nights: [
+        {
+          stayDate: '2020-01-10',
+          capacitySource: 'UNAVAILABLE',
+          totalRooms: null,
+          heldRooms: null,
+          bookedRooms: null,
+          blockedRooms: null,
+          availableRooms: null,
+          nightlyPriceToman: null,
+        },
+      ],
+    });
+    expect(capacity.projectDateRange).not.toHaveBeenCalled();
+  });
+
+  it('rejects historical rate writes without creating or reprojecting rows', async () => {
+    const dto: UpdateStaffInventoryDto = {
+      roomTypeId: roomType.id,
+      startDate: '2020-01-10',
+      endDate: '2020-01-11',
+      nightlyPriceToman: '4500000',
+    };
+
+    await expect(service.updateRange(dto)).rejects.toMatchObject({
+      response: { code: 'HISTORICAL_INVENTORY_READ_ONLY' },
+    });
+    expect(transaction.roomNightInventory.createMany).not.toHaveBeenCalled();
+    expect(capacity.lockAndProjectInventory).not.toHaveBeenCalled();
   });
 });

@@ -214,6 +214,111 @@ describe('Staff inventory API (e2e)', () => {
       .expect(401);
   });
 
+  it('reads past inventory snapshots and marks missing historical capacity unavailable', async () => {
+    const pastDate = new Date('2020-01-10T00:00:00.000Z');
+    await prisma.roomNightInventory.create({
+      data: {
+        roomTypeId,
+        stayDate: pastDate,
+        totalRooms: 3,
+        heldRooms: 1,
+        bookedRooms: 1,
+        nightlyPriceToman: 2_000_000n,
+      },
+    });
+
+    const response = await request(app.getHttpServer())
+      .get('/api/v1/staff/inventory')
+      .set('Cookie', admin.cookie)
+      .query({ roomTypeId, startDate: '2020-01-10', endDate: '2020-01-12' })
+      .expect('Cache-Control', 'private, no-store')
+      .expect(200);
+
+    const inventory = response.body as {
+      nights: Array<Record<string, string | number | null>>;
+    };
+    expect(inventory.nights).toEqual([
+      {
+        stayDate: '2020-01-10',
+        capacitySource: 'HISTORICAL',
+        totalRooms: 3,
+        heldRooms: 1,
+        bookedRooms: 1,
+        blockedRooms: 0,
+        availableRooms: 1,
+        nightlyPriceToman: '2000000',
+      },
+      {
+        stayDate: '2020-01-11',
+        capacitySource: 'UNAVAILABLE',
+        totalRooms: null,
+        heldRooms: null,
+        bookedRooms: null,
+        blockedRooms: null,
+        availableRooms: null,
+        nightlyPriceToman: null,
+      },
+    ]);
+  });
+
+  it('rejects rate writes for historical dates instead of inventing capacity', async () => {
+    const response = await request(app.getHttpServer())
+      .put('/api/v1/staff/inventory')
+      .set('Cookie', admin.cookie)
+      .set('X-CSRF-Token', admin.csrfToken)
+      .send({
+        roomTypeId,
+        startDate: '2020-01-10',
+        endDate: '2020-01-11',
+        nightlyPriceToman: '2500000',
+      })
+      .expect(409);
+
+    expect(errorBody(response).code).toBe('HISTORICAL_INVENTORY_READ_ONLY');
+  });
+
+  it('does not reproject past rows during an unrelated future rate update', async () => {
+    const pastDate = new Date('2020-02-10T00:00:00.000Z');
+    await prisma.roomNightInventory.create({
+      data: {
+        roomTypeId,
+        stayDate: pastDate,
+        totalRooms: 3,
+        bookedRooms: 3,
+        nightlyPriceToman: 2_000_000n,
+      },
+    });
+    const activeRoom = await prisma.room.findFirstOrThrow({
+      where: { roomTypeId, isActive: true },
+    });
+    await prisma.room.update({ where: { id: activeRoom.id }, data: { isActive: false } });
+
+    try {
+      await request(app.getHttpServer())
+        .put('/api/v1/staff/inventory')
+        .set('Cookie', admin.cookie)
+        .set('X-CSRF-Token', admin.csrfToken)
+        .send({
+          roomTypeId,
+          startDate: '2027-08-01',
+          endDate: '2027-08-02',
+          nightlyPriceToman: '2500000',
+        })
+        .expect(200);
+
+      const historic = await prisma.roomNightInventory.findUniqueOrThrow({
+        where: { roomTypeId_stayDate: { roomTypeId, stayDate: pastDate } },
+      });
+      expect(historic).toMatchObject({
+        totalRooms: 3,
+        bookedRooms: 3,
+        nightlyPriceToman: 2_000_000n,
+      });
+    } finally {
+      await prisma.room.update({ where: { id: activeRoom.id }, data: { isActive: true } });
+    }
+  }, 30000);
+
   it('lists active and inactive room type options for admins with a stable order and safe fields', async () => {
     const response = await request(app.getHttpServer())
       .get('/api/v1/staff/inventory/room-types')
