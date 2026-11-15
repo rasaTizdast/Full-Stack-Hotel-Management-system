@@ -9,6 +9,10 @@ const apiPort = process.env.HBE_E2E_API_PORT ?? '4015';
 const webOrigin = `http://localhost:${webPort}`;
 const apiBaseUrl = `http://localhost:${apiPort}/api/v1`;
 const reuseExistingServer = process.env.HBE_E2E_REUSE_SERVER === 'true';
+const chromiumExecutablePath = process.env.HBE_E2E_CHROMIUM_EXECUTABLE_PATH;
+const chromiumLaunchOptions = chromiumExecutablePath
+  ? { launchOptions: { executablePath: chromiumExecutablePath } }
+  : {};
 
 export default defineConfig({
   testDir: './e2e',
@@ -29,12 +33,13 @@ export default defineConfig({
       name: 'desktop-chromium',
       use: {
         ...devices['Desktop Chrome'],
+        ...chromiumLaunchOptions,
         viewport: { width: 1440, height: 960 },
       },
     },
     {
       name: 'mobile-chrome',
-      use: { ...devices['iPhone 13'], browserName: 'chromium' },
+      use: { ...devices['iPhone 13'], browserName: 'chromium', ...chromiumLaunchOptions },
     },
   ],
   webServer: [
