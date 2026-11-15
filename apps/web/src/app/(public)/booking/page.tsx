@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import { BookingFlow } from '@/components/booking/booking-flow';
+import styles from '@/components/booking/booking-flow.module.css';
 import { PublicSiteFrame } from '@/components/public/public-site-frame';
 import {
   getPublicAvailability,
@@ -52,17 +53,16 @@ function BookingMessage({ kind }: { kind: 'invalid' | 'unavailable' | 'server-er
       body: 'ظرفیت یا شرایط این اتاق تغییر کرده است. جستجو را دوباره انجام دهید تا گزینه‌های به‌روز را ببینید.',
     },
     'server-error': {
-      title: 'بررسی اتاق فعلاً ممکن نیست',
+      title: 'خطا در بررسی اتاق‌ها',
       body: 'سرویس رزرو موقتاً پاسخ نمی‌دهد. کمی بعد دوباره جستجو کنید.',
     },
   }[kind];
 
   return (
-    <section className="empty-panel" aria-labelledby="booking-message-title" role="status">
-      <p className="eyebrow">درخواست اقامت</p>
+    <section className={styles.pageMessage} aria-labelledby="booking-message-title" role="status">
       <h1 id="booking-message-title">{content.title}</h1>
       <p>{content.body}</p>
-      <Link className="text-link" href="/#stay-search">
+      <Link className={styles.pageMessageLink} href="/#stay-search">
         جستجوی دوباره <span aria-hidden="true">←</span>
       </Link>
     </section>

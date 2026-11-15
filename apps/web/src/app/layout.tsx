@@ -1,15 +1,15 @@
 import type { Metadata } from 'next';
 import type { ReactNode } from 'react';
-import '@fontsource-variable/noto-naskh-arabic';
 import '@fontsource-variable/vazirmatn';
 import './globals.css';
 
 export const metadata: Metadata = {
   title: {
-    default: 'اقامت در شیراز',
-    template: '%s | اقامت در شیراز',
+    default: 'خانه‌باغ نارنج | اقامت در شیراز',
+    template: '%s | خانه‌باغ نارنج',
   },
-  description: 'آشنایی با اقامتگاه و اتاق‌های آن در شیراز.',
+  description:
+    'اتاق‌های نمایشی خانه‌باغ نارنج در شیراز را ببینید، تاریخ اقامت و ظرفیت را بررسی کنید و درخواست خود را برای تأیید کارکنان بفرستید.',
 };
 
 export default function RootLayout({ children }: Readonly<{ children: ReactNode }>) {

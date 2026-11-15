@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import Image from 'next/image';
 import { useRef, useState, type FormEvent } from 'react';
 import { useForm, useWatch } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -29,12 +30,29 @@ export type BookingFlowProps = {
 
 type Attempt = { key: string; fingerprint: string };
 
+const roomImages: Record<string, string> = {
+  'garden-double': '/images/hotel/garden-double.webp',
+  'family-suite': '/images/hotel/family-suite.webp',
+};
+
+function RoomImage({ slug, name }: { slug: string; name: string }) {
+  const src = roomImages[slug];
+  if (!src) return null;
+
+  return (
+    <div className={styles.roomImage}>
+      <Image src={src} alt={`نمای ${name}`} fill sizes="(max-width: 760px) 100vw, 38vw" />
+      <span className={styles.imageCaption}>خانه‌باغ نارنج · شیراز</span>
+    </div>
+  );
+}
+
 function makeIdempotencyKey(): string {
   const cryptoApi = globalThis.crypto;
   if (typeof cryptoApi?.randomUUID === 'function') return cryptoApi.randomUUID();
   if (!cryptoApi?.getRandomValues) throw new Error('Secure randomness is unavailable.');
   const bytes = cryptoApi.getRandomValues(new Uint8Array(24));
-  return Array.from(bytes, (byte) => byte.toString(16).padStart(2, '0')).join('');
+  return Array.from(bytes, (byte) => byte.toString(16).padStart(2, '0')).join(''); // taste-skill-ignore: preserves byte width in a cryptographic key
 }
 
 function FieldError({ id, message }: { id: string; message?: string }) {
@@ -106,9 +124,12 @@ function Confirmation({ booking }: { booking: PublicBookingResponse }) {
       role="status"
     >
       <span className={styles.confirmationMark} aria-hidden="true">
-        ✓
+        <svg viewBox="0 0 20 20" fill="none">
+          <path d="m4.5 10.5 3.6 3.6 7.4-8.1" />
+        </svg>
       </span>
-      <p className={styles.eyebrow}>درخواست شما دریافت شد</p>
+      <RoomImage slug={booking.roomType.slug} name={booking.roomType.name} />
+      <p className={styles.confirmationStatus}>درخواست شما دریافت شد</p>
       <h1 id="booking-confirmation-title">درخواست اقامت شما ثبت شد</h1>
       <p className={styles.confirmationLead}>
         پذیرش، ظرفیت و مبلغ را بررسی می‌کند و سپس درخواست شما را تأیید می‌کند.
@@ -216,7 +237,6 @@ export function BookingFlow({ room, context, roomAvailability }: BookingFlowProp
   return (
     <section className={styles.booking} aria-labelledby="booking-title">
       <div className={styles.intro}>
-        <p className={styles.eyebrow}>یک قدم تا آرامش</p>
         <h1 id="booking-title">درخواست اقامت</h1>
         <p>اطلاعات تماس را وارد کنید. مبلغ نهایی هنگام ثبت، دوباره از سامانهٔ رزرو محاسبه می‌شود.</p>
       </div>
@@ -306,7 +326,12 @@ export function BookingFlow({ room, context, roomAvailability }: BookingFlowProp
             </div>
           </fieldset>
           <div className={styles.notice}>
-            <span aria-hidden="true">✳</span>
+            <span aria-hidden="true">
+              <svg viewBox="0 0 20 20" fill="none">
+                <path d="M10 2.75 18 17H2l8-14.25Z" />
+                <path d="M10 7v4.5M10 14.25v.1" />
+              </svg>
+            </span>
             <p>
               درخواست پس از ثبت، <strong>منتظر تأیید پذیرش</strong> می‌ماند. ثبت این فرم به معنی
               تأیید نهایی نیست.
@@ -320,7 +345,7 @@ export function BookingFlow({ room, context, roomAvailability }: BookingFlowProp
           ) : null}
           {failure === 'server-error' ? (
             <p className={styles.error} role="alert">
-              ثبت درخواست انجام نشد. اطلاعات حفظ شده است؛ دوباره تلاش کنید.
+              خطا در ثبت درخواست. اطلاعات حفظ شده است؛ دوباره تلاش کنید.
             </p>
           ) : null}
           {failure !== 'availability-changed' ? (
@@ -330,12 +355,14 @@ export function BookingFlow({ room, context, roomAvailability }: BookingFlowProp
                 : failure === 'server-error'
                   ? 'دوباره تلاش کنید'
                   : 'ثبت درخواست اقامت'}
-              <span aria-hidden="true">←</span>
+              <span className={styles.submitArrow} aria-hidden="true">
+                ←
+              </span>
             </button>
           ) : null}
         </form>
         <aside className={styles.aside} aria-label="خلاصهٔ اقامت">
-          <p className={styles.eyebrow}>خلاصهٔ انتخاب</p>
+          <RoomImage slug={room.slug} name={room.name} />
           <h2>{room.name}</h2>
           <StaySummary
             roomName={room.name}

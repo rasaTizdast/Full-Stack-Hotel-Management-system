@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import Image from 'next/image';
 import { useState, type FormEvent } from 'react';
 import {
   AvailabilityApiError,
@@ -16,6 +17,7 @@ import {
   validateAvailabilitySearch,
 } from '@/lib/jalali-date';
 import type { PublicRoomType } from '@/lib/public-api';
+import styles from './availability-search.module.css';
 
 type AvailabilitySearchProps = {
   roomTypes: PublicRoomType[];
@@ -27,7 +29,7 @@ type SearchState = 'idle' | 'loading' | 'results' | 'unavailable' | 'server-erro
 function SearchFieldError({ id, message }: { id: string; message?: string }) {
   if (!message) return null;
   return (
-    <span id={id} className="search-field__error" role="alert">
+    <span id={id} className={styles.fieldError} role="alert">
       {message}
     </span>
   );
@@ -44,6 +46,12 @@ function AvailabilityRoomCard({
   numberOfNights: number;
   stay: Pick<AvailabilityResult, 'checkIn' | 'checkOut' | 'guests'>;
 }) {
+  const imageSrc =
+    room.slug === 'garden-double'
+      ? '/images/hotel/garden-double.webp'
+      : room.slug === 'family-suite'
+        ? '/images/hotel/family-suite.webp'
+        : null;
   const bookingQuery = new URLSearchParams({
     roomType: room.slug,
     checkIn: stay.checkIn,
@@ -52,58 +60,67 @@ function AvailabilityRoomCard({
   });
   return (
     <article
-      className={`availability-card${room.isAvailable ? '' : ' availability-card--unavailable'}`}
+      className={`${styles.roomCard}${room.isAvailable ? '' : ` ${styles.roomCardUnavailable}`}`}
     >
-      <div className="availability-card__motif" aria-hidden="true">
-        <span />
+      <div className={styles.roomImage}>
+        {imageSrc ? (
+          <Image
+            src={imageSrc}
+            alt={`نمای اتاق ${room.name}`}
+            fill
+            sizes="(max-width: 760px) 100vw, 50vw"
+          />
+        ) : (
+          <span className={styles.roomImageFallback} aria-hidden="true">
+            اقامتگاه نارنج
+          </span>
+        )}
+        <span
+          className={`${styles.availabilityBadge}${room.isAvailable ? '' : ` ${styles.unavailableBadge}`}`}
+        >
+          <span aria-hidden="true" />
+          {room.isAvailable ? 'آمادهٔ پذیرش' : 'ظرفیت تکمیل است'}
+        </span>
       </div>
-      <div className="availability-card__body">
-        <div className="availability-card__heading">
+      <div className={styles.roomBody}>
+        <div className={styles.roomHeading}>
           <div>
-            <p className="availability-card__eyebrow">
-              {room.isAvailable ? 'آمادهٔ پذیرش' : 'ظرفیت تکمیل است'}
-            </p>
-            <h3>{room.name}</h3>
+            <h3 className={styles.roomTitle}>{room.name}</h3>
           </div>
-          <span className="availability-card__capacity">
+          <span className={styles.capacity}>
             حداکثر {formatPersianInteger(room.maxGuestsPerRoom)} نفر
           </span>
         </div>
         {details?.description ? (
-          <p className="availability-card__description">{details.description}</p>
+          <p className={styles.roomDescription}>{details.description}</p>
         ) : null}
         {details && details.amenities.length > 0 ? (
-          <ul className="amenity-list" aria-label={`امکانات ${room.name}`}>
+          <ul className={styles.amenities} aria-label={`امکانات ${room.name}`}>
             {details.amenities.map((amenity) => (
               <li key={amenity}>{amenity}</li>
             ))}
           </ul>
         ) : null}
         {room.isAvailable && room.totalPriceToman !== null ? (
-          <div className="availability-card__price">
+          <div className={styles.priceBlock}>
             <span>قیمت کل برای {formatPersianInteger(numberOfNights)} شب</span>
-            <strong>
+            <strong className={styles.price}>
               <bdi>{formatTomanTotal(room.totalPriceToman)}</bdi>
               <span>تومان</span>
             </strong>
-            <span className="availability-card__stock">
+            <span className={styles.stock}>
               {formatPersianInteger(room.availableRooms)} اتاق در دسترس
             </span>
           </div>
         ) : (
-          <p className="availability-card__unavailable-copy">
-            برای تاریخ‌های انتخاب‌شده موجود نیست.
-          </p>
+          <p className={styles.unavailableCopy}>برای تاریخ‌های انتخاب‌شده موجود نیست.</p>
         )}
-        <div className="availability-card__actions">
-          <Link
-            className="availability-card__link"
-            href={`/rooms/${encodeURIComponent(room.slug)}`}
-          >
+        <div className={styles.roomActions}>
+          <Link className={styles.detailsLink} href={`/rooms/${encodeURIComponent(room.slug)}`}>
             جزئیات اتاق <span aria-hidden="true">←</span>
           </Link>
           {room.isAvailable && room.totalPriceToman !== null ? (
-            <Link className="availability-card__link" href={`/booking?${bookingQuery.toString()}`}>
+            <Link className={styles.bookingLink} href={`/booking?${bookingQuery.toString()}`}>
               درخواست اقامت <span aria-hidden="true">←</span>
             </Link>
           ) : null}
@@ -154,15 +171,14 @@ export function AvailabilitySearch({ roomTypes, initialStay }: AvailabilitySearc
   const roomDetails = new Map(roomTypes.map((room) => [room.slug, room]));
 
   return (
-    <section className="availability-search" id="stay-search" aria-labelledby="stay-search-title">
-      <div className="availability-search__intro">
-        <p className="eyebrow">رزرو با خیال آسوده</p>
+    <section className={styles.search} id="stay-search" aria-labelledby="stay-search-title">
+      <div className={styles.intro}>
         <h2 id="stay-search-title">قرارِ اقامتتان را پیدا کنید</h2>
         <p>تاریخ و تعداد مهمان‌ها را انتخاب کنید تا ظرفیت و مبلغ نهایی اتاق‌ها را ببینید.</p>
       </div>
 
-      <form className="search-form" onSubmit={handleSubmit} noValidate aria-label="جستجوی اقامت">
-        <div className="search-field">
+      <form className={styles.form} onSubmit={handleSubmit} noValidate aria-label="جستجوی اقامت">
+        <div className={styles.field}>
           <label htmlFor="search-check-in">تاریخ ورود</label>
           <input
             id="search-check-in"
@@ -175,16 +191,15 @@ export function AvailabilitySearch({ roomTypes, initialStay }: AvailabilitySearc
             disabled={state === 'loading'}
             onChange={(event) => updateInput('checkIn', event.target.value)}
             aria-invalid={Boolean(fieldErrors.checkIn)}
-            aria-describedby={
-              fieldErrors.checkIn ? 'search-check-in-error' : 'search-check-in-help'
-            }
+            aria-describedby={`search-check-in-help${fieldErrors.checkIn ? ' search-check-in-error' : ''}`}
+            aria-errormessage={fieldErrors.checkIn ? 'search-check-in-error' : undefined}
           />
-          <span id="search-check-in-help" className="search-field__hint">
+          <span id="search-check-in-help" className={styles.hint}>
             سال / ماه / روز شمسی
           </span>
           <SearchFieldError id="search-check-in-error" message={fieldErrors.checkIn} />
         </div>
-        <div className="search-field">
+        <div className={styles.field}>
           <label htmlFor="search-check-out">تاریخ خروج</label>
           <input
             id="search-check-out"
@@ -197,16 +212,15 @@ export function AvailabilitySearch({ roomTypes, initialStay }: AvailabilitySearc
             disabled={state === 'loading'}
             onChange={(event) => updateInput('checkOut', event.target.value)}
             aria-invalid={Boolean(fieldErrors.checkOut)}
-            aria-describedby={
-              fieldErrors.checkOut ? 'search-check-out-error' : 'search-check-out-help'
-            }
+            aria-describedby={`search-check-out-help${fieldErrors.checkOut ? ' search-check-out-error' : ''}`}
+            aria-errormessage={fieldErrors.checkOut ? 'search-check-out-error' : undefined}
           />
-          <span id="search-check-out-help" className="search-field__hint">
+          <span id="search-check-out-help" className={styles.hint}>
             روز خروج، شب اقامت محسوب نمی‌شود
           </span>
           <SearchFieldError id="search-check-out-error" message={fieldErrors.checkOut} />
         </div>
-        <div className="search-field search-field--guests">
+        <div className={styles.field}>
           <label htmlFor="search-guests">تعداد مهمان</label>
           <select
             id="search-guests"
@@ -216,6 +230,7 @@ export function AvailabilitySearch({ roomTypes, initialStay }: AvailabilitySearc
             onChange={(event) => updateInput('guests', event.target.value)}
             aria-invalid={Boolean(fieldErrors.guests)}
             aria-describedby={fieldErrors.guests ? 'search-guests-error' : undefined}
+            aria-errormessage={fieldErrors.guests ? 'search-guests-error' : undefined}
           >
             {Array.from({ length: 20 }, (_, index) => index + 1).map((guests) => (
               <option value={String(guests)} key={guests}>
@@ -225,63 +240,56 @@ export function AvailabilitySearch({ roomTypes, initialStay }: AvailabilitySearc
           </select>
           <SearchFieldError id="search-guests-error" message={fieldErrors.guests} />
         </div>
-        <button
-          className="button button--jade search-form__submit"
-          type="submit"
-          disabled={state === 'loading'}
-        >
+        <button className={styles.submit} type="submit" disabled={state === 'loading'}>
           {state === 'loading' ? 'در حال بررسی…' : 'بررسی اتاق‌های موجود'}
-          <span aria-hidden="true">←</span>
+          <span className={styles.submitArrow} aria-hidden="true">
+            ←
+          </span>
         </button>
       </form>
 
-      <div
-        className="availability-search__results"
-        aria-live="polite"
-        aria-busy={state === 'loading'}
-      >
+      <div className={styles.results} aria-live="polite" aria-busy={state === 'loading'}>
         {state === 'idle' ? (
-          <p className="search-message search-message--quiet" role="status">
+          <p className={`${styles.message} ${styles.messageQuiet}`} role="status">
             بازهٔ اقامت خود را بررسی کنید؛ قیمت‌ها برای همهٔ شب‌های انتخاب‌شده از سامانه دریافت
             می‌شوند.
           </p>
         ) : null}
         {state === 'loading' ? (
-          <p className="search-message search-message--loading" role="status">
-            <span className="loading-state__ornament" aria-hidden="true" />
-            در حال بررسی اتاق‌های قابل رزرو
+          <p className={`${styles.message} ${styles.messageLoading}`} role="status">
+            <span className={styles.loadingMark} aria-hidden="true" />
+            در حال بارگذاری و بررسی ظرفیت اتاق‌ها…
           </p>
         ) : null}
         {state === 'unavailable' ? (
-          <p className="search-message search-message--unavailable" role="status">
+          <p className={`${styles.message} ${styles.messageUnavailable}`} role="status">
             تاریخ‌های انتخاب‌شده دیگر قابل بررسی نیستند. بازهٔ اقامت را دوباره انتخاب کنید.
           </p>
         ) : null}
         {state === 'server-error' ? (
-          <p className="search-message search-message--error" role="alert">
-            سرویس بررسی اتاق‌ها موقتاً در دسترس نیست. کمی بعد دوباره تلاش کنید.
+          <p className={`${styles.message} ${styles.messageError}`} role="alert">
+            خطا در بررسی اتاق‌ها: سرویس موقتاً در دسترس نیست. کمی بعد دوباره تلاش کنید.
           </p>
         ) : null}
         {resultState === 'empty' ? (
-          <p className="search-message" role="status">
+          <p className={styles.message} role="status">
             هنوز اتاقی برای نمایش آماده نیست.
           </p>
         ) : null}
         {resultState === 'unavailable' ? (
-          <p className="search-message search-message--unavailable" role="status">
+          <p className={`${styles.message} ${styles.messageUnavailable}`} role="status">
             برای این بازهٔ اقامت اتاق آزادی پیدا نشد.
           </p>
         ) : null}
         {resultState === 'available' && result ? (
-          <div className="availability-search__cards">
-            <div className="availability-search__result-heading">
+          <div className={styles.cards}>
+            <div className={styles.resultHeading}>
               <div>
-                <p className="eyebrow">گزینه‌های اقامت</p>
                 <h2>اتاق‌های مناسب شما</h2>
               </div>
               <p>قیمت هر اتاق برای {formatPersianInteger(result.numberOfNights)} شب اقامت است.</p>
             </div>
-            <div className="availability-card-grid">
+            <div className={styles.cardGrid}>
               {result.roomTypes.map((room) => (
                 <AvailabilityRoomCard
                   key={room.slug}
@@ -295,7 +303,7 @@ export function AvailabilitySearch({ roomTypes, initialStay }: AvailabilitySearc
           </div>
         ) : null}
         {resultState === 'unavailable' && result ? (
-          <div className="availability-card-grid availability-card-grid--unavailable">
+          <div className={`${styles.cardGrid} ${styles.unavailableGrid}`}>
             {result.roomTypes.map((room) => (
               <AvailabilityRoomCard
                 key={room.slug}
