@@ -20,7 +20,12 @@ test.beforeEach(async ({ page, staffCookies }) => {
 
 type InventoryNightSnapshot = {
   stayDate: string;
+  capacitySource: 'PROJECTED';
   totalRooms: number;
+  blockedRooms: number;
+  heldRooms: number;
+  bookedRooms: number;
+  availableRooms: number;
   nightlyPriceToman: string;
 };
 
@@ -69,7 +74,12 @@ async function readInventorySnapshot(
     if (
       !isRecord(night) ||
       typeof night.stayDate !== 'string' ||
+      night.capacitySource !== 'PROJECTED' ||
       !Number.isSafeInteger(night.totalRooms) ||
+      !Number.isSafeInteger(night.blockedRooms) ||
+      !Number.isSafeInteger(night.heldRooms) ||
+      !Number.isSafeInteger(night.bookedRooms) ||
+      !Number.isSafeInteger(night.availableRooms) ||
       typeof night.nightlyPriceToman !== 'string' ||
       !/^\d+$/.test(night.nightlyPriceToman)
     ) {
@@ -78,7 +88,12 @@ async function readInventorySnapshot(
     return [
       {
         stayDate: night.stayDate,
+        capacitySource: 'PROJECTED',
         totalRooms: night.totalRooms as number,
+        blockedRooms: night.blockedRooms as number,
+        heldRooms: night.heldRooms as number,
+        bookedRooms: night.bookedRooms as number,
+        availableRooms: night.availableRooms as number,
         nightlyPriceToman: night.nightlyPriceToman,
       },
     ];
@@ -103,7 +118,6 @@ async function restoreInventorySnapshot(
         roomTypeId: snapshot.roomTypeId,
         startDate: night.stayDate,
         endDate: nextNight.toISOString().slice(0, 10),
-        totalRooms: night.totalRooms,
         nightlyPriceToman: night.nightlyPriceToman,
       },
     });
@@ -127,15 +141,53 @@ async function restoreInventorySnapshot(
   expect(restored).toEqual(snapshot);
 }
 
-test('admin can inspect and batch-save inventory, and the page meets axe checks', async ({
+test('admin sees physical capacity and saves rates only, and the page meets axe checks', async ({
   page,
   staffCookies,
-}) => {
+}, testInfo) => {
   await withFailureSafeCleanup(async (registerCleanup) => {
+    const roomTypesResponsePromise = page.waitForResponse((response) => {
+      const url = new URL(response.url());
+      return url.pathname === '/api/v1/staff/inventory/room-types' && response.request().method() === 'GET';
+    });
     await page.goto('/staff/inventory');
+    const roomTypesResponse = await roomTypesResponsePromise;
+    expect(roomTypesResponse.headers()['cache-control']).toContain('private, no-store');
 
     const table = page.getByRole('table', { name: 'وضعیت ظرفیت و نرخ هر شب' });
-    await expect(table).toBeVisible();
+    const isNarrowViewport = (page.viewportSize()?.width ?? 0) <= 760;
+    const activeInventoryLink = page.getByRole('link', { name: /^ظرفیت و نرخ‌ها/ });
+    await expect(activeInventoryLink).toHaveAttribute('aria-current', 'page');
+    if ((page.viewportSize()?.width ?? 0) <= 640) {
+      await expect(page.locator('[data-staff-nav-overflow-cue]')).toBeVisible();
+      const navBox = await page.getByRole('navigation', { name: 'منوی پنل کارکنان' }).boundingBox();
+      const activeLinkBox = await activeInventoryLink.boundingBox();
+      expect(navBox).not.toBeNull();
+      expect(activeLinkBox).not.toBeNull();
+      expect(activeLinkBox!.x).toBeGreaterThanOrEqual(navBox!.x);
+      expect(activeLinkBox!.x + activeLinkBox!.width).toBeLessThanOrEqual(navBox!.x + navBox!.width);
+    }
+    const rateDisclosure = page.locator('.staff-inventory__rate-disclosure > summary');
+    await expect(rateDisclosure).toBeVisible();
+    await expect(rateDisclosure).toHaveAccessibleName('تنظیم نرخ شبانه');
+    const rateEditorPrecedesOverview = await page.locator('.staff-inventory__rate-disclosure').evaluate((disclosure) => {
+      const overview = document.querySelector('.staff-inventory__overview');
+      return Boolean(overview && disclosure.compareDocumentPosition(overview) & Node.DOCUMENT_POSITION_FOLLOWING);
+    });
+    expect(rateEditorPrecedesOverview).toBe(true);
+    await rateDisclosure.focus();
+    await page.keyboard.press('Enter');
+    await expect(page.getByLabel('نرخ یک شب (تومان)')).toBeVisible();
+    if (isNarrowViewport) {
+      await expect(page.locator('.staff-inventory__night-cards')).toBeVisible();
+      await expect(table).not.toBeVisible();
+    } else {
+      await expect(table).toBeVisible();
+    }
+    await page.screenshot({
+      path: testInfo.outputPath('staff-inventory.png'),
+      fullPage: true,
+    });
     const roomType = page.getByRole('combobox', { name: 'نوع اتاق' });
     await expect(roomType).toHaveValue(/.+/);
     const roomTypeId = await roomType.inputValue();
@@ -154,18 +206,83 @@ test('admin can inspect and batch-save inventory, and the page meets axe checks'
       if (saveAttempted) await restoreInventorySnapshot(page, snapshot, staffCookies);
     });
 
-    const capacity = page.getByLabel('ظرفیت کل اتاق‌ها');
-    const originalCapacity = Number(await capacity.inputValue());
-    expect(Number.isSafeInteger(originalCapacity)).toBe(true);
-    await capacity.fill(String(originalCapacity + 1));
+    await expect(page.getByLabel('ظرفیت کل اتاق‌ها')).toHaveCount(0);
+    const firstNight = snapshot.nights[0];
+    if (!firstNight) throw new Error('The inventory range did not contain a first night.');
+    const roomResponse = await page.request.get(
+      `${apiBaseUrl}/staff/rooms?roomTypeId=${encodeURIComponent(roomTypeId)}`,
+      { headers: await currentStaffHeaders(page, staffCookies) },
+    );
+    expect(roomResponse.ok()).toBe(true);
+    const roomPayload: unknown = await roomResponse.json();
+    if (!isRecord(roomPayload) || !Array.isArray(roomPayload.items)) {
+      throw new Error('Physical room lookup returned an invalid response.');
+    }
+    const activeRoomCount = roomPayload.items.filter(
+      (room) => isRecord(room) && room.isActive === true,
+    ).length;
+    const format = (value: number | bigint) => new Intl.NumberFormat('fa-IR').format(value);
+    expect(firstNight.totalRooms + firstNight.blockedRooms).toBe(activeRoomCount);
+    const firstNightCard = page
+      .locator('.staff-inventory__night-card')
+      .filter({ has: page.locator(`time[datetime="${firstNight.stayDate}"]`) });
+    if (isNarrowViewport) {
+      const metrics = firstNightCard.locator('dl > div');
+      await expect(metrics.nth(0).locator('dd')).toHaveText(
+        format(firstNight.totalRooms + firstNight.blockedRooms),
+      );
+      await expect(metrics.nth(1).locator('dd')).toHaveText(format(firstNight.blockedRooms));
+      await expect(metrics.nth(2).locator('dd')).toHaveText(format(firstNight.heldRooms));
+      await expect(metrics.nth(3).locator('dd')).toHaveText(format(firstNight.bookedRooms));
+      await expect(metrics.nth(4).locator('dd')).toHaveText(format(firstNight.availableRooms));
+      await expect(metrics.nth(5).locator('dd')).toContainText(
+        format(BigInt(firstNight.nightlyPriceToman)),
+      );
+    } else {
+      const cells = table.getByRole('row').nth(1).getByRole('cell');
+      await expect(cells.nth(0)).toHaveText(format(firstNight.totalRooms + firstNight.blockedRooms));
+      await expect(cells.nth(1)).toHaveText(format(firstNight.blockedRooms));
+      await expect(cells.nth(2)).toHaveText(format(firstNight.heldRooms));
+      await expect(cells.nth(3)).toHaveText(format(firstNight.bookedRooms));
+      await expect(cells.nth(4)).toHaveText(format(firstNight.availableRooms));
+      await expect(cells.nth(5)).toContainText(format(BigInt(firstNight.nightlyPriceToman)));
+    }
+
+    const nightlyRate = page.getByLabel('نرخ یک شب (تومان)');
+    const nextPrice = (BigInt(firstNight.nightlyPriceToman) + BigInt('1000')).toString();
+    await nightlyRate.fill(nextPrice);
+    const updateRequestPromise = page.waitForRequest((request) => {
+      const url = new URL(request.url());
+      return url.pathname === '/api/v1/staff/inventory' && request.method() === 'PUT';
+    });
+    const updateResponsePromise = page.waitForResponse((response) => {
+      const url = new URL(response.url());
+      return url.pathname === '/api/v1/staff/inventory' && response.request().method() === 'PUT';
+    });
     saveAttempted = true;
     await page.getByRole('button', { name: 'ذخیره برای همه شب‌ها' }).click();
+    const updateRequest = await updateRequestPromise;
+    expect(updateRequest.postDataJSON()).toEqual({
+      roomTypeId,
+      startDate,
+      endDate,
+      nightlyPriceToman: nextPrice,
+    });
+    const updateResponse = await updateResponsePromise;
+    expect(updateResponse.status()).toBe(200);
 
-    await expect(page.getByRole('status')).toContainText('شب ذخیره شد');
-    await expect(capacity).toHaveValue(String(originalCapacity + 1));
-    await expect(table.getByRole('row').nth(1).getByRole('cell').nth(0)).toHaveText(
-      new Intl.NumberFormat('fa-IR', { useGrouping: false }).format(originalCapacity + 1),
-    );
+    await expect(page.getByRole('status')).toContainText('نرخ');
+    if (isNarrowViewport) {
+      const metrics = firstNightCard.locator('dl > div');
+      await expect(metrics.nth(0).locator('dd')).toHaveText(
+        format(firstNight.totalRooms + firstNight.blockedRooms),
+      );
+      await expect(metrics.nth(5).locator('dd')).toContainText(format(BigInt(nextPrice)));
+    } else {
+      const cells = table.getByRole('row').nth(1).getByRole('cell');
+      await expect(cells.nth(0)).toHaveText(format(firstNight.totalRooms + firstNight.blockedRooms));
+      await expect(cells.nth(5)).toContainText(format(BigInt(nextPrice)));
+    }
 
     const results = await new AxeBuilder({ page })
       .include('.staff-inventory')
@@ -179,7 +296,7 @@ function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null && !Array.isArray(value);
 }
 
-test('inventory editor rejects capacity below a real pending booking hold', async ({
+test('pending holds remain visible while inventory capacity stays derived and read-only', async ({
   page,
   request,
   staffCookies,
@@ -190,17 +307,7 @@ test('inventory editor rejects capacity below a real pending booking hold', asyn
   if (!checkIn || !checkOut) throw new Error('The available stay dates were invalid.');
   const guestPhone = `+98916${randomInt(0, 10_000_000).toString().padStart(7, '0')}`;
   const guestEmail = `hbe020-oversell-${randomUUID()}@example.test`;
-  let inventorySnapshot: InventorySnapshot | undefined;
-  let inventoryUpdateAttempted = false;
-
-  await withFailureSafeCleanup(async (registerCleanup) => {
-    registerCleanup(async () => {
-      if (inventoryUpdateAttempted && inventorySnapshot) {
-        await restoreInventorySnapshot(page, inventorySnapshot, staffCookies);
-      }
-    });
-
-    await withStaffBookingCleanup(page, guestPhone, staffCookies, async (markBookingCreated) => {
+  await withStaffBookingCleanup(page, guestPhone, staffCookies, async (markBookingCreated) => {
       markBookingCreated();
       const bookingResponse = await request.post(`${apiBaseUrl}/bookings`, {
         headers: { 'Idempotency-Key': randomUUID() },
@@ -243,7 +350,7 @@ test('inventory editor rejects capacity below a real pending booking hold', asyn
       await page.getByRole('button', { name: 'نمایش بازه' }).click();
 
       const roomTypeId = await roomType.inputValue();
-      inventorySnapshot = await readInventorySnapshot(
+      const inventorySnapshot = await readInventorySnapshot(
         page,
         roomTypeId,
         checkIn,
@@ -251,43 +358,45 @@ test('inventory editor rejects capacity below a real pending booking hold', asyn
         staffCookies,
       );
       const inventoryTable = page.getByRole('table', { name: 'وضعیت ظرفیت و نرخ هر شب' });
+      const isNarrowViewport = (page.viewportSize()?.width ?? 0) <= 760;
       const rows = inventoryTable.getByRole('row');
-      await expect(rows).toHaveCount(3);
-      const initialCapacities = await Promise.all(
-        [1, 2].map((rowIndex) => rows.nth(rowIndex).getByRole('cell').nth(1).innerText()),
-      );
-      for (const rowIndex of [1, 2]) {
-        await expect(rows.nth(rowIndex).getByRole('cell').nth(3)).toContainText(/[۱-۹]/);
+      if (isNarrowViewport) {
+        await expect(page.locator('.staff-inventory__night-cards')).toBeVisible();
+        await expect(inventoryTable).not.toBeVisible();
+      } else {
+        await expect(rows).toHaveCount(3);
       }
-
-      const capacity = page.getByLabel('ظرفیت کل اتاق‌ها');
-      await capacity.fill('0');
-      const saveResponsePromise = page.waitForResponse((response) => {
-        const url = new URL(response.url());
-        return url.pathname === '/api/v1/staff/inventory' && response.request().method() === 'PUT';
-      });
-      inventoryUpdateAttempted = true;
-      await page.getByRole('button', { name: 'ذخیره برای همه شب‌ها' }).click();
-      const saveResponse = await saveResponsePromise;
-      expect(saveResponse.status()).toBe(409);
-      expect(await saveResponse.json()).toMatchObject({ code: 'CAPACITY_BELOW_RESERVED' });
-      await expect(capacity).toHaveAttribute('aria-invalid', 'true');
-      await expect(page.locator('#staff-inventory-capacity-error')).toHaveText(
-        'ظرفیت نمی‌تواند از مجموع اتاق‌های در انتظار تأیید و رزروشده کمتر باشد.',
-      );
-
-      await page.getByRole('button', { name: 'نمایش بازه' }).click();
-      await expect(rows).toHaveCount(3);
-      const persistedCapacities = await Promise.all(
-        [1, 2].map((rowIndex) => rows.nth(rowIndex).getByRole('cell').nth(1).innerText()),
-      );
-      expect(persistedCapacities).toEqual(initialCapacities);
-    });
+      await expect(page.getByLabel('ظرفیت کل اتاق‌ها')).toHaveCount(0);
+      expect(inventorySnapshot.nights).toHaveLength(2);
+      expect(inventorySnapshot.nights.every((night) => night.heldRooms >= 1)).toBe(true);
+      if (isNarrowViewport) {
+        for (const night of inventorySnapshot.nights) {
+          const card = page
+            .locator('.staff-inventory__night-card')
+            .filter({ has: page.locator(`time[datetime="${night.stayDate}"]`) });
+          await expect(card.locator('dl > div').nth(0).locator('dd')).toHaveText(
+            new Intl.NumberFormat('fa-IR').format(night.totalRooms + night.blockedRooms),
+          );
+          await expect(card.locator('dl > div').nth(2).locator('dd')).toHaveText(
+            new Intl.NumberFormat('fa-IR').format(night.heldRooms),
+          );
+        }
+      } else {
+        for (const rowIndex of [1, 2]) {
+          await expect(rows.nth(rowIndex).getByRole('cell').nth(2)).toContainText(/[۱-۹]/);
+        }
+        await expect(rows.nth(1).getByRole('cell').nth(0)).toHaveText(
+          new Intl.NumberFormat('fa-IR').format(
+            inventorySnapshot.nights[0]!.totalRooms + inventorySnapshot.nights[0]!.blockedRooms,
+          ),
+        );
+      }
   });
 });
 
 test('receptionist does not see or request the admin inventory editor', async ({ page }) => {
   let roomTypeRequestCount = 0;
+  let roomListRequestCount = 0;
   await page.route(`${apiBaseUrl}/staff/auth/me`, async (route) => {
     const response = await route.fetch();
     const session = await response.json();
@@ -300,19 +409,38 @@ test('receptionist does not see or request the admin inventory editor', async ({
     roomTypeRequestCount += 1;
     return route.continue();
   });
+  await page.route(`${apiBaseUrl}/staff/rooms*`, (route) => {
+    roomListRequestCount += 1;
+    return route.continue();
+  });
 
   await page.goto('/staff');
-  await expect(page.getByRole('link', { name: 'ظرفیت و نرخ‌ها' })).toHaveCount(0);
+  await expect(page.getByRole('link', { name: /^ظرفیت و نرخ‌ها/ })).toHaveCount(0);
   await page.goto('/staff/inventory');
   await expect(page.getByRole('heading', { name: 'دسترسی به مدیریت موجودی' })).toBeVisible();
   await expect(page.getByLabel('نوع اتاق')).toHaveCount(0);
   await expect(page.getByRole('button', { name: 'ذخیره برای همه شب‌ها' })).toHaveCount(0);
   expect(roomTypeRequestCount).toBe(0);
+  await page.goto('/staff/rooms/manage');
+  await expect(page.getByRole('heading', { name: 'دسترسی به مدیریت اتاق‌ها' })).toBeVisible();
+  expect(roomListRequestCount).toBe(0);
 });
 
 test('inventory editor remains keyboard reachable on mobile', async ({ page }) => {
   await page.goto('/staff/inventory');
-  await expect(page.getByRole('table', { name: 'وضعیت ظرفیت و نرخ هر شب' })).toBeVisible();
+  const rateDisclosure = page.locator('.staff-inventory__rate-disclosure > summary');
+  await expect(rateDisclosure).toBeVisible();
+  await expect(rateDisclosure).toHaveAccessibleName('تنظیم نرخ شبانه');
+  await rateDisclosure.focus();
+  await page.keyboard.press('Enter');
+  await expect(page.getByLabel('نرخ یک شب (تومان)')).toBeVisible();
+  const table = page.getByRole('table', { name: 'وضعیت ظرفیت و نرخ هر شب' });
+  if ((page.viewportSize()?.width ?? 0) <= 760) {
+    await expect(page.locator('.staff-inventory__night-cards')).toBeVisible();
+    await expect(table).not.toBeVisible();
+  } else {
+    await expect(table).toBeVisible();
+  }
 
   const focusedIds: string[] = [];
   for (let index = 0; index < 40; index += 1) {
@@ -323,6 +451,27 @@ test('inventory editor remains keyboard reachable on mobile', async ({ page }) =
   expect(focusedIds).toContain('staff-inventory-room-type');
   expect(focusedIds).toContain('staff-inventory-start-date');
   expect(focusedIds).toContain('staff-inventory-end-date');
-  expect(focusedIds).toContain('staff-inventory-capacity');
   expect(focusedIds).toContain('staff-inventory-nightly-price');
+});
+
+test('keeps each rate amount and toman label on one line at 390px', async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto('/staff/inventory');
+
+  const rateDisclosure = page.locator('.staff-inventory__rate-disclosure > summary');
+  await expect(rateDisclosure).toBeVisible();
+  await rateDisclosure.click();
+  await page.getByLabel('نرخ یک شب (تومان)').fill('2500000');
+
+  const moneyGroups = page.locator('.staff-inventory__money');
+  await expect(moneyGroups).toHaveCount(2);
+  for (let index = 0; index < 2; index += 1) {
+    const amount = await moneyGroups.nth(index).locator('.staff-inventory__money-amount').boundingBox();
+    const unit = await moneyGroups.nth(index).locator('.staff-inventory__money-unit').boundingBox();
+    expect(amount).not.toBeNull();
+    expect(unit).not.toBeNull();
+    const verticalOverlap =
+      Math.min(amount!.y + amount!.height, unit!.y + unit!.height) - Math.max(amount!.y, unit!.y);
+    expect(verticalOverlap).toBeGreaterThan(0);
+  }
 });

@@ -59,7 +59,7 @@ describe('staff inventory API client', () => {
   });
 
   it('includes the session CSRF token when batch-saving a range', async () => {
-    const update = { ...range, totalRooms: 3, nightlyPriceToman: '3500000' };
+    const update = { ...range, nightlyPriceToman: '3500000' };
     const response = {
       roomType: { id: range.roomTypeId, name: 'اتاق باغ', slug: 'garden-room' },
       startDate: range.startDate,
@@ -98,7 +98,7 @@ describe('staff inventory API client', () => {
     vi.stubGlobal('fetch', fetchMock);
 
     await expect(
-      updateStaffInventoryRange({ ...range, totalRooms: 3, nightlyPriceToman: 'invalid' }, 'csrf'),
+      updateStaffInventoryRange({ ...range, nightlyPriceToman: 'invalid' }, 'csrf'),
     ).rejects.toMatchObject({
       status: 400,
       code: 'VALIDATION_ERROR',

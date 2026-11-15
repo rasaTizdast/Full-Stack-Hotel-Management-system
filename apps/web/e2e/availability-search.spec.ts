@@ -13,6 +13,7 @@ test('guests search Persian dates and see API-priced available rooms', async ({
   page,
   request,
 }, testInfo) => {
+  await page.emulateMedia({ reducedMotion: 'reduce' });
   const stay = await findAvailableGardenStay(request, testInfo);
   const availabilityRequests: URL[] = [];
   page.on('request', (request) => {
@@ -38,7 +39,10 @@ test('guests search Persian dates and see API-priced available rooms', async ({
   await page.keyboard.press('Enter');
 
   await expect(page.getByRole('heading', { name: 'اتاق‌های مناسب شما' })).toBeVisible();
-  const firstRoom = page.locator('.availability-card').first();
+  const results = page.locator('[aria-live="polite"]').filter({
+    has: page.getByRole('heading', { name: 'اتاق‌های مناسب شما' }),
+  });
+  const firstRoom = results.locator('article').first();
   await expect(firstRoom).toBeVisible();
   await expect(firstRoom).toContainText('حداکثر');
   await expect(firstRoom).toContainText('تومان');

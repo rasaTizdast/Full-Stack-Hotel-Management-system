@@ -15,6 +15,7 @@ const roomTypeDefinitions = [
     amenities: ['وای‌فای', 'تهویه مطبوع', 'صبحانه'],
     displayOrder: 1,
     totalRooms: 8,
+    roomNumberPrefix: '1',
     nightlyPriceToman: 2_400_000n,
   },
   {
@@ -25,6 +26,7 @@ const roomTypeDefinitions = [
     amenities: ['وای‌فای', 'تهویه مطبوع', 'صبحانه', 'نشیمن'],
     displayOrder: 2,
     totalRooms: 3,
+    roomNumberPrefix: '2',
     nightlyPriceToman: 4_800_000n,
   },
 ];
@@ -73,28 +75,120 @@ export async function seedDemoData(
       },
     });
 
-    const storedRoomTypes: Array<{ id: string; totalRooms: number; nightlyPriceToman: bigint }> =
-      [];
+    const storedRoomTypes: Array<{
+      id: string;
+      hotelId: string;
+      totalRooms: number;
+      roomNumberPrefix: string;
+      nightlyPriceToman: bigint;
+    }> = [];
     for (const definition of roomTypeDefinitions) {
-      const { totalRooms, nightlyPriceToman, ...roomTypeData } = definition;
+      const { totalRooms, roomNumberPrefix, nightlyPriceToman, ...roomTypeData } = definition;
       const roomType = await transaction.roomType.upsert({
         where: { hotelId_slug: { hotelId: hotel.id, slug: definition.slug } },
         create: { ...roomTypeData, hotelId: hotel.id },
         update: roomTypeData,
       });
-      storedRoomTypes.push({ id: roomType.id, totalRooms, nightlyPriceToman });
+      storedRoomTypes.push({
+        id: roomType.id,
+        hotelId: hotel.id,
+        totalRooms,
+        roomNumberPrefix,
+        nightlyPriceToman,
+      });
+    }
+
+    for (const roomType of storedRoomTypes) {
+      const generatedRooms = await transaction.room.findMany({
+        where: { roomTypeId: roomType.id, isGenerated: true },
+        orderBy: { roomNumber: 'asc' },
+        select: { id: true },
+      });
+      let generatedIndex = 0;
+
+      for (let roomIndex = 1; roomIndex <= roomType.totalRooms; roomIndex += 1) {
+        const roomNumber = `${roomType.roomNumberPrefix}${String(roomIndex).padStart(2, '0')}`;
+        const existing = await transaction.room.findUnique({
+          where: { hotelId_roomNumber: { hotelId: roomType.hotelId, roomNumber } },
+          select: { id: true },
+        });
+        if (existing) continue;
+
+        const generatedRoom = generatedRooms[generatedIndex];
+        if (generatedRoom) {
+          generatedIndex += 1;
+          await transaction.room.update({
+            where: { id: generatedRoom.id },
+            data: {
+              roomNumber,
+              isGenerated: false,
+              isActive: true,
+              housekeepingStatus: 'INSPECTED',
+            },
+          });
+          continue;
+        }
+
+        await transaction.room.create({
+          data: {
+            hotelId: roomType.hotelId,
+            roomTypeId: roomType.id,
+            roomNumber,
+            floor: roomType.roomNumberPrefix,
+            housekeepingStatus: 'INSPECTED',
+          },
+        });
+      }
     }
 
     const firstNight = new Date();
     firstNight.setUTCHours(0, 0, 0, 0);
+    const lastNightExclusive = new Date(firstNight);
+    lastNightExclusive.setUTCDate(lastNightExclusive.getUTCDate() + 91);
+    const activeRoomCounts = new Map(
+      await Promise.all(
+        storedRoomTypes.map(
+          async (roomType) =>
+            [
+              roomType.id,
+              await transaction.room.count({ where: { roomTypeId: roomType.id, isActive: true } }),
+            ] as const,
+        ),
+      ),
+    );
+    const blocks = await transaction.roomBlock.findMany({
+      where: {
+        isActive: true,
+        startDate: { lt: lastNightExclusive },
+        endDate: { gt: firstNight },
+        room: { hotelId: hotel.id, isActive: true },
+      },
+      select: {
+        roomId: true,
+        startDate: true,
+        endDate: true,
+        room: { select: { roomTypeId: true } },
+      },
+    });
     const inventory = storedRoomTypes.flatMap((roomType) =>
       Array.from({ length: 90 }, (_, index) => {
         const stayDate = new Date(firstNight);
         stayDate.setUTCDate(stayDate.getUTCDate() + index + 1);
+        const blockedRoomIds = new Set(
+          blocks
+            .filter(
+              (block) =>
+                block.room.roomTypeId === roomType.id &&
+                block.startDate <= stayDate &&
+                block.endDate > stayDate,
+            )
+            .map((block) => block.roomId),
+        );
         return {
           roomTypeId: roomType.id,
           stayDate,
-          totalRooms: roomType.totalRooms,
+          totalRooms: Math.max(0, (activeRoomCounts.get(roomType.id) ?? 0) - blockedRoomIds.size),
+          blockedRooms: blockedRoomIds.size,
           heldRooms: 0,
           bookedRooms: 0,
           nightlyPriceToman: roomType.nightlyPriceToman,

@@ -30,6 +30,10 @@ const SAFE_DOMAIN_ERRORS: Record<string, { statusCode: number; message: string }
     statusCode: 409,
     message: 'Capacity cannot be lower than held plus booked rooms.',
   },
+  HISTORICAL_INVENTORY_READ_ONLY: {
+    statusCode: 409,
+    message: 'Historical inventory requires an authorized correction workflow.',
+  },
   INVALID_DATE_RANGE: {
     statusCode: 400,
     message: 'Use valid Gregorian YYYY-MM-DD dates and checkout after check-in.',
@@ -88,6 +92,16 @@ const SAFE_DOMAIN_ERRORS: Record<string, { statusCode: number; message: string }
   INTERNAL_NOTE_INVALID: {
     statusCode: 400,
     message: 'The internal note is invalid or exceeds its maximum length.',
+  },
+  ROOM_NOT_FOUND: { statusCode: 404, message: 'The physical room was not found.' },
+  ROOM_NUMBER_TAKEN: { statusCode: 409, message: 'A room with this number already exists.' },
+  ROOM_HAS_ACTIVE_ASSIGNMENTS: {
+    statusCode: 409,
+    message: 'Reassign current or future stays before deactivating this room.',
+  },
+  ROOM_TYPE_INACTIVE: {
+    statusCode: 409,
+    message: 'Rooms cannot be added to an inactive room type.',
   },
 };
 

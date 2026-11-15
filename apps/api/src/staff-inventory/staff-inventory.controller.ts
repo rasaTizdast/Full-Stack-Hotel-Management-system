@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Put, Query } from '@nestjs/common';
+import { Body, Controller, Get, Header, Put, Query } from '@nestjs/common';
 import {
   ApiBadRequestResponse,
   ApiConflictResponse,
@@ -28,6 +28,7 @@ export class StaffInventoryController {
 
   @RequireStaffRoles('ADMIN')
   @Get('room-types')
+  @Header('Cache-Control', 'private, no-store')
   @ApiOperation({ summary: 'List active and inactive room types for the admin inventory editor.' })
   @ApiOkResponse({ type: StaffInventoryRoomTypeOptionDto, isArray: true })
   @ApiUnauthorizedResponse({ type: ApiErrorResponseDto })
@@ -39,8 +40,9 @@ export class StaffInventoryController {
     return this.staffInventory.findRoomTypeOptions();
   }
 
-  @RequireStaffRoles('ADMIN', 'RECEPTIONIST')
+  @RequireStaffRoles('ADMIN')
   @Get()
+  @Header('Cache-Control', 'private, no-store')
   @ApiOperation({
     summary: 'Read room-night inventory for a date range.',
     description: 'Dates use Gregorian YYYY-MM-DD values; endDate is exclusive.',
@@ -55,9 +57,11 @@ export class StaffInventoryController {
 
   @RequireStaffRoles('ADMIN')
   @Put()
+  @Header('Cache-Control', 'private, no-store')
   @ApiOperation({
-    summary: 'Set capacity and nightly price for a room type and date range.',
-    description: 'Dates use Gregorian YYYY-MM-DD values; endDate is exclusive.',
+    summary: 'Set nightly prices for a room type and date range.',
+    description:
+      'Dates use Gregorian YYYY-MM-DD values; endDate is exclusive. Physical capacity is derived from active rooms and dated blocks.',
   })
   @ApiHeader({ name: 'X-CSRF-Token', required: true })
   @ApiOkResponse({ type: StaffInventoryResponseDto })

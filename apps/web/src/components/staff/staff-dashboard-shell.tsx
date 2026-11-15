@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import type { ReactNode } from 'react';
+import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { HotelLogo } from '@/components/brand/hotel-logo';
 import type { StaffMember } from '@/lib/staff-api';
 
@@ -22,6 +22,33 @@ export function StaffDashboardShell({
   currentPath = '/staff',
   children,
 }: StaffDashboardShellProps) {
+  const staffNavRef = useRef<HTMLElement>(null);
+  const [hasNavOverflow, setHasNavOverflow] = useState(false);
+
+  useEffect(() => {
+    const nav = staffNavRef.current;
+    if (!nav) return;
+
+    const activeLink = nav.querySelector<HTMLElement>('a[aria-current="page"]');
+    if (activeLink && typeof activeLink.scrollIntoView === 'function') {
+      const prefersReducedMotion =
+        typeof window.matchMedia === 'function' &&
+        window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+      activeLink.scrollIntoView({
+        behavior: prefersReducedMotion ? 'auto' : 'smooth',
+        block: 'nearest',
+        inline: 'nearest',
+      });
+    }
+
+    const measureOverflow = () => {
+      setHasNavOverflow(nav.scrollWidth > nav.clientWidth + 1);
+    };
+    measureOverflow();
+    window.addEventListener('resize', measureOverflow);
+    return () => window.removeEventListener('resize', measureOverflow);
+  }, [currentPath, staff.role]);
+
   return (
     <div className="staff-shell">
       <a className="skip-link" href="#staff-main">
@@ -76,11 +103,11 @@ export function StaffDashboardShell({
             <p className="staff-sidebar__label">فضای کاری</p>
             <span>شیراز، ایران</span>
           </div>
-          <nav aria-label="منوی پنل کارکنان" className="staff-nav">
+          <div className={`staff-nav-viewport${hasNavOverflow ? ' staff-nav-viewport--overflow' : ''}`}>
+          <nav ref={staffNavRef} aria-label="منوی پنل کارکنان" className="staff-nav">
             <Link
               href="/staff"
               aria-current={currentPath === '/staff' ? 'page' : undefined}
-              aria-label="نمای کلی"
             >
               <span className="staff-nav__glyph" aria-hidden="true">
                 <svg viewBox="0 0 24 24" fill="none">
@@ -95,7 +122,6 @@ export function StaffDashboardShell({
             <Link
               href="/staff/bookings"
               aria-current={currentPath.startsWith('/staff/bookings') ? 'page' : undefined}
-              aria-label="درخواست‌های رزرو"
             >
               <span className="staff-nav__glyph" aria-hidden="true">
                 <svg viewBox="0 0 24 24" fill="none">
@@ -110,9 +136,25 @@ export function StaffDashboardShell({
             </Link>
             {staff.role === 'ADMIN' && (
               <Link
+                href="/staff/rooms/manage"
+                aria-current={currentPath.startsWith('/staff/rooms') ? 'page' : undefined}
+              >
+                <span className="staff-nav__glyph" aria-hidden="true">
+                  <svg viewBox="0 0 24 24" fill="none">
+                    <path d="M4 19.5h16M5.5 19V7.5h13V19M8 10h3v3H8zM13 10h3v3h-3zM8 15h3v4H8zM13 15h3v2h-3z" />
+                  </svg>
+                </span>
+                <span className="staff-nav__copy">
+                  <strong>اتاق‌های فیزیکی</strong>
+                {' '}
+                  <small>شماره و وضعیت اتاق‌ها</small>
+                </span>
+              </Link>
+            )}
+            {staff.role === 'ADMIN' && (
+              <Link
                 href="/staff/inventory"
                 aria-current={currentPath.startsWith('/staff/inventory') ? 'page' : undefined}
-                aria-label="ظرفیت و نرخ‌ها"
               >
                 <span className="staff-nav__glyph" aria-hidden="true">
                   <svg viewBox="0 0 24 24" fill="none">
@@ -122,11 +164,18 @@ export function StaffDashboardShell({
                 </span>
                 <span className="staff-nav__copy">
                   <strong>ظرفیت و نرخ‌ها</strong>
+                  {' '}
                   <small>تنظیم برنامه اتاق‌ها</small>
                 </span>
               </Link>
             )}
           </nav>
+            <span className="staff-nav-overflow-cue" data-staff-nav-overflow-cue aria-hidden="true">
+              <svg viewBox="0 0 16 16" fill="none">
+                <path d="m10 3-5 5 5 5" />
+              </svg>
+            </span>
+          </div>
           {logoutError && (
             <p className="staff-nav__error" role="alert">
               {logoutError}

@@ -20,6 +20,9 @@ export class StaffInventoryNightDto {
   @ApiProperty({ format: 'date', example: '2027-05-01' })
   stayDate!: string;
 
+  @ApiProperty({ enum: ['PROJECTED', 'HISTORICAL', 'UNAVAILABLE'] })
+  capacitySource!: 'PROJECTED' | 'HISTORICAL' | 'UNAVAILABLE';
+
   @ApiProperty({ type: Number, nullable: true, example: 4 })
   totalRooms!: number | null;
 
@@ -28,6 +31,9 @@ export class StaffInventoryNightDto {
 
   @ApiProperty({ type: Number, nullable: true, example: 1 })
   bookedRooms!: number | null;
+
+  @ApiProperty({ type: Number, nullable: true, example: 0 })
+  blockedRooms!: number | null;
 
   @ApiProperty({ type: Number, nullable: true, example: 2 })
   availableRooms!: number | null;

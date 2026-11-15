@@ -28,13 +28,14 @@ export interface StaffInventoryRangeQuery {
 }
 
 export interface StaffInventoryRangeUpdate extends StaffInventoryRangeQuery {
-  totalRooms: number;
   nightlyPriceToman: string;
 }
 
 export interface StaffInventoryNight {
   stayDate: string;
+  capacitySource: 'PROJECTED' | 'HISTORICAL' | 'UNAVAILABLE';
   totalRooms: number | null;
+  blockedRooms: number | null;
   heldRooms: number | null;
   bookedRooms: number | null;
   availableRooms: number | null;
@@ -46,6 +47,41 @@ export interface StaffInventoryRangeResponse {
   startDate: string;
   endDate: string;
   nights: StaffInventoryNight[];
+}
+
+export interface StaffRoom {
+  id: string;
+  roomNumber: string;
+  floor: string | null;
+  features: string[];
+  housekeepingStatus: 'DIRTY' | 'CLEAN' | 'INSPECTED';
+  isActive: boolean;
+  isGenerated: boolean;
+  roomType: StaffInventoryRoomType;
+}
+
+export interface StaffRoomsQuery {
+  roomTypeId?: string;
+  floor?: string;
+  isActive?: boolean;
+  search?: string;
+}
+
+export interface StaffRoomListResponse {
+  items: StaffRoom[];
+}
+
+export interface StaffRoomCreate {
+  roomTypeId: string;
+  roomNumber: string;
+  floor?: string | null;
+  features?: string[];
+}
+
+export interface StaffRoomUpdate {
+  roomNumber?: string;
+  floor?: string | null;
+  features?: string[];
 }
 
 export interface StaffApiFieldError {
@@ -205,5 +241,49 @@ export function updateStaffInventoryRange(
     method: 'PUT',
     headers: { 'X-CSRF-Token': csrfToken },
     body: JSON.stringify(update),
+  });
+}
+
+export function getStaffRooms(query: StaffRoomsQuery = {}): Promise<StaffRoomListResponse> {
+  const params = new URLSearchParams();
+  if (query.roomTypeId) params.set('roomTypeId', query.roomTypeId);
+  if (query.floor) params.set('floor', query.floor);
+  if (query.isActive !== undefined) params.set('isActive', String(query.isActive));
+  if (query.search) params.set('search', query.search);
+  const search = params.toString();
+  return requestStaffApi<StaffRoomListResponse>(`rooms${search ? `?${search}` : ''}`);
+}
+
+export function createStaffRoom(room: StaffRoomCreate, csrfToken: string): Promise<StaffRoom> {
+  return requestStaffApi<StaffRoom>('rooms', {
+    method: 'POST',
+    headers: { 'X-CSRF-Token': csrfToken },
+    body: JSON.stringify(room),
+  });
+}
+
+export function updateStaffRoom(
+  roomId: string,
+  update: StaffRoomUpdate,
+  csrfToken: string,
+): Promise<StaffRoom> {
+  return requestStaffApi<StaffRoom>(`rooms/${encodeURIComponent(roomId)}`, {
+    method: 'PATCH',
+    headers: { 'X-CSRF-Token': csrfToken },
+    body: JSON.stringify(update),
+  });
+}
+
+export function deactivateStaffRoom(roomId: string, csrfToken: string): Promise<StaffRoom> {
+  return requestStaffApi<StaffRoom>(`rooms/${encodeURIComponent(roomId)}/deactivate`, {
+    method: 'POST',
+    headers: { 'X-CSRF-Token': csrfToken },
+  });
+}
+
+export function reactivateStaffRoom(roomId: string, csrfToken: string): Promise<StaffRoom> {
+  return requestStaffApi<StaffRoom>(`rooms/${encodeURIComponent(roomId)}/reactivate`, {
+    method: 'POST',
+    headers: { 'X-CSRF-Token': csrfToken },
   });
 }

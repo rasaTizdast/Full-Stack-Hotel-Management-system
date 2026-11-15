@@ -1,12 +1,18 @@
 import { defineConfig, devices } from '@playwright/test';
 import { resolve } from 'node:path';
+import { getE2eDatabaseUrl } from './e2e/test-database';
 
 const workspaceRoot = resolve(process.cwd(), '../..');
+const isolatedTestDatabaseUrl = getE2eDatabaseUrl(workspaceRoot);
 const webPort = process.env.HBE_E2E_WEB_PORT ?? '3015';
 const apiPort = process.env.HBE_E2E_API_PORT ?? '4015';
 const webOrigin = `http://localhost:${webPort}`;
 const apiBaseUrl = `http://localhost:${apiPort}/api/v1`;
 const reuseExistingServer = process.env.HBE_E2E_REUSE_SERVER === 'true';
+const chromiumExecutablePath = process.env.HBE_E2E_CHROMIUM_EXECUTABLE_PATH;
+const chromiumLaunchOptions = chromiumExecutablePath
+  ? { launchOptions: { executablePath: chromiumExecutablePath } }
+  : {};
 
 export default defineConfig({
   testDir: './e2e',
@@ -27,12 +33,13 @@ export default defineConfig({
       name: 'desktop-chromium',
       use: {
         ...devices['Desktop Chrome'],
+        ...chromiumLaunchOptions,
         viewport: { width: 1440, height: 960 },
       },
     },
     {
       name: 'mobile-chrome',
-      use: { ...devices['iPhone 13'], browserName: 'chromium' },
+      use: { ...devices['iPhone 13'], browserName: 'chromium', ...chromiumLaunchOptions },
     },
   ],
   webServer: [
@@ -42,7 +49,12 @@ export default defineConfig({
       url: `http://localhost:${apiPort}/health/ready`,
       reuseExistingServer,
       timeout: 120_000,
-      env: { NODE_ENV: 'test', PORT: apiPort, WEB_ORIGIN: webOrigin },
+      env: {
+        DATABASE_URL: isolatedTestDatabaseUrl,
+        NODE_ENV: 'test',
+        PORT: apiPort,
+        WEB_ORIGIN: webOrigin,
+      },
     },
     {
       command: 'pnpm --filter @hotel/web dev',
