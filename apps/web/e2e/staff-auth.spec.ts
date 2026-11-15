@@ -59,7 +59,7 @@ test('keeps signed-out staff routes private and the API denies direct calls', as
 
 test('allows staff to sign in and log out with the server session', async ({ page }) => {
   await signIn(page);
-  await expect(page.getByRole('link', { name: 'ظرفیت و نرخ‌ها' })).toBeVisible();
+  await expect(page.getByRole('link', { name: 'ظرفیت و نرخ‌ها', exact: true })).toBeVisible();
 
   const sessionCookie = (await page.context().cookies()).find(
     (cookie) => cookie.name === 'hotel_staff_session',
@@ -85,12 +85,12 @@ test('allows staff to sign in and log out with the server session', async ({ pag
   });
   await page.reload();
   await expect(page.getByRole('link', { name: 'درخواست‌های رزرو' })).toBeVisible();
-  await expect(page.getByRole('link', { name: 'ظرفیت و نرخ‌ها' })).toHaveCount(0);
+  await expect(page.getByRole('link', { name: 'ظرفیت و نرخ‌ها', exact: true })).toHaveCount(0);
   await expect(page.getByText('پذیرش', { exact: true })).toBeVisible();
 
   await page.unroute(`${apiBaseUrl}/staff/auth/me`);
   await page.reload();
-  await expect(page.getByRole('link', { name: 'ظرفیت و نرخ‌ها' })).toBeVisible();
+  await expect(page.getByRole('link', { name: 'ظرفیت و نرخ‌ها', exact: true })).toBeVisible();
 
   await page.getByRole('button', { name: 'خروج از پنل' }).click();
   await expect(page).toHaveURL(/\/staff\/login$/);

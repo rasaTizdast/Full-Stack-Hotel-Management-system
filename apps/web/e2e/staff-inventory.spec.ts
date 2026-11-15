@@ -393,7 +393,7 @@ test('receptionist does not see or request the admin inventory editor', async ({
   });
 
   await page.goto('/staff');
-  await expect(page.getByRole('link', { name: 'ظرفیت و نرخ‌ها' })).toHaveCount(0);
+  await expect(page.getByRole('link', { name: 'ظرفیت و نرخ‌ها', exact: true })).toHaveCount(0);
   await page.goto('/staff/inventory');
   await expect(page.getByRole('heading', { name: 'دسترسی به مدیریت موجودی' })).toBeVisible();
   await expect(page.getByLabel('نوع اتاق')).toHaveCount(0);
