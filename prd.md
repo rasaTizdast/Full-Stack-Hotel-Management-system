@@ -1,9 +1,15 @@
 Small-Hotel Booking Engine — Product Requirements Document
 
-Document status: Implementation baseline
+Document status: Initial booking-engine baseline; superseded in part by the PMS expansion below
 Version: 1.0
 Intended audience: Development agent, reviewer, and project owner
 Repository shape: One repository containing `apps/web` and `apps/api`
+
+## 2026-11-15 PMS scope expansion
+
+The original HBE scope below describes the booking-request foundation already implemented. For the expanded product, [ADR-002](docs/decisions/ADR-002-hotel-pms-scope.md), the [PMS operational requirements research](docs/hotel-pms-operational-requirements-research.md), the feature design specs under `docs/superpowers/specs/2026-11-15-pms-`, and HPM tickets in [docs/implementation-tickets.md](docs/implementation-tickets.md) take precedence wherever this version 1.0 PRD conflicts with them.
+
+The product remains Persian-first and single-property. Physical room records, room assignment, front-desk stays, housekeeping, maintenance blocks, append-only folios, manual/offline payment records, printable operational statements, expanded named roles, audit history, business date, night close, and operational reports are now in scope. Online payment processing, card data storage, OTA/channel distribution, POS and device integrations, multi-property tenancy, guest accounts, external messaging, and legally certified fiscal invoices remain out of scope until explicitly specified.
 
 1. Instructions for the development agent
 
@@ -111,17 +117,17 @@ One API instance: The first deployment assumes one running API instance for the 
 
 4. Non-goals
 
-Do not implement these in the MVP:
+Do not implement these in the original booking-engine MVP. ADR-002 supersedes the exclusions for physical-room assignment, housekeeping, and maintenance; those are now in the PMS scope.
 
 Hotel search across multiple properties or multi-tenant accounts.
 
-Real payment gateways, refunds, or payment reconciliation.
+Online payment gateways, stored card data, and automated payment-provider reconciliation. Manual/offline settlement recording is included by ADR-002; local refund rules still need validation before real deployment.
 
 SMS, email, WhatsApp, or other external notification delivery.
 
 Loyalty programs, coupons, reviews, dynamic pricing, or recommendations.
 
-Room-number assignment, housekeeping, maintenance, or point-of-sale features.
+Point-of-sale integrations, door locks, ID scanning, and other vendor integrations.
 
 Guest accounts, national ID collection, or document uploads.
 

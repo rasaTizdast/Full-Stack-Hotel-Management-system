@@ -6,6 +6,131 @@ Each ticket has one owner. Work starts in its own Git worktree and branch. Set s
 
 Status values: `Not started`, `In progress`, `Blocked`, `Done`.
 
+## HPM — Hotel PMS operational expansion
+
+The following tickets extend the original booking engine into the single-property PMS defined in `docs/decisions/ADR-002-hotel-pms-scope.md`. The research baseline and confirmed implementation comparison are in `docs/hotel-pms-operational-requirements-research.md`; feature-level acceptance plans are under `docs/superpowers/plans/`.
+
+### HPM-000 — Research, scope decision, design specs, and ticket plans
+
+- **Priority:** P0
+- **Depends on:** None
+- **Owner:** Codex orchestrator
+- **Status:** Done
+- **Branch/worktree:** `codex/hpm-000-pms-scope-and-plans` — `../Hotel Booking system-worktrees/HPM-000`
+- **Code changes:** Primary-source hotel PMS research, confirmed codebase gap analysis, ADR-002, four feature design specs, four implementation plans, and this ticket register.
+- **Required checks:** Source/link review and `git diff --check` passed. Specs were reviewed for contradictions/placeholders. Backend and Front-end reviews cleared after fixes for room-deactivation locking, `/staff/services` ownership, local Next.js docs, and private-cache assertions. Tester review cleared dependency/test sequencing and lifecycle coverage. Designer review cleared the UX decisions and confirmed the guest-phone follow-up fallback when the property phone is unset.
+- **Acceptance criteria:** The core and conditional requirements are sourced; current implementation status is confirmed from code; scope, architectural decisions, exclusions, ticket dependencies, per-ticket worktrees, tests, and merge gates are documented.
+
+### HPM-001 — Physical rooms and capacity projection
+
+- **Priority:** P0
+- **Depends on:** HPM-000
+- **Owner:** Backend senior + Front-end design master
+- **Status:** Not started
+- **Branch/worktree:** `codex/hpm-001-physical-rooms` — `../Hotel Booking system-worktrees/HPM-001`
+- **Plan:** `docs/superpowers/plans/2026-11-15-hotel-pms-inventory-and-front-desk.md`
+- **Acceptance criteria:** Physical room records are unique within the hotel; Hotel has configurable check-in/out wall times; a minimal dated RoomBlock model exists for assignment conflicts; migration preserves every existing nightly capacity by backfilling generated units and date blocks; active room counts minus distinct active blocks project atomically to every existing/new nightly row; capacity cannot fall below holds/bookings; room deactivation rejects active assignments under the same room-row lock used by assignment/check-in; inventory UI edits rates only and displays derived capacity; staff can manage room units.
+- **Required tests:** Fresh/upgrade migrations, seed repeatability, PostgreSQL projection/rollback constraints, API roles, web unit and Playwright.
+
+### HPM-002 — Staff roles, account administration, and audit events
+
+- **Priority:** P0
+- **Depends on:** HPM-000
+- **Owner:** Backend senior + Front-end design master
+- **Status:** Not started
+- **Branch/worktree:** `codex/hpm-002-staff-controls` — `../Hotel Booking system-worktrees/HPM-002`
+- **Plan:** `docs/superpowers/plans/2026-11-15-hotel-pms-staff-controls-and-daily-operations.md`
+- **Acceptance criteria:** Named roles `ADMIN`, `MANAGER`, `RECEPTIONIST`, `HOUSEKEEPER`, and `CASHIER` have explicit server-enforced capabilities; admin can create/change/deactivate accounts; a forced initial password change is enforced through `/staff/change-password`; duplicate accounts fail; deactivation revokes sessions; high-impact changes and their audit record commit atomically without secrets/full guest payloads.
+- **Required tests:** Capability matrix, duplicate/unauthorized account operations, forced password update, old-session revocation, audit redaction/reason and transaction-atomicity tests, API e2e, web unit/E2E, security review.
+
+### HPM-003 — Room board and assignments
+
+- **Priority:** P0
+- **Depends on:** HPM-001, HPM-002
+- **Owner:** Backend senior + Front-end design master
+- **Status:** Not started
+- **Branch/worktree:** `codex/hpm-003-room-board-assignment` — `../Hotel Booking system-worktrees/HPM-003`
+- **Plan:** `docs/superpowers/plans/2026-11-15-hotel-pms-inventory-and-front-desk.md`
+- **Acceptance criteria:** Staff see all rooms with occupancy, assignments, housekeeping state, and blocks; board defaults to business date, refreshes every 30 seconds, shows last updated/stale state and explicit combinations; distinct room units are assigned per booking; assignments match room type and stay dates and cannot overlap assignments/blocks; multi-room arrivals require enough distinct rooms.
+- **Required tests:** PostgreSQL concurrent assignment, overlap, wrong room type, invalid date range, block conflict, multi-room, access/redaction, API e2e, web unit, desktop/mobile Playwright.
+
+### HPM-004 — Front-desk stay operations
+
+- **Priority:** P0
+- **Depends on:** HPM-001, HPM-002, HPM-003
+- **Owner:** Backend senior + Front-end design master
+- **Status:** Not started
+- **Branch/worktree:** `codex/hpm-004-front-desk` — `../Hotel Booking system-worktrees/HPM-004`
+- **Plan:** `docs/superpowers/plans/2026-11-15-hotel-pms-inventory-and-front-desk.md`
+- **Acceptance criteria:** Staff can create walk-ins, review arrivals/in-house/departures, check in confirmed stays only with complete conflict-free inspected assignments; normal check-in follows property time and early check-in requires manager reason; late arrivals remain due-in until staff acts; no-show releases are exactly once; eligible future stays can be amended; in-house room moves retain dated assignment history.
+- **Required tests:** Lifecycle transition matrix, readiness/time/override, walk-in last-room race, no-show idempotency, sold-out amendment, assignment/price snapshot amendment, checked-in amendment denial, room-move boundaries, role checks, full guest/staff Playwright flow.
+
+### HPM-005 — Housekeeping statuses and task board
+
+- **Priority:** P0
+- **Depends on:** HPM-001, HPM-002, HPM-003, HPM-004
+- **Owner:** Backend senior + Front-end design master
+- **Status:** Not started
+- **Branch/worktree:** `codex/hpm-005-housekeeping` — `../Hotel Booking system-worktrees/HPM-005`
+- **Plan:** `docs/superpowers/plans/2026-11-15-hotel-pms-housekeeping-maintenance.md`
+- **Acceptance criteria:** Staff distinguish occupancy from DIRTY/CLEAN/INSPECTED condition; housekeeping tasks can be assigned/prioritized/completed idempotently; housekeeping can report SLEEP/SKIP discrepancies but only reception/manager can resolve them; housekeeping cannot change occupancy or access folios; reception can see readiness without unnecessary guest PII; default check-in readiness is enforced.
+- **Required tests:** State transition, task lifecycle/idempotency, discrepancy report/resolve/dismiss permissions, role/privacy, check-in gating, API e2e, web unit and Playwright before manual UI review. HPM-008 owns the checkout-to-DIRTY transition.
+
+### HPM-006 — Maintenance requests and out-of-order blocks
+
+- **Priority:** P0
+- **Depends on:** HPM-001, HPM-002, HPM-003, HPM-005
+- **Owner:** Backend senior + Front-end design master
+- **Status:** Not started
+- **Branch/worktree:** `codex/hpm-006-maintenance-blocks` — `../Hotel Booking system-worktrees/HPM-006`
+- **Plan:** `docs/superpowers/plans/2026-11-15-hotel-pms-housekeeping-maintenance.md`
+- **Acceptance criteria:** Repairs have category/priority/assignee/due/resolved state; open repairs are separate from inventory blocks; managers create dated out-of-order or capacity-closed blocks with reasons; blocks update capacity transactionally and cannot invalidate holds/bookings/assignments; room restoration is safe and repeatable.
+- **Required tests:** Block/booking race, date boundaries, capacity rollback, same-room overlap rejection, active assignment conflict, occupied-room block denial, restoration/idempotency, permissions, API/web E2E.
+
+### HPM-007 — Folio ledger and service catalog
+
+- **Priority:** P0
+- **Depends on:** HPM-002, HPM-004
+- **Owner:** Backend senior + Front-end design master
+- **Status:** Not started
+- **Branch/worktree:** `codex/hpm-007-folio-ledger` — `../Hotel Booking system-worktrees/HPM-007`
+- **Plan:** `docs/superpowers/plans/2026-11-15-hotel-pms-folio-and-checkout.md`
+- **Acceptance criteria:** Each stay has an append-only itemized folio; room/service lines store room attribution, integer Toman, and immutable snapshots; one shared locked posting service and database key prevent duplicate room-night charges across checkout/night-close; authorized corrections add compensating entries with reasons; managers/admins can manage the `/staff/services` catalog without rewriting existing postings; public DTOs never reveal folios; private requests/responses enforce and test both no-store controls.
+- **Required tests:** BigInt balance math, room/night boundaries, immutable snapshots, cross-path duplicate protection, duplicate idempotency, role checks, PostgreSQL rollback, API e2e, web unit/E2E.
+
+### HPM-008 — Manual settlement, final checkout, and printing
+
+- **Priority:** P0
+- **Depends on:** HPM-003, HPM-004, HPM-005, HPM-006, HPM-007
+- **Owner:** Backend senior + Front-end design master
+- **Status:** Not started
+- **Branch/worktree:** `codex/hpm-008-checkout-print-folio` — `../Hotel Booking system-worktrees/HPM-008`
+- **Plan:** `docs/superpowers/plans/2026-11-15-hotel-pms-folio-and-checkout.md`
+- **Acceptance criteria:** Positive cash/bank-terminal/bank-transfer/other settlements are recorded without cardholder data; payments cannot exceed balance; refunds are limited to unrefunded source payment; closed-due folios accept collection but no new charges; ordinary checkout requires zero balance; manager on-account override requires reason; checkout, final charges, folio state, future-night release, assignment close, dirty-room transition, and audit are atomic; staff can print an authenticated no-store RTL operational folio with room attribution and interim/final timestamp.
+- **Required tests:** Nonzero-balance denial, manager override, payment/refund limits, post-checkout collection, duplicate retries, concurrent post/checkout, early departure release, transaction rollback, unauthorized print, print layout and end-to-end flow.
+
+### HPM-009 — Business date, night close, and reports
+
+- **Priority:** P1
+- **Depends on:** HPM-004, HPM-005, HPM-006, HPM-007, HPM-008
+- **Owner:** Backend senior + Front-end design master
+- **Status:** Not started
+- **Branch/worktree:** `codex/hpm-009-night-close-reports` — `../Hotel Booking system-worktrees/HPM-009`
+- **Plan:** `docs/superpowers/plans/2026-11-15-hotel-pms-staff-controls-and-daily-operations.md`
+- **Acceptance criteria:** Managers preview blockers separately from warnings, confirm a named business date/effects, run an all-or-nothing manual close, post at most one accommodation charge per assignment/date through the shared checkout service, advance business date once, retry safely after rollback, and view role-filtered summaries.
+- **Required tests:** Tehran timezone boundaries, rollback after charge inserts before date advance, retry after rollback and success, cross-path duplicate prevention, report totals against ledger fixtures, permissions, API/web E2E.
+
+### HPM-010 — Cross-role release QA and product documentation
+
+- **Priority:** P0 release gate
+- **Depends on:** HPM-001 through HPM-009
+- **Owner:** Tester + Designer + Codex orchestrator
+- **Status:** Not started
+- **Branch/worktree:** `codex/hpm-010-release-qa-readme` — `../Hotel Booking system-worktrees/HPM-010`
+- **Plan:** `docs/superpowers/plans/2026-11-15-hotel-pms-staff-controls-and-daily-operations.md`
+- **Acceptance criteria:** Frontend E2E passes before manual UI review and reruns before each defect recheck; negative flows cover unauthorized folio, dirty-room check-in, duplicate posting, nonzero-balance checkout, and interrupted/retried close; guest/reception/housekeeping/cashier/manager/admin flows pass; full root release checks pass; current visual audit command is recorded if available (otherwise no Hallmark pass is claimed); README reflects shipped features and limitations; all ticket worktrees/branches are removed.
+- **Required tests:** `pnpm check`, fresh and upgrade migration checks, complete cross-role Playwright, manual tester verification, visual review, print inspection, and final git/worktree audit.
+
 ## HBE-001 — Establish monorepo workspace and app boundaries
 
 - **Priority:** P0
