@@ -2049,6 +2049,9 @@
   font-weight: 750;
   font-variant-numeric: tabular-nums;
 }
+.staffScope :global(.staff-inventory__money) {
+  white-space: nowrap;
+}
 
 .staffScope :global(.staff-inventory__night-cards) {
   display: none;

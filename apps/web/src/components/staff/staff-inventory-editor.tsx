@@ -420,8 +420,13 @@ function InventoryEditForm({
         <p className="staff-inventory__rate-impact" aria-live="polite">
           <span>جمع نرخ بازه</span>
           <bdi dir="ltr">
-            {formatPersianInteger(BigInt(parsedNightlyPrice!))} تومان ×{' '}
-            {formatPersianInteger(rangeNightCount)} شب = {formatPersianInteger(rangeTotal)} تومان
+            <span className="staff-inventory__money">
+              {formatPersianInteger(BigInt(parsedNightlyPrice!))} تومان
+            </span>{' '}
+            × {formatPersianInteger(rangeNightCount)} شب ={' '}
+            <span className="staff-inventory__money">
+              {formatPersianInteger(rangeTotal)} تومان
+            </span>
           </bdi>
         </p>
       ) : null}

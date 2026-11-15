@@ -189,15 +189,21 @@ describe('StaffInventoryPage', () => {
       staff: { ...session.current.staff, role: 'ADMIN' },
     };
 
-    render(<StaffInventoryPage />);
+    const { container } = render(<StaffInventoryPage />);
     await openRateDisclosure();
     fireEvent.change(await screen.findByLabelText('نرخ یک شب (تومان)'), {
       target: { value: '۲۴۰۰۰۰۰' },
     });
 
-    expect(
-      await screen.findByText('۲٬۴۰۰٬۰۰۰ تومان × ۲ شب = ۴٬۸۰۰٬۰۰۰ تومان'),
-    ).toBeInTheDocument();
+    expect(container.querySelector('.staff-inventory__rate-impact bdi')).toHaveTextContent(
+      '۲٬۴۰۰٬۰۰۰ تومان × ۲ شب = ۴٬۸۰۰٬۰۰۰ تومان',
+    );
+
+    const moneyGroups = container.querySelectorAll('.staff-inventory__money');
+    expect([...moneyGroups].map((group) => group.textContent?.trim())).toEqual([
+      '۲٬۴۰۰٬۰۰۰ تومان',
+      '۴٬۸۰۰٬۰۰۰ تومان',
+    ]);
   });
 
   it('places a native rate disclosure before the nightly details', async () => {
