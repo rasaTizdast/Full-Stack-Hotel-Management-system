@@ -69,7 +69,7 @@ test('admin manages physical rooms through filters, create, renumber, duplicate 
     });
 
     await page.goto('/staff/rooms/manage');
-    await expect(page.getByRole('heading', { name: 'اتاق‌ها' })).toBeVisible();
+    await expect(page.getByRole('heading', { level: 1, name: 'اتاق‌ها', exact: true })).toBeVisible();
     await expect(page.getByRole('link', { name: /^اتاق‌های فیزیکی/ })).toHaveAttribute(
       'aria-current',
       'page',
