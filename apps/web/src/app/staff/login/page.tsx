@@ -15,7 +15,7 @@ export default function StaffLoginPage() {
         <div className="staff-login-card__art" aria-hidden="true">
           <div className="staff-login-card__art-topline">
             <span>خانه‌باغ نارنج</span>
-            <span>شیراز · ایران</span>
+            <span>شیراز، ایران</span>
           </div>
           <span className="staff-login-card__art-seal" aria-hidden="true">
             <HotelLogo size={112} />
@@ -28,11 +28,11 @@ export default function StaffLoginPage() {
 
         <div className="staff-login-card__content">
           <Link className="staff-login-card__back" href="/">
-            <span aria-hidden="true">→</span> بازگشت به وب‌سایت
+            بازگشت به وب‌سایت
           </Link>
           <div className="staff-login-card__heading">
             <h1 id="staff-login-title">به پنل خوش آمدید</h1>
-            <p>برای مدیریت درخواست‌های اقامت، با حساب کاری خود وارد شوید.</p>
+            <p>مدیریت درخواست‌های اقامت</p>
           </div>
           <StaffLoginForm />
           <p className="staff-login-card__footnote">این بخش فقط برای کارکنان اقامتگاه است.</p>

@@ -71,7 +71,6 @@ export function StaffLoginForm() {
       )}
       <button className="staff-login-form__submit" disabled={submitting} type="submit">
         {submitting ? 'در حال ورود…' : 'ورود به پنل'}
-        <span aria-hidden="true">←</span>
       </button>
       <p className="staff-login-form__privacy">
         دسترسی کارکنان با حساب کاری انجام می‌شود. اطلاعات ورود را با دیگران به اشتراک نگذارید.

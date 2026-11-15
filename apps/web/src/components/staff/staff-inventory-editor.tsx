@@ -289,6 +289,10 @@ function InventoryOverview({
         </span>
       </div>
 
+      <p className="staff-inventory__scroll-hint">
+        برای دیدن همهٔ ستون‌ها، جدول را افقی پیمایش کنید.
+      </p>
+
       <div
         className="staff-inventory__table-scroll"
         tabIndex={0}

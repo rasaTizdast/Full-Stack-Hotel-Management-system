@@ -1,3 +1,7 @@
+/* Hallmark · checked: 2026-11-15 · genre: modern-minimal (inferred)
+ * floor: 0 FAIL · fixed: 18 (3,25,26a,39a,39b,40,48,49,50,54,62,F3,F5,F6,F7,F16,F25,F26)
+ * structural: 0 printed
+ * built: the project · redesign: polish · v2.0.0 */
 /* Token-led booking workspace. */
 .page {
   --ink: var(--foreground);
@@ -31,6 +35,7 @@
   margin: 0 0 0.35rem;
   color: var(--primary-strong);
   font-size: clamp(1.8rem, 3vw, 2.6rem);
+  text-wrap: balance;
 }
 
 .headingRow p {
@@ -51,12 +56,11 @@
   align-items: center;
   justify-content: center;
   gap: 0.45rem;
-  border: 1px solid transparent;
-  border-radius: var(--radius-pill);
   padding: 0.6rem 1rem;
   font: inherit;
   font-size: var(--text-caption);
-  font-weight: 750;
+  line-height: 1.4;
+  font-weight: 700;
   cursor: pointer;
   transition:
     transform 180ms var(--motion-out),
@@ -69,16 +73,46 @@
 .secondaryButton,
 .clearButton,
 .pagination button {
+  border: 1px solid var(--border);
   border-color: var(--border);
   background: var(--surface);
   color: var(--primary-strong);
 }
 
+.refreshButton,
+.pagination button {
+  border-radius: var(--radius-control);
+}
+
+.secondaryButton {
+  border-radius: var(--radius-control);
+}
+
+.refreshButton {
+  background: var(--surface-soft);
+}
+
+.clearButton {
+  border: 1px solid transparent;
+  border-radius: 0;
+  border-color: transparent;
+  background: transparent;
+  color: var(--primary);
+  padding-inline: 0.55rem;
+  text-decoration: underline;
+  text-underline-offset: 0.3em;
+}
+
 .primaryButton {
+  border: 1px solid var(--primary);
+  border-color: var(--primary);
+  border-radius: var(--radius-control);
   background: var(--primary);
   color: var(--primary-foreground);
 }
 .rejectButton {
+  border: 1px solid color-mix(in srgb, var(--destructive) 28%, var(--border));
+  border-radius: var(--radius-control);
   border-color: color-mix(in srgb, var(--destructive) 28%, var(--border));
   background: color-mix(in srgb, var(--destructive) 7%, var(--surface));
   color: var(--destructive);
@@ -113,8 +147,8 @@
 .filterField input:focus-visible,
 .filterField select:focus-visible,
 .actionField textarea:focus-visible {
-  outline: 3px solid color-mix(in srgb, var(--accent) 70%, transparent);
-  outline-offset: 2px;
+  outline: 3px solid var(--focus);
+  outline-offset: 3px;
 }
 
 .refreshButton:disabled,
@@ -123,8 +157,19 @@
 .rejectButton:disabled,
 .clearButton:disabled,
 .pagination button:disabled {
+  border-color: var(--border);
+  background: var(--surface-soft);
+  color: var(--muted-foreground);
   cursor: not-allowed;
-  opacity: 0.58;
+}
+
+.refreshButton:active:not(:disabled),
+.primaryButton:active:not(:disabled),
+.secondaryButton:active:not(:disabled),
+.rejectButton:active:not(:disabled),
+.clearButton:active:not(:disabled),
+.pagination button:active:not(:disabled) {
+  transform: scale(0.985);
 }
 
 .filters {
@@ -135,7 +180,7 @@
   align-items: end;
   gap: 0.8rem;
   border: 1px solid var(--border);
-  border-block-start: 4px solid var(--highlight);
+  border: 1px solid var(--border);
   border-radius: var(--radius-card);
   background: var(--surface);
   padding: 1rem;
@@ -152,20 +197,21 @@
 .actionField label {
   color: var(--foreground);
   font-size: var(--text-caption);
-  font-weight: 750;
+  font-weight: 700;
 }
 
 .filterField input,
 .filterField select,
 .actionField textarea {
   width: 100%;
-  min-height: 2.8rem;
-  border: 1px solid var(--border);
+  min-height: 2.6rem;
+  border: 1px solid var(--field-border);
   border-radius: var(--radius-control);
   background: var(--surface-soft);
   padding: 0.55rem 0.7rem;
   color: var(--foreground);
   font: inherit;
+  line-height: 1.5;
   font-size: var(--text-caption);
 }
 
@@ -198,6 +244,10 @@
   gap: 1rem;
 }
 
+.workspaceSingle {
+  grid-template-columns: minmax(0, 1fr);
+}
+
 .listPanel,
 .detailPanel {
   min-width: 0;
@@ -226,6 +276,7 @@
   margin: 0;
   color: var(--primary-strong);
   font-size: var(--text-subheading);
+  text-wrap: balance;
 }
 .count {
   margin: 0;
@@ -247,7 +298,7 @@
   width: 100%;
   gap: 0.48rem;
   border: 1px solid var(--border);
-  border-inline-start: 3px solid transparent;
+  border-inline-start: 1px solid var(--border);
   border-radius: var(--radius-card);
   background: var(--surface);
   padding: 0.82rem;
@@ -263,7 +314,7 @@
 .bookingCardSelected {
   transform: translateX(-2px);
   border-color: color-mix(in srgb, var(--primary) 30%, var(--border));
-  border-inline-start-color: var(--primary);
+  border-color: color-mix(in srgb, var(--primary) 30%, var(--border));
   background: color-mix(in srgb, var(--primary) 4%, var(--surface));
 }
 
@@ -278,7 +329,7 @@
 .reference {
   color: var(--primary-strong);
   font-size: var(--text-caption);
-  font-weight: 850;
+  font-weight: 700;
   letter-spacing: 0.03em;
 }
 
@@ -301,7 +352,7 @@
   border-radius: var(--radius-pill);
   padding: 0.15rem 0.6rem;
   font-size: var(--text-caption);
-  font-weight: 800;
+  font-weight: 700;
   white-space: nowrap;
 }
 .status_PENDING_CONFIRMATION {
@@ -329,7 +380,7 @@
 .cardGuest {
   color: var(--foreground);
   font-size: var(--text-compact);
-  font-weight: 750;
+  font-weight: 700;
 }
 .cardMeta,
 .cardFooter {
@@ -411,7 +462,7 @@
   min-height: 420px;
 }
 .detailPlaceholder p {
-  max-width: 38ch;
+  max-width: 45ch;
 }
 .detailContent {
   display: grid;
@@ -427,7 +478,7 @@
 }
 .detailHeading h2:focus-visible,
 .actionPanel h3:focus-visible {
-  outline: 2px solid var(--accent);
+  outline: 3px solid var(--focus);
   outline-offset: 3px;
 }
 .detailHeading h2 bdi {
@@ -449,6 +500,7 @@
   margin: 0;
   color: var(--primary-strong);
   font-size: var(--text-compact);
+  text-wrap: balance;
 }
 .guestDetails,
 .stayDetails {
@@ -500,7 +552,7 @@
 .nightList li span:last-child,
 .totalRow strong {
   color: var(--foreground);
-  font-weight: 750;
+  font-weight: 700;
 }
 .totalRow {
   margin: 0;
@@ -514,7 +566,7 @@
   font-size: var(--text-compact);
 }
 .noteSection {
-  border-inline-start: 3px solid var(--highlight);
+  border: 1px solid color-mix(in srgb, var(--highlight) 40%, var(--border));
   border-radius: var(--radius-control);
   background: color-mix(in srgb, var(--highlight) 9%, var(--surface));
   padding: 0.7rem 0.8rem;
@@ -564,7 +616,7 @@
 }
 .errorText {
   margin: 0;
-  border-inline-start: 3px solid var(--destructive);
+  border: 1px solid color-mix(in srgb, var(--destructive) 35%, var(--border));
   border-radius: var(--radius-control);
   background: color-mix(in srgb, var(--destructive) 8%, var(--surface));
   padding: 0.6rem 0.75rem;
@@ -573,7 +625,7 @@
 }
 .successMessage {
   margin: 0;
-  border-inline-start: 3px solid var(--success);
+  border: 1px solid color-mix(in srgb, var(--success) 35%, var(--border));
   border-radius: var(--radius-control);
   background: color-mix(in srgb, var(--success) 9%, var(--surface));
   padding: 0.6rem 0.75rem;
@@ -589,6 +641,9 @@
 @media (max-width: 1120px) {
   .filters {
     grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+  .statusField {
+    grid-column: 1 / -1;
   }
   .searchField {
     grid-column: span 2;

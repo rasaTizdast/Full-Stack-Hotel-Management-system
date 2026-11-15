@@ -34,7 +34,7 @@ describe('StaffDashboardShell', () => {
     expect(
       screen.getByRole('link', { name: /^خانه‌باغ نارنج\s*پنل کارکنان$/ }),
     ).toBeInTheDocument();
-    expect(screen.getByText('شیراز · خانه‌باغ نارنج')).toBeInTheDocument();
+    expect(screen.getByText('شیراز، خانه‌باغ نارنج')).toBeInTheDocument();
   });
 
   it('shows inventory navigation to administrators', () => {

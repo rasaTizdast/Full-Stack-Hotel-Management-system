@@ -11,19 +11,13 @@ export default function StaffDashboardPage() {
     <section className="staff-overview" aria-labelledby="staff-overview-title">
       <header className="staff-overview__hero">
         <div className="staff-overview__hero-copy">
-          <h1 id="staff-overview-title">روز بخیر، {staff.username}</h1>
+          <h1 id="staff-overview-title">رسیدگی به اقامت مهمانان</h1>
           <p className="staff-overview__intro">
-            مسیر رسیدگی به اقامت مهمانان از همین‌جا شروع می‌شود. درخواست‌ها را بررسی کنید و وضعیت
-            اتاق‌ها را به‌روز نگه دارید.
+            درخواست‌ها را بررسی کنید و ظرفیت اتاق‌ها را به‌روز نگه دارید.
           </p>
           <div className="staff-overview__hero-actions">
             <Link className="staff-overview__primary-link" href="/staff/bookings">
-              <span>مشاهده درخواست‌های رزرو</span>
-              <span className="staff-overview__link-icon" aria-hidden="true">
-                <svg viewBox="0 0 20 20" fill="none">
-                  <path d="M4 10h11M10 5l5 5-5 5" />
-                </svg>
-              </span>
+              مشاهده درخواست‌های رزرو
             </Link>
             {staff.role === 'ADMIN' && (
               <Link className="staff-overview__secondary-link" href="/staff/inventory">
@@ -47,9 +41,9 @@ export default function StaffDashboardPage() {
 
       <div className="staff-overview__section-heading">
         <div>
-          <h2>از کجا شروع کنیم؟</h2>
+          <h2>دسترسی سریع</h2>
         </div>
-        <p>ابزارهای موردنیاز را بر اساس نقش خود باز کنید.</p>
+        <p>درخواست‌ها را پاسخ دهید یا ظرفیت اتاق‌ها را تنظیم کنید.</p>
       </div>
 
       <nav className="staff-overview__actions" aria-label="دسترسی سریع پنل">
@@ -57,12 +51,6 @@ export default function StaffDashboardPage() {
           className="staff-overview__action staff-overview__action--bookings"
           href="/staff/bookings"
         >
-          <span className="staff-overview__action-topline">
-            <span>مهمانان</span>
-            <span className="staff-overview__action-arrow" aria-hidden="true">
-              ↗
-            </span>
-          </span>
           <span className="staff-overview__action-icon" aria-hidden="true">
             <svg viewBox="0 0 28 28" fill="none">
               <rect x="4.5" y="4.5" width="19" height="19" rx="4" />
@@ -81,12 +69,6 @@ export default function StaffDashboardPage() {
             className="staff-overview__action staff-overview__action--inventory"
             href="/staff/inventory"
           >
-            <span className="staff-overview__action-topline">
-              <span>برنامه‌ریزی</span>
-              <span className="staff-overview__action-arrow" aria-hidden="true">
-                ↗
-              </span>
-            </span>
             <span className="staff-overview__action-icon" aria-hidden="true">
               <svg viewBox="0 0 28 28" fill="none">
                 <path d="m4.5 9 9.5-4.5L23.5 9 14 13.5 4.5 9Z" />

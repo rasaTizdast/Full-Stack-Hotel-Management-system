@@ -37,8 +37,7 @@ export function StaffDashboardShell({
         </Link>
         <div className="staff-topbar__right">
           <span className="staff-property-label">
-            <span className="staff-property-label__dot" aria-hidden="true" />
-            شیراز · خانه‌باغ نارنج
+            شیراز، خانه‌باغ نارنج
           </span>
           <div className="staff-identity">
             <span className="staff-identity__avatar" aria-hidden="true">
@@ -75,7 +74,7 @@ export function StaffDashboardShell({
         <aside className="staff-sidebar">
           <div className="staff-sidebar__heading">
             <p className="staff-sidebar__label">فضای کاری</p>
-            <span>شیراز · ایران</span>
+            <span>شیراز، ایران</span>
           </div>
           <nav aria-label="منوی پنل کارکنان" className="staff-nav">
             <Link
