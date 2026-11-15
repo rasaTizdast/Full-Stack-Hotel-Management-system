@@ -163,6 +163,7 @@ test('admin manages physical rooms through filters, create, renumber, duplicate 
     );
 
     const filtersAfterRenumber = page.getByRole('form', { name: 'فیلتر اتاق‌ها' });
+    await filtersAfterRenumber.getByLabel('وضعیت اتاق').selectOption('true');
     await filtersAfterRenumber.getByLabel('جست‌وجوی شماره اتاق').fill(replacementNumber);
     await filtersAfterRenumber.getByRole('button', { name: 'اعمال فیلترها' }).click();
     const activeCard = page.getByRole('article', { name: replacementNumber });
