@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useRef, useState, type FormEvent } from 'react';
+import Link from 'next/link';
 import {
   StaffApiError,
   getStaffInventoryRange,
@@ -12,7 +13,6 @@ import {
 import { formatPersianInteger } from '@/lib/jalali-date';
 import {
   getDefaultInventoryRangeInput,
-  parseInventoryCapacityInput,
   parseInventoryPriceInput,
   validateInventoryRangeInput,
   type InventoryRangeInput,
@@ -21,14 +21,10 @@ import { StaffInventoryEditor, type InventoryFormErrors } from './staff-inventor
 import { useStaffSession } from './staff-session-provider';
 
 function rangeFieldsFromResponse(inventory: StaffInventoryRangeResponse) {
-  const capacities = inventory.nights.map((night) => night.totalRooms);
   const prices = inventory.nights.map((night) => night.nightlyPriceToman);
-  const allCapacitiesMatch =
-    capacities.length > 0 && capacities.every((value) => value === capacities[0]);
   const allPricesMatch = prices.length > 0 && prices.every((value) => value === prices[0]);
 
   return {
-    totalRooms: allCapacitiesMatch && capacities[0] !== null ? String(capacities[0]) : '',
     nightlyPriceToman: allPricesMatch && prices[0] !== null ? prices[0] : '',
   };
 }
@@ -37,11 +33,13 @@ function validationMessageForApiField(field: string): string | undefined {
   const messages: Record<string, string> = {
     startDate: 'تاریخ شروع را به شکل شمسی معتبر وارد کنید.',
     endDate: 'تاریخ پایان را به شکل شمسی معتبر وارد کنید.',
-    totalRooms: 'ظرفیت کل باید یک عدد صحیح نامنفی باشد.',
     nightlyPriceToman: 'نرخ شب باید یک مبلغ صحیح نامنفی به تومان باشد.',
   };
   return messages[field];
 }
+
+const historicalRateReadOnlyMessage =
+  'نرخ شب‌های گذشته قابل ویرایش نیست. بازه‌ای از امروز یا بعد از آن انتخاب کنید.';
 
 export function StaffInventoryPage() {
   const { status, staff, csrfToken } = useStaffSession();
@@ -50,7 +48,6 @@ export function StaffInventoryPage() {
   const [selectedRoomTypeId, setSelectedRoomTypeId] = useState('');
   const [rangeInput, setRangeInput] = useState<InventoryRangeInput>(defaultRange);
   const [inventory, setInventory] = useState<StaffInventoryRangeResponse | null>(null);
-  const [totalRooms, setTotalRooms] = useState('');
   const [nightlyPriceToman, setNightlyPriceToman] = useState('');
   const [fieldErrors, setFieldErrors] = useState<InventoryFormErrors>({});
   const [formError, setFormError] = useState<string | null>(null);
@@ -89,7 +86,6 @@ export function StaffInventoryPage() {
         if (!active || rangeRequestId.current !== rangeRequestIdForLoad) return;
         setInventory(result);
         const values = rangeFieldsFromResponse(result);
-        setTotalRooms(values.totalRooms);
         setNightlyPriceToman(values.nightlyPriceToman);
       } catch (cause) {
         if (!active) return;
@@ -137,7 +133,6 @@ export function StaffInventoryPage() {
     setRangeInput((current) => ({ ...current, [field]: value }));
     setFieldErrors((current) => ({ ...current, [field]: undefined }));
     setInventory(null);
-    setTotalRooms('');
     setNightlyPriceToman('');
     setSuccessMessage(null);
     setIsLoadingRange(false);
@@ -147,18 +142,11 @@ export function StaffInventoryPage() {
     rangeRequestId.current += 1;
     setSelectedRoomTypeId(roomTypeId);
     setInventory(null);
-    setTotalRooms('');
     setNightlyPriceToman('');
     setFieldErrors({});
     setFormError(null);
     setSuccessMessage(null);
     setIsLoadingRange(false);
-  }
-
-  function updateCapacity(value: string) {
-    setTotalRooms(value);
-    setFieldErrors((current) => ({ ...current, totalRooms: undefined }));
-    setSuccessMessage(null);
   }
 
   function updateNightlyPrice(value: string) {
@@ -188,7 +176,6 @@ export function StaffInventoryPage() {
       if (rangeRequestId.current !== requestId) return;
       setInventory(result);
       const values = rangeFieldsFromResponse(result);
-      setTotalRooms(values.totalRooms);
       setNightlyPriceToman(values.nightlyPriceToman);
     } catch (cause) {
       if (rangeRequestId.current !== requestId) return;
@@ -206,14 +193,11 @@ export function StaffInventoryPage() {
     setSuccessMessage(null);
     const validation = validateInventoryRangeInput(rangeInput);
     const errors: InventoryFormErrors = validation.errors;
-    const capacity = parseInventoryCapacityInput(totalRooms);
     const price = parseInventoryPriceInput(nightlyPriceToman);
 
-    if (capacity === null) errors.totalRooms = 'ظرفیت کل باید یک عدد صحیح از صفر به بالا باشد.';
     if (price === null) errors.nightlyPriceToman = 'نرخ شب را به‌صورت مبلغ صحیح نامنفی وارد کنید.';
     setFieldErrors(errors);
     if (
-      capacity === null ||
       price === null ||
       Object.keys(errors).length > 0 ||
       !validation.range ||
@@ -230,23 +214,24 @@ export function StaffInventoryPage() {
           roomTypeId: selectedRoomTypeId,
           startDate: validation.range.startDate,
           endDate: validation.range.endDate,
-          totalRooms: capacity,
           nightlyPriceToman: price,
         },
         csrfToken,
       );
       setInventory(result);
-      const values = rangeFieldsFromResponse(result);
-      setTotalRooms(values.totalRooms);
-      setNightlyPriceToman(values.nightlyPriceToman);
+      setNightlyPriceToman(price);
       setSuccessMessage(
-        `ظرفیت و نرخ ${formatPersianInteger(validation.range.numberOfNights)} شب ذخیره شد.`,
+        `نرخ ${formatPersianInteger(validation.range.numberOfNights)} شب ذخیره شد.`,
       );
     } catch (cause) {
       if (cause instanceof StaffApiError && cause.code === 'CAPACITY_BELOW_RESERVED') {
-        setFieldErrors({
-          totalRooms: 'ظرفیت نمی‌تواند از مجموع اتاق‌های در انتظار تأیید و رزروشده کمتر باشد.',
-        });
+        setFormError(
+          'ظرفیت فیزیکی با اتاق‌های رزروشده هم‌خوان نیست؛ تغییر ظرفیت فقط از مدیریت اتاق‌های فیزیکی انجام می‌شود.',
+        );
+        return;
+      }
+      if (cause instanceof StaffApiError && cause.code === 'HISTORICAL_INVENTORY_READ_ONLY') {
+        setFormError(historicalRateReadOnlyMessage);
         return;
       }
       if (cause instanceof StaffApiError && cause.fields?.length) {
@@ -268,14 +253,20 @@ export function StaffInventoryPage() {
     <section className="staff-inventory" aria-labelledby="staff-inventory-title">
       <header className="staff-inventory__header">
         <h1 id="staff-inventory-title">ظرفیت و نرخ‌ها</h1>
-        <p>برای هر اتاق، ظرفیت و نرخ شبانه را در یک بازه بررسی و یک‌جا ویرایش کنید.</p>
+        <p>ظرفیت فیزیکی را در بازهٔ اقامت ببینید و نرخ شبانه را برای چند شب یک‌جا تنظیم کنید.</p>
       </header>
 
       <aside className="staff-inventory__snapshot-note">
         <span className="staff-inventory__note-mark" aria-hidden="true">
           ◇
         </span>
-        <p>رزروهای ثبت‌شده با قیمت فعلی خود باقی می‌مانند.</p>
+        <div>
+          <p>قیمت ثبت‌شده برای رزروهای موجود تغییر نمی‌کند.</p>
+          <p>ظرفیت از اتاق‌های فعال و مسدودی‌های هر شب به‌صورت خودکار محاسبه می‌شود.</p>
+        </div>
+        <Link className="staff-inventory__rooms-link" href="/staff/rooms/manage">
+          مدیریت اتاق‌های فیزیکی
+        </Link>
       </aside>
 
       <StaffInventoryEditor
@@ -283,7 +274,6 @@ export function StaffInventoryPage() {
         selectedRoomTypeId={selectedRoomTypeId}
         rangeInput={rangeInput}
         inventory={inventory}
-        totalRooms={totalRooms}
         nightlyPriceToman={nightlyPriceToman}
         fieldErrors={fieldErrors}
         formError={formError}
@@ -294,7 +284,6 @@ export function StaffInventoryPage() {
         onRoomTypeChange={updateRoomType}
         onRangeInputChange={updateRangeField}
         onLoadRange={loadRange}
-        onCapacityChange={updateCapacity}
         onPriceChange={updateNightlyPrice}
         onSaveRange={saveRange}
       />

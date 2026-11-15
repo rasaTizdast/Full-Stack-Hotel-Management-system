@@ -39,4 +39,50 @@ describe('isolated Playwright database target', () => {
       ),
     ).toThrow('must match the isolated database in the root .env file');
   });
+
+  it('uses an explicit isolated override while keeping a development .env for credentials', () => {
+    const override = 'postgresql://tester:secret@127.0.0.1:55432/hotel_booking_hpm001_test?schema=public';
+    expect(
+      getIsolatedTestDatabaseUrl(
+        'DATABASE_URL=postgresql://tester:secret@127.0.0.1:5433/hotel_booking_dev?schema=public',
+        undefined,
+        override,
+      ),
+    ).toBe(override);
+  });
+
+  it('validates the override as a PostgreSQL URL ending in _test', () => {
+    expect(() =>
+      getIsolatedTestDatabaseUrl(
+        'DATABASE_URL=postgresql://tester:secret@127.0.0.1:5433/hotel_booking_dev',
+        undefined,
+        'postgresql://tester:secret@127.0.0.1:55432/hotel_booking_dev',
+      ),
+    ).toThrow('HBE_E2E_DATABASE_URL DATABASE_URL must target a database ending in _test');
+    expect(() =>
+      getIsolatedTestDatabaseUrl(
+        'DATABASE_URL=postgresql://tester:secret@127.0.0.1:5433/hotel_booking_dev',
+        undefined,
+        'mysql://tester:secret@127.0.0.1:55432/hotel_booking_hpm001_test',
+      ),
+    ).toThrow('HBE_E2E_DATABASE_URL must contain a valid PostgreSQL DATABASE_URL');
+  });
+
+  it('rejects an inherited DATABASE_URL that disagrees with the override', () => {
+    const override = 'postgresql://tester:secret@127.0.0.1:55432/hotel_booking_hpm001_test';
+    expect(() =>
+      getIsolatedTestDatabaseUrl(
+        'DATABASE_URL=postgresql://tester:secret@127.0.0.1:5433/hotel_booking_dev',
+        'postgresql://tester:secret@127.0.0.1:55432/another_test',
+        override,
+      ),
+    ).toThrow('must match HBE_E2E_DATABASE_URL');
+    expect(() =>
+      getIsolatedTestDatabaseUrl(
+        'DATABASE_URL=postgresql://tester:secret@127.0.0.1:5433/hotel_booking_dev',
+        'postgresql://tester:secret@127.0.0.1:5433/hotel_booking_dev',
+        override,
+      ),
+    ).toThrow('inherited environment DATABASE_URL must target a database ending in _test');
+  });
 });

@@ -1,7 +1,9 @@
 import { defineConfig, devices } from '@playwright/test';
 import { resolve } from 'node:path';
+import { getE2eDatabaseUrl } from './e2e/test-database';
 
 const workspaceRoot = resolve(process.cwd(), '../..');
+const isolatedTestDatabaseUrl = getE2eDatabaseUrl(workspaceRoot);
 const webPort = process.env.HBE_E2E_WEB_PORT ?? '3015';
 const apiPort = process.env.HBE_E2E_API_PORT ?? '4015';
 const webOrigin = `http://localhost:${webPort}`;
@@ -42,7 +44,12 @@ export default defineConfig({
       url: `http://localhost:${apiPort}/health/ready`,
       reuseExistingServer,
       timeout: 120_000,
-      env: { NODE_ENV: 'test', PORT: apiPort, WEB_ORIGIN: webOrigin },
+      env: {
+        DATABASE_URL: isolatedTestDatabaseUrl,
+        NODE_ENV: 'test',
+        PORT: apiPort,
+        WEB_ORIGIN: webOrigin,
+      },
     },
     {
       command: 'pnpm --filter @hotel/web dev',

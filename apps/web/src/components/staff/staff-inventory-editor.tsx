@@ -14,7 +14,6 @@ import {
 } from '@/lib/staff-inventory';
 
 export type InventoryFormErrors = InventoryRangeErrors & {
-  totalRooms?: string;
   nightlyPriceToman?: string;
 };
 
@@ -23,7 +22,6 @@ interface StaffInventoryEditorProps {
   selectedRoomTypeId: string;
   rangeInput: InventoryRangeInput;
   inventory: StaffInventoryRangeResponse | null;
-  totalRooms: string;
   nightlyPriceToman: string;
   fieldErrors: InventoryFormErrors;
   formError: string | null;
@@ -34,17 +32,30 @@ interface StaffInventoryEditorProps {
   onRoomTypeChange: (roomTypeId: string) => void;
   onRangeInputChange: (field: keyof InventoryRangeInput, value: string) => void;
   onLoadRange: (event: FormEvent<HTMLFormElement>) => Promise<void>;
-  onCapacityChange: (value: string) => void;
   onPriceChange: (value: string) => void;
   onSaveRange: (event: FormEvent<HTMLFormElement>) => Promise<void>;
 }
 
-function formatNightValue(value: number | null): string {
-  return value === null ? 'تنظیم نشده' : formatPersianInteger(value);
+function formatNightValue(night: StaffInventoryNight, value: number | null): string {
+  if (night.capacitySource === 'UNAVAILABLE' || value === null) return 'نامشخص';
+  return formatPersianInteger(value);
 }
 
-function formatTomanValue(value: string | null): string {
-  if (value === null) return 'تنظیم نشده';
+function formatActiveRoomCount(night: StaffInventoryNight): string {
+  if (night.capacitySource === 'UNAVAILABLE' || night.totalRooms === null || night.blockedRooms === null) {
+    return 'نامشخص';
+  }
+  return formatPersianInteger(night.totalRooms + night.blockedRooms);
+}
+
+function capacitySourceLabel(night: StaffInventoryNight): string {
+  if (night.capacitySource === 'UNAVAILABLE') return 'تاریخچه ظرفیت در دسترس نیست';
+  if (night.capacitySource === 'HISTORICAL') return 'ظرفیت ثبت‌شده';
+  return 'ظرفیت محاسبه‌شده';
+}
+
+function formatTomanValue(value: string | null, capacitySource: StaffInventoryNight['capacitySource']): string {
+  if (value === null) return capacitySource === 'UNAVAILABLE' ? 'نامشخص' : 'نرخ ثبت نشده';
   return /^\d+$/.test(value) ? formatPersianInteger(BigInt(value)) : 'نامعتبر';
 }
 
@@ -57,13 +68,15 @@ function NightRow({ night }: { night: StaffInventoryNight }) {
     <tr>
       <th scope="row">
         <time dateTime={night.stayDate}>{formatNightDate(night.stayDate)}</time>
+        <span className="staff-inventory__capacity-source">{capacitySourceLabel(night)}</span>
       </th>
-      <td>{formatNightValue(night.totalRooms)}</td>
-      <td>{formatNightValue(night.bookedRooms)}</td>
-      <td>{formatNightValue(night.heldRooms)}</td>
-      <td>{formatNightValue(night.availableRooms)}</td>
-      <td>
-        <bdi>{formatTomanValue(night.nightlyPriceToman)}</bdi>
+      <td>{formatActiveRoomCount(night)}</td>
+      <td>{formatNightValue(night, night.blockedRooms)}</td>
+      <td>{formatNightValue(night, night.heldRooms)}</td>
+      <td>{formatNightValue(night, night.bookedRooms)}</td>
+      <td>{formatNightValue(night, night.availableRooms)}</td>
+      <td className={night.nightlyPriceToman === null ? 'staff-inventory__missing-rate' : undefined}>
+        <bdi>{formatTomanValue(night.nightlyPriceToman, night.capacitySource)}</bdi>
       </td>
     </tr>
   );
@@ -289,22 +302,15 @@ function InventoryOverview({
         </span>
       </div>
 
-      <p className="staff-inventory__scroll-hint">
-        برای دیدن همهٔ ستون‌ها، جدول را افقی پیمایش کنید.
-      </p>
-
-      <div
-        className="staff-inventory__table-scroll"
-        tabIndex={0}
-        aria-label="جدول ظرفیت و نرخ شبانه؛ برای مشاهده در صفحه کوچک افقی حرکت کنید"
-      >
+      <div className="staff-inventory__table-scroll">
         <table aria-label="وضعیت ظرفیت و نرخ هر شب">
           <thead>
             <tr>
               <th scope="col">شب اقامت</th>
-              <th scope="col">ظرفیت کل</th>
-              <th scope="col">رزرو قطعی</th>
+              <th scope="col">اتاق فعال</th>
+              <th scope="col">مسدود</th>
               <th scope="col">در انتظار</th>
+              <th scope="col">رزرو قطعی</th>
               <th scope="col">اتاق آزاد</th>
               <th scope="col">نرخ شبانه (تومان)</th>
             </tr>
@@ -316,6 +322,27 @@ function InventoryOverview({
           </tbody>
         </table>
       </div>
+
+      <div className="staff-inventory__night-cards" aria-label="وضعیت هر شب">
+        {inventory.nights.map((night) => (
+          <article className="staff-inventory__night-card" key={night.stayDate}>
+            <h3>
+              <time dateTime={night.stayDate}>{formatNightDate(night.stayDate)}</time>
+              <span className="staff-inventory__capacity-source">{capacitySourceLabel(night)}</span>
+            </h3>
+            <dl>
+              <div><dt>اتاق فعال</dt><dd>{formatActiveRoomCount(night)}</dd></div>
+              <div><dt>مسدود</dt><dd>{formatNightValue(night, night.blockedRooms)}</dd></div>
+              <div><dt>در انتظار</dt><dd>{formatNightValue(night, night.heldRooms)}</dd></div>
+              <div><dt>رزرو قطعی</dt><dd>{formatNightValue(night, night.bookedRooms)}</dd></div>
+              <div><dt>اتاق آزاد</dt><dd>{formatNightValue(night, night.availableRooms)}</dd></div>
+              <div className={night.nightlyPriceToman === null ? 'staff-inventory__missing-rate' : undefined}>
+                <dt>نرخ شبانه</dt><dd><bdi>{formatTomanValue(night.nightlyPriceToman, night.capacitySource)}</bdi></dd>
+              </div>
+            </dl>
+          </article>
+        ))}
+      </div>
     </section>
   );
 }
@@ -323,47 +350,47 @@ function InventoryOverview({
 type InventoryEditFormProps = Pick<
   StaffInventoryEditorProps,
   | 'fieldErrors'
-  | 'totalRooms'
+  | 'inventory'
   | 'nightlyPriceToman'
   | 'isLoadingRange'
   | 'isSaving'
-  | 'onCapacityChange'
   | 'onPriceChange'
   | 'onSaveRange'
 >;
 
 function InventoryEditForm({
   fieldErrors,
-  totalRooms,
+  inventory,
   nightlyPriceToman,
   isLoadingRange,
   isSaving,
-  onCapacityChange,
   onPriceChange,
   onSaveRange,
 }: InventoryEditFormProps) {
+  const historicalRange = inventory?.nights.some(
+    (night) => night.capacitySource !== 'PROJECTED',
+  ) ?? false;
+
   return (
     <form
       className="staff-inventory__edit-form"
       onSubmit={onSaveRange}
-      aria-label="ویرایش ظرفیت و نرخ بازه"
+      aria-label="ویرایش نرخ بازه"
     >
       <div className="staff-inventory__edit-heading">
         <div>
-          <h2>ویرایش بازه</h2>
+          <h2>تنظیم نرخ شبانه</h2>
         </div>
-        <p>مقدارهای تازه برای همه شب‌های انتخاب‌شده ذخیره می‌شوند.</p>
+        <p>نرخ تازه برای همه شب‌های انتخاب‌شده ذخیره می‌شود؛ ظرفیت از اتاق‌های فیزیکی محاسبه می‌شود.</p>
       </div>
 
+      {historicalRange ? (
+        <p className="staff-inventory__historical-rate-note" role="status">
+          نرخ شب‌های گذشته قابل ویرایش نیست. بازه‌ای از امروز یا بعد از آن انتخاب کنید.
+        </p>
+      ) : null}
+
       <div className="staff-inventory__edit-fields">
-        <NumericField
-          id="staff-inventory-capacity"
-          label="ظرفیت کل اتاق‌ها"
-          value={totalRooms}
-          help="عدد کل اتاق‌هایی که برای هر شب قابل عرضه است"
-          error={fieldErrors.totalRooms}
-          onChange={onCapacityChange}
-        />
         <NumericField
           id="staff-inventory-nightly-price"
           label="نرخ یک شب (تومان)"
@@ -376,7 +403,7 @@ function InventoryEditForm({
         <button
           className="button button--jade staff-inventory__save"
           type="submit"
-          disabled={isSaving || isLoadingRange}
+          disabled={isSaving || isLoadingRange || historicalRange}
         >
           {isSaving ? 'در حال ذخیره…' : 'ذخیره برای همه شب‌ها'}
         </button>

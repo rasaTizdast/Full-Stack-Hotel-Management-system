@@ -1,12 +1,10 @@
 import { execFileSync } from 'node:child_process';
-import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
-import { getIsolatedTestDatabaseUrl } from '../src/lib/test-database-url';
+import { getE2eDatabaseUrl } from './test-database';
 
 export default async function globalSetup(): Promise<void> {
   const workspaceRoot = resolve(process.cwd(), '../..');
-  const envContent = readFileSync(resolve(workspaceRoot, '.env'), 'utf8');
-  const databaseUrl = getIsolatedTestDatabaseUrl(envContent, process.env.DATABASE_URL);
+  const databaseUrl = getE2eDatabaseUrl(workspaceRoot);
   const pnpm = process.platform === 'win32' ? 'pnpm.cmd' : 'pnpm';
   const execution = {
     cwd: workspaceRoot,

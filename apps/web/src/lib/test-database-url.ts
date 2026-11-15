@@ -43,7 +43,25 @@ function readEnvDatabaseUrl(envContent: string): string {
 export function getIsolatedTestDatabaseUrl(
   envContent: string,
   inheritedDatabaseUrl: string | undefined,
+  e2eDatabaseUrl: string | undefined = undefined,
 ): string {
+  if (e2eDatabaseUrl?.trim()) {
+    const isolatedOverride = normalizeIsolatedDatabaseUrl(
+      e2eDatabaseUrl.trim(),
+      'HBE_E2E_DATABASE_URL',
+    );
+    if (!inheritedDatabaseUrl?.trim()) return isolatedOverride;
+
+    const inherited = normalizeIsolatedDatabaseUrl(
+      inheritedDatabaseUrl.trim(),
+      'The inherited environment',
+    );
+    if (inherited !== isolatedOverride) {
+      throw new Error('The inherited DATABASE_URL must match HBE_E2E_DATABASE_URL.');
+    }
+    return isolatedOverride;
+  }
+
   const envDatabaseUrl = readEnvDatabaseUrl(envContent);
   if (!inheritedDatabaseUrl?.trim()) return envDatabaseUrl;
 

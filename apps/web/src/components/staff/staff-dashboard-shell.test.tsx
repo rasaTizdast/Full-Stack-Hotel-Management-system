@@ -21,6 +21,7 @@ describe('StaffDashboardShell', () => {
       '/staff/bookings',
     );
     expect(screen.queryByRole('link', { name: 'ظرفیت و نرخ‌ها' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('link', { name: 'اتاق‌های فیزیکی' })).not.toBeInTheDocument();
     expect(screen.getByText('صفحه امن')).toBeInTheDocument();
   });
 
@@ -47,6 +48,27 @@ describe('StaffDashboardShell', () => {
     expect(screen.getByRole('link', { name: 'ظرفیت و نرخ‌ها' })).toHaveAttribute(
       'href',
       '/staff/inventory',
+    );
+  });
+
+  it('shows the physical rooms navigation to administrators and marks the active route', () => {
+    render(
+      <StaffDashboardShell
+        staff={{ ...receptionist, role: 'ADMIN' }}
+        onLogout={vi.fn()}
+        currentPath="/staff/rooms/manage"
+      >
+        <p>مدیریت اتاق‌ها</p>
+      </StaffDashboardShell>,
+    );
+
+    expect(screen.getByRole('link', { name: 'اتاق‌های فیزیکی' })).toHaveAttribute(
+      'href',
+      '/staff/rooms/manage',
+    );
+    expect(screen.getByRole('link', { name: 'اتاق‌های فیزیکی' })).toHaveAttribute(
+      'aria-current',
+      'page',
     );
   });
 

@@ -1,4 +1,4 @@
-import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { StaffInventoryPage } from './staff-inventory-page';
 import { StaffApiError } from '@/lib/staff-api';
@@ -55,7 +55,9 @@ const response = {
   nights: [
     {
       stayDate: '2027-01-02',
+      capacitySource: 'PROJECTED' as const,
       totalRooms: 3,
+      blockedRooms: 1,
       heldRooms: 1,
       bookedRooms: 0,
       availableRooms: 2,
@@ -63,11 +65,13 @@ const response = {
     },
     {
       stayDate: '2027-01-03',
-      totalRooms: 3,
+      capacitySource: 'PROJECTED' as const,
+      totalRooms: 4,
+      blockedRooms: 0,
       heldRooms: 0,
-      bookedRooms: 0,
+      bookedRooms: 1,
       availableRooms: 3,
-      nightlyPriceToman: '3500000',
+      nightlyPriceToman: null,
     },
   ],
 };
@@ -117,8 +121,15 @@ describe('StaffInventoryPage', () => {
     ).toBeInTheDocument();
     expect(screen.getByRole('option', { name: 'اتاق باغ' })).toBeInTheDocument();
     expect(screen.getByRole('option', { name: 'اتاق در حال تعمیر (غیرفعال)' })).toBeInTheDocument();
-    expect(screen.getByText('رزروهای ثبت‌شده با قیمت فعلی خود باقی می‌مانند.')).toBeInTheDocument();
-    expect(screen.getAllByText('۳٬۵۰۰٬۰۰۰')).toHaveLength(2);
+    expect(screen.getByText('ظرفیت از اتاق‌های فعال و مسدودی‌های هر شب به‌صورت خودکار محاسبه می‌شود.')).toBeInTheDocument();
+    expect(screen.getByText('قیمت ثبت‌شده برای رزروهای موجود تغییر نمی‌کند.')).toBeInTheDocument();
+    expect(screen.getAllByText('ظرفیت محاسبه‌شده')).toHaveLength(4);
+    expect(screen.getAllByText('۴')).toHaveLength(4);
+    expect(screen.getAllByText('نرخ ثبت نشده')).toHaveLength(2);
+    const inventoryTable = screen.getByRole('table', { name: 'وضعیت ظرفیت و نرخ هر شب' });
+    expect(within(inventoryTable).getByRole('columnheader', { name: 'مسدود' })).toBeInTheDocument();
+    expect(within(inventoryTable).getByRole('columnheader', { name: 'در انتظار' })).toBeInTheDocument();
+    expect(within(inventoryTable).getByRole('columnheader', { name: 'رزرو قطعی' })).toBeInTheDocument();
     expect(inventoryApi.getStaffInventoryRange).toHaveBeenCalledWith(
       expect.objectContaining({ roomTypeId: roomType.id }),
     );
@@ -132,6 +143,66 @@ describe('StaffInventoryPage', () => {
         expect.objectContaining({ roomTypeId: inactiveRoomTypeOption.id }),
       );
     });
+  });
+
+  it('marks missing historical capacity as unavailable instead of displaying zero', async () => {
+    inventoryApi.getStaffInventoryRange.mockResolvedValue({
+      ...response,
+      startDate: '2026-10-01',
+      endDate: '2026-10-02',
+      nights: [
+        {
+          stayDate: '2026-10-01',
+          capacitySource: 'UNAVAILABLE',
+          totalRooms: null,
+          blockedRooms: null,
+          heldRooms: null,
+          bookedRooms: null,
+          availableRooms: null,
+          nightlyPriceToman: null,
+        },
+      ],
+    });
+    session.current = {
+      ...session.current,
+      staff: { ...session.current.staff, role: 'ADMIN' },
+    };
+
+    render(<StaffInventoryPage />);
+
+    expect(await screen.findAllByText('تاریخچه ظرفیت در دسترس نیست')).not.toHaveLength(0);
+    expect(screen.getAllByText('نامشخص')).toHaveLength(12);
+    expect(screen.queryByText('نرخ ثبت نشده')).not.toBeInTheDocument();
+    expect(screen.queryByText('۰')).not.toBeInTheDocument();
+  });
+
+  it('locks historical rate ranges and explains how to recover', async () => {
+    inventoryApi.getStaffInventoryRange.mockResolvedValue({
+      ...response,
+      startDate: '2026-10-01',
+      endDate: '2026-10-02',
+      nights: [
+        {
+          ...response.nights[0],
+          stayDate: '2026-10-01',
+          capacitySource: 'HISTORICAL',
+          nightlyPriceToman: null,
+        },
+      ],
+    });
+    session.current = {
+      ...session.current,
+      staff: { ...session.current.staff, role: 'ADMIN' },
+    };
+
+    render(<StaffInventoryPage />);
+
+    expect(await screen.findByRole('button', { name: 'ذخیره برای همه شب‌ها' })).toBeDisabled();
+    expect(screen.getAllByText('ظرفیت ثبت‌شده')).toHaveLength(2);
+    expect(screen.getAllByText('نرخ ثبت نشده')).toHaveLength(2);
+    expect(screen.getByRole('status')).toHaveTextContent(
+      'نرخ شب‌های گذشته قابل ویرایش نیست. بازه‌ای از امروز یا بعد از آن انتخاب کنید.',
+    );
   });
 
   it('ignores a range response after the selected room changes', async () => {
@@ -174,10 +245,10 @@ describe('StaffInventoryPage', () => {
     });
 
     expect(screen.queryByRole('table', { name: 'وضعیت ظرفیت و نرخ هر شب' })).not.toBeInTheDocument();
-    expect(screen.queryByLabelText('ظرفیت کل اتاق‌ها')).not.toBeInTheDocument();
+    expect(screen.queryByLabelText('ظرفیت مشتق‌شده')).not.toBeInTheDocument();
   });
 
-  it('shows capacity conflicts on the capacity field', async () => {
+  it('updates a rate without sending or editing derived room capacity', async () => {
     inventoryApi.updateStaffInventoryRange.mockRejectedValue(
       new StaffApiError(
         'Capacity cannot be lower than held plus booked rooms.',
@@ -192,14 +263,43 @@ describe('StaffInventoryPage', () => {
 
     render(<StaffInventoryPage />);
 
-    const capacity = await screen.findByLabelText('ظرفیت کل اتاق‌ها');
-    fireEvent.change(capacity, { target: { value: '۰' } });
+    const rate = await screen.findByLabelText('نرخ یک شب (تومان)');
+    fireEvent.change(rate, { target: { value: '۴۰۰۰۰۰۰' } });
     fireEvent.click(screen.getByRole('button', { name: 'ذخیره برای همه شب‌ها' }));
 
     expect(await screen.findByRole('alert')).toHaveTextContent(
-      'ظرفیت نمی‌تواند از مجموع اتاق‌های در انتظار تأیید و رزروشده کمتر باشد.',
+      'ظرفیت فیزیکی با اتاق‌های رزروشده هم‌خوان نیست؛ تغییر ظرفیت فقط از مدیریت اتاق‌های فیزیکی انجام می‌شود.',
     );
-    expect(capacity).toHaveAttribute('aria-invalid', 'true');
+    expect(screen.queryByLabelText('ظرفیت کل اتاق‌ها')).not.toBeInTheDocument();
+    expect(inventoryApi.updateStaffInventoryRange).toHaveBeenCalledWith(
+      expect.objectContaining({ roomTypeId: roomType.id, nightlyPriceToman: '4000000' }),
+      'csrf-token',
+    );
+    expect(inventoryApi.updateStaffInventoryRange.mock.calls[0]?.[0]).not.toHaveProperty('totalRooms');
+  });
+
+  it('maps the historical inventory conflict to Persian recovery guidance', async () => {
+    inventoryApi.updateStaffInventoryRange.mockRejectedValue(
+      new StaffApiError(
+        'Historical capacity can only be changed by an authorized correction workflow.',
+        409,
+        'HISTORICAL_INVENTORY_READ_ONLY',
+      ),
+    );
+    session.current = {
+      ...session.current,
+      staff: { ...session.current.staff, role: 'ADMIN' },
+    };
+
+    render(<StaffInventoryPage />);
+    fireEvent.change(await screen.findByLabelText('نرخ یک شب (تومان)'), {
+      target: { value: '۴۰۰۰۰۰۰' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'ذخیره برای همه شب‌ها' }));
+
+    expect(await screen.findByRole('alert')).toHaveTextContent(
+      'نرخ شب‌های گذشته قابل ویرایش نیست. بازه‌ای از امروز یا بعد از آن انتخاب کنید.',
+    );
   });
 
   it('rejects invalid Jalali ranges before requesting inventory', async () => {

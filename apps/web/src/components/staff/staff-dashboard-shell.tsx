@@ -110,6 +110,23 @@ export function StaffDashboardShell({
             </Link>
             {staff.role === 'ADMIN' && (
               <Link
+                href="/staff/rooms/manage"
+                aria-current={currentPath.startsWith('/staff/rooms') ? 'page' : undefined}
+                aria-label="اتاق‌های فیزیکی"
+              >
+                <span className="staff-nav__glyph" aria-hidden="true">
+                  <svg viewBox="0 0 24 24" fill="none">
+                    <path d="M4 19.5h16M5.5 19V7.5h13V19M8 10h3v3H8zM13 10h3v3h-3zM8 15h3v4H8zM13 15h3v2h-3z" />
+                  </svg>
+                </span>
+                <span className="staff-nav__copy">
+                  <strong>اتاق‌های فیزیکی</strong>
+                  <small>شماره و وضعیت اتاق‌ها</small>
+                </span>
+              </Link>
+            )}
+            {staff.role === 'ADMIN' && (
+              <Link
                 href="/staff/inventory"
                 aria-current={currentPath.startsWith('/staff/inventory') ? 'page' : undefined}
                 aria-label="ظرفیت و نرخ‌ها"
