@@ -20,17 +20,20 @@ export class StaffInventoryNightDto {
   @ApiProperty({ format: 'date', example: '2027-05-01' })
   stayDate!: string;
 
-  @ApiProperty({ type: Number, nullable: true, example: 4 })
-  totalRooms!: number | null;
+  @ApiProperty({ type: Number, example: 4 })
+  totalRooms!: number;
 
-  @ApiProperty({ type: Number, nullable: true, example: 1 })
-  heldRooms!: number | null;
+  @ApiProperty({ type: Number, example: 1 })
+  heldRooms!: number;
 
-  @ApiProperty({ type: Number, nullable: true, example: 1 })
-  bookedRooms!: number | null;
+  @ApiProperty({ type: Number, example: 1 })
+  bookedRooms!: number;
 
-  @ApiProperty({ type: Number, nullable: true, example: 2 })
-  availableRooms!: number | null;
+  @ApiProperty({ type: Number, example: 0 })
+  blockedRooms!: number;
+
+  @ApiProperty({ type: Number, example: 2 })
+  availableRooms!: number;
 
   @ApiProperty({ nullable: true, example: '4800000' })
   nightlyPriceToman!: string | null;

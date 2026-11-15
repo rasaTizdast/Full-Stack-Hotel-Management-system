@@ -104,6 +104,14 @@ describe('Staff inventory API (e2e)', () => {
       },
     });
     roomTypeId = roomType.id;
+    await prisma.room.createMany({
+      data: ['101', '102', '103'].map((roomNumber) => ({
+        hotelId,
+        roomTypeId,
+        roomNumber,
+        housekeepingStatus: 'INSPECTED',
+      })),
+    });
     const orderedRoomType = await prisma.roomType.create({
       data: {
         hotelId,
@@ -134,6 +142,9 @@ describe('Staff inventory API (e2e)', () => {
 
   afterAll(async () => {
     if (prisma) {
+      await prisma.roomAssignment.deleteMany({ where: { booking: { roomTypeId } } });
+      await prisma.roomBlock.deleteMany({ where: { room: { roomTypeId } } });
+      await prisma.room.deleteMany({ where: { roomTypeId } });
       await prisma.roomNightInventory.deleteMany({
         where: { roomTypeId },
       });
@@ -153,11 +164,11 @@ describe('Staff inventory API (e2e)', () => {
       .put('/api/v1/staff/inventory')
       .set('Cookie', admin.cookie)
       .set('X-CSRF-Token', admin.csrfToken)
+      .expect('Cache-Control', 'private, no-store')
       .send({
         roomTypeId,
         startDate: '2027-01-02',
         endDate: '2027-01-04',
-        totalRooms: 3,
         nightlyPriceToman: '3500000',
       })
       .expect(200);
@@ -166,6 +177,7 @@ describe('Staff inventory API (e2e)', () => {
       .get('/api/v1/staff/inventory')
       .set('Cookie', admin.cookie)
       .query({ roomTypeId, startDate: '2027-01-02', endDate: '2027-01-04' })
+      .expect('Cache-Control', 'private, no-store')
       .expect(200);
 
     expect(response.body).toMatchObject({
@@ -178,6 +190,7 @@ describe('Staff inventory API (e2e)', () => {
           totalRooms: 3,
           heldRooms: 0,
           bookedRooms: 0,
+          blockedRooms: 0,
           availableRooms: 3,
           nightlyPriceToman: '3500000',
         },
@@ -186,6 +199,7 @@ describe('Staff inventory API (e2e)', () => {
           totalRooms: 3,
           heldRooms: 0,
           bookedRooms: 0,
+          blockedRooms: 0,
           availableRooms: 3,
           nightlyPriceToman: '3500000',
         },
@@ -245,7 +259,6 @@ describe('Staff inventory API (e2e)', () => {
         roomTypeId,
         startDate: '2027-01-02',
         endDate: '2027-01-04',
-        totalRooms: 3,
         nightlyPriceToman: '3500000',
       })
       .expect(403);
@@ -253,12 +266,12 @@ describe('Staff inventory API (e2e)', () => {
     expect(errorBody(response).code).toBe('FORBIDDEN');
   });
 
-  it('allows receptionists to read inventory but rejects their mutation', async () => {
+  it('restricts inventory reads and mutations to administrators', async () => {
     await request(app.getHttpServer())
       .get('/api/v1/staff/inventory')
       .set('Cookie', receptionist.cookie)
       .query({ roomTypeId, startDate: '2027-01-02', endDate: '2027-01-04' })
-      .expect(200);
+      .expect(403);
 
     const response = await request(app.getHttpServer())
       .put('/api/v1/staff/inventory')
@@ -268,7 +281,6 @@ describe('Staff inventory API (e2e)', () => {
         roomTypeId,
         startDate: '2027-01-02',
         endDate: '2027-01-04',
-        totalRooms: 3,
         nightlyPriceToman: '3500000',
       })
       .expect(403);
@@ -285,7 +297,6 @@ describe('Staff inventory API (e2e)', () => {
         roomTypeId,
         startDate: '2027-02-30',
         endDate: '2027-03-01',
-        totalRooms: 3,
         nightlyPriceToman: '100',
       })
       .expect(400);
@@ -296,7 +307,7 @@ describe('Staff inventory API (e2e)', () => {
     );
   });
 
-  it('returns field errors for out-of-range capacity and invalid price strings', async () => {
+  it('returns field errors for invalid nightly price strings', async () => {
     const response = await request(app.getHttpServer())
       .put('/api/v1/staff/inventory')
       .set('Cookie', admin.cookie)
@@ -305,37 +316,13 @@ describe('Staff inventory API (e2e)', () => {
         roomTypeId,
         startDate: '2027-02-01',
         endDate: '2027-02-02',
-        totalRooms: 2_147_483_648,
         nightlyPriceToman: '-10',
       })
       .expect(400);
 
     expect(errorBody(response).code).toBe('VALIDATION_ERROR');
     expect(errorBody(response).fields).toEqual(
-      expect.arrayContaining([
-        expect.objectContaining({ field: 'totalRooms' }),
-        expect.objectContaining({ field: 'nightlyPriceToman' }),
-      ]),
-    );
-  });
-
-  it('rejects negative room capacity as a field validation error', async () => {
-    const response = await request(app.getHttpServer())
-      .put('/api/v1/staff/inventory')
-      .set('Cookie', admin.cookie)
-      .set('X-CSRF-Token', admin.csrfToken)
-      .send({
-        roomTypeId,
-        startDate: '2027-02-01',
-        endDate: '2027-02-02',
-        totalRooms: -1,
-        nightlyPriceToman: '100',
-      })
-      .expect(400);
-
-    expect(errorBody(response).code).toBe('VALIDATION_ERROR');
-    expect(errorBody(response).fields).toEqual(
-      expect.arrayContaining([expect.objectContaining({ field: 'totalRooms' })]),
+      expect.arrayContaining([expect.objectContaining({ field: 'nightlyPriceToman' })]),
     );
   });
 
@@ -348,7 +335,6 @@ describe('Staff inventory API (e2e)', () => {
         roomTypeId,
         startDate: '2027-03-01',
         endDate: '2027-03-02',
-        totalRooms: 1,
         nightlyPriceToman: '9223372036854775808',
       })
       .expect(400);
@@ -359,7 +345,7 @@ describe('Staff inventory API (e2e)', () => {
     );
   });
 
-  it('rejects a range capacity below held plus booked rooms without partial updates', async () => {
+  it('preserves held and booked counters when prices change', async () => {
     const firstDate = new Date('2027-01-10T00:00:00.000Z');
     const secondDate = new Date('2027-01-11T00:00:00.000Z');
     await prisma.roomNightInventory.createMany({
@@ -391,22 +377,27 @@ describe('Staff inventory API (e2e)', () => {
         roomTypeId,
         startDate: '2027-01-10',
         endDate: '2027-01-12',
-        totalRooms: 2,
         nightlyPriceToman: '6000000',
       })
-      .expect(409);
-
-    expect(errorBody(response).code).toBe('CAPACITY_BELOW_RESERVED');
-    expect(errorBody(response).message).toBe(
-      'Capacity cannot be lower than held plus booked rooms.',
-    );
+      .expect(200);
+    const responseBody = response.body as {
+      nights: Array<{ heldRooms: number; bookedRooms: number }>;
+    };
+    expect(responseBody.nights[0]).toMatchObject({ heldRooms: 1, bookedRooms: 0 });
     const persisted = await prisma.roomNightInventory.findMany({
       where: { roomTypeId, stayDate: { gte: firstDate, lt: new Date('2027-01-12T00:00:00.000Z') } },
       orderBy: { stayDate: 'asc' },
     });
-    expect(persisted.map((night) => [night.totalRooms, night.nightlyPriceToman])).toEqual([
-      [4, 4_000_000n],
-      [4, 5_000_000n],
+    expect(
+      persisted.map((night) => [
+        night.totalRooms,
+        night.heldRooms,
+        night.bookedRooms,
+        night.nightlyPriceToman,
+      ]),
+    ).toEqual([
+      [3, 1, 0, 6_000_000n],
+      [3, 1, 2, 6_000_000n],
     ]);
   }, 30000);
 
@@ -441,7 +432,7 @@ describe('Staff inventory API (e2e)', () => {
       data: {
         roomTypeId,
         stayDate,
-        totalRooms: 2,
+        totalRooms: 3,
         bookedRooms: 1,
         nightlyPriceToman: 3_000_000n,
       },
@@ -454,7 +445,6 @@ describe('Staff inventory API (e2e)', () => {
         roomTypeId,
         startDate: '2027-01-20',
         endDate: '2027-01-21',
-        totalRooms: 2,
         nightlyPriceToman: '4500000',
       })
       .expect(200);

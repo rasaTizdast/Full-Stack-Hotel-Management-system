@@ -25,6 +25,21 @@ enum StaffRole {
   @@map("staff_role")
 }
 
+enum HousekeepingStatus {
+  DIRTY
+  CLEAN
+  INSPECTED
+
+  @@map("housekeeping_status")
+}
+
+enum RoomBlockKind {
+  OUT_OF_ORDER
+  CAPACITY_CLOSED
+
+  @@map("room_block_kind")
+}
+
 model Hotel {
   id           String     @id @default(uuid()) @db.Uuid
   slug         String     @unique @db.VarChar(120)
@@ -34,9 +49,12 @@ model Hotel {
   timezone     String     @default("Asia/Tehran") @db.VarChar(64)
   contactPhone String?    @map("contact_phone") @db.VarChar(32)
   contactEmail String?    @map("contact_email") @db.VarChar(254)
+  checkInTime  String     @default("15:00") @map("check_in_time") @db.VarChar(5)
+  checkOutTime String     @default("11:00") @map("check_out_time") @db.VarChar(5)
   createdAt    DateTime   @default(now()) @map("created_at") @db.Timestamptz(3)
   updatedAt    DateTime   @updatedAt @map("updated_at") @db.Timestamptz(3)
   roomTypes    RoomType[]
+  rooms        Room[]
 
   @@map("hotels")
 }
@@ -56,10 +74,77 @@ model RoomType {
   hotel            Hotel                @relation(fields: [hotelId], references: [id], onDelete: Restrict)
   inventory        RoomNightInventory[]
   bookings         Booking[]
+  rooms            Room[]
 
   @@unique([hotelId, slug])
+  @@unique([id, hotelId])
   @@index([hotelId, isActive, displayOrder])
   @@map("room_types")
+}
+
+model Room {
+  id                String             @id @default(uuid()) @db.Uuid
+  hotelId           String             @map("hotel_id") @db.Uuid
+  roomTypeId        String             @map("room_type_id") @db.Uuid
+  roomNumber        String             @map("room_number") @db.VarChar(32)
+  floor             String?            @db.VarChar(32)
+  features          String[]           @default([])
+  housekeepingStatus HousekeepingStatus @default(DIRTY) @map("housekeeping_status")
+  isActive          Boolean            @default(true) @map("is_active")
+  isGenerated       Boolean            @default(false) @map("is_generated")
+  createdAt         DateTime           @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt         DateTime           @updatedAt @map("updated_at") @db.Timestamptz(3)
+  hotel             Hotel              @relation(fields: [hotelId], references: [id], onDelete: Restrict)
+  roomType          RoomType           @relation(fields: [roomTypeId, hotelId], references: [id, hotelId], onDelete: Restrict)
+  blocks            RoomBlock[]
+  assignments       RoomAssignment[]
+
+  @@unique([hotelId, roomNumber])
+  @@unique([id, roomTypeId])
+  @@index([roomTypeId, isActive, roomNumber])
+  @@index([roomTypeId, floor, isActive])
+  @@map("rooms")
+}
+
+model RoomBlock {
+  id                    String        @id @default(uuid()) @db.Uuid
+  roomId                String        @map("room_id") @db.Uuid
+  startDate             DateTime      @map("start_date") @db.Date
+  endDate               DateTime      @map("end_date") @db.Date
+  kind                  RoomBlockKind @default(OUT_OF_ORDER)
+  reason                String        @db.VarChar(500)
+  isActive              Boolean       @default(true) @map("is_active")
+  createdByStaffUserId  String?       @map("created_by_staff_user_id") @db.Uuid
+  createdAt             DateTime      @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt             DateTime      @updatedAt @map("updated_at") @db.Timestamptz(3)
+  room                  Room          @relation(fields: [roomId], references: [id], onDelete: Restrict)
+  createdBy             StaffUser?    @relation("RoomBlockCreator", fields: [createdByStaffUserId], references: [id], onDelete: SetNull)
+
+  @@index([roomId, isActive, startDate, endDate])
+  @@index([startDate, endDate])
+  @@map("room_blocks")
+}
+
+model RoomAssignment {
+  id                    String     @id @default(uuid()) @db.Uuid
+  bookingId             String     @map("booking_id") @db.Uuid
+  roomId                String     @map("room_id") @db.Uuid
+  roomTypeId            String     @map("room_type_id") @db.Uuid
+  startDate             DateTime   @map("start_date") @db.Date
+  endDate               DateTime   @map("end_date") @db.Date
+  isActive              Boolean    @default(true) @map("is_active")
+  assignedByStaffUserId String?    @map("assigned_by_staff_user_id") @db.Uuid
+  changeReason          String?    @map("change_reason") @db.VarChar(500)
+  createdAt             DateTime   @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt             DateTime   @updatedAt @map("updated_at") @db.Timestamptz(3)
+  booking               Booking    @relation(fields: [bookingId, roomTypeId], references: [id, roomTypeId], onDelete: Restrict)
+  room                  Room       @relation(fields: [roomId, roomTypeId], references: [id, roomTypeId], onDelete: Restrict)
+  assignedBy            StaffUser? @relation("RoomAssignmentCreator", fields: [assignedByStaffUserId], references: [id], onDelete: SetNull)
+
+  @@index([roomId, isActive, startDate, endDate])
+  @@index([bookingId, isActive])
+  @@index([startDate, endDate])
+  @@map("room_assignments")
 }
 
 model RoomNightInventory {
@@ -104,10 +189,12 @@ model Booking {
   cancellationReason     String?        @map("cancellation_reason") @db.VarChar(500)
   roomType               RoomType       @relation(fields: [roomTypeId], references: [id], onDelete: Restrict)
   nights                 BookingNight[]
+  assignments            RoomAssignment[]
 
   @@index([status, createdAt])
   @@index([status, checkIn])
   @@index([roomTypeId, checkIn])
+  @@unique([id, roomTypeId])
   @@map("bookings")
 }
 
@@ -136,6 +223,8 @@ model StaffUser {
   createdAt    DateTime       @default(now()) @map("created_at") @db.Timestamptz(3)
   updatedAt    DateTime       @updatedAt @map("updated_at") @db.Timestamptz(3)
   sessions     StaffSession[]
+  createdRoomBlocks RoomBlock[] @relation("RoomBlockCreator")
+  createdRoomAssignments RoomAssignment[] @relation("RoomAssignmentCreator")
 
   @@index([isActive, role])
   @@map("staff_users")
