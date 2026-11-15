@@ -233,6 +233,17 @@ describe('Staff physical room API (e2e)', () => {
       .expect(200);
     expect(bodyAs<RoomsApiResponse>(generatedList).items[0].isGenerated).toBe(true);
 
+    const unchanged = await request(app.getHttpServer())
+      .patch(`/api/v1/staff/rooms/${generated.id}`)
+      .set('Cookie', admin.cookie)
+      .set('X-CSRF-Token', admin.csrfToken)
+      .send({ roomNumber: generated.roomNumber })
+      .expect(200);
+    expect(bodyAs<RoomApiResponse>(unchanged)).toMatchObject({
+      roomNumber: generated.roomNumber,
+      isGenerated: true,
+    });
+
     const updated = await request(app.getHttpServer())
       .patch(`/api/v1/staff/rooms/${generated.id}`)
       .set('Cookie', admin.cookie)
@@ -245,6 +256,23 @@ describe('Staff physical room API (e2e)', () => {
       roomNumber: '301',
       isGenerated: false,
     });
+  });
+
+  it.each([
+    ['roomNumber', { roomNumber: null }],
+    ['features', { features: null }],
+  ])('rejects null PATCH values for %s without a server error', async (_field, body) => {
+    const room = await prisma.room.create({
+      data: { hotelId, roomTypeId, roomNumber: `NULL-${suffix.slice(0, 6)}-${_field}` },
+    });
+    const response = await request(app.getHttpServer())
+      .patch(`/api/v1/staff/rooms/${room.id}`)
+      .set('Cookie', admin.cookie)
+      .set('X-CSRF-Token', admin.csrfToken)
+      .send(body)
+      .expect(400);
+
+    expect(errorBody(response).code).toBe('VALIDATION_ERROR');
   });
 
   it('rejects a duplicate room number when renumbering an existing room', async () => {

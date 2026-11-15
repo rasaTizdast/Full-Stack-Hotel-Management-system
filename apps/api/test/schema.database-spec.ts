@@ -1,4 +1,5 @@
 import { randomUUID } from 'node:crypto';
+import { readFileSync, readdirSync } from 'node:fs';
 import { spawnSync } from 'node:child_process';
 import { resolve } from 'node:path';
 import * as argon2 from 'argon2';
@@ -131,6 +132,103 @@ describe('PostgreSQL schema and fictional seed', () => {
       [randomUUID(), randomUUID().replaceAll('-', '').slice(0, 16), roomTypeId],
     );
   }
+
+  it('upgrades populated legacy inventory without marking generated rooms ready', async () => {
+    const client = await pool.connect();
+    const schemaName = `legacy_upgrade_${randomUUID().replaceAll('-', '')}`;
+    let schemaCreated = false;
+    try {
+      await client.query(`CREATE SCHEMA "${schemaName}"`);
+      schemaCreated = true;
+      await client.query(`SET search_path TO "${schemaName}"`);
+
+      const migrationsDirectory = resolve(apiDirectory, 'prisma', 'migrations');
+      const legacyMigrations = readdirSync(migrationsDirectory, { withFileTypes: true })
+        .filter(
+          (entry) =>
+            entry.isDirectory() &&
+            entry.name.localeCompare('20261115100000_physical_rooms_foundation') < 0,
+        )
+        .sort((left, right) => left.name.localeCompare(right.name));
+      expect(legacyMigrations.length).toBeGreaterThan(0);
+
+      for (const migration of legacyMigrations) {
+        const sql = readFileSync(
+          resolve(migrationsDirectory, migration.name, 'migration.sql'),
+          'utf8',
+        );
+        await client.query(sql);
+      }
+
+      await client.query(`
+        INSERT INTO hotels (id, slug, name, address, description, timezone, created_at, updated_at)
+        VALUES ('10000000-0000-4000-8000-000000000001', 'legacy-upgrade', 'Legacy fixture', 'Test', 'Test', 'Asia/Tehran', now(), now());
+        INSERT INTO room_types (id, hotel_id, name, slug, description, max_guests_per_room, created_at, updated_at)
+        VALUES ('20000000-0000-4000-8000-000000000001', '10000000-0000-4000-8000-000000000001', 'Legacy type', 'legacy', 'Test', 2, now(), now());
+        INSERT INTO room_night_inventory (id, room_type_id, stay_date, total_rooms, held_rooms, booked_rooms, nightly_price_toman, created_at, updated_at) VALUES
+          ('40000000-0000-4000-8000-000000000001', '20000000-0000-4000-8000-000000000001', '2099-05-17', 3, 1, 1, 5000, now(), now()),
+          ('40000000-0000-4000-8000-000000000002', '20000000-0000-4000-8000-000000000001', '2099-05-18', 1, 0, 1, 6000, now(), now());
+        INSERT INTO bookings (id, public_reference, status, check_in, check_out, guest_count, room_type_id, room_quantity, guest_name, guest_phone, total_price_toman, expires_at) VALUES
+          ('30000000-0000-4000-8000-000000000001', 'UP-PENDING-0001', 'PENDING_CONFIRMATION', '2099-05-17', '2099-05-19', 2, '20000000-0000-4000-8000-000000000001', 1, 'Fixture pending', '+989121234567', 5000, now() + interval '1 day'),
+          ('30000000-0000-4000-8000-000000000002', 'UP-CONFIRMED-01', 'CONFIRMED', '2099-05-17', '2099-05-19', 2, '20000000-0000-4000-8000-000000000001', 1, 'Fixture confirmed', '+989121234567', 5100, now() + interval '1 day'),
+          ('30000000-0000-4000-8000-000000000003', 'UP-CANCELLED-01', 'CANCELLED', '2099-05-17', '2099-05-19', 2, '20000000-0000-4000-8000-000000000001', 1, 'Fixture cancelled', '+989121234567', 5200, now() + interval '1 day'),
+          ('30000000-0000-4000-8000-000000000004', 'UP-EXPIRED-001', 'EXPIRED', '2099-05-17', '2099-05-19', 2, '20000000-0000-4000-8000-000000000001', 1, 'Fixture expired', '+989121234567', 5300, now() + interval '1 day');
+        INSERT INTO booking_nights (id, booking_id, stay_date, nightly_price_toman, room_quantity, amount_toman, created_at) VALUES
+          ('50000000-0000-4000-8000-000000000001', '30000000-0000-4000-8000-000000000001', '2099-05-17', 5000, 1, 5000, now()),
+          ('50000000-0000-4000-8000-000000000002', '30000000-0000-4000-8000-000000000002', '2099-05-17', 5100, 1, 5100, now()),
+          ('50000000-0000-4000-8000-000000000003', '30000000-0000-4000-8000-000000000003', '2099-05-17', 5200, 1, 5200, now()),
+          ('50000000-0000-4000-8000-000000000004', '30000000-0000-4000-8000-000000000004', '2099-05-17', 5300, 1, 5300, now());
+      `);
+
+      const physicalMigration = readFileSync(
+        resolve(migrationsDirectory, '20261115100000_physical_rooms_foundation', 'migration.sql'),
+        'utf8',
+      );
+      await client.query(physicalMigration);
+
+      const upgraded = await client.query<{
+        room_count: string;
+        generated_count: string;
+        generated_dirty_count: string;
+        reduced_night_blocks: string;
+        inventory_snapshot: string;
+        booking_count: string;
+        booking_night_count: string;
+        booking_snapshot_prices: string;
+      }>(`
+        SELECT
+          (SELECT count(*) FROM rooms WHERE room_type_id = '20000000-0000-4000-8000-000000000001') AS room_count,
+          (SELECT count(*) FROM rooms WHERE room_type_id = '20000000-0000-4000-8000-000000000001' AND is_generated) AS generated_count,
+          (SELECT count(*) FROM rooms WHERE room_type_id = '20000000-0000-4000-8000-000000000001' AND is_generated AND housekeeping_status = 'DIRTY') AS generated_dirty_count,
+          (SELECT count(*) FROM room_blocks WHERE start_date = DATE '2099-05-18') AS reduced_night_blocks,
+          (SELECT string_agg(total_rooms || ':' || held_rooms || ':' || booked_rooms || ':' || nightly_price_toman, ',' ORDER BY stay_date) FROM room_night_inventory WHERE room_type_id = '20000000-0000-4000-8000-000000000001') AS inventory_snapshot,
+          (SELECT count(*) FROM bookings) AS booking_count,
+          (SELECT count(*) FROM booking_nights) AS booking_night_count,
+          (SELECT string_agg(nightly_price_toman::text, ',' ORDER BY nightly_price_toman) FROM booking_nights) AS booking_snapshot_prices
+      `);
+      expect(upgraded.rows[0]).toEqual({
+        room_count: '3',
+        generated_count: '3',
+        generated_dirty_count: '3',
+        reduced_night_blocks: '2',
+        inventory_snapshot: '3:1:1:5000,1:0:1:6000',
+        booking_count: '4',
+        booking_night_count: '4',
+        booking_snapshot_prices: '5000,5100,5200,5300',
+      });
+    } finally {
+      if (schemaCreated) {
+        try {
+          await client.query('SET search_path TO public');
+          await client.query(`DROP SCHEMA "${schemaName}" CASCADE`);
+        } finally {
+          client.release();
+        }
+      } else {
+        client.release();
+      }
+    }
+  }, 30000);
 
   it('keeps one inventory row per room type and Gregorian stay date', async () => {
     const { roomTypeId, stayDate } = await createInventoryFixture();

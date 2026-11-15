@@ -28,6 +28,7 @@ export class StaffInventoryController {
 
   @RequireStaffRoles('ADMIN')
   @Get('room-types')
+  @Header('Cache-Control', 'private, no-store')
   @ApiOperation({ summary: 'List active and inactive room types for the admin inventory editor.' })
   @ApiOkResponse({ type: StaffInventoryRoomTypeOptionDto, isArray: true })
   @ApiUnauthorizedResponse({ type: ApiErrorResponseDto })

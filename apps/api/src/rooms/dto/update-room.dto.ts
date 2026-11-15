@@ -7,13 +7,14 @@ import {
   MaxLength,
   MinLength,
   Matches,
+  ValidateIf,
 } from 'class-validator';
 import { ApiPropertyOptional } from '@nestjs/swagger';
 
 export class UpdateRoomDto {
   @ApiPropertyOptional({ example: '301', maxLength: 32 })
   @Transform(({ value }: { value: unknown }) => (typeof value === 'string' ? value.trim() : value))
-  @IsOptional()
+  @ValidateIf((_object, value: unknown) => value !== undefined)
   @IsString()
   @MinLength(1)
   @MaxLength(32)
@@ -27,7 +28,7 @@ export class UpdateRoomDto {
   floor?: string | null;
 
   @ApiPropertyOptional({ type: [String], example: ['balcony', 'city-view'] })
-  @IsOptional()
+  @ValidateIf((_object, value: unknown) => value !== undefined)
   @IsArray()
   @ArrayMaxSize(30)
   @IsString({ each: true })

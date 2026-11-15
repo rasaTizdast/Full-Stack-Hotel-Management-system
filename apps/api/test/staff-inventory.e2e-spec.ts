@@ -218,6 +218,7 @@ describe('Staff inventory API (e2e)', () => {
     const response = await request(app.getHttpServer())
       .get('/api/v1/staff/inventory/room-types')
       .set('Cookie', admin.cookie)
+      .expect('Cache-Control', 'private, no-store')
       .expect(200);
 
     const options = response.body as Array<Record<string, unknown>>;

@@ -127,7 +127,8 @@ export class RoomsService {
       select: roomSelect,
     });
     if (!current) throw new NotFoundException({ code: 'ROOM_NOT_FOUND' });
-    if (dto.roomNumber === undefined && dto.floor === undefined && dto.features === undefined) {
+    const roomNumberChanged = dto.roomNumber !== undefined && dto.roomNumber !== current.roomNumber;
+    if (!roomNumberChanged && dto.floor === undefined && dto.features === undefined) {
       return toRoomDto(current);
     }
 
@@ -135,7 +136,7 @@ export class RoomsService {
       const updated = await this.prisma.room.update({
         where: { id: roomId },
         data: {
-          ...(dto.roomNumber !== undefined
+          ...(roomNumberChanged && dto.roomNumber !== undefined
             ? { roomNumber: dto.roomNumber, isGenerated: false }
             : {}),
           ...(dto.floor !== undefined ? { floor: dto.floor?.trim() || null } : {}),
