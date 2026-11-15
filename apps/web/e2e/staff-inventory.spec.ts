@@ -453,3 +453,25 @@ test('inventory editor remains keyboard reachable on mobile', async ({ page }) =
   expect(focusedIds).toContain('staff-inventory-end-date');
   expect(focusedIds).toContain('staff-inventory-nightly-price');
 });
+
+test('keeps each rate amount and toman label on one line at 390px', async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto('/staff/inventory');
+
+  const rateDisclosure = page.locator('.staff-inventory__rate-disclosure > summary');
+  await expect(rateDisclosure).toBeVisible();
+  await rateDisclosure.click();
+  await page.getByLabel('نرخ یک شب (تومان)').fill('2500000');
+
+  const moneyGroups = page.locator('.staff-inventory__money');
+  await expect(moneyGroups).toHaveCount(2);
+  for (let index = 0; index < 2; index += 1) {
+    const amount = await moneyGroups.nth(index).locator('.staff-inventory__money-amount').boundingBox();
+    const unit = await moneyGroups.nth(index).locator('.staff-inventory__money-unit').boundingBox();
+    expect(amount).not.toBeNull();
+    expect(unit).not.toBeNull();
+    const verticalOverlap =
+      Math.min(amount!.y + amount!.height, unit!.y + unit!.height) - Math.max(amount!.y, unit!.y);
+    expect(verticalOverlap).toBeGreaterThan(0);
+  }
+});

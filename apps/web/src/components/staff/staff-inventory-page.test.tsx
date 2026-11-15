@@ -195,7 +195,7 @@ describe('StaffInventoryPage', () => {
       target: { value: '۲۴۰۰۰۰۰' },
     });
 
-    expect(container.querySelector('.staff-inventory__rate-impact bdi')).toHaveTextContent(
+    expect(container.querySelector('.staff-inventory__rate-equation')).toHaveTextContent(
       '۲٬۴۰۰٬۰۰۰ تومان × ۲ شب = ۴٬۸۰۰٬۰۰۰ تومان',
     );
 
@@ -204,6 +204,10 @@ describe('StaffInventoryPage', () => {
       '۲٬۴۰۰٬۰۰۰ تومان',
       '۴٬۸۰۰٬۰۰۰ تومان',
     ]);
+    for (const group of moneyGroups) {
+      expect(group.querySelector('.staff-inventory__money-amount')).not.toBeNull();
+      expect(group.querySelector('.staff-inventory__money-unit')).toHaveTextContent('تومان');
+    }
   });
 
   it('places a native rate disclosure before the nightly details', async () => {

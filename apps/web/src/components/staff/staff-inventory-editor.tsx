@@ -417,17 +417,27 @@ function InventoryEditForm({
         </button>
       </div>
       {rangeTotal !== null ? (
-        <p className="staff-inventory__rate-impact" aria-live="polite">
-          <span>جمع نرخ بازه</span>
-          <bdi dir="ltr">
-            <span className="staff-inventory__money">
-              {formatPersianInteger(BigInt(parsedNightlyPrice!))} تومان
+        <p className="staff-inventory__rate-impact" aria-live="polite" dir="rtl">
+          <span className="staff-inventory__rate-impact-label">جمع نرخ بازه</span>
+          <span className="staff-inventory__rate-equation" dir="rtl">
+            <span className="staff-inventory__money" dir="rtl">
+              <bdi className="staff-inventory__money-amount" dir="ltr">
+                {formatPersianInteger(BigInt(parsedNightlyPrice!))}
+              </bdi>
+              {' '}<span className="staff-inventory__money-unit">تومان</span>
             </span>{' '}
-            × {formatPersianInteger(rangeNightCount)} شب ={' '}
-            <span className="staff-inventory__money">
-              {formatPersianInteger(rangeTotal)} تومان
+            <span className="staff-inventory__equation-token">×</span>{' '}
+            <span className="staff-inventory__equation-token">
+              {formatPersianInteger(rangeNightCount)} شب
+            </span>{' '}
+            <span className="staff-inventory__equation-token">=</span>{' '}
+            <span className="staff-inventory__money" dir="rtl">
+              <bdi className="staff-inventory__money-amount" dir="ltr">
+                {formatPersianInteger(rangeTotal)}
+              </bdi>
+              {' '}<span className="staff-inventory__money-unit">تومان</span>
             </span>
-          </bdi>
+          </span>
         </p>
       ) : null}
     </form>

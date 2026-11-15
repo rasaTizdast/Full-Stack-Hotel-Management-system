@@ -2040,16 +2040,41 @@
   line-height: 1.7;
 }
 
-.staffScope :global(.staff-inventory__rate-impact) span {
+.staffScope :global(.staff-inventory__rate-impact-label) {
   color: var(--muted-foreground);
   font-weight: 600;
 }
 
-.staffScope :global(.staff-inventory__rate-impact) bdi {
+.staffScope :global(.staff-inventory__rate-equation) {
+  display: flex;
+  min-width: 0;
+  flex: 0 1 auto;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: flex-start;
+  gap: 0.25rem 0.4rem;
+  direction: rtl;
+  unicode-bidi: isolate;
+}
+
+.staffScope :global(.staff-inventory__money) {
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: baseline;
+  gap: 0.25rem;
+  direction: rtl;
+  unicode-bidi: isolate;
+  white-space: nowrap;
+}
+
+.staffScope :global(.staff-inventory__money-amount) {
   font-weight: 750;
   font-variant-numeric: tabular-nums;
 }
-.staffScope :global(.staff-inventory__money) {
+
+.staffScope :global(.staff-inventory__money-unit),
+.staffScope :global(.staff-inventory__equation-token) {
+  flex: 0 0 auto;
   white-space: nowrap;
 }
 
