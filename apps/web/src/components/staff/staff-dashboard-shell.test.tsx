@@ -76,6 +76,63 @@ describe('StaffDashboardShell', () => {
     );
   });
 
+  it('scrolls the active route into view and includes an overflow cue', () => {
+    const originalScrollIntoView = HTMLElement.prototype.scrollIntoView;
+    const scrollIntoView = vi.fn();
+    Object.defineProperty(HTMLElement.prototype, 'scrollIntoView', {
+      configurable: true,
+      value: scrollIntoView,
+    });
+
+    try {
+      const { container, rerender } = render(
+        <StaffDashboardShell
+          staff={{ ...receptionist, role: 'ADMIN' }}
+          onLogout={vi.fn()}
+          currentPath="/staff/rooms/manage"
+        >
+          <p>مدیریت اتاق‌ها</p>
+        </StaffDashboardShell>,
+      );
+
+      expect(container.querySelector('[data-staff-nav-overflow-cue]')).toHaveAttribute(
+        'aria-hidden',
+        'true',
+      );
+      expect(scrollIntoView).toHaveBeenCalledWith(
+        expect.objectContaining({ block: 'nearest', inline: 'nearest' }),
+      );
+      scrollIntoView.mockClear();
+
+      rerender(
+        <StaffDashboardShell
+          staff={{ ...receptionist, role: 'ADMIN' }}
+          onLogout={vi.fn()}
+          currentPath="/staff/inventory"
+        >
+          <p>مدیریت موجودی</p>
+        </StaffDashboardShell>,
+      );
+
+      expect(scrollIntoView).toHaveBeenCalledWith(
+        expect.objectContaining({ block: 'nearest', inline: 'nearest' }),
+      );
+      expect(screen.getByRole('link', { name: /^ظرفیت و نرخ‌ها/ })).toHaveAttribute(
+        'aria-current',
+        'page',
+      );
+    } finally {
+      if (originalScrollIntoView) {
+        Object.defineProperty(HTMLElement.prototype, 'scrollIntoView', {
+          configurable: true,
+          value: originalScrollIntoView,
+        });
+      } else {
+        delete (HTMLElement.prototype as Partial<HTMLElement>).scrollIntoView;
+      }
+    }
+  });
+
   it('runs logout from a named control', () => {
     const onLogout = vi.fn();
     render(

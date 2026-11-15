@@ -452,6 +452,12 @@
   color: var(--muted-foreground);
   font-size: var(--text-caption);
 }
+.staffScope :global(.staff-nav-viewport) {
+  min-width: 0;
+}
+.staffScope :global(.staff-nav-overflow-cue) {
+  display: none;
+}
 .staffScope :global(.staff-nav__error) {
   margin: 1rem 0 0;
   border: 1px solid color-mix(in srgb, var(--destructive) 30%, var(--border));
@@ -1093,7 +1099,8 @@
 }
 .staffScope :global(.staff-inventory__range-form),
 .staffScope :global(.staff-inventory__overview),
-.staffScope :global(.staff-inventory__edit-form) {
+.staffScope :global(.staff-inventory__edit-form),
+.staffScope :global(.staff-inventory__rate-disclosure) {
   overflow: hidden;
   border: 1px solid var(--border);
   border-radius: var(--radius-feature);
@@ -1105,6 +1112,50 @@
 .staffScope :global(.staff-inventory__overview),
 .staffScope :global(.staff-inventory__edit-form) {
   border-block-start: 4px solid color-mix(in srgb, var(--primary) 45%, var(--border));
+}
+.staffScope :global(.staff-inventory__rate-disclosure) {
+  border-block-start: 4px solid color-mix(in srgb, var(--primary) 45%, var(--border));
+}
+.staffScope :global(.staff-inventory__rate-disclosure) > summary {
+  display: flex;
+  min-height: 3.25rem;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.9rem;
+  padding: 0.75rem 1rem;
+  color: var(--primary-strong);
+  font-weight: 750;
+  cursor: pointer;
+  list-style: none;
+}
+.staffScope :global(.staff-inventory__rate-disclosure) > summary::-webkit-details-marker {
+  display: none;
+}
+.staffScope :global(.staff-inventory__rate-disclosure) > summary:focus-visible {
+  outline: 3px solid var(--focus);
+  outline-offset: -4px;
+}
+.staffScope :global(.staff-inventory__rate-disclosure) > summary svg {
+  width: 1.15rem;
+  flex: 0 0 1.15rem;
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 1.7;
+  transition: transform 180ms var(--motion-out);
+}
+.staffScope :global(.staff-inventory__rate-disclosure[open]) > summary {
+  border-block-end: 1px solid var(--border);
+}
+.staffScope :global(.staff-inventory__rate-disclosure[open]) > summary svg {
+  transform: rotate(180deg);
+}
+.staffScope :global(.staff-inventory__rate-disclosure) > .staff-inventory__edit-form {
+  overflow: visible;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  padding: 1rem 1.1rem 1.2rem;
 }
 .staffScope :global(.staff-inventory__range-heading) h2,
 .staffScope :global(.staff-inventory__edit-heading) h2,
@@ -1203,7 +1254,34 @@
     gap: 0.45rem;
     overflow-x: auto;
     overscroll-behavior-inline: contain;
+    padding-inline-end: 1.6rem;
     scrollbar-width: thin;
+  }
+  .staffScope :global(.staff-nav-viewport) {
+    position: relative;
+    min-width: 0;
+  }
+  .staffScope :global(.staff-nav) {
+    scroll-padding-inline-end: 1.6rem;
+  }
+  .staffScope :global(.staff-nav-viewport--overflow) :global(.staff-nav-overflow-cue) {
+    position: absolute;
+    inset-block: 0;
+    inset-inline-end: 0;
+    z-index: 1;
+    display: grid;
+    width: 1.6rem;
+    place-items: center;
+    background: linear-gradient(90deg, var(--surface) 0%, color-mix(in srgb, var(--surface) 78%, transparent) 45%, transparent 100%);
+    color: var(--muted-foreground);
+    pointer-events: none;
+  }
+  .staffScope :global(.staff-nav-overflow-cue) svg {
+    width: 0.9rem;
+    stroke: currentColor;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    stroke-width: 1.6;
   }
   .staffScope :global(.staff-nav) a {
     min-height: 3rem;
@@ -1440,6 +1518,9 @@
   .staffScope :global(.staff-logout) {
     transition: none;
   }
+  .staffScope :global(.staff-inventory__rate-disclosure) > summary svg {
+    transition: none;
+  }
 }
 
 .staffScope :global(.staff-rooms),
@@ -1456,6 +1537,16 @@
   justify-content: space-between;
   gap: 1rem;
   padding-block: 0.35rem 0.7rem;
+}
+.staffScope :global(.staff-rooms__header-actions) {
+  display: flex;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: 0.9rem;
+}
+.staffScope :global(.staff-rooms__add-toggle) {
+  min-height: 2.85rem;
+  white-space: nowrap;
 }
 
 .staffScope :global(.staff-rooms__header) h1,
@@ -1600,7 +1691,8 @@
 .staffScope :global(.staff-rooms__field) select:focus-visible,
 .staffScope :global(.staff-rooms__editor-actions) button:focus-visible,
 .staffScope :global(.staff-rooms__card-actions) button:focus-visible,
-.staffScope :global(.staff-rooms__filters-heading) button:focus-visible,
+.staffScope :global(.staff-rooms__filter-button):focus-visible,
+.staffScope :global(.staff-rooms__add-toggle):focus-visible,
 .staffScope :global(.staff-rooms__confirm-actions) button:focus-visible {
   outline: 3px solid var(--focus);
   outline-offset: 3px;
@@ -1685,6 +1777,17 @@
 
 .staffScope :global(.staff-rooms__filter-button) {
   white-space: nowrap;
+}
+.staffScope :global(.staff-rooms__filter-actions) {
+  display: flex;
+  justify-content: flex-start;
+  margin-block-start: 0.85rem;
+}
+.staffScope :global(.staff-rooms__editor[hidden]) {
+  display: none;
+}
+.staffScope :global(.staff-rooms__editor-heading) h2 {
+  scroll-margin-block-start: calc(var(--staff-header-height) + 1rem);
 }
 
 .staffScope :global(.staff-rooms__list) {
@@ -1976,6 +2079,16 @@
     gap: 0.6rem;
   }
 
+  .staffScope :global(.staff-rooms__header-actions) {
+    width: 100%;
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .staffScope :global(.staff-rooms__add-toggle) {
+    width: 100%;
+  }
+
   .staffScope :global(.staff-rooms__filter-fields),
   .staffScope :global(.staff-rooms__editor-fields),
   .staffScope :global(.staff-rooms__grid) {
@@ -2000,6 +2113,15 @@
     display: grid;
     grid-template-columns: minmax(0, 1fr);
     gap: 0.65rem;
+  }
+
+  .staffScope :global(.staff-inventory__rate-disclosure) > summary {
+    min-height: 3rem;
+    padding: 0.75rem 0.85rem;
+  }
+
+  .staffScope :global(.staff-inventory__rate-disclosure) > .staff-inventory__edit-form {
+    padding: 0.85rem;
   }
 
   .staffScope :global(.staff-inventory__night-card) {

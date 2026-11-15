@@ -156,6 +156,28 @@ test('admin sees physical capacity and saves rates only, and the page meets axe 
 
     const table = page.getByRole('table', { name: 'وضعیت ظرفیت و نرخ هر شب' });
     const isNarrowViewport = (page.viewportSize()?.width ?? 0) <= 760;
+    const activeInventoryLink = page.getByRole('link', { name: /^ظرفیت و نرخ‌ها/ });
+    await expect(activeInventoryLink).toHaveAttribute('aria-current', 'page');
+    if ((page.viewportSize()?.width ?? 0) <= 640) {
+      await expect(page.locator('[data-staff-nav-overflow-cue]')).toBeVisible();
+      const navBox = await page.getByRole('navigation', { name: 'منوی پنل کارکنان' }).boundingBox();
+      const activeLinkBox = await activeInventoryLink.boundingBox();
+      expect(navBox).not.toBeNull();
+      expect(activeLinkBox).not.toBeNull();
+      expect(activeLinkBox!.x).toBeGreaterThanOrEqual(navBox!.x);
+      expect(activeLinkBox!.x + activeLinkBox!.width).toBeLessThanOrEqual(navBox!.x + navBox!.width);
+    }
+    const rateDisclosure = page.locator('.staff-inventory__rate-disclosure > summary');
+    await expect(rateDisclosure).toBeVisible();
+    await expect(rateDisclosure).toHaveAccessibleName('تنظیم نرخ شبانه');
+    const rateEditorPrecedesOverview = await page.locator('.staff-inventory__rate-disclosure').evaluate((disclosure) => {
+      const overview = document.querySelector('.staff-inventory__overview');
+      return Boolean(overview && disclosure.compareDocumentPosition(overview) & Node.DOCUMENT_POSITION_FOLLOWING);
+    });
+    expect(rateEditorPrecedesOverview).toBe(true);
+    await rateDisclosure.focus();
+    await page.keyboard.press('Enter');
+    await expect(page.getByLabel('نرخ یک شب (تومان)')).toBeVisible();
     if (isNarrowViewport) {
       await expect(page.locator('.staff-inventory__night-cards')).toBeVisible();
       await expect(table).not.toBeVisible();
@@ -406,6 +428,12 @@ test('receptionist does not see or request the admin inventory editor', async ({
 
 test('inventory editor remains keyboard reachable on mobile', async ({ page }) => {
   await page.goto('/staff/inventory');
+  const rateDisclosure = page.locator('.staff-inventory__rate-disclosure > summary');
+  await expect(rateDisclosure).toBeVisible();
+  await expect(rateDisclosure).toHaveAccessibleName('تنظیم نرخ شبانه');
+  await rateDisclosure.focus();
+  await page.keyboard.press('Enter');
+  await expect(page.getByLabel('نرخ یک شب (تومان)')).toBeVisible();
   const table = page.getByRole('table', { name: 'وضعیت ظرفیت و نرخ هر شب' });
   if ((page.viewportSize()?.width ?? 0) <= 760) {
     await expect(page.locator('.staff-inventory__night-cards')).toBeVisible();

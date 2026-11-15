@@ -380,6 +380,7 @@ function InventoryEditForm({
 
   return (
     <form
+      id="staff-inventory-rate-form"
       className="staff-inventory__edit-form"
       onSubmit={onSaveRange}
       aria-label="ویرایش نرخ بازه"
@@ -439,11 +440,19 @@ export function StaffInventoryEditor(props: StaffInventoryEditorProps) {
       <EditorMessages {...props} />
       {props.inventory ? (
         <>
+          <details className="staff-inventory__rate-disclosure">
+            <summary aria-controls="staff-inventory-rate-form">
+              <span>تنظیم نرخ شبانه</span>
+              <svg viewBox="0 0 20 20" fill="none" aria-hidden="true">
+                <path d="m5 7.5 5 5 5-5" />
+              </svg>
+            </summary>
+            <InventoryEditForm {...props} />
+          </details>
           <InventoryOverview
             inventory={props.inventory}
             roomTypeName={selectedRoomType?.name ?? props.inventory.roomType.name}
           />
-          <InventoryEditForm {...props} />
         </>
       ) : null}
     </>

@@ -127,6 +127,7 @@ export function StaffRoomsPage() {
   });
   const [draft, setDraft] = useState<RoomFormState>(emptyDraft);
   const [editingRoom, setEditingRoom] = useState<StaffRoom | null>(null);
+  const [isEditorOpen, setIsEditorOpen] = useState(false);
   const [fieldError, setFieldError] = useState<string | null>(null);
   const [formError, setFormError] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
@@ -141,6 +142,7 @@ export function StaffRoomsPage() {
   const confirmationButton = useRef<HTMLButtonElement>(null);
   const actionTrigger = useRef<HTMLButtonElement | null>(null);
   const roomListHeading = useRef<HTMLHeadingElement>(null);
+  const editorHeading = useRef<HTMLHeadingElement>(null);
 
   async function loadRooms(query: StaffRoomsQuery, nextFilters?: RoomFilters) {
     const requestId = ++loadRequestId.current;
@@ -198,6 +200,21 @@ export function StaffRoomsPage() {
     else if (actionTrigger.current) roomListHeading.current?.focus();
   }, [pendingAction]);
 
+  useEffect(() => {
+    if (!isEditorOpen || !editorHeading.current) return;
+    const heading = editorHeading.current;
+    heading.focus();
+    if (typeof heading.scrollIntoView === 'function') {
+      const prefersReducedMotion =
+        typeof window.matchMedia === 'function' &&
+        window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+      heading.scrollIntoView({
+        behavior: prefersReducedMotion ? 'auto' : 'smooth',
+        block: 'start',
+      });
+    }
+  }, [editingRoom?.id, isEditorOpen]);
+
   if (status !== 'authenticated' || !staff) return null;
 
   if (staff.role !== 'ADMIN') {
@@ -222,12 +239,26 @@ export function StaffRoomsPage() {
     setSuccessMessage(null);
   }
 
+  function toggleCreateEditor() {
+    if (isEditorOpen && !editingRoom) {
+      setIsEditorOpen(false);
+      return;
+    }
+    setEditingRoom(null);
+    setDraft({ ...emptyDraft, roomTypeId: activeRoomTypes[0]?.id ?? '' });
+    setFieldError(null);
+    setFormError(null);
+    setSuccessMessage(null);
+    setIsEditorOpen(true);
+  }
+
   async function applyFilters(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     await loadRooms(toQuery(filters), filters);
   }
 
   function startEdit(room: StaffRoom) {
+    setIsEditorOpen(true);
     setEditingRoom(room);
     setDraft({
       roomTypeId: room.roomType.id,
@@ -241,6 +272,7 @@ export function StaffRoomsPage() {
   }
 
   function cancelEdit() {
+    setIsEditorOpen(false);
     setEditingRoom(null);
     setDraft({ ...emptyDraft, roomTypeId: roomTypes.find((option) => option.isActive)?.id ?? '' });
     setFieldError(null);
@@ -293,6 +325,7 @@ export function StaffRoomsPage() {
             : `اطلاعات اتاق ${updated.roomNumber} ذخیره شد، اما فیلترهای فعلی آن را پنهان کرده‌اند.`,
         );
         setHiddenRoomNumber(matchesFilters ? null : updated.roomNumber);
+        setIsEditorOpen(false);
         setEditingRoom(null);
         setDraft({ ...emptyDraft, roomTypeId: roomTypes.find((option) => option.isActive)?.id ?? '' });
       } else {
@@ -313,6 +346,7 @@ export function StaffRoomsPage() {
             : `اتاق ${created.roomNumber} اضافه شد، اما فیلترهای فعلی آن را پنهان کرده‌اند.`,
         );
         setHiddenRoomNumber(matchesFilters ? null : created.roomNumber);
+        setIsEditorOpen(false);
         setDraft({ ...emptyDraft, roomTypeId: roomTypes.find((option) => option.isActive)?.id ?? '' });
       }
     } catch (cause) {
@@ -405,9 +439,25 @@ export function StaffRoomsPage() {
           <h1 id="staff-rooms-title">اتاق‌ها</h1>
           <p>فهرست اتاق‌های واقعی، شماره‌ها و وضعیت فعال‌بودن را مدیریت کنید.</p>
         </div>
-        <div className="staff-rooms__summary" aria-live="polite">
-          <strong>{formatPersianInteger(rooms.length)}</strong>
-          <span>اتاق در فهرست فعلی</span>
+        <div className="staff-rooms__header-actions">
+          <div className="staff-rooms__summary" aria-live="polite">
+            <strong>{formatPersianInteger(rooms.length)}</strong>
+            <span>اتاق در فهرست فعلی</span>
+          </div>
+          <button
+            className="button button--jade staff-rooms__add-toggle"
+            type="button"
+            aria-controls="staff-rooms-editor"
+            aria-expanded={isEditorOpen}
+            onClick={toggleCreateEditor}
+            disabled={isSaving || Boolean(editingRoom)}
+          >
+            {editingRoom
+              ? `ویرایش اتاق ${editingRoom.roomNumber}`
+              : isEditorOpen
+                ? 'بستن فرم افزودن اتاق'
+                : 'افزودن اتاق'}
+          </button>
         </div>
       </header>
 
@@ -437,9 +487,6 @@ export function StaffRoomsPage() {
             <h2>پیدا کردن اتاق</h2>
             <p>با نوع، طبقه، وضعیت یا شماره اتاق فهرست را محدود کنید.</p>
           </div>
-          <button className="button button--jade staff-rooms__filter-button" type="submit" disabled={isLoading}>
-            اعمال فیلترها
-          </button>
         </div>
         <div className="staff-rooms__filter-fields">
           <div className="staff-rooms__field">
@@ -466,58 +513,9 @@ export function StaffRoomsPage() {
             <input id="staff-rooms-filter-search" type="search" value={filters.search} disabled={isSaving} onChange={(event) => updateFilter('search', event.target.value)} />
           </div>
         </div>
-      </form>
-
-      <form className="staff-rooms__editor" onSubmit={saveRoom} aria-label={editingRoom ? 'ویرایش اتاق' : 'افزودن اتاق'}>
-        <div className="staff-rooms__editor-heading">
-          <div>
-            <p className="staff-rooms__eyebrow">{editingRoom ? 'ویرایش اطلاعات' : 'ثبت اتاق واقعی'}</p>
-            <h2>{editingRoom ? `ویرایش اتاق ${editingRoom.roomNumber}` : 'افزودن اتاق'}</h2>
-          </div>
-          {editingRoom?.isGenerated ? (
-            <p className="staff-rooms__generated-note" role="note">شماره‌های نمونه باید پیش از بهره‌برداری با شماره واقعی جایگزین شوند.</p>
-          ) : null}
-        </div>
-        <div className="staff-rooms__editor-fields">
-          {!editingRoom ? (
-            <div className="staff-rooms__field">
-              <label htmlFor="staff-room-type">نوع اتاق</label>
-              <select id="staff-room-type" value={draft.roomTypeId} onChange={(event) => updateDraft('roomTypeId', event.target.value)} disabled={isSaving || activeRoomTypes.length === 0}>
-                <option value="">انتخاب نوع اتاق</option>
-                {activeRoomTypes.map((roomType) => <option key={roomType.id} value={roomType.id}>{roomType.name}</option>)}
-              </select>
-            </div>
-          ) : (
-            <div className="staff-rooms__field staff-rooms__field--read-only">
-              <span>نوع اتاق</span>
-              <strong>{editingRoom.roomType.name}</strong>
-            </div>
-          )}
-          <div className="staff-rooms__field">
-            <label htmlFor="staff-room-number">شماره اتاق</label>
-            <input id="staff-room-number" value={draft.roomNumber} maxLength={32} disabled={isSaving} onChange={(event) => updateDraft('roomNumber', event.target.value)} aria-invalid={Boolean(fieldError)} aria-describedby={fieldError ? 'staff-room-number-error' : 'staff-room-number-help'} />
-            <span id="staff-room-number-help" className="staff-rooms__hint">شماره باید در کل اقامتگاه یکتا باشد.</span>
-            {fieldError ? <span id="staff-room-number-error" className="staff-rooms__field-error" role="alert">{fieldError}</span> : null}
-          </div>
-          <div className="staff-rooms__field">
-            <label htmlFor="staff-room-floor">طبقه</label>
-            <input id="staff-room-floor" value={draft.floor} maxLength={32} disabled={isSaving} onChange={(event) => updateDraft('floor', event.target.value)} />
-          </div>
-          <div className="staff-rooms__field staff-rooms__field--features">
-            <label htmlFor="staff-room-features">امکانات</label>
-            <input id="staff-room-features" value={draft.features} disabled={isSaving} onChange={(event) => updateDraft('features', event.target.value)} aria-describedby="staff-room-features-help" />
-            <span id="staff-room-features-help" className="staff-rooms__hint">امکانات را با ویرگول جدا کنید؛ مانند بالکن، نمای باغ.</span>
-          </div>
-        </div>
-        {!editingRoom && activeRoomTypes.length === 0 && !isLoading ? (
-          <p className="staff-rooms__message" role="status">
-            برای ثبت اتاق، ابتدا دست‌کم یک نوع اتاق فعال ایجاد یا فعال کنید.
-          </p>
-        ) : null}
-        <div className="staff-rooms__editor-actions">
-          {editingRoom ? <button className="button button--quiet" type="button" onClick={cancelEdit} disabled={isSaving}>لغو ویرایش</button> : null}
-          <button className="button button--jade" type="submit" disabled={isSaving || (!editingRoom && activeRoomTypes.length === 0)}>
-            {isSaving ? 'در حال ذخیره…' : editingRoom ? 'ذخیره تغییرات اتاق' : 'افزودن اتاق'}
+        <div className="staff-rooms__filter-actions">
+          <button className="button button--jade staff-rooms__filter-button" type="submit" disabled={isLoading}>
+            اعمال فیلترها
           </button>
         </div>
       </form>
@@ -571,6 +569,116 @@ export function StaffRoomsPage() {
           </div>
         ) : null}
       </section>
+
+      <form
+        id="staff-rooms-editor"
+        className="staff-rooms__editor"
+        onSubmit={saveRoom}
+        aria-label={editingRoom ? 'ویرایش اتاق' : 'افزودن اتاق'}
+        hidden={!isEditorOpen}
+      >
+        <div className="staff-rooms__editor-heading">
+          <div>
+            <p className="staff-rooms__eyebrow">{editingRoom ? 'ویرایش اطلاعات' : 'ثبت اتاق واقعی'}</p>
+            <h2 ref={editorHeading} tabIndex={-1}>
+              {editingRoom ? `ویرایش اتاق ${editingRoom.roomNumber}` : 'افزودن اتاق'}
+            </h2>
+          </div>
+          {editingRoom?.isGenerated ? (
+            <p className="staff-rooms__generated-note" role="note">
+              شماره‌های نمونه باید پیش از بهره‌برداری با شماره واقعی جایگزین شوند.
+            </p>
+          ) : null}
+        </div>
+        <div className="staff-rooms__editor-fields">
+          {!editingRoom ? (
+            <div className="staff-rooms__field">
+              <label htmlFor="staff-room-type">نوع اتاق</label>
+              <select
+                id="staff-room-type"
+                value={draft.roomTypeId}
+                onChange={(event) => updateDraft('roomTypeId', event.target.value)}
+                disabled={isSaving || activeRoomTypes.length === 0}
+              >
+                <option value="">انتخاب نوع اتاق</option>
+                {activeRoomTypes.map((roomType) => (
+                  <option key={roomType.id} value={roomType.id}>{roomType.name}</option>
+                ))}
+              </select>
+            </div>
+          ) : (
+            <div className="staff-rooms__field staff-rooms__field--read-only">
+              <span>نوع اتاق</span>
+              <strong>{editingRoom.roomType.name}</strong>
+            </div>
+          )}
+          <div className="staff-rooms__field">
+            <label htmlFor="staff-room-number">شماره اتاق</label>
+            <input
+              id="staff-room-number"
+              value={draft.roomNumber}
+              maxLength={32}
+              disabled={isSaving}
+              onChange={(event) => updateDraft('roomNumber', event.target.value)}
+              aria-invalid={Boolean(fieldError)}
+              aria-describedby={fieldError ? 'staff-room-number-error' : 'staff-room-number-help'}
+            />
+            <span id="staff-room-number-help" className="staff-rooms__hint">
+              شماره باید در کل اقامتگاه یکتا باشد.
+            </span>
+            {fieldError ? (
+              <span id="staff-room-number-error" className="staff-rooms__field-error" role="alert">
+                {fieldError}
+              </span>
+            ) : null}
+          </div>
+          <div className="staff-rooms__field">
+            <label htmlFor="staff-room-floor">طبقه</label>
+            <input
+              id="staff-room-floor"
+              value={draft.floor}
+              maxLength={32}
+              disabled={isSaving}
+              onChange={(event) => updateDraft('floor', event.target.value)}
+            />
+          </div>
+          <div className="staff-rooms__field staff-rooms__field--features">
+            <label htmlFor="staff-room-features">امکانات</label>
+            <input
+              id="staff-room-features"
+              value={draft.features}
+              disabled={isSaving}
+              onChange={(event) => updateDraft('features', event.target.value)}
+              aria-describedby="staff-room-features-help"
+            />
+            <span id="staff-room-features-help" className="staff-rooms__hint">
+              امکانات را با ویرگول جدا کنید؛ مانند بالکن، نمای باغ.
+            </span>
+          </div>
+        </div>
+        {!editingRoom && activeRoomTypes.length === 0 && !isLoading ? (
+          <p className="staff-rooms__message" role="status">
+            برای ثبت اتاق، ابتدا دست‌کم یک نوع اتاق فعال ایجاد یا فعال کنید.
+          </p>
+        ) : null}
+        <div className="staff-rooms__editor-actions">
+          <button
+            className="button button--quiet"
+            type="button"
+            onClick={editingRoom ? cancelEdit : () => setIsEditorOpen(false)}
+            disabled={isSaving}
+          >
+            {editingRoom ? 'لغو ویرایش' : 'بستن فرم'}
+          </button>
+          <button
+            className="button button--jade"
+            type="submit"
+            disabled={isSaving || (!editingRoom && activeRoomTypes.length === 0)}
+          >
+            {isSaving ? 'در حال ذخیره…' : editingRoom ? 'ذخیره تغییرات اتاق' : 'افزودن اتاق'}
+          </button>
+        </div>
+      </form>
 
       {pendingAction ? (
         <div className="staff-rooms__dialog-backdrop">

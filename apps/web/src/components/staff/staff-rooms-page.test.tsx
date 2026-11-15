@@ -122,11 +122,27 @@ describe('StaffRoomsPage', () => {
     expect(screen.getByRole('button', { name: 'ویرایش اتاق اتاق باغ ۱' })).toBeInTheDocument();
   });
 
+  it('shows room results before the collapsed editor and opens the editor on request', async () => {
+    render(<StaffRoomsPage />);
+    await screen.findByRole('article', { name: 'اتاق باغ ۱' });
+
+    expect(screen.queryByRole('form', { name: 'افزودن اتاق' })).not.toBeInTheDocument();
+    const roomList = screen.getByRole('region', { name: 'فهرست اتاق‌ها' });
+    fireEvent.click(screen.getByRole('button', { name: 'افزودن اتاق' }));
+
+    const editor = await screen.findByRole('form', { name: 'افزودن اتاق' });
+    expect(roomList.compareDocumentPosition(editor) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(screen.getByRole('heading', { level: 2, name: 'افزودن اتاق' })).toHaveFocus();
+  });
+
   it('filters by room type, floor, active status, and search text', async () => {
     render(<StaffRoomsPage />);
     await screen.findByText('اتاق باغ ۱');
 
     const filterForm = screen.getByRole('form', { name: 'فیلتر اتاق‌ها' });
+    const searchInput = within(filterForm).getByLabelText('جست‌وجوی شماره اتاق');
+    const applyButton = within(filterForm).getByRole('button', { name: 'اعمال فیلترها' });
+    expect(searchInput.compareDocumentPosition(applyButton) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
     fireEvent.change(within(filterForm).getByLabelText('نوع اتاق'), { target: { value: roomType.id } });
     fireEvent.change(within(filterForm).getByLabelText('طبقه'), { target: { value: '۲' } });
     fireEvent.change(within(filterForm).getByLabelText('وضعیت اتاق'), { target: { value: 'true' } });
@@ -148,6 +164,8 @@ describe('StaffRoomsPage', () => {
     roomsApi.createStaffRoom.mockResolvedValue(createdRoom);
     render(<StaffRoomsPage />);
     await screen.findByText('اتاق باغ ۱');
+
+    fireEvent.click(screen.getByRole('button', { name: 'افزودن اتاق' }));
 
     const form = screen.getByRole('form', { name: 'افزودن اتاق' });
     fireEvent.change(within(form).getByLabelText('نوع اتاق'), { target: { value: roomType.id } });

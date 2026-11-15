@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import type { ReactNode } from 'react';
+import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { HotelLogo } from '@/components/brand/hotel-logo';
 import type { StaffMember } from '@/lib/staff-api';
 
@@ -22,6 +22,33 @@ export function StaffDashboardShell({
   currentPath = '/staff',
   children,
 }: StaffDashboardShellProps) {
+  const staffNavRef = useRef<HTMLElement>(null);
+  const [hasNavOverflow, setHasNavOverflow] = useState(false);
+
+  useEffect(() => {
+    const nav = staffNavRef.current;
+    if (!nav) return;
+
+    const activeLink = nav.querySelector<HTMLElement>('a[aria-current="page"]');
+    if (activeLink && typeof activeLink.scrollIntoView === 'function') {
+      const prefersReducedMotion =
+        typeof window.matchMedia === 'function' &&
+        window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+      activeLink.scrollIntoView({
+        behavior: prefersReducedMotion ? 'auto' : 'smooth',
+        block: 'nearest',
+        inline: 'nearest',
+      });
+    }
+
+    const measureOverflow = () => {
+      setHasNavOverflow(nav.scrollWidth > nav.clientWidth + 1);
+    };
+    measureOverflow();
+    window.addEventListener('resize', measureOverflow);
+    return () => window.removeEventListener('resize', measureOverflow);
+  }, [currentPath, staff.role]);
+
   return (
     <div className="staff-shell">
       <a className="skip-link" href="#staff-main">
@@ -76,7 +103,8 @@ export function StaffDashboardShell({
             <p className="staff-sidebar__label">فضای کاری</p>
             <span>شیراز، ایران</span>
           </div>
-          <nav aria-label="منوی پنل کارکنان" className="staff-nav">
+          <div className={`staff-nav-viewport${hasNavOverflow ? ' staff-nav-viewport--overflow' : ''}`}>
+          <nav ref={staffNavRef} aria-label="منوی پنل کارکنان" className="staff-nav">
             <Link
               href="/staff"
               aria-current={currentPath === '/staff' ? 'page' : undefined}
@@ -142,6 +170,12 @@ export function StaffDashboardShell({
               </Link>
             )}
           </nav>
+            <span className="staff-nav-overflow-cue" data-staff-nav-overflow-cue aria-hidden="true">
+              <svg viewBox="0 0 16 16" fill="none">
+                <path d="m10 3-5 5 5 5" />
+              </svg>
+            </span>
+          </div>
           {logoutError && (
             <p className="staff-nav__error" role="alert">
               {logoutError}

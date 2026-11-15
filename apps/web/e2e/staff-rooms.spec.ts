@@ -70,12 +70,31 @@ test('admin manages physical rooms through filters, create, renumber, duplicate 
 
     await page.goto('/staff/rooms/manage');
     await expect(page.getByRole('heading', { level: 1, name: 'اتاق‌ها', exact: true })).toBeVisible();
-    await expect(page.getByRole('link', { name: /^اتاق‌های فیزیکی/ })).toHaveAttribute(
+    const activeNavigationLink = page.getByRole('link', { name: /^اتاق‌های فیزیکی/ });
+    await expect(activeNavigationLink).toHaveAttribute(
       'aria-current',
       'page',
     );
+    if ((page.viewportSize()?.width ?? 0) <= 640) {
+      await expect(page.locator('[data-staff-nav-overflow-cue]')).toBeVisible();
+      const navBox = await page.getByRole('navigation', { name: 'منوی پنل کارکنان' }).boundingBox();
+      const activeLinkBox = await activeNavigationLink.boundingBox();
+      expect(navBox).not.toBeNull();
+      expect(activeLinkBox).not.toBeNull();
+      expect(activeLinkBox!.x).toBeGreaterThanOrEqual(navBox!.x);
+      expect(activeLinkBox!.x + activeLinkBox!.width).toBeLessThanOrEqual(navBox!.x + navBox!.width);
+    }
 
+    const addRoomButton = page.getByRole('button', { name: 'افزودن اتاق', exact: true });
     const createForm = page.getByRole('form', { name: 'افزودن اتاق' });
+    await expect(createForm).toHaveCount(0);
+    await addRoomButton.click();
+    await expect(createForm).toBeVisible();
+    const resultsPrecedeEditor = await page.locator('.staff-rooms__list').evaluate((roomList) => {
+      const editor = document.querySelector('.staff-rooms__editor');
+      return Boolean(editor && roomList.compareDocumentPosition(editor) & Node.DOCUMENT_POSITION_FOLLOWING);
+    });
+    expect(resultsPrecedeEditor).toBe(true);
     const roomType = createForm.getByLabel('نوع اتاق');
     await roomType.selectOption({ label: 'اتاق دوتخته باغ' });
     const roomTypeId = await roomType.inputValue();
@@ -97,6 +116,12 @@ test('admin manages physical rooms through filters, create, renumber, duplicate 
     await expect(page.getByRole('status')).toContainText(`اتاق ${roomNumber} اضافه شد.`);
 
     const filters = page.getByRole('form', { name: 'فیلتر اتاق‌ها' });
+    const filterOrderIsLogical = await filters.evaluate((form) => {
+      const search = form.querySelector('#staff-rooms-filter-search');
+      const apply = form.querySelector('.staff-rooms__filter-button');
+      return Boolean(search && apply && search.compareDocumentPosition(apply) & Node.DOCUMENT_POSITION_FOLLOWING);
+    });
+    expect(filterOrderIsLogical).toBe(true);
     await filters.getByLabel('نوع اتاق').selectOption(roomTypeId);
     await filters.getByLabel('طبقه').fill('۹');
     await filters.getByLabel('وضعیت اتاق').selectOption('true');
@@ -148,6 +173,7 @@ test('admin manages physical rooms through filters, create, renumber, duplicate 
     expect(updated).toMatchObject({ roomNumber: replacementNumber, isGenerated: false });
 
     const duplicateForm = page.getByRole('form', { name: 'افزودن اتاق' });
+    await page.getByRole('button', { name: 'افزودن اتاق', exact: true }).click();
     await duplicateForm.getByLabel('شماره اتاق').fill(replacementNumber);
     const duplicateResponsePromise = page.waitForResponse((response) => {
       const url = new URL(response.url());

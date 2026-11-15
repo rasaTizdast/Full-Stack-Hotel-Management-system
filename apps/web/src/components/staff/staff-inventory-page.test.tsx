@@ -76,6 +76,13 @@ const response = {
   ],
 };
 
+async function openRateDisclosure() {
+  await screen.findByRole('table', { name: 'وضعیت ظرفیت و نرخ هر شب' });
+  const summary = document.querySelector('.staff-inventory__rate-disclosure > summary');
+  if (!summary) throw new Error('The rate disclosure summary was not rendered.');
+  fireEvent.click(summary);
+}
+
 describe('StaffInventoryPage', () => {
   beforeEach(() => {
     session.current = {
@@ -183,6 +190,7 @@ describe('StaffInventoryPage', () => {
     };
 
     render(<StaffInventoryPage />);
+    await openRateDisclosure();
     fireEvent.change(await screen.findByLabelText('نرخ یک شب (تومان)'), {
       target: { value: '۲۴۰۰۰۰۰' },
     });
@@ -190,6 +198,30 @@ describe('StaffInventoryPage', () => {
     expect(
       await screen.findByText('۲٬۴۰۰٬۰۰۰ تومان × ۲ شب = ۴٬۸۰۰٬۰۰۰ تومان'),
     ).toBeInTheDocument();
+  });
+
+  it('places a native rate disclosure before the nightly details', async () => {
+    session.current = {
+      ...session.current,
+      staff: { ...session.current.staff, role: 'ADMIN' },
+    };
+
+    const { container } = render(<StaffInventoryPage />);
+    await screen.findByRole('table', { name: 'وضعیت ظرفیت و نرخ هر شب' });
+    const disclosure = container.querySelector('.staff-inventory__rate-disclosure');
+    const overview = container.querySelector('.staff-inventory__overview');
+    const summary = disclosure?.querySelector('summary');
+
+    expect(disclosure).not.toBeNull();
+    expect(overview).not.toBeNull();
+    expect(summary).not.toBeNull();
+    expect(disclosure!.compareDocumentPosition(overview!) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(disclosure).not.toHaveAttribute('open');
+
+    fireEvent.click(summary!);
+
+    expect(disclosure).toHaveAttribute('open');
+    expect(await screen.findByRole('textbox', { name: 'نرخ یک شب (تومان)' })).toBeVisible();
   });
 
   it('locks historical rate ranges and explains how to recover', async () => {
@@ -213,6 +245,7 @@ describe('StaffInventoryPage', () => {
 
     render(<StaffInventoryPage />);
 
+    await openRateDisclosure();
     expect(await screen.findByRole('button', { name: 'ذخیره برای همه شب‌ها' })).toBeDisabled();
     expect(screen.getAllByText('ظرفیت ثبت‌شده')).toHaveLength(2);
     expect(screen.getAllByText('نرخ ثبت نشده')).toHaveLength(2);
@@ -279,6 +312,7 @@ describe('StaffInventoryPage', () => {
 
     render(<StaffInventoryPage />);
 
+    await openRateDisclosure();
     const rate = await screen.findByLabelText('نرخ یک شب (تومان)');
     fireEvent.change(rate, { target: { value: '۴۰۰۰۰۰۰' } });
     fireEvent.click(screen.getByRole('button', { name: 'ذخیره برای همه شب‌ها' }));
@@ -308,6 +342,7 @@ describe('StaffInventoryPage', () => {
     };
 
     render(<StaffInventoryPage />);
+    await openRateDisclosure();
     fireEvent.change(await screen.findByLabelText('نرخ یک شب (تومان)'), {
       target: { value: '۴۰۰۰۰۰۰' },
     });
