@@ -143,7 +143,7 @@ describe('StaffBookingsPage', () => {
 
   it('loads booking requests and opens authorized guest details', async () => {
     setupApi();
-    const row = await screen.findByRole('button', { name: /نمایش رزرو HB-26-AB/ });
+    const row = await screen.findByRole('button', { name: /HB-26-AB/ });
 
     expect(within(row).getByText('مریم رضایی')).toBeInTheDocument();
     fireEvent.click(row);
@@ -159,7 +159,7 @@ describe('StaffBookingsPage', () => {
 
   it('keeps the selected booking details open when staff selects that booking again', async () => {
     const { requests } = setupApi();
-    const row = await screen.findByRole('button', { name: /نمایش رزرو HB-26-AB/ });
+    const row = await screen.findByRole('button', { name: /HB-26-AB/ });
     fireEvent.click(row);
     expect(
       await screen.findByRole('heading', { name: 'جزئیات رزرو HB-26-AB' }),
@@ -173,7 +173,7 @@ describe('StaffBookingsPage', () => {
 
   it('converts Jalali arrival filters and searches by reference or phone', async () => {
     const { requests } = setupApi({ lists: [pageOf(), pageOf()] });
-    await screen.findByRole('button', { name: /نمایش رزرو HB-26-AB/ });
+    await screen.findByRole('button', { name: /HB-26-AB/ });
 
     fireEvent.change(screen.getByLabelText('وضعیت درخواست'), {
       target: { value: 'CONFIRMED' },
@@ -197,7 +197,7 @@ describe('StaffBookingsPage', () => {
 
   it('does not call the list API when Jalali filters are invalid', async () => {
     const { requests } = setupApi({ lists: [pageOf()] });
-    await screen.findByRole('button', { name: /نمایش رزرو HB-26-AB/ });
+    await screen.findByRole('button', { name: /HB-26-AB/ });
     const callsBeforeFilter = requests.filter((request) =>
       request.url.includes('/staff/bookings'),
     ).length;
@@ -214,7 +214,7 @@ describe('StaffBookingsPage', () => {
   it('requires a separate confirmation before sending a booking decision', async () => {
     const confirmed = { ...bookingDetail, status: 'CONFIRMED' as const };
     const { requests } = setupApi({ actions: { confirm: { status: 200, body: confirmed } } });
-    fireEvent.click(await screen.findByRole('button', { name: /نمایش رزرو HB-26-AB/ }));
+    fireEvent.click(await screen.findByRole('button', { name: /HB-26-AB/ }));
     fireEvent.click(await screen.findByRole('button', { name: 'تأیید رزرو' }));
 
     expect(screen.getByRole('heading', { name: 'تأیید نهایی رزرو' })).toBeInTheDocument();
@@ -238,7 +238,7 @@ describe('StaffBookingsPage', () => {
       lists: [pageOf([booking, secondBooking])],
       details: [bookingDetail, secondBookingDetail],
     });
-    fireEvent.click(await screen.findByRole('button', { name: /نمایش رزرو HB-26-AB/ }));
+    fireEvent.click(await screen.findByRole('button', { name: /HB-26-AB/ }));
     expect(
       await screen.findByRole('heading', { name: 'جزئیات رزرو HB-26-AB' }),
     ).toBeInTheDocument();
@@ -246,7 +246,7 @@ describe('StaffBookingsPage', () => {
     fireEvent.click(screen.getByRole('button', { name: 'تأیید رزرو' }));
     expect(screen.getByRole('heading', { name: 'تأیید نهایی رزرو' })).toBeInTheDocument();
 
-    fireEvent.click(await screen.findByRole('button', { name: /نمایش رزرو HB-26-CD/ }));
+    fireEvent.click(await screen.findByRole('button', { name: /HB-26-CD/ }));
 
     expect(
       await screen.findByRole('heading', { name: 'جزئیات رزرو HB-26-CD' }),
@@ -263,7 +263,7 @@ describe('StaffBookingsPage', () => {
       details: [confirmedBooking],
       actions: { cancel: { status: 200, body: cancelled } },
     });
-    fireEvent.click(await screen.findByRole('button', { name: /نمایش رزرو HB-26-AB/ }));
+    fireEvent.click(await screen.findByRole('button', { name: /HB-26-AB/ }));
     fireEvent.click(await screen.findByRole('button', { name: 'لغو رزرو' }));
 
     const confirm = screen.getByRole('button', { name: 'بله، رزرو را لغو می‌کنم' });
@@ -289,7 +289,7 @@ describe('StaffBookingsPage', () => {
       checkIn: '2024-03-20',
     };
     setupApi({ details: [checkedInBooking] });
-    fireEvent.click(await screen.findByRole('button', { name: /نمایش رزرو HB-26-AB/ }));
+    fireEvent.click(await screen.findByRole('button', { name: /HB-26-AB/ }));
 
     expect(
       await screen.findByRole('heading', { name: 'جزئیات رزرو HB-26-AB' }),
@@ -312,7 +312,7 @@ describe('StaffBookingsPage', () => {
         },
       },
     });
-    fireEvent.click(await screen.findByRole('button', { name: /نمایش رزرو HB-26-AB/ }));
+    fireEvent.click(await screen.findByRole('button', { name: /HB-26-AB/ }));
     fireEvent.click(await screen.findByRole('button', { name: 'تأیید رزرو' }));
     fireEvent.click(await screen.findByRole('button', { name: 'بله، رزرو را تأیید می‌کنم' }));
 
@@ -338,7 +338,7 @@ describe('StaffBookingsPage', () => {
     fireEvent.click(screen.getByRole('button', { name: 'تلاش دوباره' }));
 
     expect(
-      await screen.findByRole('button', { name: /نمایش رزرو HB-26-AB/ }),
+      await screen.findByRole('button', { name: /HB-26-AB/ }),
     ).toBeInTheDocument();
   });
 });
