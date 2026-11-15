@@ -1,4 +1,4 @@
-import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { StaffInventoryPage } from './staff-inventory-page';
 import { StaffApiError } from '@/lib/staff-api';
@@ -132,6 +132,49 @@ describe('StaffInventoryPage', () => {
         expect.objectContaining({ roomTypeId: inactiveRoomTypeOption.id }),
       );
     });
+  });
+
+  it('ignores a range response after the selected room changes', async () => {
+    const secondRoomType = {
+      id: '72be28d2-d4ef-49b0-8c6b-688124a1521f',
+      name: 'سوئیت باغ',
+      slug: 'garden-suite',
+      isActive: true,
+    };
+    let resolveRange!: (value: typeof response) => void;
+    inventoryApi.getStaffInventoryRoomTypes.mockResolvedValue([roomTypeOption, secondRoomType]);
+    session.current = {
+      ...session.current,
+      staff: { ...session.current.staff, role: 'ADMIN' },
+    };
+
+    render(<StaffInventoryPage />);
+    await screen.findByRole('table', { name: 'وضعیت ظرفیت و نرخ هر شب' });
+    inventoryApi.getStaffInventoryRange.mockReturnValueOnce(
+      new Promise((resolve) => {
+        resolveRange = resolve;
+      }),
+    );
+
+    fireEvent.change(screen.getByLabelText('نوع اتاق'), { target: { value: secondRoomType.id } });
+    fireEvent.click(screen.getByRole('button', { name: 'نمایش بازه' }));
+    await waitFor(() => expect(inventoryApi.getStaffInventoryRange).toHaveBeenCalledTimes(2));
+
+    fireEvent.change(screen.getByLabelText('نوع اتاق'), { target: { value: roomType.id } });
+    await act(async () => {
+      resolveRange({
+        ...response,
+        roomType: secondRoomType,
+        nights: response.nights.map((night) => ({
+          ...night,
+          totalRooms: 9,
+          nightlyPriceToman: '5000000',
+        })),
+      });
+    });
+
+    expect(screen.queryByRole('table', { name: 'وضعیت ظرفیت و نرخ هر شب' })).not.toBeInTheDocument();
+    expect(screen.queryByLabelText('ظرفیت کل اتاق‌ها')).not.toBeInTheDocument();
   });
 
   it('shows capacity conflicts on the capacity field', async () => {

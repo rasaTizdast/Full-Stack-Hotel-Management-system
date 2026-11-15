@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import Image from 'next/image';
-import { useRef, useState, type FormEvent } from 'react';
+import { useEffect, useRef, useState, type FormEvent } from 'react';
 import { useForm, useWatch } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import {
@@ -20,6 +20,7 @@ import { formatTomanTotal } from '@/lib/availability';
 import { formatGregorianAsJalali, formatPersianInteger } from '@/lib/jalali-date';
 import type { AvailabilityRoomType } from '@/lib/availability';
 import type { PublicRoomType } from '@/lib/public-api';
+import { getRoomImage } from '@/components/public/room-imagery';
 import styles from './booking-flow.module.css';
 
 export type BookingFlowProps = {
@@ -30,19 +31,14 @@ export type BookingFlowProps = {
 
 type Attempt = { key: string; fingerprint: string };
 
-const roomImages: Record<string, string> = {
-  'garden-double': '/images/hotel/garden-double.webp',
-  'family-suite': '/images/hotel/family-suite.webp',
-};
-
-function RoomImage({ slug, name }: { slug: string; name: string }) {
-  const src = roomImages[slug];
-  if (!src) return null;
+function RoomImage({ slug }: { slug: string }) {
+  if (slug !== 'garden-double' && slug !== 'family-suite') return null;
+  const image = getRoomImage({ slug });
 
   return (
     <div className={styles.roomImage}>
-      <Image src={src} alt={`نمای ${name}`} fill sizes="(max-width: 760px) 100vw, 38vw" />
-      <span className={styles.imageCaption}>خانه‌باغ نارنج · شیراز</span>
+      <Image src={image.src} alt={image.alt} fill sizes="(max-width: 760px) 100vw, 38vw" />
+      <span className={styles.imageCaption}>خانه‌باغ نارنج، شیراز</span>
     </div>
   );
 }
@@ -72,7 +68,7 @@ function StaySummary({
   roomQuantity,
   total,
 }: {
-  roomName: string;
+  roomName?: string;
   checkIn: string;
   checkOut: string;
   guestCount: number;
@@ -81,10 +77,12 @@ function StaySummary({
 }) {
   return (
     <dl className={styles.summary}>
-      <div>
-        <dt>اتاق</dt>
-        <dd>{roomName}</dd>
-      </div>
+      {roomName ? (
+        <div>
+          <dt>اتاق</dt>
+          <dd>{roomName}</dd>
+        </div>
+      ) : null}
       <div>
         <dt>ورود</dt>
         <dd>
@@ -117,6 +115,12 @@ function StaySummary({
 }
 
 function Confirmation({ booking }: { booking: PublicBookingResponse }) {
+  const headingRef = useRef<HTMLHeadingElement>(null);
+
+  useEffect(() => {
+    headingRef.current?.focus();
+  }, []);
+
   return (
     <section
       className={styles.confirmation}
@@ -128,11 +132,13 @@ function Confirmation({ booking }: { booking: PublicBookingResponse }) {
           <path d="m4.5 10.5 3.6 3.6 7.4-8.1" />
         </svg>
       </span>
-      <RoomImage slug={booking.roomType.slug} name={booking.roomType.name} />
+      <RoomImage slug={booking.roomType.slug} />
       <p className={styles.confirmationStatus}>درخواست شما دریافت شد</p>
-      <h1 id="booking-confirmation-title">درخواست اقامت شما ثبت شد</h1>
+      <h1 ref={headingRef} id="booking-confirmation-title" tabIndex={-1}>
+        درخواست اقامت شما ثبت شد
+      </h1>
       <p className={styles.confirmationLead}>
-        پذیرش، ظرفیت و مبلغ را بررسی می‌کند و سپس درخواست شما را تأیید می‌کند.
+        پذیرش ظرفیت و مبلغ را بررسی می‌کند و نتیجهٔ درخواست را به شما اطلاع می‌دهد.
       </p>
       <div className={styles.reference}>
         <span>کد پیگیری</span>
@@ -152,7 +158,7 @@ function Confirmation({ booking }: { booking: PublicBookingResponse }) {
         وضعیت درخواست: <strong>در انتظار تأیید پذیرش</strong>
       </p>
       <Link href="/" className={styles.backLink}>
-        بازگشت به اقامتگاه <span aria-hidden="true">←</span>
+        بازگشت به اقامتگاه
       </Link>
     </section>
   );
@@ -238,7 +244,7 @@ export function BookingFlow({ room, context, roomAvailability }: BookingFlowProp
     <section className={styles.booking} aria-labelledby="booking-title">
       <div className={styles.intro}>
         <h1 id="booking-title">درخواست اقامت</h1>
-        <p>اطلاعات تماس را وارد کنید. مبلغ نهایی هنگام ثبت، دوباره از سامانهٔ رزرو محاسبه می‌شود.</p>
+        <p>اطلاعات تماس را برای پیگیری درخواست وارد کنید.</p>
       </div>
       <div className={styles.layout}>
         <form
@@ -355,17 +361,13 @@ export function BookingFlow({ room, context, roomAvailability }: BookingFlowProp
                 : failure === 'server-error'
                   ? 'دوباره تلاش کنید'
                   : 'ثبت درخواست اقامت'}
-              <span className={styles.submitArrow} aria-hidden="true">
-                ←
-              </span>
             </button>
           ) : null}
         </form>
         <aside className={styles.aside} aria-label="خلاصهٔ اقامت">
-          <RoomImage slug={room.slug} name={room.name} />
+          <RoomImage slug={room.slug} />
           <h2>{room.name}</h2>
           <StaySummary
-            roomName={room.name}
             checkIn={context.checkIn}
             checkOut={context.checkOut}
             guestCount={context.guestCount}

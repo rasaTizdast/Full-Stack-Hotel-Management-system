@@ -110,7 +110,11 @@ describe('BookingFlow', () => {
     expect(fetchMock).toHaveBeenCalledOnce();
 
     resolveRequest(Response.json(bookingResponse, { status: 201 }));
-    expect(await screen.findByRole('heading', { name: 'درخواست اقامت شما ثبت شد' })).toBeVisible();
+    const confirmationHeading = await screen.findByRole('heading', {
+      name: 'درخواست اقامت شما ثبت شد',
+    });
+    expect(confirmationHeading).toBeVisible();
+    expect(confirmationHeading).toHaveFocus();
     expect(screen.getByText('N8rP4vQkL2dX')).toBeVisible();
     expect(screen.getByText('۴٬۸۰۰٬۰۰۰')).toBeVisible();
     expect(screen.queryByLabelText('شماره موبایل')).not.toBeInTheDocument();
@@ -127,7 +131,7 @@ describe('BookingFlow', () => {
     fillGuestDetails();
     fireEvent.click(screen.getByRole('button', { name: 'ثبت درخواست اقامت' }));
     expect(await screen.findByRole('alert')).toHaveTextContent(
-      'ثبت درخواست انجام نشد. اطلاعات حفظ شده است؛ دوباره تلاش کنید.',
+      'خطا در ثبت درخواست. اطلاعات حفظ شده است؛ دوباره تلاش کنید.',
     );
 
     fireEvent.click(screen.getByRole('button', { name: 'دوباره تلاش کنید' }));

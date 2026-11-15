@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, type FormEvent } from 'react';
+import { useEffect, useRef, useState, type FormEvent } from 'react';
 import {
   StaffApiError,
   getStaffInventoryRange,
@@ -58,12 +58,14 @@ export function StaffInventoryPage() {
   const [isLoadingRoomTypes, setIsLoadingRoomTypes] = useState(true);
   const [isLoadingRange, setIsLoadingRange] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const rangeRequestId = useRef(0);
 
   useEffect(() => {
     if (status !== 'authenticated' || staff?.role !== 'ADMIN') return;
     let active = true;
 
     async function loadRoomTypes() {
+      let rangeRequestIdForLoad: number | null = null;
       setIsLoadingRoomTypes(true);
       setFormError(null);
       try {
@@ -77,26 +79,38 @@ export function StaffInventoryPage() {
         const initialRange = validateInventoryRangeInput(defaultRange).range;
         if (!initialRange) return;
 
+        rangeRequestIdForLoad = ++rangeRequestId.current;
         setIsLoadingRange(true);
         const result = await getStaffInventoryRange({
           roomTypeId: firstRoomType.id,
           startDate: initialRange.startDate,
           endDate: initialRange.endDate,
         });
-        if (!active) return;
+        if (!active || rangeRequestId.current !== rangeRequestIdForLoad) return;
         setInventory(result);
         const values = rangeFieldsFromResponse(result);
         setTotalRooms(values.totalRooms);
         setNightlyPriceToman(values.nightlyPriceToman);
       } catch (cause) {
         if (!active) return;
+        if (
+          rangeRequestIdForLoad !== null &&
+          rangeRequestId.current !== rangeRequestIdForLoad
+        ) {
+          return;
+        }
         setFormError(
           cause instanceof Error ? cause.message : 'اطلاعات ظرفیت بارگذاری نشد. دوباره تلاش کنید.',
         );
       } finally {
         if (active) {
           setIsLoadingRoomTypes(false);
-          setIsLoadingRange(false);
+          if (
+            rangeRequestIdForLoad === null ||
+            rangeRequestId.current === rangeRequestIdForLoad
+          ) {
+            setIsLoadingRange(false);
+          }
         }
       }
     }
@@ -119,15 +133,18 @@ export function StaffInventoryPage() {
   }
 
   function updateRangeField(field: keyof InventoryRangeInput, value: string) {
+    rangeRequestId.current += 1;
     setRangeInput((current) => ({ ...current, [field]: value }));
     setFieldErrors((current) => ({ ...current, [field]: undefined }));
     setInventory(null);
     setTotalRooms('');
     setNightlyPriceToman('');
     setSuccessMessage(null);
+    setIsLoadingRange(false);
   }
 
   function updateRoomType(roomTypeId: string) {
+    rangeRequestId.current += 1;
     setSelectedRoomTypeId(roomTypeId);
     setInventory(null);
     setTotalRooms('');
@@ -135,6 +152,7 @@ export function StaffInventoryPage() {
     setFieldErrors({});
     setFormError(null);
     setSuccessMessage(null);
+    setIsLoadingRange(false);
   }
 
   function updateCapacity(value: string) {
@@ -158,23 +176,27 @@ export function StaffInventoryPage() {
     setFieldErrors(validation.errors);
     if (!validation.range || !selectedRoomTypeId) return;
 
+    const requestId = ++rangeRequestId.current;
+    const roomTypeId = selectedRoomTypeId;
     setIsLoadingRange(true);
     try {
       const result = await getStaffInventoryRange({
-        roomTypeId: selectedRoomTypeId,
+        roomTypeId,
         startDate: validation.range.startDate,
         endDate: validation.range.endDate,
       });
+      if (rangeRequestId.current !== requestId) return;
       setInventory(result);
       const values = rangeFieldsFromResponse(result);
       setTotalRooms(values.totalRooms);
       setNightlyPriceToman(values.nightlyPriceToman);
     } catch (cause) {
+      if (rangeRequestId.current !== requestId) return;
       setFormError(
         cause instanceof Error ? cause.message : 'اطلاعات ظرفیت بارگذاری نشد. دوباره تلاش کنید.',
       );
     } finally {
-      setIsLoadingRange(false);
+      if (rangeRequestId.current === requestId) setIsLoadingRange(false);
     }
   }
 

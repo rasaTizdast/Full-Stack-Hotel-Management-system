@@ -338,7 +338,7 @@ export function StaffBookingsPage() {
       </header>
 
       <form className={styles.filters} onSubmit={applyFilters} aria-label="فیلتر درخواست‌ها">
-        <div className={styles.filterField}>
+        <div className={`${styles.filterField} ${styles.statusField}`}>
           <label htmlFor="booking-status">وضعیت درخواست</label>
           <select
             id="booking-status"
@@ -417,7 +417,9 @@ export function StaffBookingsPage() {
         )}
       </form>
 
-      <div className={styles.workspace}>
+      <div
+        className={`${styles.workspace} ${items.length === 0 && !selectedReference ? styles.workspaceSingle : ''}`}
+      >
         <section className={styles.listPanel} aria-labelledby="booking-list-title">
           <div className={styles.panelHeading}>
             <div>
@@ -466,8 +468,10 @@ export function StaffBookingsPage() {
                     className={`${styles.bookingCard} ${selectedReference === item.reference ? styles.bookingCardSelected : ''}`}
                     type="button"
                     aria-pressed={selectedReference === item.reference}
+                    aria-label={`نمایش رزرو ${item.reference}`}
                     disabled={acting}
                     onClick={() => {
+                      if (selectedReference === item.reference) return;
                       setSelectedReference(item.reference);
                       setDetail(null);
                       setDetailState('loading');
@@ -481,9 +485,6 @@ export function StaffBookingsPage() {
                       setActionMessage(null);
                     }}
                   >
-                    <span className={styles.visuallyHidden}>
-                      نمایش جزئیات رزرو {item.reference}،
-                    </span>
                     <span className={styles.cardTopline}>
                       <span className={styles.reference} dir="ltr">
                         {item.reference}
@@ -495,15 +496,15 @@ export function StaffBookingsPage() {
                     <span className={styles.cardGuest}>{item.guestName}</span>
                     <span className={styles.cardMeta}>
                       <span>{item.roomType.name}</span>
-                      <span dir="ltr">
-                        {bookingDate(item.checkIn)} ← {bookingDate(item.checkOut)}
+                      <span>
+                        {bookingDate(item.checkIn)} تا {bookingDate(item.checkOut)}
                       </span>
                     </span>
                     <span className={styles.cardFooter}>
                       <span dir="ltr">{item.guestPhone}</span>
                       <span>
-                        {formatPersianInteger(item.roomQuantity)} اتاق ·{' '}
-                        {formatPersianInteger(item.guestCount)} مهمان
+                        اتاق: {formatPersianInteger(item.roomQuantity)}، مهمان:{' '}
+                        {formatPersianInteger(item.guestCount)}
                       </span>
                     </span>
                   </button>
@@ -536,226 +537,231 @@ export function StaffBookingsPage() {
           )}
         </section>
 
-        <aside className={styles.detailPanel} aria-labelledby="booking-detail-title">
-          {!selectedReference && (
-            <div className={styles.detailPlaceholder}>
-              <span className={styles.detailGlyph} aria-hidden="true">
-                ▤
-              </span>
-              <h2 id="booking-detail-title">جزئیات درخواست</h2>
-              <p>یک رزرو را از فهرست انتخاب کنید تا اطلاعات لازم برای پاسخ را ببینید.</p>
-            </div>
-          )}
-          {selectedReference && detailState === 'loading' && (
-            <div className={styles.statePanel} role="status" aria-busy="true">
-              <span className={styles.loader} aria-hidden="true" />
-              <p>در حال دریافت جزئیات رزرو…</p>
-            </div>
-          )}
-          {selectedReference && detailState === 'error' && (
-            <div className={styles.statePanel}>
-              <h2 id="booking-detail-title">جزئیات رزرو</h2>
-              <p className={styles.errorText} role="alert">
-                {detailError}
-              </p>
-              <button className={styles.secondaryButton} type="button" onClick={retryDetail}>
-                تلاش دوباره
-              </button>
-            </div>
-          )}
-          {detail && detailState === 'ready' && (
-            <div className={styles.detailContent}>
-              <div className={styles.detailHeading}>
-                <div>
-                  <h2 id="booking-detail-title" ref={detailHeadingRef} tabIndex={-1}>
-                    جزئیات رزرو <bdi dir="ltr">{detail.reference}</bdi>
-                  </h2>
-                </div>
-                <span className={`${styles.status} ${styles[`status_${detail.status}`]}`}>
-                  {STATUS_LABELS[detail.status]}
+        {(items.length > 0 || selectedReference) && (
+          <aside className={styles.detailPanel} aria-labelledby="booking-detail-title">
+            {!selectedReference && (
+              <div className={styles.detailPlaceholder}>
+                <span className={styles.detailGlyph} aria-hidden="true">
+                  ▤
                 </span>
+                <h2 id="booking-detail-title">جزئیات درخواست</h2>
+                <p>یک رزرو را از فهرست انتخاب کنید تا اطلاعات لازم برای پاسخ را ببینید.</p>
               </div>
-
-              {actionMessage && (
-                <p className={styles.successMessage} role="status">
-                  {actionMessage}
+            )}
+            {selectedReference && detailState === 'loading' && (
+              <div className={styles.statePanel} role="status" aria-busy="true">
+                <span className={styles.loader} aria-hidden="true" />
+                <p>در حال دریافت جزئیات رزرو…</p>
+              </div>
+            )}
+            {selectedReference && detailState === 'error' && (
+              <div className={styles.statePanel}>
+                <h2 id="booking-detail-title">جزئیات رزرو</h2>
+                <p className={styles.errorText} role="alert">
+                  {detailError}
                 </p>
-              )}
+                <button className={styles.secondaryButton} type="button" onClick={retryDetail}>
+                  تلاش دوباره
+                </button>
+              </div>
+            )}
+            {detail && detailState === 'ready' && (
+              <div className={styles.detailContent}>
+                <div className={styles.detailHeading}>
+                  <div>
+                    <h2 id="booking-detail-title" ref={detailHeadingRef} tabIndex={-1}>
+                      جزئیات رزرو <bdi dir="ltr">{detail.reference}</bdi>
+                    </h2>
+                  </div>
+                  <span className={`${styles.status} ${styles[`status_${detail.status}`]}`}>
+                    {STATUS_LABELS[detail.status]}
+                  </span>
+                </div>
 
-              <section className={styles.guestSection} aria-labelledby="guest-info-title">
-                <h3 id="guest-info-title">اطلاعات مهمان</h3>
-                <dl className={styles.guestDetails}>
-                  <div>
-                    <dt>نام</dt>
-                    <dd>{detail.guestName}</dd>
-                  </div>
-                  <div>
-                    <dt>موبایل</dt>
-                    <dd dir="ltr">{detail.guestPhone}</dd>
-                  </div>
-                  {detail.guestEmail && (
+                {actionMessage && (
+                  <p className={styles.successMessage} role="status">
+                    {actionMessage}
+                  </p>
+                )}
+
+                <section className={styles.guestSection} aria-labelledby="guest-info-title">
+                  <h3 id="guest-info-title">اطلاعات مهمان</h3>
+                  <dl className={styles.guestDetails}>
                     <div>
-                      <dt>ایمیل</dt>
-                      <dd dir="ltr">{detail.guestEmail}</dd>
+                      <dt>نام</dt>
+                      <dd>{detail.guestName}</dd>
                     </div>
-                  )}
-                </dl>
-              </section>
-
-              <section className={styles.staySection} aria-labelledby="stay-info-title">
-                <h3 id="stay-info-title">جزئیات اقامت</h3>
-                <dl className={styles.stayDetails}>
-                  <div>
-                    <dt>نوع اتاق</dt>
-                    <dd>{detail.roomType.name}</dd>
-                  </div>
-                  <div>
-                    <dt>تاریخ ورود</dt>
-                    <dd>
-                      <bdi>{bookingDate(detail.checkIn)}</bdi>
-                    </dd>
-                  </div>
-                  <div>
-                    <dt>تاریخ خروج</dt>
-                    <dd>
-                      <bdi>{bookingDate(detail.checkOut)}</bdi>
-                    </dd>
-                  </div>
-                  <div>
-                    <dt>اتاق</dt>
-                    <dd>{formatPersianInteger(detail.roomQuantity)}</dd>
-                  </div>
-                  <div>
-                    <dt>مهمان</dt>
-                    <dd>{formatPersianInteger(detail.guestCount)}</dd>
-                  </div>
-                </dl>
-                <ul className={styles.nightList} aria-label="قیمت هر شب">
-                  {detail.nights.map((night) => (
-                    <li key={night.stayDate}>
-                      <span>{bookingDate(night.stayDate)}</span>
-                      <span>{toman(night.amountToman)}</span>
-                    </li>
-                  ))}
-                </ul>
-                <p className={styles.totalRow}>
-                  <span>مبلغ کل ثبت‌شده</span>
-                  <strong>{toman(detail.totalPriceToman)}</strong>
-                </p>
-              </section>
-
-              {detail.internalNote && (
-                <section className={styles.noteSection} aria-labelledby="internal-note-title">
-                  <h3 id="internal-note-title">یادداشت داخلی</h3>
-                  <p>{detail.internalNote}</p>
+                    <div>
+                      <dt>موبایل</dt>
+                      <dd dir="ltr">{detail.guestPhone}</dd>
+                    </div>
+                    {detail.guestEmail && (
+                      <div>
+                        <dt>ایمیل</dt>
+                        <dd dir="ltr">{detail.guestEmail}</dd>
+                      </div>
+                    )}
+                  </dl>
                 </section>
-              )}
-              {detail.cancellationReason && (
-                <section className={styles.noteSection} aria-labelledby="cancellation-reason-title">
-                  <h3 id="cancellation-reason-title">دلیل لغو</h3>
-                  <p>{detail.cancellationReason}</p>
-                </section>
-              )}
 
-              {isActionable(detail) &&
-                (!actionDraft || actionTargetReference !== detail.reference) && (
-                  <div className={styles.bookingActions} aria-label="اقدام‌های رزرو">
-                    {detail.status === 'PENDING_CONFIRMATION' ? (
-                      <>
-                        <button
-                          className={styles.primaryButton}
-                          type="button"
-                          onClick={(event) => openAction('confirm', event.currentTarget)}
-                        >
-                          تأیید رزرو
-                        </button>
+                <section className={styles.staySection} aria-labelledby="stay-info-title">
+                  <h3 id="stay-info-title">جزئیات اقامت</h3>
+                  <dl className={styles.stayDetails}>
+                    <div>
+                      <dt>نوع اتاق</dt>
+                      <dd>{detail.roomType.name}</dd>
+                    </div>
+                    <div>
+                      <dt>تاریخ ورود</dt>
+                      <dd>
+                        <bdi>{bookingDate(detail.checkIn)}</bdi>
+                      </dd>
+                    </div>
+                    <div>
+                      <dt>تاریخ خروج</dt>
+                      <dd>
+                        <bdi>{bookingDate(detail.checkOut)}</bdi>
+                      </dd>
+                    </div>
+                    <div>
+                      <dt>اتاق</dt>
+                      <dd>{formatPersianInteger(detail.roomQuantity)}</dd>
+                    </div>
+                    <div>
+                      <dt>مهمان</dt>
+                      <dd>{formatPersianInteger(detail.guestCount)}</dd>
+                    </div>
+                  </dl>
+                  <ul className={styles.nightList} aria-label="قیمت هر شب">
+                    {detail.nights.map((night) => (
+                      <li key={night.stayDate}>
+                        <span>{bookingDate(night.stayDate)}</span>
+                        <span>{toman(night.amountToman)}</span>
+                      </li>
+                    ))}
+                  </ul>
+                  <p className={styles.totalRow}>
+                    <span>مبلغ کل ثبت‌شده</span>
+                    <strong>{toman(detail.totalPriceToman)}</strong>
+                  </p>
+                </section>
+
+                {detail.internalNote && (
+                  <section className={styles.noteSection} aria-labelledby="internal-note-title">
+                    <h3 id="internal-note-title">یادداشت داخلی</h3>
+                    <p>{detail.internalNote}</p>
+                  </section>
+                )}
+                {detail.cancellationReason && (
+                  <section
+                    className={styles.noteSection}
+                    aria-labelledby="cancellation-reason-title"
+                  >
+                    <h3 id="cancellation-reason-title">دلیل لغو</h3>
+                    <p>{detail.cancellationReason}</p>
+                  </section>
+                )}
+
+                {isActionable(detail) &&
+                  (!actionDraft || actionTargetReference !== detail.reference) && (
+                    <div className={styles.bookingActions} aria-label="اقدام‌های رزرو">
+                      {detail.status === 'PENDING_CONFIRMATION' ? (
+                        <>
+                          <button
+                            className={styles.primaryButton}
+                            type="button"
+                            onClick={(event) => openAction('confirm', event.currentTarget)}
+                          >
+                            تأیید رزرو
+                          </button>
+                          <button
+                            className={styles.rejectButton}
+                            type="button"
+                            onClick={(event) => openAction('reject', event.currentTarget)}
+                          >
+                            رد درخواست
+                          </button>
+                        </>
+                      ) : (
                         <button
                           className={styles.rejectButton}
                           type="button"
-                          onClick={(event) => openAction('reject', event.currentTarget)}
+                          onClick={(event) => openAction('cancel', event.currentTarget)}
                         >
-                          رد درخواست
+                          لغو رزرو
                         </button>
-                      </>
-                    ) : (
-                      <button
-                        className={styles.rejectButton}
-                        type="button"
-                        onClick={(event) => openAction('cancel', event.currentTarget)}
-                      >
-                        لغو رزرو
-                      </button>
-                    )}
-                  </div>
-                )}
-
-              {actionDraft && actionTargetReference === detail.reference && (
-                <section className={styles.actionPanel} aria-labelledby="booking-action-title">
-                  <h3 id="booking-action-title" ref={actionHeadingRef} tabIndex={-1}>
-                    {ACTION_LABELS[actionDraft]}
-                  </h3>
-                  <p>
-                    {actionDraft === 'confirm'
-                      ? 'با تأیید، وضعیت درخواست تغییر می‌کند و اتاق‌ها برای رزرو ثبت‌شده می‌شوند.'
-                      : actionDraft === 'reject'
-                        ? 'با رد درخواست، ظرفیت نگه‌داشته‌شده برای این اقامت آزاد می‌شود.'
-                        : 'با لغو رزرو، ظرفیت اقامت دوباره آزاد می‌شود.'}
-                  </p>
-                  <form className={styles.actionForm} onSubmit={submitAction}>
-                    {actionDraft === 'cancel' ? (
-                      <div className={styles.actionField}>
-                        <label htmlFor="cancellation-reason">دلیل لغو</label>
-                        <textarea
-                          id="cancellation-reason"
-                          value={cancellationReason}
-                          onChange={(event) => setCancellationReason(event.target.value)}
-                          required
-                          maxLength={500}
-                          rows={3}
-                        />
-                      </div>
-                    ) : (
-                      <div className={styles.actionField}>
-                        <label htmlFor="internal-note">یادداشت داخلی (اختیاری)</label>
-                        <textarea
-                          id="internal-note"
-                          value={internalNote}
-                          onChange={(event) => setInternalNote(event.target.value)}
-                          maxLength={1000}
-                          rows={3}
-                        />
-                      </div>
-                    )}
-                    {actionError && (
-                      <p className={styles.errorText} role="alert">
-                        {actionError}
-                      </p>
-                    )}
-                    <div className={styles.actionControls}>
-                      <button className={styles.primaryButton} type="submit" disabled={acting}>
-                        {acting
-                          ? 'در حال ثبت…'
-                          : actionDraft === 'confirm'
-                            ? 'بله، رزرو را تأیید می‌کنم'
-                            : actionDraft === 'reject'
-                              ? 'بله، درخواست را رد می‌کنم'
-                              : 'بله، رزرو را لغو می‌کنم'}
-                      </button>
-                      <button
-                        className={styles.clearButton}
-                        type="button"
-                        disabled={acting}
-                        onClick={closeAction}
-                      >
-                        بازگشت
-                      </button>
+                      )}
                     </div>
-                  </form>
-                </section>
-              )}
-            </div>
-          )}
-        </aside>
+                  )}
+
+                {actionDraft && actionTargetReference === detail.reference && (
+                  <section className={styles.actionPanel} aria-labelledby="booking-action-title">
+                    <h3 id="booking-action-title" ref={actionHeadingRef} tabIndex={-1}>
+                      {ACTION_LABELS[actionDraft]}
+                    </h3>
+                    <p>
+                      {actionDraft === 'confirm'
+                        ? 'با تأیید، وضعیت درخواست تغییر می‌کند و اتاق‌ها برای رزرو ثبت‌شده می‌شوند.'
+                        : actionDraft === 'reject'
+                          ? 'با رد درخواست، ظرفیت نگه‌داشته‌شده برای این اقامت آزاد می‌شود.'
+                          : 'با لغو رزرو، ظرفیت اقامت دوباره آزاد می‌شود.'}
+                    </p>
+                    <form className={styles.actionForm} onSubmit={submitAction}>
+                      {actionDraft === 'cancel' ? (
+                        <div className={styles.actionField}>
+                          <label htmlFor="cancellation-reason">دلیل لغو</label>
+                          <textarea
+                            id="cancellation-reason"
+                            value={cancellationReason}
+                            onChange={(event) => setCancellationReason(event.target.value)}
+                            required
+                            maxLength={500}
+                            rows={3}
+                          />
+                        </div>
+                      ) : (
+                        <div className={styles.actionField}>
+                          <label htmlFor="internal-note">یادداشت داخلی (اختیاری)</label>
+                          <textarea
+                            id="internal-note"
+                            value={internalNote}
+                            onChange={(event) => setInternalNote(event.target.value)}
+                            maxLength={1000}
+                            rows={3}
+                          />
+                        </div>
+                      )}
+                      {actionError && (
+                        <p className={styles.errorText} role="alert">
+                          {actionError}
+                        </p>
+                      )}
+                      <div className={styles.actionControls}>
+                        <button className={styles.primaryButton} type="submit" disabled={acting}>
+                          {acting
+                            ? 'در حال ثبت…'
+                            : actionDraft === 'confirm'
+                              ? 'بله، رزرو را تأیید می‌کنم'
+                              : actionDraft === 'reject'
+                                ? 'بله، درخواست را رد می‌کنم'
+                                : 'بله، رزرو را لغو می‌کنم'}
+                        </button>
+                        <button
+                          className={styles.clearButton}
+                          type="button"
+                          disabled={acting}
+                          onClick={closeAction}
+                        >
+                          بازگشت
+                        </button>
+                      </div>
+                    </form>
+                  </section>
+                )}
+              </div>
+            )}
+          </aside>
+        )}
       </div>
     </section>
   );
