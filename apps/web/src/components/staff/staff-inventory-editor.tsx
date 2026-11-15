@@ -9,6 +9,7 @@ import type {
 import { formatGregorianAsJalali, formatPersianInteger } from '@/lib/jalali-date';
 import {
   normalizeInventoryNumericInput,
+  parseInventoryPriceInput,
   type InventoryRangeErrors,
   type InventoryRangeInput,
 } from '@/lib/staff-inventory';
@@ -367,6 +368,12 @@ function InventoryEditForm({
   onPriceChange,
   onSaveRange,
 }: InventoryEditFormProps) {
+  const parsedNightlyPrice = parseInventoryPriceInput(nightlyPriceToman);
+  const rangeNightCount = inventory?.nights.length ?? 0;
+  const rangeTotal =
+    parsedNightlyPrice !== null && rangeNightCount > 0
+      ? BigInt(parsedNightlyPrice) * BigInt(rangeNightCount)
+      : null;
   const historicalRange = inventory?.nights.some(
     (night) => night.capacitySource !== 'PROJECTED',
   ) ?? false;
@@ -408,6 +415,15 @@ function InventoryEditForm({
           {isSaving ? 'در حال ذخیره…' : 'ذخیره برای همه شب‌ها'}
         </button>
       </div>
+      {rangeTotal !== null ? (
+        <p className="staff-inventory__rate-impact" aria-live="polite">
+          <span>جمع نرخ بازه</span>
+          <bdi dir="ltr">
+            {formatPersianInteger(BigInt(parsedNightlyPrice!))} تومان ×{' '}
+            {formatPersianInteger(rangeNightCount)} شب = {formatPersianInteger(rangeTotal)} تومان
+          </bdi>
+        </p>
+      ) : null}
     </form>
   );
 }

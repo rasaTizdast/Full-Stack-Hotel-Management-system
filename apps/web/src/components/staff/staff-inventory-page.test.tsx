@@ -176,6 +176,22 @@ describe('StaffInventoryPage', () => {
     expect(screen.queryByText('۰')).not.toBeInTheDocument();
   });
 
+  it('previews the grouped Persian rate impact across the selected nights', async () => {
+    session.current = {
+      ...session.current,
+      staff: { ...session.current.staff, role: 'ADMIN' },
+    };
+
+    render(<StaffInventoryPage />);
+    fireEvent.change(await screen.findByLabelText('نرخ یک شب (تومان)'), {
+      target: { value: '۲۴۰۰۰۰۰' },
+    });
+
+    expect(
+      await screen.findByText('۲٬۴۰۰٬۰۰۰ تومان × ۲ شب = ۴٬۸۰۰٬۰۰۰ تومان'),
+    ).toBeInTheDocument();
+  });
+
   it('locks historical rate ranges and explains how to recover', async () => {
     inventoryApi.getStaffInventoryRange.mockResolvedValue({
       ...response,

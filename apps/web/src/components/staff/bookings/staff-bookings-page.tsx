@@ -468,7 +468,6 @@ export function StaffBookingsPage() {
                     className={`${styles.bookingCard} ${selectedReference === item.reference ? styles.bookingCardSelected : ''}`}
                     type="button"
                     aria-pressed={selectedReference === item.reference}
-                    aria-label={`نمایش رزرو ${item.reference}`}
                     disabled={acting}
                     onClick={() => {
                       if (selectedReference === item.reference) return;

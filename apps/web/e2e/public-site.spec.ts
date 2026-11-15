@@ -26,7 +26,7 @@ test('guests can browse API-backed hotel and room information', async ({ page })
   await expect(page).toHaveURL(/\/rooms$/);
   await expect(page.getByRole('heading', { level: 1, name: 'اتاق‌ها و سوئیت‌ها' })).toBeVisible();
   await expectNoHorizontalOverflow(page);
-  await page.getByRole('link', { name: 'جزئیات اتاق دوتخته باغ' }).click();
+  await page.getByRole('link', { name: 'جزئیات اتاق دوتخته باغ', exact: true }).click();
 
   await expect(page).toHaveURL(/\/rooms\/garden-double$/);
   await expect(page.getByRole('heading', { level: 1, name: 'اتاق دوتخته باغ' })).toBeVisible();

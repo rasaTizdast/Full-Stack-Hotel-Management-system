@@ -186,6 +186,38 @@ describe('StaffRoomsPage', () => {
     expect(screen.queryByText('شمارهٔ پیشنهادی')).not.toBeInTheDocument();
   });
 
+  it('offers a room-specific filter action when renumbering hides the room from the current results', async () => {
+    const updatedRoom = { ...generatedRoom, roomNumber: '۲۰۳', isGenerated: false };
+    roomsApi.updateStaffRoom.mockResolvedValue(updatedRoom);
+    render(<StaffRoomsPage />);
+    await screen.findByText('اتاق باغ ۱');
+
+    const filters = screen.getByRole('form', { name: 'فیلتر اتاق‌ها' });
+    fireEvent.change(within(filters).getByLabelText('جست‌وجوی شماره اتاق'), {
+      target: { value: generatedRoom.roomNumber },
+    });
+    fireEvent.click(within(filters).getByRole('button', { name: 'اعمال فیلترها' }));
+    await waitFor(() => {
+      expect(roomsApi.getStaffRooms).toHaveBeenLastCalledWith({ search: generatedRoom.roomNumber });
+    });
+
+    fireEvent.click(screen.getByRole('button', { name: `ویرایش اتاق ${generatedRoom.roomNumber}` }));
+    const editor = screen.getByRole('form', { name: 'ویرایش اتاق' });
+    fireEvent.change(within(editor).getByLabelText('شماره اتاق'), { target: { value: '۲۰۳' } });
+    fireEvent.click(within(editor).getByRole('button', { name: 'ذخیره تغییرات اتاق' }));
+
+    expect(
+      await screen.findByText('اطلاعات اتاق ۲۰۳ ذخیره شد، اما فیلترهای فعلی آن را پنهان کرده‌اند.'),
+    ).toBeInTheDocument();
+    expect(screen.queryByRole('article', { name: '۲۰۳' })).not.toBeInTheDocument();
+
+    roomsApi.getStaffRooms.mockResolvedValueOnce({ items: [updatedRoom] });
+    fireEvent.click(screen.getByRole('button', { name: 'نمایش اتاق ۲۰۳' }));
+
+    expect(await screen.findByRole('article', { name: '۲۰۳' })).toBeInTheDocument();
+    expect(roomsApi.getStaffRooms).toHaveBeenLastCalledWith({ search: '۲۰۳' });
+  });
+
   it('keeps a generated marker when only descriptive fields change', async () => {
     const updatedRoom = { ...generatedRoom, floor: '۳' };
     roomsApi.updateStaffRoom.mockResolvedValue(updatedRoom);

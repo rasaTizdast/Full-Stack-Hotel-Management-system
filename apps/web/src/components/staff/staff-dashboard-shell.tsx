@@ -80,7 +80,6 @@ export function StaffDashboardShell({
             <Link
               href="/staff"
               aria-current={currentPath === '/staff' ? 'page' : undefined}
-              aria-label="نمای کلی"
             >
               <span className="staff-nav__glyph" aria-hidden="true">
                 <svg viewBox="0 0 24 24" fill="none">
@@ -95,7 +94,6 @@ export function StaffDashboardShell({
             <Link
               href="/staff/bookings"
               aria-current={currentPath.startsWith('/staff/bookings') ? 'page' : undefined}
-              aria-label="درخواست‌های رزرو"
             >
               <span className="staff-nav__glyph" aria-hidden="true">
                 <svg viewBox="0 0 24 24" fill="none">
@@ -112,7 +110,6 @@ export function StaffDashboardShell({
               <Link
                 href="/staff/rooms/manage"
                 aria-current={currentPath.startsWith('/staff/rooms') ? 'page' : undefined}
-                aria-label="اتاق‌های فیزیکی"
               >
                 <span className="staff-nav__glyph" aria-hidden="true">
                   <svg viewBox="0 0 24 24" fill="none">
@@ -121,6 +118,7 @@ export function StaffDashboardShell({
                 </span>
                 <span className="staff-nav__copy">
                   <strong>اتاق‌های فیزیکی</strong>
+                {' '}
                   <small>شماره و وضعیت اتاق‌ها</small>
                 </span>
               </Link>
@@ -129,7 +127,6 @@ export function StaffDashboardShell({
               <Link
                 href="/staff/inventory"
                 aria-current={currentPath.startsWith('/staff/inventory') ? 'page' : undefined}
-                aria-label="ظرفیت و نرخ‌ها"
               >
                 <span className="staff-nav__glyph" aria-hidden="true">
                   <svg viewBox="0 0 24 24" fill="none">
@@ -139,6 +136,7 @@ export function StaffDashboardShell({
                 </span>
                 <span className="staff-nav__copy">
                   <strong>ظرفیت و نرخ‌ها</strong>
+                  {' '}
                   <small>تنظیم برنامه اتاق‌ها</small>
                 </span>
               </Link>

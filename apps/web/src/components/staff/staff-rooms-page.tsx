@@ -130,6 +130,7 @@ export function StaffRoomsPage() {
   const [fieldError, setFieldError] = useState<string | null>(null);
   const [formError, setFormError] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
+  const [hiddenRoomNumber, setHiddenRoomNumber] = useState<string | null>(null);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
@@ -147,6 +148,7 @@ export function StaffRoomsPage() {
     setLoadError(null);
     setFormError(null);
     setSuccessMessage(null);
+    setHiddenRoomNumber(null);
     try {
       const response = await getStaffRooms(query);
       if (loadRequestId.current !== requestId) return;
@@ -209,6 +211,8 @@ export function StaffRoomsPage() {
 
   function updateFilter<K extends keyof RoomFilters>(field: K, value: RoomFilters[K]) {
     setFilters((current) => ({ ...current, [field]: value }));
+    setSuccessMessage(null);
+    setHiddenRoomNumber(null);
   }
 
   function updateDraft<K extends keyof RoomFormState>(field: K, value: RoomFormState[K]) {
@@ -281,8 +285,14 @@ export function StaffRoomsPage() {
           update,
           csrfToken,
         );
+        const matchesFilters = roomMatchesFilters(updated, filters);
         setRooms((current) => replaceRoom(current, updated, filters));
-        setSuccessMessage(`اطلاعات اتاق ${updated.roomNumber} ذخیره شد.`);
+        setSuccessMessage(
+          matchesFilters
+            ? `اطلاعات اتاق ${updated.roomNumber} ذخیره شد.`
+            : `اطلاعات اتاق ${updated.roomNumber} ذخیره شد، اما فیلترهای فعلی آن را پنهان کرده‌اند.`,
+        );
+        setHiddenRoomNumber(matchesFilters ? null : updated.roomNumber);
         setEditingRoom(null);
         setDraft({ ...emptyDraft, roomTypeId: roomTypes.find((option) => option.isActive)?.id ?? '' });
       } else {
@@ -295,8 +305,14 @@ export function StaffRoomsPage() {
           },
           csrfToken,
         );
+        const matchesFilters = roomMatchesFilters(created, filters);
         setRooms((current) => replaceRoom(current, created, filters));
-        setSuccessMessage(`اتاق ${created.roomNumber} اضافه شد.`);
+        setSuccessMessage(
+          matchesFilters
+            ? `اتاق ${created.roomNumber} اضافه شد.`
+            : `اتاق ${created.roomNumber} اضافه شد، اما فیلترهای فعلی آن را پنهان کرده‌اند.`,
+        );
+        setHiddenRoomNumber(matchesFilters ? null : created.roomNumber);
         setDraft({ ...emptyDraft, roomTypeId: roomTypes.find((option) => option.isActive)?.id ?? '' });
       }
     } catch (cause) {
@@ -315,6 +331,17 @@ export function StaffRoomsPage() {
   ) {
     actionTrigger.current = event.currentTarget;
     setPendingAction({ room, action });
+  }
+
+  function showHiddenRoom() {
+    if (!hiddenRoomNumber) return;
+    const nextFilters: RoomFilters = {
+      roomTypeId: '',
+      floor: '',
+      activeState: '',
+      search: hiddenRoomNumber,
+    };
+    void loadRooms({ search: hiddenRoomNumber }, nextFilters);
   }
 
   async function confirmRoomAction() {
@@ -393,7 +420,16 @@ export function StaffRoomsPage() {
         </div>
       ) : null}
       {formError ? <p className="staff-rooms__message staff-rooms__message--error" role="alert">{formError}</p> : null}
-      {successMessage ? <p className="staff-rooms__message staff-rooms__message--success" role="status">{successMessage}</p> : null}
+      {successMessage ? (
+        <div className="staff-rooms__message staff-rooms__message--success" role="status">
+          <p>{successMessage}</p>
+          {hiddenRoomNumber ? (
+            <button type="button" onClick={showHiddenRoom} disabled={isLoading || isSaving}>
+              نمایش اتاق {hiddenRoomNumber}
+            </button>
+          ) : null}
+        </div>
+      ) : null}
 
       <form className="staff-rooms__filters" onSubmit={applyFilters} aria-label="فیلتر اتاق‌ها">
         <div className="staff-rooms__filters-heading">

@@ -16,7 +16,7 @@ describe('StaffDashboardShell', () => {
       </StaffDashboardShell>,
     );
 
-    expect(screen.getByRole('link', { name: 'درخواست‌های رزرو' })).toHaveAttribute(
+    expect(screen.getByRole('link', { name: /^درخواست‌های رزرو/ })).toHaveAttribute(
       'href',
       '/staff/bookings',
     );
@@ -45,7 +45,9 @@ describe('StaffDashboardShell', () => {
       </StaffDashboardShell>,
     );
 
-    expect(screen.getByRole('link', { name: 'ظرفیت و نرخ‌ها' })).toHaveAttribute(
+    const inventoryLink = screen.getByRole('link', { name: /^ظرفیت و نرخ‌ها/ });
+    expect(inventoryLink).toHaveAccessibleName('ظرفیت و نرخ‌ها تنظیم برنامه اتاق‌ها');
+    expect(inventoryLink).toHaveAttribute(
       'href',
       '/staff/inventory',
     );
@@ -62,11 +64,13 @@ describe('StaffDashboardShell', () => {
       </StaffDashboardShell>,
     );
 
-    expect(screen.getByRole('link', { name: 'اتاق‌های فیزیکی' })).toHaveAttribute(
+    const roomsLink = screen.getByRole('link', { name: /^اتاق‌های فیزیکی/ });
+    expect(roomsLink).toHaveAccessibleName('اتاق‌های فیزیکی شماره و وضعیت اتاق‌ها');
+    expect(roomsLink).toHaveAttribute(
       'href',
       '/staff/rooms/manage',
     );
-    expect(screen.getByRole('link', { name: 'اتاق‌های فیزیکی' })).toHaveAttribute(
+    expect(roomsLink).toHaveAttribute(
       'aria-current',
       'page',
     );

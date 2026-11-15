@@ -1921,6 +1921,32 @@
   line-height: 1.7;
 }
 
+.staffScope :global(.staff-inventory__rate-impact) {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.35rem 1rem;
+  margin: 0.75rem 0 0;
+  border-inline-start: 3px solid var(--jade);
+  border-radius: var(--radius-control);
+  background: var(--surface-soft);
+  padding: 0.65rem 0.8rem;
+  color: var(--foreground);
+  font-size: var(--text-small);
+  line-height: 1.7;
+}
+
+.staffScope :global(.staff-inventory__rate-impact) span {
+  color: var(--muted-foreground);
+  font-weight: 600;
+}
+
+.staffScope :global(.staff-inventory__rate-impact) bdi {
+  font-weight: 750;
+  font-variant-numeric: tabular-nums;
+}
+
 .staffScope :global(.staff-inventory__night-cards) {
   display: none;
 }

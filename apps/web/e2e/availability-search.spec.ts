@@ -13,6 +13,7 @@ test('guests search Persian dates and see API-priced available rooms', async ({
   page,
   request,
 }, testInfo) => {
+  await page.emulateMedia({ reducedMotion: 'reduce' });
   const stay = await findAvailableGardenStay(request, testInfo);
   const availabilityRequests: URL[] = [];
   page.on('request', (request) => {

@@ -98,7 +98,7 @@ async function findBooking(page: Page, reference: string) {
   await page.getByLabel('کد رزرو یا موبایل').fill(reference);
   await page.getByRole('button', { name: 'اعمال فیلترها' }).click();
   const booking = page.getByRole('button', {
-    name: new RegExp(`نمایش رزرو ${reference}`),
+    name: new RegExp(reference),
   });
   await expect(booking).toBeVisible();
   await booking.click();

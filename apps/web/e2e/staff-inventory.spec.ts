@@ -218,12 +218,12 @@ test('admin sees physical capacity and saves rates only, and the page meets axe 
       );
     } else {
       const cells = table.getByRole('row').nth(1).getByRole('cell');
-      await expect(cells.nth(1)).toHaveText(format(firstNight.totalRooms + firstNight.blockedRooms));
-      await expect(cells.nth(2)).toHaveText(format(firstNight.blockedRooms));
-      await expect(cells.nth(3)).toHaveText(format(firstNight.heldRooms));
-      await expect(cells.nth(4)).toHaveText(format(firstNight.bookedRooms));
-      await expect(cells.nth(5)).toHaveText(format(firstNight.availableRooms));
-      await expect(cells.nth(6)).toContainText(format(BigInt(firstNight.nightlyPriceToman)));
+      await expect(cells.nth(0)).toHaveText(format(firstNight.totalRooms + firstNight.blockedRooms));
+      await expect(cells.nth(1)).toHaveText(format(firstNight.blockedRooms));
+      await expect(cells.nth(2)).toHaveText(format(firstNight.heldRooms));
+      await expect(cells.nth(3)).toHaveText(format(firstNight.bookedRooms));
+      await expect(cells.nth(4)).toHaveText(format(firstNight.availableRooms));
+      await expect(cells.nth(5)).toContainText(format(BigInt(firstNight.nightlyPriceToman)));
     }
 
     const nightlyRate = page.getByLabel('نرخ یک شب (تومان)');
@@ -258,8 +258,8 @@ test('admin sees physical capacity and saves rates only, and the page meets axe 
       await expect(metrics.nth(5).locator('dd')).toContainText(format(BigInt(nextPrice)));
     } else {
       const cells = table.getByRole('row').nth(1).getByRole('cell');
-      await expect(cells.nth(1)).toHaveText(format(firstNight.totalRooms + firstNight.blockedRooms));
-      await expect(cells.nth(6)).toContainText(format(BigInt(nextPrice)));
+      await expect(cells.nth(0)).toHaveText(format(firstNight.totalRooms + firstNight.blockedRooms));
+      await expect(cells.nth(5)).toContainText(format(BigInt(nextPrice)));
     }
 
     const results = await new AxeBuilder({ page })
@@ -361,9 +361,9 @@ test('pending holds remain visible while inventory capacity stays derived and re
         }
       } else {
         for (const rowIndex of [1, 2]) {
-          await expect(rows.nth(rowIndex).getByRole('cell').nth(3)).toContainText(/[۱-۹]/);
+          await expect(rows.nth(rowIndex).getByRole('cell').nth(2)).toContainText(/[۱-۹]/);
         }
-        await expect(rows.nth(1).getByRole('cell').nth(1)).toHaveText(
+        await expect(rows.nth(1).getByRole('cell').nth(0)).toHaveText(
           new Intl.NumberFormat('fa-IR').format(
             inventorySnapshot.nights[0]!.totalRooms + inventorySnapshot.nights[0]!.blockedRooms,
           ),
@@ -393,7 +393,7 @@ test('receptionist does not see or request the admin inventory editor', async ({
   });
 
   await page.goto('/staff');
-  await expect(page.getByRole('link', { name: 'ظرفیت و نرخ‌ها', exact: true })).toHaveCount(0);
+  await expect(page.getByRole('link', { name: /^ظرفیت و نرخ‌ها/ })).toHaveCount(0);
   await page.goto('/staff/inventory');
   await expect(page.getByRole('heading', { name: 'دسترسی به مدیریت موجودی' })).toBeVisible();
   await expect(page.getByLabel('نوع اتاق')).toHaveCount(0);
