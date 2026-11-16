@@ -44,6 +44,7 @@ describe('Staff authentication (e2e)', () => {
   let prisma: {
     staffUser: { findUnique: jest.Mock; update: jest.Mock; updateMany: jest.Mock };
     room: { findMany: jest.Mock };
+    auditEvent: { create: jest.Mock };
     staffSession: {
       create: jest.Mock;
       findFirst: jest.Mock;
@@ -69,6 +70,9 @@ describe('Staff authentication (e2e)', () => {
     expiresAt: Date;
     revokedAt: Date | null;
   }>;
+  let auditEvents: Array<Record<string, unknown>>;
+  let auditTransactionStates: boolean[];
+  let transactionActive: boolean;
   let email: string;
   const password = 'correct-test-password-very-long';
 
@@ -99,6 +103,9 @@ describe('Staff authentication (e2e)', () => {
       mustChangePassword: false,
     };
     sessions = [];
+    auditEvents = [];
+    auditTransactionStates = [];
+    transactionActive = false;
     prisma = {
       staffUser: {
         findUnique: jest.fn(({ where }: { where: { email?: string; id?: string } }) => {
@@ -127,6 +134,13 @@ describe('Staff authentication (e2e)', () => {
         ),
       },
       room: { findMany: jest.fn().mockResolvedValue([]) },
+      auditEvent: {
+        create: jest.fn(({ data }: { data: Record<string, unknown> }) => {
+          auditEvents.push(data);
+          auditTransactionStates.push(transactionActive);
+          return Promise.resolve(data);
+        }),
+      },
       staffSession: {
         create: jest.fn(
           ({ data }: { data: Omit<(typeof sessions)[number], 'id' | 'revokedAt'> }) => {
@@ -179,9 +193,14 @@ describe('Staff authentication (e2e)', () => {
           },
         ),
       },
-      $transaction: jest.fn(async (operation: (tx: unknown) => Promise<unknown>) =>
-        operation(prisma),
-      ),
+      $transaction: jest.fn(async (operation: (tx: unknown) => Promise<unknown>) => {
+        transactionActive = true;
+        try {
+          return await operation(prisma);
+        } finally {
+          transactionActive = false;
+        }
+      }),
     };
 
     app = await createApp();
@@ -363,12 +382,27 @@ describe('Staff authentication (e2e)', () => {
     const cookieHeader = cookies.map((cookie) => cookie.split(';')[0]).join('; ');
     const csrfToken = bodyOf(login).csrfToken!;
 
-    await request(app.getHttpServer())
+    const passwordChange = await request(app.getHttpServer())
       .post('/api/v1/staff/auth/change-password')
       .set('Cookie', cookieHeader)
       .set('X-CSRF-Token', csrfToken)
-      .send({ currentPassword: password, newPassword: 'A-different-long-password-2026!' })
-      .expect(204);
+      .send({ currentPassword: password, newPassword: 'A-different-long-password-2026!' });
+    expect(passwordChange.status).toBe(204);
+    expect(auditEvents).toEqual([
+      expect.objectContaining({
+        actorStaffUserId: user.id,
+        eventName: 'STAFF_PASSWORD_CHANGED',
+        targetType: 'STAFF_ACCOUNT',
+        targetId: user.id,
+        before: { mustChangePassword: true },
+        after: { mustChangePassword: false },
+      }),
+    ]);
+    const serializedAudit = JSON.stringify(auditEvents);
+    expect(serializedAudit).not.toContain(password);
+    expect(serializedAudit).not.toContain('A-different-long-password-2026!');
+    expect(serializedAudit).not.toContain('passwordHash');
+    expect(auditTransactionStates).toEqual([true]);
 
     const current = await request(app.getHttpServer())
       .get('/api/v1/staff/auth/me')
