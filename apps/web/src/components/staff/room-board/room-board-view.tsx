@@ -160,7 +160,7 @@ export function RoomBoardHeader({ board, isLoading, isRefreshing, onRefresh }: R
 export function RoomBoardSummary({ items }: { items: StaffRoomBoardItem[] }) {
   const counts = roomBoardCounts(items);
   return (
-    <section className={styles.summary} aria-label="خلاصهٔ وضعیت اتاق‌ها">
+    <section className={styles.summary} aria-label="خلاصهٔ وضعیت اتاق‌های نمایش‌داده‌شده">
       <div><strong>{formatPersianInteger(counts.ready)}</strong><span>خالی و بازرسی‌شده</span></div>
       <div><strong>{formatPersianInteger(counts.dirty)}</strong><span>خالی و نیازمند نظافت</span></div>
       <div><strong>{formatPersianInteger(counts.arriving)}</strong><span>ورود امروز</span></div>

@@ -144,6 +144,9 @@ describe('StaffRoomBoardPage', () => {
 
     expect(screen.getByRole('status')).toHaveTextContent('در حال دریافت وضعیت اتاق‌ها');
     expect(await screen.findByRole('heading', { name: 'وضعیت اتاق‌ها' })).toBeVisible();
+    expect(
+      await screen.findByRole('region', { name: 'خلاصهٔ وضعیت اتاق‌های نمایش‌داده‌شده' }),
+    ).toBeVisible();
     expect(boardApi.getStaffRoomBoard).toHaveBeenCalledWith({});
 
     const reservedRoom = screen.getByRole('article', { name: /اتاق ۱۰۱/ });
