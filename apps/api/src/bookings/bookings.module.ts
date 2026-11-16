@@ -9,16 +9,19 @@ import { BookingExpiryWorker } from './booking-expiry.worker';
 import { BookingsService } from './bookings.service';
 import { StaffBookingsController } from './staff-bookings.controller';
 import { StaffBookingsService } from './staff-bookings.service';
+import { StaffStaysController } from './staff-stays.controller';
+import { StaffStaysService } from './staff-stays.service';
 
 @Module({
   imports: [PrismaModule, AuditModule, RoomsModule],
-  controllers: [BookingsController, StaffBookingsController],
+  controllers: [BookingsController, StaffBookingsController, StaffStaysController],
   providers: [
     BookingRateLimitGuard,
     BookingRateLimitService,
     BookingsService,
     BookingExpiryWorker,
     StaffBookingsService,
+    StaffStaysService,
   ],
 })
 export class BookingsModule {}
