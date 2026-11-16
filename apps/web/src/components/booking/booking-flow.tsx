@@ -27,6 +27,7 @@ export type BookingFlowProps = {
   room: PublicRoomType;
   context: { checkIn: string; checkOut: string; guestCount: number };
   roomAvailability: AvailabilityRoomType;
+  hotelContactPhone: string | null;
 };
 
 type Attempt = { key: string; fingerprint: string };
@@ -58,6 +59,18 @@ function FieldError({ id, message }: { id: string; message?: string }) {
       {message}
     </span>
   );
+}
+
+function getPropertyPhoneHref(phone: string | null): string | null {
+  if (!phone) return null;
+
+  const asciiDigits = phone
+    .replace(/[۰-۹]/g, (digit) => String(digit.charCodeAt(0) - 0x06f0))
+    .replace(/[٠-٩]/g, (digit) => String(digit.charCodeAt(0) - 0x0660));
+  const compact = asciiDigits.trim().replace(/[\s().-]/g, '');
+  if (!/^\+?\d{7,15}$/.test(compact)) return null;
+
+  return `tel:${compact}`;
 }
 
 function StaySummary({
@@ -114,8 +127,17 @@ function StaySummary({
   );
 }
 
-function Confirmation({ booking }: { booking: PublicBookingResponse }) {
+function Confirmation({
+  booking,
+  submittedPhone,
+  hotelContactPhone,
+}: {
+  booking: PublicBookingResponse;
+  submittedPhone: string;
+  hotelContactPhone: string | null;
+}) {
   const headingRef = useRef<HTMLHeadingElement>(null);
+  const propertyPhoneHref = getPropertyPhoneHref(hotelContactPhone);
 
   useEffect(() => {
     headingRef.current?.focus();
@@ -125,7 +147,6 @@ function Confirmation({ booking }: { booking: PublicBookingResponse }) {
     <section
       className={styles.confirmation}
       aria-labelledby="booking-confirmation-title"
-      role="status"
     >
       <span className={styles.confirmationMark} aria-hidden="true">
         <svg viewBox="0 0 20 20" fill="none">
@@ -157,6 +178,17 @@ function Confirmation({ booking }: { booking: PublicBookingResponse }) {
       <p className={styles.pendingNote}>
         وضعیت درخواست: <strong>در انتظار تأیید پذیرش</strong>
       </p>
+      <div className={styles.followUp}>
+        <p>پذیرش برای پیگیری درخواست با این شماره تماس می‌گیرد:</p>
+        <bdi className={styles.followUpPhone} dir="ltr">
+          {submittedPhone}
+        </bdi>
+        {propertyPhoneHref ? (
+          <a className={styles.contactLink} href={propertyPhoneHref} dir="rtl">
+            تماس با اقامتگاه: <bdi dir="ltr">{hotelContactPhone}</bdi>
+          </a>
+        ) : null}
+      </div>
       <Link href="/" className={styles.backLink}>
         بازگشت به اقامتگاه
       </Link>
@@ -164,7 +196,12 @@ function Confirmation({ booking }: { booking: PublicBookingResponse }) {
   );
 }
 
-export function BookingFlow({ room, context, roomAvailability }: BookingFlowProps) {
+export function BookingFlow({
+  room,
+  context,
+  roomAvailability,
+  hotelContactPhone,
+}: BookingFlowProps) {
   const minimumRooms = Math.ceil(context.guestCount / room.maxGuestsPerRoom);
   const maxRooms = Math.min(roomAvailability.availableRooms, 20);
   const schema = createBookingFormSchema({
@@ -183,7 +220,10 @@ export function BookingFlow({ room, context, roomAvailability }: BookingFlowProp
     mode: 'onSubmit',
   });
   const [failure, setFailure] = useState<'server-error' | 'availability-changed' | null>(null);
-  const [booking, setBooking] = useState<PublicBookingResponse | null>(null);
+  const [booking, setBooking] = useState<{
+    response: PublicBookingResponse;
+    submittedPhone: string;
+  } | null>(null);
   const attempt = useRef<Attempt | null>(null);
   const submitting = useRef(false);
   const quantity =
@@ -213,7 +253,8 @@ export function BookingFlow({ room, context, roomAvailability }: BookingFlowProp
     }
 
     try {
-      setBooking(await submitBookingRequest(payload, attempt.current.key));
+      const response = await submitBookingRequest(payload, attempt.current.key);
+      setBooking({ response, submittedPhone: values.guestPhone });
     } catch (error) {
       setFailure(error instanceof BookingApiError ? error.kind : 'server-error');
     }
@@ -234,7 +275,15 @@ export function BookingFlow({ room, context, roomAvailability }: BookingFlowProp
       });
   }
 
-  if (booking) return <Confirmation booking={booking} />;
+  if (booking) {
+    return (
+      <Confirmation
+        booking={booking.response}
+        submittedPhone={booking.submittedPhone}
+        hotelContactPhone={hotelContactPhone}
+      />
+    );
+  }
 
   const errors = form.formState.errors;
   const fieldMessage = (field: keyof BookingFormInput) =>

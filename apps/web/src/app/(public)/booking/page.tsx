@@ -132,7 +132,12 @@ export default async function BookingPage({
   }
   return (
     <PublicSiteFrame hotel={hotel}>
-      <BookingFlow room={room} context={query} roomAvailability={roomAvailability} />
+      <BookingFlow
+        room={room}
+        context={query}
+        roomAvailability={roomAvailability}
+        hotelContactPhone={hotel.contactPhone}
+      />
     </PublicSiteFrame>
   );
 }

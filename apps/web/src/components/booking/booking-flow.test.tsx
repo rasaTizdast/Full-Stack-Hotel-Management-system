@@ -45,8 +45,15 @@ const bookingResponse = {
 
 afterEach(() => vi.unstubAllGlobals());
 
-function renderBookingFlow() {
-  return render(<BookingFlow room={room} context={context} roomAvailability={roomAvailability} />);
+function renderBookingFlow(hotelContactPhone: string | null = null) {
+  return render(
+    <BookingFlow
+      room={room}
+      context={context}
+      roomAvailability={roomAvailability}
+      hotelContactPhone={hotelContactPhone}
+    />,
+  );
 }
 
 function fillGuestDetails() {
@@ -119,6 +126,63 @@ describe('BookingFlow', () => {
     expect(screen.getByText('۴٬۸۰۰٬۰۰۰')).toBeVisible();
     expect(screen.queryByLabelText('شماره موبایل')).not.toBeInTheDocument();
     expect(screen.queryByText('مریم رضایی')).not.toBeInTheDocument();
+  });
+
+  it('exposes the confirmation as a named region instead of a long status live region', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(Response.json(bookingResponse, { status: 201 })));
+    renderBookingFlow();
+    fillGuestDetails();
+    fireEvent.click(screen.getByRole('button', { name: 'ثبت درخواست اقامت' }));
+    await screen.findByRole('heading', { name: 'درخواست اقامت شما ثبت شد' });
+
+    expect(screen.getByRole('region', { name: 'درخواست اقامت شما ثبت شد' })).toBeVisible();
+    expect(screen.queryByRole('status')).not.toBeInTheDocument();
+  });
+
+  it('offers a direct call link when the property has a valid configured phone', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue(Response.json(bookingResponse, { status: 201 })),
+    );
+    renderBookingFlow('+98 (71) 3234-5678');
+    fillGuestDetails();
+    fireEvent.click(screen.getByRole('button', { name: 'ثبت درخواست اقامت' }));
+
+    const contactLink = await screen.findByRole('link', { name: /تماس با اقامتگاه/ });
+    expect(contactLink).toHaveAttribute('href', 'tel:+987132345678');
+    expect(screen.getByText('در انتظار تأیید پذیرش')).toBeVisible();
+  });
+
+  it('does not show an empty or placeholder contact link when the property phone is null', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue(Response.json(bookingResponse, { status: 201 })),
+    );
+    const { container } = renderBookingFlow(null);
+    fillGuestDetails();
+    fireEvent.click(screen.getByRole('button', { name: 'ثبت درخواست اقامت' }));
+    await screen.findByRole('heading', { name: 'درخواست اقامت شما ثبت شد' });
+
+    expect(container.querySelector('a[href^="tel:"]')).toBeNull();
+    expect(screen.queryByRole('link', { name: /تماس با اقامتگاه/ })).not.toBeInTheDocument();
+    expect(screen.getByText(/پذیرش برای پیگیری درخواست با این شماره تماس می‌گیرد/)).toBeVisible();
+    expect(screen.getByText('+989123456789')).toBeVisible();
+  });
+
+  it('shows the submitted phone as the number reception will use for follow-up', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue(Response.json(bookingResponse, { status: 201 })),
+    );
+    renderBookingFlow();
+    fillGuestDetails();
+    fireEvent.click(screen.getByRole('button', { name: 'ثبت درخواست اقامت' }));
+    await screen.findByRole('heading', { name: 'درخواست اقامت شما ثبت شد' });
+
+    expect(screen.getByText(/پذیرش برای پیگیری درخواست با این شماره تماس می‌گیرد/)).toBeVisible();
+    expect(screen.getByText('+989123456789')).toBeVisible();
+    expect(screen.getByText('N8rP4vQkL2dX')).toBeVisible();
+    expect(screen.getByText('در انتظار تأیید پذیرش')).toBeVisible();
   });
 
   it('reuses the same idempotency key when retrying the same form after a server failure', async () => {
