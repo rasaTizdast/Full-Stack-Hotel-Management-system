@@ -26,6 +26,17 @@ const SAFE_MESSAGES: Record<number, { code: string; message: string }> = {
 };
 
 const SAFE_DOMAIN_ERRORS: Record<string, { statusCode: number; message: string }> = {
+  PASSWORD_CHANGE_REQUIRED: {
+    statusCode: 403,
+    message: 'Change your password before accessing staff operations.',
+  },
+  PASSWORD_REUSE: { statusCode: 400, message: 'Choose a different password.' },
+  STAFF_ACCOUNT_EXISTS: { statusCode: 409, message: 'The username or email is already in use.' },
+  STAFF_ACCOUNT_NOT_FOUND: { statusCode: 404, message: 'The staff account was not found.' },
+  LAST_ACTIVE_ADMIN: {
+    statusCode: 409,
+    message: 'At least one active administrator account must remain.',
+  },
   CAPACITY_BELOW_RESERVED: {
     statusCode: 409,
     message: 'Capacity cannot be lower than held plus booked rooms.',
@@ -113,6 +124,9 @@ export class ApiExceptionFilter implements ExceptionFilter {
     const http = host.switchToHttp();
     const request = http.getRequest<RequestWithId>();
     const response = http.getResponse<Response>();
+    if (request.path === '/api/v1/staff' || request.path.startsWith('/api/v1/staff/')) {
+      response.setHeader('Cache-Control', 'private, no-store');
+    }
     const statusCode = exception instanceof HttpException ? exception.getStatus() : 500;
     const requestId = request.requestId ?? 'unknown';
     const error = this.toApiError(exception, statusCode, requestId);

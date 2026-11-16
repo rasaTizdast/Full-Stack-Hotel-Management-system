@@ -22,6 +22,14 @@ const requestIdMiddleware = (request: RequestWithId, response: Response, next: (
   next();
 };
 
+const privateStaffResponseMiddleware = (request: Request, response: Response, next: () => void) => {
+  const path = request.path;
+  if (path === '/api/v1/staff' || path.startsWith('/api/v1/staff/')) {
+    response.setHeader('Cache-Control', 'private, no-store');
+  }
+  next();
+};
+
 const parserErrorMiddleware: ErrorRequestHandler = (error, request, response, next) => {
   if (response.headersSent) {
     next(error);
@@ -75,6 +83,7 @@ export function configureApiApplication(app: INestApplication): void {
   const allowConfiguredOrigin: CustomOrigin = (requestOrigin, callback) => {
     callback(null, requestOrigin === webOrigin ? webOrigin : false);
   };
+  app.use(privateStaffResponseMiddleware);
   app.enableCors({
     origin: allowConfiguredOrigin,
     credentials: true,

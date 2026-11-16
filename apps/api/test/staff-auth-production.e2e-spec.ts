@@ -8,7 +8,7 @@ import request from 'supertest';
 import { configureApiApplication } from '../src/common/configure-api-application';
 
 type StaffResponse = {
-  staff?: { username: string; email: string; role: 'ADMIN' };
+  staff?: { username: string; email: string; role: 'ADMIN'; mustChangePassword: boolean };
 };
 
 const previousNodeEnv = process.env.NODE_ENV;
@@ -33,6 +33,7 @@ describe('Staff authentication cookies in production (e2e)', () => {
       passwordHash: await argon2.hash(password, { type: argon2.argon2id }),
       role: 'ADMIN',
       isActive: true,
+      mustChangePassword: false,
     };
     const prisma = {
       staffUser: { findUnique: jest.fn().mockResolvedValue(user) },
@@ -64,6 +65,7 @@ describe('Staff authentication cookies in production (e2e)', () => {
       username: email,
       email,
       role: 'ADMIN',
+      mustChangePassword: false,
     });
   });
 

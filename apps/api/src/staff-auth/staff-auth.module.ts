@@ -7,6 +7,7 @@ import { LoginRateLimitGuard } from './login-rate-limit.guard';
 import { LoginRateLimitService } from './login-rate-limit.service';
 import { StaffAuthController } from './staff-auth.controller';
 import { StaffAuthService } from './staff-auth.service';
+import { StaffCapabilitiesGuard } from './staff-capabilities.guard';
 import { StaffRolesGuard } from './staff-roles.guard';
 import { StaffSessionGuard } from './staff-session.guard';
 
@@ -20,9 +21,11 @@ import { StaffSessionGuard } from './staff-session.guard';
     LoginRateLimitService,
     StaffAuthService,
     StaffRolesGuard,
+    StaffCapabilitiesGuard,
     StaffSessionGuard,
     { provide: APP_GUARD, useExisting: StaffSessionGuard },
     { provide: APP_GUARD, useExisting: StaffRolesGuard },
+    { provide: APP_GUARD, useExisting: StaffCapabilitiesGuard },
   ],
   exports: [StaffAuthService, StaffRolesGuard, StaffSessionGuard],
 })

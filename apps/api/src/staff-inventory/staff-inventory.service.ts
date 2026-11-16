@@ -6,6 +6,7 @@ import {
 } from '@nestjs/common';
 import { PrismaService } from '../database/prisma.service';
 import { RoomCapacityService } from '../rooms/room-capacity.service';
+import { AuditService } from '../audit/audit.service';
 import { StaffInventoryRangeQueryDto } from './dto/staff-inventory-range-query.dto';
 import {
   StaffInventoryResponseDto,
@@ -21,6 +22,7 @@ export class StaffInventoryService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly capacity: RoomCapacityService,
+    private readonly audit: AuditService,
   ) {}
 
   async findRoomTypeOptions(): Promise<StaffInventoryRoomTypeOptionDto[]> {
@@ -132,7 +134,10 @@ export class StaffInventoryService {
     );
   }
 
-  async updateRange(dto: UpdateStaffInventoryDto): Promise<StaffInventoryResponseDto> {
+  async updateRange(
+    dto: UpdateStaffInventoryDto,
+    actorStaffUserId: string,
+  ): Promise<StaffInventoryResponseDto> {
     const range = parseStaffInventoryDateRange(dto);
     const nightlyPriceToman = BigInt(dto.nightlyPriceToman);
     if (nightlyPriceToman > MAX_POSTGRES_BIGINT) {
@@ -160,6 +165,20 @@ export class StaffInventoryService {
           message: 'Historical capacity can only be changed by an authorized correction workflow.',
         });
       }
+
+      const previousPrices = await transaction.roomNightInventory.findMany({
+        where: {
+          roomTypeId: dto.roomTypeId,
+          stayDate: { gte: range.start, lt: range.end },
+        },
+        select: { stayDate: true, nightlyPriceToman: true },
+      });
+      const previousPriceByDate = new Map(
+        previousPrices.map((night) => [
+          night.stayDate.toISOString().slice(0, 10),
+          night.nightlyPriceToman,
+        ]),
+      );
 
       const projection = await this.capacity.projectDateRange(
         transaction,
@@ -197,6 +216,21 @@ export class StaffInventoryService {
         },
         data: { nightlyPriceToman },
       });
+
+      for (const night of lockedInventory) {
+        await this.audit.record(transaction, {
+          actorStaffUserId,
+          eventName: 'INVENTORY_RATE_UPDATED',
+          targetType: 'ROOM_TYPE_NIGHT',
+          targetId: `${dto.roomTypeId}:${night.stayDate.toISOString().slice(0, 10)}`,
+          before: {
+            nightlyPriceToman:
+              previousPriceByDate.get(night.stayDate.toISOString().slice(0, 10))?.toString() ??
+              null,
+          },
+          after: { nightlyPriceToman: nightlyPriceToman.toString() },
+        });
+      }
     });
 
     return this.findRange(dto);

@@ -12,7 +12,12 @@ import { RequireStaffRoles } from '../src/staff-auth/require-staff-roles.decorat
 type StaffAuthResponseBody = {
   code?: string;
   csrfToken?: string;
-  staff?: { username: string; email: string; role: 'ADMIN' | 'RECEPTIONIST' };
+  staff?: {
+    username: string;
+    email: string;
+    role: 'ADMIN' | 'RECEPTIONIST';
+    mustChangePassword?: boolean;
+  };
 };
 
 function bodyOf(response: { body: unknown }): StaffAuthResponseBody {
@@ -37,13 +42,15 @@ class AuthorizationFixtureController {
 describe('Staff authentication (e2e)', () => {
   let app: INestApplication<App>;
   let prisma: {
-    staffUser: { findUnique: jest.Mock };
+    staffUser: { findUnique: jest.Mock; update: jest.Mock; updateMany: jest.Mock };
+    room: { findMany: jest.Mock };
     staffSession: {
       create: jest.Mock;
       findFirst: jest.Mock;
       update: jest.Mock;
       updateMany: jest.Mock;
     };
+    $transaction: jest.Mock;
   };
   let user: {
     id: string;
@@ -52,6 +59,7 @@ describe('Staff authentication (e2e)', () => {
     passwordHash: string;
     role: 'ADMIN' | 'RECEPTIONIST';
     isActive: true;
+    mustChangePassword: boolean;
   };
   let sessions: Array<{
     id: string;
@@ -88,14 +96,37 @@ describe('Staff authentication (e2e)', () => {
       passwordHash: await argon2.hash(password, { type: argon2.argon2id }),
       role: 'ADMIN',
       isActive: true,
+      mustChangePassword: false,
     };
     sessions = [];
     prisma = {
       staffUser: {
-        findUnique: jest.fn(({ where }: { where: { email: string } }) =>
-          Promise.resolve(where.email === email ? user : null),
+        findUnique: jest.fn(({ where }: { where: { email?: string; id?: string } }) => {
+          if (where.email !== undefined)
+            return Promise.resolve(where.email === email ? user : null);
+          return Promise.resolve(where.id === user.id ? user : null);
+        }),
+        update: jest.fn(({ data }: { data: Partial<typeof user> }) => {
+          user = { ...user, ...data };
+          return Promise.resolve(user);
+        }),
+        updateMany: jest.fn(
+          ({
+            where,
+            data,
+          }: {
+            where: { id: string; passwordHash: string };
+            data: Partial<typeof user>;
+          }) => {
+            if (user.id !== where.id || user.passwordHash !== where.passwordHash) {
+              return Promise.resolve({ count: 0 });
+            }
+            user = { ...user, ...data };
+            return Promise.resolve({ count: 1 });
+          },
         ),
       },
+      room: { findMany: jest.fn().mockResolvedValue([]) },
       staffSession: {
         create: jest.fn(
           ({ data }: { data: Omit<(typeof sessions)[number], 'id' | 'revokedAt'> }) => {
@@ -129,16 +160,28 @@ describe('Staff authentication (e2e)', () => {
           },
         ),
         updateMany: jest.fn(
-          ({ where, data }: { where: { id: string }; data: { revokedAt: Date } }) => {
-            const session = sessions.find((candidate) => candidate.id === where.id);
-            if (!session) {
-              return Promise.resolve({ count: 0 });
-            }
-            session.revokedAt = data.revokedAt;
-            return Promise.resolve({ count: 1 });
+          ({
+            where,
+            data,
+          }: {
+            where: { id?: string | { not: string }; staffUserId?: string; revokedAt: null };
+            data: { revokedAt: Date };
+          }) => {
+            const eligible = sessions.filter((candidate) => {
+              if (candidate.revokedAt !== null) return false;
+              if (where.staffUserId && candidate.staffUserId !== where.staffUserId) return false;
+              if (typeof where.id === 'string' && candidate.id !== where.id) return false;
+              if (typeof where.id === 'object' && candidate.id === where.id.not) return false;
+              return true;
+            });
+            for (const session of eligible) session.revokedAt = data.revokedAt;
+            return Promise.resolve({ count: eligible.length });
           },
         ),
       },
+      $transaction: jest.fn(async (operation: (tx: unknown) => Promise<unknown>) =>
+        operation(prisma),
+      ),
     };
 
     app = await createApp();
@@ -149,7 +192,10 @@ describe('Staff authentication (e2e)', () => {
   });
 
   it('rejects unauthenticated access to the current-staff endpoint', async () => {
-    const response = await request(app.getHttpServer()).get('/api/v1/staff/auth/me').expect(401);
+    const response = await request(app.getHttpServer())
+      .get('/api/v1/staff/auth/me')
+      .expect('Cache-Control', 'private, no-store')
+      .expect(401);
 
     expect(bodyOf(response).code).toBe('UNAUTHORIZED');
     expect(response.body).not.toHaveProperty('staff');
@@ -182,7 +228,7 @@ describe('Staff authentication (e2e)', () => {
       .expect(200);
 
     expect(bodyOf(response)).toMatchObject({
-      staff: { username: email, email, role: 'ADMIN' },
+      staff: { username: email, email, role: 'ADMIN', mustChangePassword: false },
     });
     expect(bodyOf(response)).not.toHaveProperty('staff.id');
     expect(bodyOf(response)).not.toHaveProperty('sessionToken');
@@ -210,7 +256,12 @@ describe('Staff authentication (e2e)', () => {
       .get('/api/v1/staff/auth/me')
       .set('Cookie', `${sessionCookie!.split(';')[0]}; ${csrfCookie!.split(';')[0]}`)
       .expect(200);
-    expect(bodyOf(currentUser).staff).toEqual({ username: email, email, role: 'ADMIN' });
+    expect(bodyOf(currentUser).staff).toEqual({
+      username: email,
+      email,
+      role: 'ADMIN',
+      mustChangePassword: false,
+    });
     expect(currentUser.body).not.toHaveProperty('id');
     expect(currentUser.body).not.toHaveProperty('passwordHash');
     expect(bodyOf(currentUser).csrfToken).toBeDefined();
@@ -233,11 +284,82 @@ describe('Staff authentication (e2e)', () => {
     expect(response.headers['set-cookie']).toBeUndefined();
   });
 
+  it('includes the forced password flag in the safe login and session profiles', async () => {
+    user.mustChangePassword = true;
+    const login = await request(app.getHttpServer())
+      .post('/api/v1/staff/auth/login')
+      .set('Origin', 'http://localhost:3000')
+      .send({ email, password })
+      .expect(200);
+    const cookies = login.headers['set-cookie'] as unknown as string[];
+    const cookieHeader = cookies.map((cookie) => cookie.split(';')[0]).join('; ');
+    const current = await request(app.getHttpServer())
+      .get('/api/v1/staff/auth/me')
+      .set('Cookie', cookieHeader)
+      .expect(200);
+
+    expect(bodyOf(login).staff?.mustChangePassword).toBe(true);
+    expect(bodyOf(current).staff).toEqual({
+      username: email,
+      email,
+      role: 'ADMIN',
+      mustChangePassword: true,
+    });
+    expect(current.body).not.toHaveProperty('passwordHash');
+    expect(current.body).not.toHaveProperty('sessions');
+  });
+
+  it('blocks operational routes while a session must change its password', async () => {
+    user.mustChangePassword = true;
+    const login = await request(app.getHttpServer())
+      .post('/api/v1/staff/auth/login')
+      .set('Origin', 'http://localhost:3000')
+      .send({ email, password })
+      .expect(200);
+    const cookieHeader = (login.headers['set-cookie'] as unknown as string[])
+      .map((cookie) => cookie.split(';')[0])
+      .join('; ');
+
+    const response = await request(app.getHttpServer())
+      .get('/api/v1/staff/rooms')
+      .set('Cookie', cookieHeader)
+      .expect(403);
+
+    expect(bodyOf(response).code).toBe('PASSWORD_CHANGE_REQUIRED');
+    expect(prisma.room.findMany).not.toHaveBeenCalled();
+  });
+
+  it('changes the password with CSRF proof and clears the forced-change state', async () => {
+    user.mustChangePassword = true;
+    const login = await request(app.getHttpServer())
+      .post('/api/v1/staff/auth/login')
+      .set('Origin', 'http://localhost:3000')
+      .send({ email, password })
+      .expect(200);
+    const cookies = login.headers['set-cookie'] as unknown as string[];
+    const cookieHeader = cookies.map((cookie) => cookie.split(';')[0]).join('; ');
+    const csrfToken = bodyOf(login).csrfToken!;
+
+    await request(app.getHttpServer())
+      .post('/api/v1/staff/auth/change-password')
+      .set('Cookie', cookieHeader)
+      .set('X-CSRF-Token', csrfToken)
+      .send({ currentPassword: password, newPassword: 'A-different-long-password-2026!' })
+      .expect(204);
+
+    const current = await request(app.getHttpServer())
+      .get('/api/v1/staff/auth/me')
+      .set('Cookie', cookieHeader)
+      .expect(200);
+    expect(bodyOf(current).staff?.mustChangePassword).toBe(false);
+  });
+
   it('validates login fields before querying staff credentials', async () => {
     const response = await request(app.getHttpServer())
       .post('/api/v1/staff/auth/login')
       .set('Origin', 'http://localhost:3000')
       .send({ email: 'not-an-email', password: 'short' })
+      .expect('Cache-Control', 'private, no-store')
       .expect(400);
 
     expect(bodyOf(response).code).toBe('VALIDATION_ERROR');

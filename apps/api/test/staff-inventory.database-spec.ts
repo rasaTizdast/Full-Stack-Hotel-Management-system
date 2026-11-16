@@ -2,6 +2,7 @@ import { randomUUID } from 'node:crypto';
 import { Pool } from 'pg';
 import { ConfigService } from '@nestjs/config';
 import { PrismaService } from '../src/database/prisma.service';
+import { AuditService } from '../src/audit/audit.service';
 import { RoomCapacityService } from '../src/rooms/room-capacity.service';
 import { StaffInventoryService } from '../src/staff-inventory/staff-inventory.service';
 
@@ -12,6 +13,7 @@ describe('PostgreSQL staff inventory updates', () => {
   let service: StaffInventoryService | undefined;
   let hotelId: string;
   let roomTypeId: string;
+  let actorId: string;
 
   beforeAll(async () => {
     const databaseUrl = process.env.DATABASE_URL;
@@ -26,8 +28,9 @@ describe('PostgreSQL staff inventory updates', () => {
     expect(database.rows[0].database_name).toMatch(/_test$/);
 
     prisma = new PrismaService(new ConfigService({ DATABASE_URL: databaseUrl }));
-    service = new StaffInventoryService(prisma, new RoomCapacityService());
+    service = new StaffInventoryService(prisma, new RoomCapacityService(), new AuditService());
     hotelId = randomUUID();
+    actorId = randomUUID();
     const hotel = await prisma.hotel.create({
       data: {
         id: hotelId,
@@ -47,6 +50,15 @@ describe('PostgreSQL staff inventory updates', () => {
       },
     });
     roomTypeId = roomType.id;
+    await prisma.staffUser.create({
+      data: {
+        id: actorId,
+        username: `inventory-audit-${suffix}`,
+        email: `inventory-audit-${suffix}@example.invalid`,
+        passwordHash: 'not-used-by-this-test',
+        role: 'ADMIN',
+      },
+    });
     await prisma.room.createMany({
       data: Array.from({ length: 3 }, (_, index) => ({
         hotelId,
@@ -69,6 +81,7 @@ describe('PostgreSQL staff inventory updates', () => {
       await prisma.booking.deleteMany({ where: { roomTypeId } });
       await prisma.roomType.deleteMany({ where: { id: roomTypeId } });
       await prisma.hotel.deleteMany({ where: { id: hotelId } });
+      await prisma.staffUser.update({ where: { id: actorId }, data: { isActive: false } });
       await prisma.$disconnect();
     }
     await pool?.end();
@@ -100,12 +113,15 @@ describe('PostgreSQL staff inventory updates', () => {
     });
 
     await expect(
-      service.updateRange({
-        roomTypeId,
-        startDate: '2027-04-10',
-        endDate: '2027-04-12',
-        nightlyPriceToman: '6000000',
-      }),
+      service.updateRange(
+        {
+          roomTypeId,
+          startDate: '2027-04-10',
+          endDate: '2027-04-12',
+          nightlyPriceToman: '6000000',
+        },
+        actorId,
+      ),
     ).rejects.toMatchObject({
       response: { code: 'CAPACITY_BELOW_RESERVED' },
     });
@@ -141,12 +157,15 @@ describe('PostgreSQL staff inventory updates', () => {
       },
     });
 
-    const updated = await service.updateRange({
-      roomTypeId,
-      startDate: '2027-04-20',
-      endDate: '2027-04-21',
-      nightlyPriceToman: '2000000',
-    });
+    const updated = await service.updateRange(
+      {
+        roomTypeId,
+        startDate: '2027-04-20',
+        endDate: '2027-04-21',
+        nightlyPriceToman: '2000000',
+      },
+      actorId,
+    );
     expect(updated.nights[0]).toMatchObject({
       totalRooms: 3,
       heldRooms: 1,

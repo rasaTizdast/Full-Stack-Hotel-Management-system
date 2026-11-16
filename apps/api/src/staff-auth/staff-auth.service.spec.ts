@@ -15,12 +15,14 @@ describe('StaffAuthService', () => {
     username: string;
     email: string;
     passwordHash: string;
-    role: 'ADMIN' | 'RECEPTIONIST';
+    role: 'ADMIN' | 'MANAGER' | 'RECEPTIONIST' | 'HOUSEKEEPER' | 'CASHIER';
     isActive: boolean;
+    mustChangePassword: boolean;
   };
   let prisma: {
-    staffUser: { findUnique: jest.Mock };
+    staffUser: { findUnique: jest.Mock; updateMany: jest.Mock };
     staffSession: { create: jest.Mock; update: jest.Mock; updateMany: jest.Mock };
+    $transaction: jest.Mock;
   };
   let service: StaffAuthService;
 
@@ -32,14 +34,26 @@ describe('StaffAuthService', () => {
       passwordHash: await argon2.hash(password, { type: argon2.argon2id }),
       role: 'ADMIN',
       isActive: true,
+      mustChangePassword: false,
     };
     prisma = {
-      staffUser: { findUnique: jest.fn().mockResolvedValue(user) },
+      staffUser: {
+        findUnique: jest.fn(({ where }: { where: { email?: string; id?: string } }) =>
+          Promise.resolve(where.email === user.email || where.id === user.id ? user : null),
+        ),
+        updateMany: jest.fn(({ data }: { data: Partial<typeof user> }) => {
+          user = { ...user, ...data };
+          return Promise.resolve({ count: 1 });
+        }),
+      },
       staffSession: {
         create: jest.fn().mockResolvedValue({ id: randomUUID() }),
         update: jest.fn().mockResolvedValue(undefined),
         updateMany: jest.fn().mockResolvedValue({ count: 1 }),
       },
+      $transaction: jest.fn(async (operation: (tx: unknown) => Promise<unknown>) =>
+        operation(prisma),
+      ),
     };
     service = new StaffAuthService(prisma as unknown as PrismaService);
   });
@@ -56,6 +70,7 @@ describe('StaffAuthService', () => {
       username: user.username,
       email: user.email,
       role: 'ADMIN',
+      mustChangePassword: false,
     });
     expect(result.staff).not.toHaveProperty('id');
     expect(result.staff).not.toHaveProperty('passwordHash');

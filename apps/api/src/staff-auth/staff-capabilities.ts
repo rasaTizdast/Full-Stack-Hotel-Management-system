@@ -1,0 +1,45 @@
+import type { StaffRole } from './staff-auth.types';
+
+export const STAFF_CAPABILITIES = [
+  'MANAGE_STAFF',
+  'MANAGE_INVENTORY',
+  'MANAGE_BOOKINGS',
+  'MANAGE_ROOM_CATALOG',
+  'VIEW_ROOM_BOARD',
+  'VIEW_ASSIGNED_ROOM_WORK',
+  'UPDATE_HOUSEKEEPING',
+  'MANAGE_MAINTENANCE',
+  'VIEW_FOLIOS',
+  'POST_FOLIO',
+  'ADJUST_FOLIOS',
+  'CHECKOUT',
+  'NIGHT_CLOSE_REPORTS',
+  'VIEW_FOLIO_ROOM_NUMBER',
+] as const;
+
+export type StaffCapability = (typeof STAFF_CAPABILITIES)[number];
+
+export const STAFF_CAPABILITIES_BY_ROLE: Record<StaffRole, readonly StaffCapability[]> = {
+  ADMIN: STAFF_CAPABILITIES,
+  MANAGER: [
+    'MANAGE_INVENTORY',
+    'MANAGE_BOOKINGS',
+    'MANAGE_ROOM_CATALOG',
+    'VIEW_ROOM_BOARD',
+    'VIEW_ASSIGNED_ROOM_WORK',
+    'UPDATE_HOUSEKEEPING',
+    'MANAGE_MAINTENANCE',
+    'VIEW_FOLIOS',
+    'POST_FOLIO',
+    'ADJUST_FOLIOS',
+    'CHECKOUT',
+    'NIGHT_CLOSE_REPORTS',
+  ],
+  RECEPTIONIST: ['MANAGE_BOOKINGS', 'VIEW_ROOM_BOARD', 'VIEW_FOLIOS', 'CHECKOUT'],
+  HOUSEKEEPER: ['VIEW_ASSIGNED_ROOM_WORK', 'UPDATE_HOUSEKEEPING'],
+  CASHIER: ['VIEW_FOLIOS', 'POST_FOLIO', 'CHECKOUT', 'VIEW_FOLIO_ROOM_NUMBER'],
+};
+
+export function staffHasCapability(role: StaffRole, capability: StaffCapability): boolean {
+  return role === 'ADMIN' || STAFF_CAPABILITIES_BY_ROLE[role].includes(capability);
+}

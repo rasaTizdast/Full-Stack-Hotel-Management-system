@@ -7,8 +7,11 @@ export class PublicStaffDto {
   @ApiProperty({ format: 'email', example: 'admin@example.invalid' })
   email!: string;
 
-  @ApiProperty({ enum: ['ADMIN', 'RECEPTIONIST'], example: 'ADMIN' })
-  role!: 'ADMIN' | 'RECEPTIONIST';
+  @ApiProperty({ enum: ['ADMIN', 'MANAGER', 'RECEPTIONIST', 'HOUSEKEEPER', 'CASHIER'] })
+  role!: 'ADMIN' | 'MANAGER' | 'RECEPTIONIST' | 'HOUSEKEEPER' | 'CASHIER';
+
+  @ApiProperty({ description: 'The account must change its password before using operations.' })
+  mustChangePassword!: boolean;
 }
 
 export class StaffAuthResponseDto {
