@@ -102,12 +102,12 @@
 
 **Files:** modify `apps/api/src/rooms/room-board.service.ts` and DTO/tests; modify `apps/web/src/lib/staff-api.ts` and room-board tests as needed.
 
-- [ ] Add a failing API test proving a checked-in reservation is shown as `OCCUPIED` with its active room context while a merely confirmed reservation remains reserved/arriving.
-- [ ] Run the focused room-board tests and verify that checked-in assignment contexts are currently omitted or mislabeled.
-- [ ] Include checked-in bookings in occupancy context while keeping the assignable editor limited to confirmed stays. Preserve date filtering, complete assignment intervals, and all HPM-003 revision semantics.
-- [ ] Replace the existing room-block relation join with a separately awaited query inside the same RepeatableRead transaction to remove the pg@9 concurrent-query deprecation; preserve room occupancy and assignment semantics.
-- [ ] Update client status unions and Persian text labels; verify occupancy is never conveyed by color alone and private data remains absent.
-- [ ] Run room-board API/web unit tests and focused desktop/mobile board Playwright; commit the integration.
+- [x] Add a failing API test proving a checked-in reservation is shown as `OCCUPIED` with its active room context while a merely confirmed reservation remains reserved/arriving.
+- [x] Run the focused room-board tests and verify that checked-in assignment contexts are currently omitted or mislabeled.
+- [x] Include checked-in bookings in occupancy context while keeping the assignable editor limited to confirmed stays. Preserve date filtering, complete assignment intervals, and all HPM-003 revision semantics.
+- [x] Replace the existing room-block relation join with a separately awaited query inside the same RepeatableRead transaction to remove the pg@9 concurrent-query deprecation; preserve room occupancy and assignment semantics.
+- [x] Update client status unions and Persian text labels; verify occupancy is never conveyed by color alone and private data remains absent.
+- [x] Run room-board API/web unit tests and focused desktop/mobile board Playwright; commit the integration.
 
 ### Task 6: Preserve the guest request follow-up promise
 
