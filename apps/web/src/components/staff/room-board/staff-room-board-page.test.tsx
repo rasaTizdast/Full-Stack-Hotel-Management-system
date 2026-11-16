@@ -160,8 +160,11 @@ describe('StaffRoomBoardPage', () => {
   it('shows checked-in reservations as in-house and physically occupied', async () => {
     const checkedInBoard = copyBoard();
     const checkedInRoom = checkedInBoard.items[0];
+    if (!checkedInRoom) throw new Error('The room-board fixture must contain a room.');
     checkedInRoom.occupancy = 'OCCUPIED';
-    Reflect.set(checkedInRoom.reservationContexts[0], 'stayContext', 'IN_HOUSE');
+    const checkedInContext = checkedInRoom.reservationContexts[0];
+    if (!checkedInContext) throw new Error('The checked-in room fixture must contain a reservation.');
+    checkedInContext.stayContext = 'IN_HOUSE';
     boardApi.getStaffRoomBoard.mockResolvedValueOnce(checkedInBoard);
 
     render(<StaffRoomBoardPage />);
@@ -180,8 +183,12 @@ describe('StaffRoomBoardPage', () => {
   it('keeps a checkout-day departure distinct from physical occupancy', async () => {
     const checkoutDayBoard = copyBoard();
     checkoutDayBoard.date = '2026-11-20';
-    checkoutDayBoard.items[0].occupancy = 'UNKNOWN';
-    Reflect.set(checkoutDayBoard.items[0].reservationContexts[0], 'stayContext', 'DEPARTING');
+    const departingRoom = checkoutDayBoard.items[0];
+    if (!departingRoom) throw new Error('The room-board fixture must contain a room.');
+    departingRoom.occupancy = 'UNKNOWN';
+    const departingContext = departingRoom.reservationContexts[0];
+    if (!departingContext) throw new Error('The departing room fixture must contain a reservation.');
+    departingContext.stayContext = 'DEPARTING';
     boardApi.getStaffRoomBoard.mockResolvedValueOnce(checkoutDayBoard);
 
     render(<StaffRoomBoardPage />);
