@@ -70,6 +70,7 @@ describe('StaffAccountsPage', () => {
     expect(within(row).getByText('reception@example.test')).toBeInTheDocument();
     expect(within(row).getByText('پذیرش')).toBeInTheDocument();
     expect(within(row).getByText('گذرواژه آغازین تغییر نشده')).toBeInTheDocument();
+    expect(within(row).getByText('۱۴۰۵/۰۸/۲۵، ۱۰:۳۰')).toBeInTheDocument();
     expect(screen.getByRole('navigation', { name: 'صفحه‌های حساب کارکنان' })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'صفحه بعد' })).toBeEnabled();
     expect(screen.queryByText('one-time-initial-secret')).not.toBeInTheDocument();
@@ -89,9 +90,44 @@ describe('StaffAccountsPage', () => {
     expect(card).toHaveTextContent('پذیرش');
     expect(card).toHaveTextContent('فعال');
     expect(card).toHaveTextContent('گذرواژه آغازین تغییر نشده');
-    expect(card).toHaveTextContent('2026-11-16');
+    expect(card).toHaveTextContent('۱۴۰۵/۰۸/۲۵، ۱۰:۳۰');
     expect(within(card).getByRole('button', { name: 'تغییر نقش' })).toBeEnabled();
     expect(within(card).getByRole('button', { name: 'غیرفعال‌سازی' })).toBeEnabled();
+  });
+
+  it('keeps date-only account creation dates Jalali without adding a time', async () => {
+    accountApi.getStaffAdminAccounts.mockResolvedValue({
+      ...accountPage,
+      items: [{ ...account, createdAt: '2026-11-16' }],
+    });
+
+    render(<StaffAccountsPage />);
+
+    const row = await screen.findByRole('row', { name: /reception-1/ });
+    expect(within(row).getByText('۱۴۰۵/۰۸/۲۵')).toBeInTheDocument();
+    expect(within(row).queryByText(/۱۰:۳۰/)).not.toBeInTheDocument();
+    const card = within(await screen.findByRole('list', { name: 'فهرست حساب‌های کارکنان' })).getByRole('listitem');
+    expect(within(card).getByText('۱۴۰۵/۰۸/۲۵')).toBeInTheDocument();
+    expect(within(card).queryByText(/۱۰:۳۰/)).not.toBeInTheDocument();
+  });
+
+  it('does not repeat an email when it normalizes to the username in either account layout', async () => {
+    const accountWithMatchingEmail: StaffAdminAccount = {
+      ...account,
+      username: 'Staff@Example.test',
+      email: 'staff@example.test',
+    };
+    accountApi.getStaffAdminAccounts.mockResolvedValue({
+      ...accountPage,
+      items: [accountWithMatchingEmail],
+    });
+
+    render(<StaffAccountsPage />);
+
+    const row = await screen.findByRole('row', { name: /Staff@Example\.test/ });
+    expect(within(row).queryByRole('link')).not.toBeInTheDocument();
+    const card = within(await screen.findByRole('list', { name: 'فهرست حساب‌های کارکنان' })).getByRole('listitem');
+    expect(within(card).queryByRole('link')).not.toBeInTheDocument();
   });
 
   it('creates an account and clears the initial password after success', async () => {

@@ -25,7 +25,35 @@ function errorText(cause: unknown): string {
 }
 
 function createdDate(value: string): string {
-  return formatGregorianAsJalali(value) ?? value;
+  const dateOnly = formatGregorianAsJalali(value);
+  if (dateOnly) return dateOnly;
+
+  const instant = new Date(value);
+  if (!value.includes('T') || Number.isNaN(instant.getTime())) return value;
+
+  const parts = new Intl.DateTimeFormat('en-CA', {
+    timeZone: 'Asia/Tehran',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    numberingSystem: 'latn',
+  }).formatToParts(instant);
+  const part = (type: Intl.DateTimeFormatPartTypes) => parts.find((item) => item.type === type)?.value;
+  const gregorianDate = [part('year'), part('month'), part('day')].join('-');
+  const jalaliDate = formatGregorianAsJalali(gregorianDate);
+  if (!jalaliDate) return value;
+
+  const tehranTime = new Intl.DateTimeFormat('fa-IR', {
+    timeZone: 'Asia/Tehran',
+    hour: '2-digit',
+    minute: '2-digit',
+    hourCycle: 'h23',
+  }).format(instant);
+  return `${jalaliDate}، ${tehranTime}`;
+}
+
+function shouldShowAccountEmail(account: StaffAdminAccount): boolean {
+  return account.email.trim().toLowerCase() !== account.username.trim().toLowerCase();
 }
 
 export function StaffAccountsPage() {
@@ -314,7 +342,10 @@ export function StaffAccountsPage() {
               <tbody>
                 {accounts.map((account) => (
                   <tr key={account.id}>
-                    <th scope="row"><strong>{account.username}</strong><a href={`mailto:${account.email}`} dir="ltr">{account.email}</a></th>
+                    <th scope="row">
+                      <strong>{account.username}</strong>
+                      {shouldShowAccountEmail(account) && <a href={`mailto:${account.email}`} dir="ltr">{account.email}</a>}
+                    </th>
                     <td>{getStaffRoleLabel(account.role)}</td>
                     <td><span className={`staff-accounts__status${account.isActive ? ' staff-accounts__status--active' : ''}`}>{account.isActive ? 'فعال' : 'غیرفعال'}</span></td>
                     <td>{account.mustChangePassword ? 'گذرواژه آغازین تغییر نشده' : 'تکمیل‌شده'}</td>
@@ -337,9 +368,11 @@ export function StaffAccountsPage() {
                     {account.isActive ? 'فعال' : 'غیرفعال'}
                   </span>
                 </header>
-                <a className="staff-accounts__mobile-email" href={`mailto:${account.email}`} dir="ltr">
-                  {account.email}
-                </a>
+                {shouldShowAccountEmail(account) && (
+                  <a className="staff-accounts__mobile-email" href={`mailto:${account.email}`} dir="ltr">
+                    {account.email}
+                  </a>
+                )}
                 <dl>
                   <div><dt>نقش</dt><dd>{getStaffRoleLabel(account.role)}</dd></div>
                   <div><dt>ورود اولیه</dt><dd>{account.mustChangePassword ? 'گذرواژه آغازین تغییر نشده' : 'تکمیل‌شده'}</dd></div>

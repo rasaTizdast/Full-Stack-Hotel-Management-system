@@ -39,8 +39,8 @@ test('admin creates and manages an account with forced password replacement', as
   browser,
 }, testInfo) => {
   const suffix = randomUUID().slice(0, 8);
-  const username = `e2e-staff-${suffix}`;
-  const email = `e2e-staff-${suffix}@example.test`;
+  const username = `e2e-staff-${suffix}@example.test`;
+  const email = username;
   const initialPassword = `E2e!${randomUUID()}aA1`;
   const replacementPassword = `Replaced!${randomUUID()}zZ2`;
   let accountId: string | undefined;
@@ -111,7 +111,8 @@ test('admin creates and manages an account with forced password replacement', as
     await expect(page.getByText(initialPassword, { exact: false })).toHaveCount(0);
 
     const initialRow = accountEntry(username);
-    await expect(initialRow).toContainText(email);
+    await expect(initialRow).toContainText(/[۰-۹]{4}\/[۰-۹]{2}\/[۰-۹]{2}، [۰-۹]{2}:[۰-۹]{2}/);
+    await expect(initialRow.getByRole('link')).toHaveCount(0);
     await expect(initialRow).toContainText('پذیرش');
     await expect(initialRow).toContainText('فعال');
     await expect(initialRow).toContainText('گذرواژه آغازین تغییر نشده');
