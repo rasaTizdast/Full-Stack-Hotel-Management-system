@@ -96,7 +96,7 @@ function dateLabel(date: string): string {
   return formatGregorianAsJalali(date) ?? date;
 }
 
-function safeErrorMessage(error: unknown): string {
+function safeErrorMessage(error: unknown, context?: 'move'): string {
   if (!(error instanceof StaffApiError)) return 'درخواست انجام نشد. دوباره تلاش کنید.';
   if (error.status === 0) return 'ارتباط با سامانه برقرار نشد. اتصال را بررسی و دوباره تلاش کنید.';
   if (error.status === 403) return 'دسترسی شما برای انجام این کار تأیید نشد. صفحه را تازه‌سازی کنید یا با سرپرست شیفت تماس بگیرید.';
@@ -104,6 +104,9 @@ function safeErrorMessage(error: unknown): string {
     case 'ROOM_ASSIGNMENT_INCOMPLETE':
       return 'تخصیص اتاق‌ها کامل نیست. ابتدا اتاق‌های باقی‌مانده را در وضعیت اتاق‌ها تخصیص دهید.';
     case 'ROOM_NOT_INSPECTED':
+      if (context === 'move') {
+        return 'انتقال انجام نشد؛ وضعیت بازرسی اتاق مقصد از سوی سامانه تأیید نشده است. اتاق‌های بازرسی‌شده را در وضعیت اتاق‌ها بررسی کنید.';
+      }
       return 'ورود ثبت نشد؛ وضعیت بازرسی اتاق‌ها باید از سوی سامانه تأیید شود.';
     case 'ROOM_ASSIGNMENT_OVERLAP':
     case 'ROOM_BLOCKED':
@@ -429,7 +432,7 @@ export function StaffFrontDeskPage({ queue, roomTypes = [], roomTypesStatus = 'r
       setDialog(null);
       refreshList();
     } catch (error) {
-      setDialogError(safeErrorMessage(error));
+      setDialogError(safeErrorMessage(error, dialog.kind === 'move' ? 'move' : undefined));
       setDialogRoomRecovery(hasRoomRecovery(error));
     } finally {
       setDialogBusy(false);

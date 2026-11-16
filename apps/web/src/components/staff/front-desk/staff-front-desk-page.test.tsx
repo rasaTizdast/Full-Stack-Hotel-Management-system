@@ -490,9 +490,13 @@ describe('StaffFrontDeskPage', () => {
     ));
   });
 
-  it.each(['ROOM_BLOCKED', 'ROOM_ASSIGNMENT_OVERLAP'] as const)(
-    'links a %s move conflict to room recovery',
-    async (code) => {
+  it.each([
+    ['ROOM_BLOCKED', 'یکی از اتاق‌ها با یک رزرو یا محدودیت هم‌پوشانی دارد'],
+    ['ROOM_ASSIGNMENT_OVERLAP', 'یکی از اتاق‌ها با یک رزرو یا محدودیت هم‌پوشانی دارد'],
+    ['ROOM_NOT_INSPECTED', 'انتقال انجام نشد؛ وضعیت بازرسی اتاق مقصد از سوی سامانه تأیید نشده است'],
+  ] as const)(
+    'links a %s move error to room recovery with action-appropriate copy',
+    async (code, message) => {
       const checkedIn = copyStay();
       checkedIn.status = 'CHECKED_IN';
       checkedIn.checkOut = '2026-11-20';
@@ -509,7 +513,7 @@ describe('StaffFrontDeskPage', () => {
       fireEvent.click(within(dialog).getByRole('button', { name: 'ثبت انتقال' }));
 
       const error = await within(dialog).findByRole('alert');
-      expect(error).toHaveTextContent('یکی از اتاق‌ها با یک رزرو یا محدودیت هم‌پوشانی دارد');
+      expect(error).toHaveTextContent(message);
       expect(error).not.toHaveTextContent('ورود ثبت نشد');
       expect(within(error).getByRole('link', { name: 'بررسی وضعیت اتاق‌ها' })).toHaveAttribute('href', '/staff/rooms');
     },
