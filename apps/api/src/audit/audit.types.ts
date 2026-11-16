@@ -7,7 +7,12 @@ export type AuditSafeField =
   | 'housekeepingStatus'
   | 'isGenerated'
   | 'status'
-  | 'nightlyPriceToman';
+  | 'nightlyPriceToman'
+  | 'checkIn'
+  | 'checkOut'
+  | 'roomQuantity'
+  | 'roomId'
+  | 'effectiveDate';
 
 export type AuditSnapshot = Partial<Record<AuditSafeField, string | number | boolean | null>>;
 

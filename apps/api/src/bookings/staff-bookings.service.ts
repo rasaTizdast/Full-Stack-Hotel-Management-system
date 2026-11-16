@@ -5,7 +5,11 @@ import type { StaffPrincipal } from '../staff-auth/staff-auth.types';
 import type { StaffBookingAction, BookingTransitionOptions } from './bookings.service';
 import { BookingsService } from './bookings.service';
 import type { CreateBookingDto } from './dto/create-booking.dto';
-import type { StaffStayMutationDto } from './dto/staff-stay-action.dto';
+import type {
+  AmendStaffStayDto,
+  MoveStaffRoomDto,
+  StaffStayMutationDto,
+} from './dto/staff-stay-action.dto';
 import { StaffBookingsQueryDto } from './dto/staff-bookings-query.dto';
 import type {
   StaffBookingDetailDto,
@@ -147,6 +151,22 @@ export class StaffBookingsService {
 
   noShow(reference: string, actor: StaffPrincipal, reason: string): Promise<StaffStayMutationDto> {
     return this.bookings.noShow(reference, actor, reason);
+  }
+
+  amend(
+    reference: string,
+    actor: StaffPrincipal,
+    dto: AmendStaffStayDto,
+  ): Promise<StaffStayMutationDto> {
+    return this.bookings.amend(reference, actor.id, dto);
+  }
+
+  moveRoom(
+    reference: string,
+    actor: StaffPrincipal,
+    dto: MoveStaffRoomDto,
+  ): Promise<StaffStayMutationDto> {
+    return this.bookings.moveRoom(reference, actor.id, dto);
   }
 
   async list(query: StaffBookingsQueryDto): Promise<StaffBookingListDto> {

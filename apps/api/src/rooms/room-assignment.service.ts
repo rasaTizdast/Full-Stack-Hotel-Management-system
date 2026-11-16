@@ -53,6 +53,16 @@ function assignmentSetDto(
 
 type AssignmentInterval = Pick<Assignment, 'roomId' | 'startDate' | 'endDate'>;
 
+type CheckedInRoomMove = {
+  booking: { id: string; roomTypeId: string };
+  actorStaffUserId: string;
+  sourceRoomId: string;
+  targetRoomId: string;
+  businessDate: Date;
+  checkOut: Date;
+  reason: string;
+};
+
 function intervalKey({ roomId, startDate, endDate }: AssignmentInterval): string {
   return [roomId, startDate.getTime(), endDate.getTime()].join(':');
 }
@@ -223,6 +233,87 @@ export class RoomAssignmentService {
   }
 
   // The booking, its room type, and assigned rooms are already locked.
+  async assertAmendmentFitsAssignments(
+    transaction: TransactionClient,
+    booking: { id: string; roomTypeId: string },
+    startDate: Date,
+    endDate: Date,
+    roomQuantity: number,
+  ): Promise<void> {
+    const active = await transaction.roomAssignment.findMany({
+      where: { bookingId: booking.id, isActive: true },
+      select: { roomId: true, startDate: true, endDate: true },
+    });
+    if (active.length > roomQuantity) {
+      throw new ConflictException({ code: 'ROOM_ASSIGNMENT_LIMIT' });
+    }
+    if (active.some((interval) => interval.startDate < startDate || interval.endDate > endDate)) {
+      throw new ConflictException({ code: 'ROOM_ASSIGNMENT_OUTSIDE_BOOKING' });
+    }
+    await this.assertRoomsAssignable(transaction, booking.id, booking.roomTypeId, active);
+  }
+
+  // The caller holds the booking, room type, and both room locks.
+  async moveCheckedInRoom(transaction: TransactionClient, move: CheckedInRoomMove): Promise<void> {
+    const {
+      booking,
+      actorStaffUserId,
+      sourceRoomId,
+      targetRoomId,
+      businessDate,
+      checkOut,
+      reason,
+    } = move;
+    const source = await transaction.roomAssignment.findFirst({
+      where: {
+        bookingId: booking.id,
+        roomId: sourceRoomId,
+        isActive: true,
+        startDate: { lte: businessDate },
+        endDate: { gt: businessDate },
+      },
+      select: { id: true, startDate: true },
+    });
+    if (!source) throw new ConflictException({ code: 'ROOM_MOVE_SOURCE_NOT_ASSIGNED' });
+
+    const target = { roomId: targetRoomId, startDate: businessDate, endDate: checkOut };
+    await this.assertRoomsAssignable(transaction, undefined, booking.roomTypeId, [target], true);
+
+    await transaction.roomAssignment.update({
+      where: { id: source.id },
+      data: {
+        isActive: false,
+        // Same-day moves preserve a nonzero interval. The audit records the effective date.
+        endDate: source.startDate < businessDate ? businessDate : undefined,
+      },
+    });
+    await transaction.roomAssignment.create({
+      data: {
+        ...target,
+        bookingId: booking.id,
+        roomTypeId: booking.roomTypeId,
+        assignedByStaffUserId: actorStaffUserId,
+        changeReason: reason,
+      },
+      select: { id: true },
+    });
+    await transaction.room.update({
+      where: { id: sourceRoomId },
+      data: { housekeepingStatus: 'DIRTY' },
+      select: { id: true },
+    });
+    await this.audit.record(transaction, {
+      actorStaffUserId,
+      eventName: 'BOOKING_ROOM_MOVE',
+      targetType: 'BOOKING',
+      targetId: booking.id,
+      reason,
+      before: { roomId: sourceRoomId },
+      after: { roomId: targetRoomId, effectiveDate: businessDate.toISOString().slice(0, 10) },
+    });
+  }
+
+  // The booking, its room type, and assigned rooms are already locked.
   async assertCheckInReadiness(
     transaction: TransactionClient,
     booking: { id: string; roomTypeId: string; roomQuantity: number },
@@ -269,7 +360,8 @@ export class RoomAssignmentService {
     });
   }
 
-  private async lockAffectedRooms(
+  // Call after acquiring the booking lock.
+  async lockAffectedRooms(
     transaction: TransactionClient,
     roomTypeId: string,
     roomIds: string[],
@@ -282,7 +374,7 @@ export class RoomAssignmentService {
 
   private async assertRoomsAssignable(
     transaction: TransactionClient,
-    bookingId: string,
+    excludedBookingId: string | undefined,
     roomTypeId: string,
     desired: AssignmentInterval[],
     requireInspected = false,
@@ -313,7 +405,11 @@ export class RoomAssignmentService {
       endDate: { gt: startDate },
     }));
     const occupied = await transaction.roomAssignment.findFirst({
-      where: { bookingId: { not: bookingId }, isActive: true, OR: overlaps },
+      where: {
+        bookingId: excludedBookingId ? { not: excludedBookingId } : undefined,
+        isActive: true,
+        OR: overlaps,
+      },
       select: { id: true },
     });
     if (occupied) throw new ConflictException({ code: 'ROOM_ASSIGNMENT_OVERLAP' });

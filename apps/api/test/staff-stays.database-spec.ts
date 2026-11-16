@@ -125,6 +125,29 @@ describe('Front-desk mutations over HTTP and PostgreSQL', () => {
       .send(body);
   }
 
+  function amend(reference: string, body: Record<string, unknown>) {
+    return fixture.client().patch(bookingRoute(reference)).set(receptionist.headers).send(body);
+  }
+
+  function move(reference: string, targetIndex = 1, moveReason: unknown = 'Room repair needed') {
+    return action(reference, 'room-move', {
+      sourceRoomId: property.rooms[0].id,
+      targetRoomId: property.rooms[targetIndex].id,
+      reason: moveReason,
+    });
+  }
+
+  async function inspectTarget() {
+    await fixture.prisma.room.update({
+      where: { id: property.rooms[1].id },
+      data: { housekeepingStatus: 'INSPECTED' },
+    });
+  }
+
+  function sourceRoom() {
+    return fixture.prisma.room.findUniqueOrThrow({ where: { id: property.rooms[0].id } });
+  }
+
   function counters() {
     return fixture.prisma.roomNightInventory.findMany({
       where: { roomTypeId: property.type.id },
@@ -573,6 +596,336 @@ describe('Front-desk mutations over HTTP and PostgreSQL', () => {
     expect((await counters()).map(({ bookedRooms }) => bookedRooms)).toEqual(
       checkedIn ? [1, 1] : [0, 0],
     );
+    expect(await audits(booking.id)).toHaveLength(1);
+  });
+
+  it('amends a same-day confirmed stay before configured check-in and preserves retained rates', async () => {
+    await setCheckInTime('23:59');
+    await inventory(today, 0);
+    await fixture.prisma.roomNightInventory.update({
+      where: {
+        roomTypeId_stayDate: { roomTypeId: property.type.id, stayDate: parseDateOnly(today) },
+      },
+      data: { bookedRooms: 1, nightlyPriceToman: 400_000n },
+    });
+    const booking = await stay(today, tomorrow);
+    const original = await persisted(booking.id);
+    const changes = { checkOut: dayAfter, roomQuantity: 2, guestCount: 3, guestEmail: null };
+    const replies = await Promise.all([
+      amend(booking.publicReference, changes).expect(200),
+      amend(booking.publicReference, changes).expect(200),
+    ]);
+    expect(replies[0].body as unknown).toEqual(replies[1].body as unknown);
+    const result = await persisted(booking.id);
+    expect(result).toMatchObject({
+      status: 'CONFIRMED',
+      roomQuantity: 2,
+      guestCount: 3,
+      guestEmail: null,
+      totalPriceToman: 500_000n,
+      nights: [
+        {
+          id: original.nights[0].id,
+          nightlyPriceToman: 100_000n,
+          roomQuantity: 2,
+          amountToman: 200_000n,
+        },
+        { nightlyPriceToman: 150_000n, roomQuantity: 2, amountToman: 300_000n },
+      ],
+    });
+    expect(await counters()).toEqual([
+      { heldRooms: 0, bookedRooms: 2 },
+      { heldRooms: 0, bookedRooms: 2 },
+    ]);
+    expect(await audits(booking.id)).toMatchObject([
+      { eventName: 'BOOKING_AMENDED', actorStaffUserId: receptionist.id },
+    ]);
+  });
+
+  it('releases removed nights and applies negative quantity deltas to retained future nights', async () => {
+    const lastDate = addDays(dayAfter, 1);
+    await inventory(tomorrow, 2);
+    await fixture.prisma.roomNightInventory.create({
+      data: {
+        roomTypeId: property.type.id,
+        stayDate: parseDateOnly(dayAfter),
+        totalRooms: 3,
+        nightlyPriceToman: 300_000n,
+      },
+    });
+    const booking = await stay(tomorrow, dayAfter, 2);
+    await amend(booking.publicReference, { checkOut: lastDate }).expect(200);
+    await amend(booking.publicReference, { checkIn: dayAfter, roomQuantity: 1 }).expect(200);
+    expect(await persisted(booking.id)).toMatchObject({
+      checkIn: parseDateOnly(dayAfter),
+      checkOut: parseDateOnly(lastDate),
+      roomQuantity: 1,
+      totalPriceToman: 300_000n,
+      nights: [{ stayDate: parseDateOnly(dayAfter), roomQuantity: 1, amountToman: 300_000n }],
+    });
+    expect(await counters()).toEqual([
+      { heldRooms: 0, bookedRooms: 0 },
+      { heldRooms: 0, bookedRooms: 1 },
+    ]);
+  });
+
+  it('rolls back the amendment if an added night is sold out, then allows a retry', async () => {
+    await inventory(today, 1, 2);
+    const booking = await stay(today, tomorrow);
+    const original = await persisted(booking.id);
+    const newNight = { roomTypeId: property.type.id, stayDate: parseDateOnly(tomorrow) };
+    await fixture.prisma.roomNightInventory.update({
+      where: { roomTypeId_stayDate: newNight },
+      data: { heldRooms: 1 },
+    });
+    const res = await amend(booking.publicReference, {
+      checkOut: dayAfter,
+      roomQuantity: 2,
+    }).expect(409);
+    expect(res.body as unknown).toMatchObject({ code: 'AVAILABILITY_CHANGED' });
+    expect(await persisted(booking.id)).toEqual(original);
+    expect(await audits(booking.id)).toEqual([]);
+    expect(await counters()).toEqual([
+      { heldRooms: 0, bookedRooms: 1 },
+      { heldRooms: 1, bookedRooms: 1 },
+    ]);
+    await fixture.prisma.roomNightInventory.update({
+      where: { roomTypeId_stayDate: newNight },
+      data: { heldRooms: 0, totalRooms: 3 },
+    });
+    await amend(booking.publicReference, { checkOut: dayAfter, roomQuantity: 2 }).expect(200);
+    expect(await counters()).toEqual([
+      { heldRooms: 0, bookedRooms: 2 },
+      { heldRooms: 0, bookedRooms: 3 },
+    ]);
+  });
+
+  it('keeps a valid active interval when an extension creates an unassigned night and unit', async () => {
+    await inventory(today, 0);
+    await fixture.prisma.roomNightInventory.update({
+      where: {
+        roomTypeId_stayDate: { roomTypeId: property.type.id, stayDate: parseDateOnly(today) },
+      },
+      data: { bookedRooms: 1 },
+    });
+    const booking = await stay(today, tomorrow);
+    const assignment = await assign(booking.id, 0, today, tomorrow);
+    await amend(booking.publicReference, { checkOut: dayAfter, roomQuantity: 2 }).expect(200);
+    expect((await persisted(booking.id)).assignments).toEqual([assignment]);
+    const checkIn = await action(booking.publicReference, 'check-in').expect(409);
+    expect(checkIn.body as unknown).toMatchObject({ code: 'ROOM_ASSIGNMENT_INCOMPLETE' });
+  });
+
+  it('rejects an amendment when an existing active interval conflicts with a block', async () => {
+    await inventory(today, 1);
+    const booking = await stay(today, tomorrow);
+    await assign(booking.id, 0, today, tomorrow);
+    await fixture.prisma.roomBlock.create({
+      data: {
+        roomId: property.rooms[0].id,
+        startDate: parseDateOnly(today),
+        endDate: parseDateOnly(tomorrow),
+        reason: 'Fixture repair',
+      },
+    });
+    const original = await persisted(booking.id);
+    const result = await amend(booking.publicReference, { checkOut: dayAfter }).expect(409);
+    expect(result.body as unknown).toMatchObject({ code: 'ROOM_BLOCKED' });
+    expect(await persisted(booking.id)).toEqual(original);
+  });
+
+  it('rejects amendments that would invalidate active assignments', async () => {
+    await inventory(today, 2);
+    const booking = await stay(today, dayAfter, 2);
+    await assign(booking.id);
+    await assign(booking.id, 1);
+    const original = await persisted(booking.id);
+    const smaller = await amend(booking.publicReference, { roomQuantity: 1 }).expect(409);
+    const shorter = await amend(booking.publicReference, { checkIn: tomorrow }).expect(409);
+    expect(smaller.body as unknown).toMatchObject({ code: 'ROOM_ASSIGNMENT_LIMIT' });
+    expect(shorter.body as unknown).toMatchObject({ code: 'ROOM_ASSIGNMENT_OUTSIDE_BOOKING' });
+    expect(await persisted(booking.id)).toEqual(original);
+    expect((await counters()).map(({ bookedRooms }) => bookedRooms)).toEqual([2, 2]);
+  });
+
+  it('rejects edits to overdue, no-showed, checked-in, and checked-out stays', async () => {
+    for (const booking of [
+      await stay(yesterday),
+      await stay(yesterday, today),
+      await stay(today, dayAfter, 1, 'NO_SHOW'),
+      await stay(today, dayAfter, 1, 'CHECKED_IN'),
+      await stay(today, dayAfter, 1, 'CHECKED_OUT'),
+    ]) {
+      await amend(booking.publicReference, { guestName: 'Changed Name' }).expect(409);
+      expect((await persisted(booking.id)).guestName).toBe(guest.guestName);
+    }
+  });
+
+  it('rolls back amendment counters, snapshots, and contact changes when the audit fails', async () => {
+    await inventory(today, 1);
+    const booking = await stay(today, tomorrow);
+    const original = await persisted(booking.id);
+    const originalCounters = await counters();
+    const record = jest
+      .spyOn(AuditService.prototype, 'record')
+      .mockRejectedValueOnce(new Error('Fixture audit failure'));
+    try {
+      await amend(booking.publicReference, { roomQuantity: 2, guestName: 'Changed Name' }).expect(
+        500,
+      );
+    } finally {
+      record.mockRestore();
+    }
+    expect(await persisted(booking.id)).toEqual(original);
+    expect(await counters()).toEqual(originalCounters);
+    expect(await audits(booking.id)).toEqual([]);
+  });
+
+  it.each(['later', 'same'])('preserves nonzero source history for a %s-day move', async (when) => {
+    await inspectTarget();
+    const start = when === 'later' ? yesterday : today;
+    await inventory(start, 1);
+    const booking = await stay(start, dayAfter, 1, 'CHECKED_IN');
+    const source = await assign(booking.id, 0, start);
+    const original = await persisted(booking.id);
+    const originalCounters = await counters();
+    const result = await move(booking.publicReference, 1, '  Room repair needed  ').expect(200);
+    expect(result.body as unknown).toMatchObject({
+      status: 'CHECKED_IN',
+      checkIn: start,
+      checkOut: dayAfter,
+    });
+    const updated = await persisted(booking.id);
+    expect(updated.totalPriceToman).toBe(original.totalPriceToman);
+    expect(updated.nights).toEqual(original.nights);
+    expect(updated.assignments).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          id: source.id,
+          startDate: parseDateOnly(start),
+          endDate: parseDateOnly(when === 'later' ? today : dayAfter),
+          isActive: false,
+        }),
+        expect.objectContaining({
+          roomId: property.rooms[1].id,
+          startDate: parseDateOnly(today),
+          endDate: parseDateOnly(dayAfter),
+          isActive: true,
+          assignedByStaffUserId: receptionist.id,
+          changeReason: 'Room repair needed',
+        }),
+      ]),
+    );
+    expect(updated.assignments).toHaveLength(2);
+    expect((await sourceRoom()).housekeepingStatus).toBe('DIRTY');
+    expect(await counters()).toEqual(originalCounters);
+    expect(await audits(booking.id)).toMatchObject([
+      {
+        actorStaffUserId: receptionist.id,
+        eventName: 'BOOKING_ROOM_MOVE',
+        reason: 'Room repair needed',
+        before: { roomId: property.rooms[0].id },
+        after: { roomId: property.rooms[1].id, effectiveDate: today },
+      },
+    ]);
+  });
+
+  it('rejects blank reasons, unavailable targets, a confirmed stay, and a departure-day move', async () => {
+    const booking = await stay(today, dayAfter, 1, 'CHECKED_IN');
+    const confirmed = await stay();
+    const departing = await stay(yesterday, today, 1, 'CHECKED_IN');
+    await assign(booking.id);
+    await assign(departing.id, 0, yesterday, today);
+    const original = await persisted(booking.id);
+    const missing = await move(booking.publicReference, 1, '  ').expect(400);
+    expect(missing.body as unknown).toMatchObject({ code: 'ROOM_MOVE_REASON_REQUIRED' });
+    const dirty = await move(booking.publicReference).expect(409);
+    expect(dirty.body as unknown).toMatchObject({ code: 'ROOM_NOT_INSPECTED' });
+    await move(booking.publicReference, 0).expect(409);
+    await inspectTarget();
+    await move(confirmed.publicReference).expect(409);
+    await move(departing.publicReference).expect(409);
+    await fixture.prisma.room.update({
+      where: { id: property.rooms[1].id },
+      data: { isActive: false },
+    });
+    const inactive = await move(booking.publicReference).expect(409);
+    expect(inactive.body as unknown).toMatchObject({ code: 'ROOM_INACTIVE' });
+    const otherType = await fixture.roomType(property.hotel.id);
+    const otherRoom = await fixture.prisma.room.create({
+      data: {
+        hotelId: property.hotel.id,
+        roomTypeId: otherType.id,
+        roomNumber: '777',
+        floor: '7',
+        housekeepingStatus: 'INSPECTED',
+      },
+    });
+    const sendTarget = (targetRoomId: string) =>
+      action(booking.publicReference, 'room-move', {
+        sourceRoomId: property.rooms[0].id,
+        targetRoomId,
+        reason: 'Room repair',
+      });
+    const wrongType = await sendTarget(otherRoom.id).expect(409);
+    expect(wrongType.body as unknown).toMatchObject({ code: 'ROOM_TYPE_MISMATCH' });
+    await sendTarget(randomUUID()).expect(404);
+    expect(await persisted(booking.id)).toEqual(original);
+    expect(await audits(booking.id)).toEqual([]);
+  });
+
+  it.each(['block', 'other booking', 'same booking'])(
+    'rejects a target with a future %s conflict',
+    async (conflict) => {
+      await inspectTarget();
+      const multiRoom = conflict === 'same booking';
+      const booking = await stay(today, dayAfter, multiRoom ? 2 : 1, 'CHECKED_IN');
+      await assign(booking.id);
+      if (conflict === 'block') {
+        await fixture.prisma.roomBlock.create({
+          data: {
+            roomId: property.rooms[1].id,
+            startDate: parseDateOnly(tomorrow),
+            endDate: parseDateOnly(dayAfter),
+            reason: 'Fixture repair',
+          },
+        });
+      } else {
+        const other = multiRoom ? booking : await stay(tomorrow);
+        await assign(other.id, 1, tomorrow);
+      }
+      const original = await persisted(booking.id);
+      const res = await move(booking.publicReference).expect(409);
+      expect(res.body as unknown).toMatchObject({
+        code: conflict === 'block' ? 'ROOM_BLOCKED' : 'ROOM_ASSIGNMENT_OVERLAP',
+      });
+      expect(await persisted(booking.id)).toEqual(original);
+      expect((await sourceRoom()).housekeepingStatus).toBe('INSPECTED');
+    },
+  );
+
+  it('rolls back a move when audit fails and applies a concurrent retry only once', async () => {
+    await inspectTarget();
+    const booking = await stay(today, dayAfter, 1, 'CHECKED_IN');
+    await assign(booking.id);
+    const original = await persisted(booking.id);
+    const record = jest
+      .spyOn(AuditService.prototype, 'record')
+      .mockRejectedValueOnce(new Error('Fixture audit failure'));
+    try {
+      await move(booking.publicReference).expect(500);
+    } finally {
+      record.mockRestore();
+    }
+    expect(await persisted(booking.id)).toEqual(original);
+    expect((await sourceRoom()).housekeepingStatus).toBe('INSPECTED');
+    expect(await audits(booking.id)).toEqual([]);
+    const retries = await Promise.all([
+      move(booking.publicReference),
+      move(booking.publicReference),
+    ]);
+    expect(retries.map(({ status }) => status).sort()).toEqual([200, 409]);
+    expect((await persisted(booking.id)).assignments).toHaveLength(2);
     expect(await audits(booking.id)).toHaveLength(1);
   });
 

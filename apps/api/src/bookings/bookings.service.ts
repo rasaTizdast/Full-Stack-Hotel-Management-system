@@ -10,7 +10,11 @@ import {
 import { Prisma } from '../generated/prisma/client';
 import { PrismaService } from '../database/prisma.service';
 import { AuditService } from '../audit/audit.service';
-import { getHotelBusinessDate, parseAvailabilityCriteria } from '../availability/date-range';
+import {
+  getHotelBusinessDate,
+  parseAvailabilityCriteria,
+  type AvailabilityCriteria,
+} from '../availability/date-range';
 import { assertGuestCapacity, calculateBookingTotal, hashBookingRequest } from './booking-rules';
 import {
   canCancelConfirmedBooking,
@@ -26,7 +30,11 @@ import { requireBookingIdempotencyKey } from './booking-idempotency-key';
 import { lockBookingByReference, type LockedBooking } from './booking-row-lock';
 import { CreateBookingDto } from './dto/create-booking.dto';
 import { BookingResponseDto } from './dto/booking-response.dto';
-import type { StaffStayMutationDto } from './dto/staff-stay-action.dto';
+import type {
+  AmendStaffStayDto,
+  MoveStaffRoomDto,
+  StaffStayMutationDto,
+} from './dto/staff-stay-action.dto';
 import { getStayArrivalWindow } from './stay-arrival-window';
 
 const IDEMPOTENCY_KEY_CONFLICT = {
@@ -290,6 +298,249 @@ export class BookingsService {
       }
       throw error;
     }
+  }
+
+  async amend(
+    reference: string,
+    actorStaffUserId: string,
+    dto: AmendStaffStayDto,
+  ): Promise<StaffStayMutationDto> {
+    return this.prisma.$transaction(async (transaction) => {
+      const booking = await lockBookingByReference(transaction, reference);
+      if (booking.status !== 'CONFIRMED') throw this.statusConflict();
+      await this.assignments.lockAssignedRooms(transaction, booking);
+
+      const stay = await transaction.booking.findUniqueOrThrow({
+        where: { id: booking.id },
+        select: {
+          ...stayMutationSelect,
+          guestCount: true,
+          guestName: true,
+          guestPhone: true,
+          guestEmail: true,
+          roomType: { select: { maxGuestsPerRoom: true, hotel: { select: { timezone: true } } } },
+        },
+      });
+      const businessDate = hotelBusinessDate(
+        stay.roomType.hotel.timezone,
+        await this.databaseNow(transaction),
+      );
+      if (stay.checkIn < businessDate || stay.checkOut <= businessDate) {
+        throw new ConflictException({ code: 'STAY_AMENDMENT_WINDOW_CLOSED' });
+      }
+
+      const previous = toStayMutationResponse(stay);
+      const roomQuantity = dto.roomQuantity ?? booking.roomQuantity;
+      const guestCount = dto.guestCount ?? stay.guestCount;
+      const guestName = dto.guestName ?? stay.guestName;
+      const guestPhone = dto.guestPhone ?? stay.guestPhone;
+      const guestEmail = dto.guestEmail === undefined ? stay.guestEmail : dto.guestEmail;
+      const criteria = parseAvailabilityCriteria(
+        {
+          checkIn: dto.checkIn ?? previous.checkIn,
+          checkOut: dto.checkOut ?? previous.checkOut,
+          guests: guestCount,
+        },
+        businessDate.toISOString().slice(0, 10),
+      );
+      assertGuestCapacity(guestCount, stay.roomType.maxGuestsPerRoom, roomQuantity);
+
+      const inventoryChanged =
+        criteria.checkIn !== previous.checkIn ||
+        criteria.checkOut !== previous.checkOut ||
+        roomQuantity !== booking.roomQuantity;
+      if (
+        !inventoryChanged &&
+        guestCount === stay.guestCount &&
+        guestName === stay.guestName &&
+        guestPhone === stay.guestPhone &&
+        guestEmail === stay.guestEmail
+      ) {
+        return previous;
+      }
+
+      let totalPriceToman: bigint | undefined;
+      if (inventoryChanged) {
+        await this.assignments.assertAmendmentFitsAssignments(
+          transaction,
+          booking,
+          criteria.checkInDate,
+          criteria.checkOutDate,
+          roomQuantity,
+        );
+        totalPriceToman = await this.amendInventoryAndNights(
+          transaction,
+          booking,
+          stay.checkOut,
+          criteria,
+          roomQuantity,
+        );
+      }
+
+      const updated = await transaction.booking.update({
+        where: { id: booking.id },
+        data: {
+          checkIn: criteria.checkInDate,
+          checkOut: criteria.checkOutDate,
+          guestCount,
+          roomQuantity,
+          guestName,
+          guestPhone,
+          guestEmail,
+          totalPriceToman,
+        },
+        select: stayMutationSelect,
+      });
+      await this.audit.record(transaction, {
+        actorStaffUserId,
+        eventName: 'BOOKING_AMENDED',
+        targetType: 'BOOKING',
+        targetId: booking.id,
+        before: {
+          checkIn: previous.checkIn,
+          checkOut: previous.checkOut,
+          roomQuantity: booking.roomQuantity,
+        },
+        after: { checkIn: criteria.checkIn, checkOut: criteria.checkOut, roomQuantity },
+      });
+      return toStayMutationResponse(updated);
+    });
+  }
+
+  private async amendInventoryAndNights(
+    transaction: Prisma.TransactionClient,
+    booking: LockedBooking,
+    oldCheckOut: Date,
+    criteria: AvailabilityCriteria,
+    roomQuantity: number,
+  ): Promise<bigint> {
+    const nights = await transaction.bookingNight.findMany({
+      where: { bookingId: booking.id },
+      select: { id: true, stayDate: true, roomQuantity: true, nightlyPriceToman: true },
+    });
+    if (
+      nights.length !== (oldCheckOut.getTime() - booking.checkIn.getTime()) / 86_400_000 ||
+      nights.some(
+        (night) =>
+          night.stayDate < booking.checkIn ||
+          night.stayDate >= oldCheckOut ||
+          night.roomQuantity !== booking.roomQuantity,
+      )
+    ) {
+      throw new InternalServerErrorException('Booking night snapshots are inconsistent.');
+    }
+
+    const existing = new Map(
+      nights.map((night) => [night.stayDate.toISOString().slice(0, 10), night]),
+    );
+    const desired = new Map(
+      criteria.stayDateStrings.map((date, index) => [date, criteria.stayDates[index]]),
+    );
+    const dates = [...new Set([...existing.keys(), ...desired.keys()])].sort();
+    const inventory = await transaction.$queryRaw<LockedInventoryNight[]>`
+      SELECT id::text AS id,
+             to_char(stay_date, 'YYYY-MM-DD') AS "stayDate",
+             total_rooms AS "totalRooms",
+             held_rooms AS "heldRooms",
+             booked_rooms AS "bookedRooms",
+             nightly_price_toman AS "nightlyPriceToman"
+      FROM room_night_inventory
+      WHERE room_type_id = ${booking.roomTypeId}::uuid
+        AND stay_date IN (${Prisma.join(dates.map((date) => Prisma.sql`${date}::date`))})
+      ORDER BY stay_date ASC
+      FOR UPDATE
+    `;
+    const inventoryByDate = new Map(inventory.map((night) => [night.stayDate, night]));
+
+    let totalPriceToman = 0n;
+    for (const date of dates) {
+      const previous = existing.get(date);
+      const stayDate = desired.get(date);
+      const night = inventoryByDate.get(date);
+      const previousQuantity = previous?.roomQuantity ?? 0;
+      if (previous && (!night || night.bookedRooms < previousQuantity)) {
+        throw new InternalServerErrorException('Booking inventory counters are inconsistent.');
+      }
+      if (!night) throw this.availabilityChanged();
+
+      const delta = (stayDate ? roomQuantity : 0) - previousQuantity;
+      if (delta > 0 && night.heldRooms + night.bookedRooms + delta > night.totalRooms) {
+        throw this.availabilityChanged();
+      }
+      if (delta !== 0) {
+        await transaction.roomNightInventory.update({
+          where: { id: night.id },
+          data: { bookedRooms: { increment: delta } },
+        });
+      }
+
+      if (stayDate) {
+        const nightlyPriceToman = previous?.nightlyPriceToman ?? night.nightlyPriceToman;
+        const amountToman = nightlyPriceToman * BigInt(roomQuantity);
+        totalPriceToman += amountToman;
+        if (!previous) {
+          await transaction.bookingNight.create({
+            data: { bookingId: booking.id, stayDate, nightlyPriceToman, roomQuantity, amountToman },
+          });
+        } else if (delta !== 0) {
+          await transaction.bookingNight.update({
+            where: { id: previous.id },
+            data: { roomQuantity, amountToman },
+          });
+        }
+      } else if (previous) {
+        await transaction.bookingNight.delete({ where: { id: previous.id } });
+      }
+    }
+    return totalPriceToman;
+  }
+
+  async moveRoom(
+    reference: string,
+    actorStaffUserId: string,
+    dto: MoveStaffRoomDto,
+  ): Promise<StaffStayMutationDto> {
+    const reason = this.normalizeOptionalText(dto.reason, 500, 'ROOM_MOVE_REASON_INVALID');
+    if (!reason) throw new BadRequestException({ code: 'ROOM_MOVE_REASON_REQUIRED' });
+
+    const sourceRoomId = dto.sourceRoomId.toLowerCase();
+    const targetRoomId = dto.targetRoomId.toLowerCase();
+    if (sourceRoomId === targetRoomId) {
+      throw new ConflictException({ code: 'ROOM_ASSIGNMENT_DUPLICATE_ROOM' });
+    }
+
+    return this.prisma.$transaction(async (transaction) => {
+      const booking = await lockBookingByReference(transaction, reference);
+      if (booking.status !== 'CHECKED_IN') throw this.statusConflict();
+      await this.assignments.lockAffectedRooms(transaction, booking.roomTypeId, [
+        sourceRoomId,
+        targetRoomId,
+      ]);
+      const stay = await transaction.booking.findUniqueOrThrow({
+        where: { id: booking.id },
+        select: {
+          ...stayMutationSelect,
+          roomType: { select: { hotel: { select: { timezone: true } } } },
+        },
+      });
+      const businessDate = hotelBusinessDate(
+        stay.roomType.hotel.timezone,
+        await this.databaseNow(transaction),
+      );
+      if (businessDate < stay.checkIn || businessDate >= stay.checkOut) {
+        throw new ConflictException({ code: 'STAY_OUTSIDE_ROOM_MOVE_WINDOW' });
+      }
+      await this.assignments.moveCheckedInRoom(transaction, {
+        booking,
+        actorStaffUserId,
+        sourceRoomId,
+        targetRoomId,
+        businessDate,
+        checkOut: stay.checkOut,
+        reason,
+      });
+      return toStayMutationResponse(stay);
+    });
   }
 
   async checkIn(

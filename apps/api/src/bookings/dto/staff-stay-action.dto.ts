@@ -1,6 +1,18 @@
-import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { IsOptional, IsString, MaxLength, ValidateIf } from 'class-validator';
+import { ApiProperty, ApiPropertyOptional, OmitType, PartialType } from '@nestjs/swagger';
+import { Transform } from 'class-transformer';
+import {
+  IsEmail,
+  IsInt,
+  IsOptional,
+  IsString,
+  IsUUID,
+  Max,
+  MaxLength,
+  Min,
+  ValidateIf,
+} from 'class-validator';
 import { BookingStatus } from '../../generated/prisma/enums';
+import { CreateBookingDto } from './create-booking.dto';
 
 export class CheckInStaffStayDto {
   @ApiPropertyOptional({
@@ -15,6 +27,56 @@ export class CheckInStaffStayDto {
 
 export class NoShowStaffStayDto {
   @ApiProperty({ minLength: 1, maxLength: 500, description: 'Operational reason for the no-show.' })
+  @ValidateIf((_, value: unknown) => value !== undefined)
+  @IsString()
+  @MaxLength(500)
+  reason!: string;
+}
+
+export class AmendStaffStayDto extends PartialType(
+  OmitType(CreateBookingDto, ['roomTypeSlug', 'guestCount', 'roomQuantity', 'guestEmail']),
+  { skipNullProperties: false },
+) {
+  @ApiPropertyOptional({ type: Number, minimum: 1, maximum: 20 })
+  @ValidateIf((_, value: unknown) => value !== undefined)
+  @IsInt()
+  @Min(1)
+  @Max(20)
+  guestCount?: number;
+
+  @ApiPropertyOptional({ type: Number, minimum: 1, maximum: 20 })
+  @ValidateIf((_, value: unknown) => value !== undefined)
+  @IsInt()
+  @Min(1)
+  @Max(20)
+  roomQuantity?: number;
+
+  @ApiPropertyOptional({
+    type: String,
+    format: 'email',
+    maxLength: 254,
+    nullable: true,
+    description: 'Pass null to remove the saved email.',
+  })
+  @Transform(({ value }: { value: unknown }) =>
+    typeof value === 'string' ? value.trim().toLowerCase() : value,
+  )
+  @IsOptional()
+  @IsEmail()
+  @MaxLength(254)
+  guestEmail?: string | null;
+}
+
+export class MoveStaffRoomDto {
+  @ApiProperty({ format: 'uuid', description: 'The room currently assigned to the stay.' })
+  @IsUUID()
+  sourceRoomId!: string;
+
+  @ApiProperty({ format: 'uuid', description: 'An inspected room of the same room type.' })
+  @IsUUID()
+  targetRoomId!: string;
+
+  @ApiProperty({ minLength: 1, maxLength: 500, description: 'Operational reason for the move.' })
   @ValidateIf((_, value: unknown) => value !== undefined)
   @IsString()
   @MaxLength(500)

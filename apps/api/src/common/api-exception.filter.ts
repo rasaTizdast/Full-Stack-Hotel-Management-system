@@ -92,6 +92,23 @@ const SAFE_DOMAIN_ERRORS: Record<string, { statusCode: number; message: string }
     statusCode: 409,
     message: 'A confirmed booking cannot be cancelled after check-in begins.',
   },
+  STAY_AMENDMENT_WINDOW_CLOSED: {
+    statusCode: 409,
+    message: 'Only confirmed stays arriving today or later can be amended.',
+  },
+  STAY_OUTSIDE_ROOM_MOVE_WINDOW: {
+    statusCode: 409,
+    message: 'A room move must take place on a business date inside the stay.',
+  },
+  ROOM_MOVE_SOURCE_NOT_ASSIGNED: {
+    statusCode: 409,
+    message: 'The source room is no longer assigned to the stay for the current business date.',
+  },
+  ROOM_MOVE_REASON_REQUIRED: { statusCode: 400, message: 'A room move reason is required.' },
+  ROOM_MOVE_REASON_INVALID: {
+    statusCode: 400,
+    message: 'The room move reason exceeds its maximum length.',
+  },
   WALK_IN_ARRIVAL_DATE_INVALID: {
     statusCode: 400,
     message: "Walk-ins must arrive on the hotel's current business date.",
@@ -161,7 +178,7 @@ const SAFE_DOMAIN_ERRORS: Record<string, { statusCode: number; message: string }
   },
   ROOM_NOT_INSPECTED: {
     statusCode: 409,
-    message: 'Assigned rooms must be inspected before check-in.',
+    message: 'The rooms required for this operation must be inspected.',
   },
   ROOM_ASSIGNMENT_OVERLAP: {
     statusCode: 409,

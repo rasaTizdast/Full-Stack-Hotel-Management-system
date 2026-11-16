@@ -6,6 +6,7 @@ import {
   HttpCode,
   HttpStatus,
   Param,
+  Patch,
   Post,
   Query,
   Req,
@@ -32,7 +33,9 @@ import { StaffBookingParamsDto } from './dto/staff-booking-params.dto';
 import { StaffBookingsQueryDto } from './dto/staff-bookings-query.dto';
 import { StaffBookingDetailDto, StaffBookingListDto } from './dto/staff-booking-response.dto';
 import {
+  AmendStaffStayDto,
   CheckInStaffStayDto,
+  MoveStaffRoomDto,
   NoShowStaffStayDto,
   StaffStayMutationDto,
 } from './dto/staff-stay-action.dto';
@@ -147,6 +150,61 @@ export class StaffBookingsController {
     @Body() dto: NoShowStaffStayDto,
   ): Promise<StaffStayMutationDto> {
     return this.staffBookings.noShow(params.reference, request.staff!, dto.reason);
+  }
+
+  @Patch(':reference')
+  @ApiOperation({
+    summary: 'Amend a confirmed stay arriving today or later before check-in.',
+    description:
+      'Send only fields to update. Dates are Gregorian, checkout is exclusive, and only added nights use the current rate.',
+  })
+  @ApiHeader({ name: 'X-CSRF-Token', required: true })
+  @ApiOkResponse({ type: StaffStayMutationDto })
+  @ApiBadRequestResponse({
+    type: ApiErrorResponseDto,
+    description: 'Invalid date, guest capacity, or amendment fields.',
+  })
+  @ApiUnauthorizedResponse({ type: ApiErrorResponseDto })
+  @ApiForbiddenResponse({ type: ApiErrorResponseDto })
+  @ApiNotFoundResponse({ type: ApiErrorResponseDto })
+  @ApiConflictResponse({
+    type: ApiErrorResponseDto,
+    description: 'Stay status or arrival date, availability, or existing room assignment conflict.',
+  })
+  amend(
+    @Req() request: StaffRequest,
+    @Param() params: StaffBookingParamsDto,
+    @Body() dto: AmendStaffStayDto,
+  ): Promise<StaffStayMutationDto> {
+    return this.staffBookings.amend(params.reference, request.staff!, dto);
+  }
+
+  @Post(':reference/room-move')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({
+    summary: 'Move an in-house stay to an inspected room of the same type.',
+    description:
+      'The move takes effect on the current property business date. A retry with an inactive source assignment returns a conflict.',
+  })
+  @ApiHeader({ name: 'X-CSRF-Token', required: true })
+  @ApiOkResponse({ type: StaffStayMutationDto })
+  @ApiBadRequestResponse({
+    type: ApiErrorResponseDto,
+    description: 'Invalid room IDs or a missing or invalid reason.',
+  })
+  @ApiUnauthorizedResponse({ type: ApiErrorResponseDto })
+  @ApiForbiddenResponse({ type: ApiErrorResponseDto })
+  @ApiNotFoundResponse({ type: ApiErrorResponseDto })
+  @ApiConflictResponse({
+    type: ApiErrorResponseDto,
+    description: 'Stay status or business date, room readiness, or assignment or block conflict.',
+  })
+  moveRoom(
+    @Req() request: StaffRequest,
+    @Param() params: StaffBookingParamsDto,
+    @Body() dto: MoveStaffRoomDto,
+  ): Promise<StaffStayMutationDto> {
+    return this.staffBookings.moveRoom(params.reference, request.staff!, dto);
   }
 
   @Post(':reference/confirm')

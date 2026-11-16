@@ -1,6 +1,7 @@
 import { randomUUID } from 'node:crypto';
 import { addDays } from '../src/availability/date-range';
 import {
+  bookingRoute,
   RoomBoardFixture,
   type RoomBoardFixture as RoomBoardFixtureType,
 } from './room-board-fixture';
@@ -416,6 +417,113 @@ describe('Staff stay worklists HTTP API', () => {
         endDate: nextDate,
       },
     ]);
+  });
+
+  it('protects stay amendments and room moves with session, capability, and CSRF checks', async () => {
+    const reference = stays.todayArrival.reference;
+    const requests = [
+      () => f.client().patch(bookingRoute(reference)).send({ guestName: 'Private Guest Updated' }),
+      () =>
+        f
+          .client()
+          .post(bookingRoute(reference) + '/room-move')
+          .send({
+            sourceRoomId: rooms[0].id,
+            targetRoomId: rooms[1].id,
+            reason: 'Operational move',
+          }),
+    ];
+    for (const send of requests) {
+      await send().expect(401).expect('Cache-Control', 'private, no-store');
+      await send().set(cashier.headers).expect(403).expect('Cache-Control', 'private, no-store');
+      await send()
+        .set({ Cookie: receptionist.headers.Cookie })
+        .expect(403)
+        .expect('Cache-Control', 'private, no-store');
+    }
+  });
+
+  it('rejects other booking fields and minimizes both mutation responses', async () => {
+    const confirmed = await createStay(
+      'amendMutation',
+      'CONFIRMED',
+      hotelBusinessDate,
+      nextDate,
+      'Private Amendment Guest',
+    );
+    const amendmentRoute = bookingRoute(confirmed.reference);
+    for (const extra of [
+      { roomTypeSlug: 'other' },
+      { roomTypeId: roomType.id },
+      { status: 'CHECKED_IN' },
+      { guestName: null },
+      { roomQuantity: true },
+      { guestCount: '3' },
+    ]) {
+      await f.client().patch(amendmentRoute).set(receptionist.headers).send(extra).expect(400);
+    }
+    await f
+      .client()
+      .patch(amendmentRoute)
+      .set(receptionist.headers)
+      .send({ guestPhone: 'invalid-phone-value' })
+      .expect(400)
+      .expect((response) => expect(response.text).not.toContain('invalid-phone-value'));
+    const amendment = await f
+      .client()
+      .patch(amendmentRoute)
+      .set(receptionist.headers)
+      .send({ guestName: 'Private Guest Updated', guestPhone: '0912 123 4567' })
+      .expect(200);
+    const updated = await f.prisma.booking.findUniqueOrThrow({
+      where: { publicReference: confirmed.reference },
+    });
+    expect(updated).toMatchObject({
+      guestName: 'Private Guest Updated',
+      guestPhone: '+989121234567',
+    });
+
+    const checkedIn = await createStay(
+      'moveMutation',
+      'CHECKED_IN',
+      hotelBusinessDate,
+      nextDate,
+      'Private Move Guest',
+      2,
+    );
+    const target = await f.prisma.room.create({
+      data: {
+        hotelId: rooms[2].hotelId,
+        roomTypeId: roomType.id,
+        roomNumber: '301',
+        housekeepingStatus: 'INSPECTED',
+      },
+    });
+    const moveRoute = bookingRoute(checkedIn.reference) + '/room-move';
+    const move = f.client().post(moveRoute).set(receptionist.headers);
+    const moved = await move
+      .send({
+        sourceRoomId: rooms[2].id,
+        targetRoomId: target.id,
+        reason: 'Private operational reason',
+      })
+      .expect(200);
+
+    for (const response of [amendment, moved]) {
+      expect(response.headers['cache-control']).toBe('private, no-store');
+      expect(Object.keys(response.body as object).sort()).toEqual([
+        'checkIn',
+        'checkOut',
+        'checkedInAt',
+        'confirmedAt',
+        'noShowAt',
+        'reference',
+        'status',
+      ]);
+      expect(response.text).not.toMatch(
+        /Private|guestPhone|guestEmail|totalPriceToman|assignmentId/,
+      );
+    }
   });
 
   it('rejects invalid dates and pagination and enforces receptionist capability', async () => {

@@ -12,6 +12,11 @@ const ALLOWED_AUDIT_FIELDS = new Set<AuditSafeField>([
   'isGenerated',
   'status',
   'nightlyPriceToman',
+  'checkIn',
+  'checkOut',
+  'roomQuantity',
+  'roomId',
+  'effectiveDate',
 ]);
 
 function assertSafeSnapshot(snapshot: AuditSnapshot | undefined): void {
