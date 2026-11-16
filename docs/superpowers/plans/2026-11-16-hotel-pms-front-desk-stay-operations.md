@@ -59,12 +59,12 @@
 
 **Files:** modify `apps/api/prisma/schema.prisma`, add a forward migration under `apps/api/prisma/migrations/`, modify `apps/api/src/bookings/booking-lifecycle.ts` and `booking-lifecycle.spec.ts`, and update lifecycle enums in booking DTOs.
 
-- [ ] Add failing table-driven tests for `CONFIRMED → CHECKED_IN`, `CONFIRMED → NO_SHOW`, retry idempotency, invalid transitions, and the terminal `CHECKED_OUT`/`NO_SHOW` states. Assert that existing pending/confirm/reject/cancel/expire decisions stay byte-for-byte equivalent.
-- [ ] Run `pnpm --filter @hotel/api test -- booking-lifecycle.spec.ts`; confirm failures are the missing stay transitions, not a test/setup error.
-- [ ] Add `CHECKED_IN`, `CHECKED_OUT`, and `NO_SHOW` to the Prisma enum and TypeScript lifecycle union. Add nullable checked-in/checked-out/no-show actor and timestamp fields plus `noShowReason`; add explicit `StaffUser` relations and indexes for status/check-in and status/check-out queries.
-- [ ] Generate a forward-only migration. Deploy it as an upgrade to isolated `hotel_hpm003_test` on port 55432 and as a fresh migration to a separate `_test` database in the same isolated container. Do not reset/drop either database.
-- [ ] Update the pure lifecycle resolver and run the focused lifecycle tests until green. Do not add a checkout action; `CHECKED_OUT` remains a schema-ready state for HPM-008.
-- [ ] Commit the schema/rules slice after `pnpm --filter @hotel/api exec prisma validate`, focused tests, and `git diff --check` pass.
+- [x] Add failing table-driven tests for `CONFIRMED → CHECKED_IN`, `CONFIRMED → NO_SHOW`, retry idempotency, invalid transitions, and the terminal `CHECKED_OUT`/`NO_SHOW` states. Assert that existing pending/confirm/reject/cancel/expire decisions stay byte-for-byte equivalent.
+- [x] Run `pnpm --filter @hotel/api test -- booking-lifecycle.spec.ts`; confirm failures are the missing stay transitions, not a test/setup error.
+- [x] Add `CHECKED_IN`, `CHECKED_OUT`, and `NO_SHOW` to the Prisma enum and TypeScript lifecycle union. Add nullable checked-in/checked-out/no-show actor and timestamp fields plus `noShowReason`; add explicit `StaffUser` relations and indexes for status/check-in and status/check-out queries.
+- [x] Generate a forward-only migration. Deploy it as an upgrade to isolated `hotel_hpm003_test` on port 55432 and as a fresh migration to a separate `_test` database in the same isolated container. Do not reset/drop either database.
+- [x] Update the pure lifecycle resolver and run the focused lifecycle tests until green. Do not add a checkout action; `CHECKED_OUT` remains a schema-ready state for HPM-008.
+- [x] Commit the schema/rules slice after `pnpm --filter @hotel/api exec prisma validate`, focused tests, and `git diff --check` pass.
 
 ### Task 2: Worklist query contract and front-desk API
 
@@ -108,20 +108,29 @@
 - [ ] Update client status unions and Persian text labels; verify occupancy is never conveyed by color alone and private data remains absent.
 - [ ] Run room-board API/web unit tests and focused desktop/mobile board Playwright; commit the integration.
 
-### Task 6: Responsive Persian front-desk workspaces
+### Task 6: Preserve the guest request follow-up promise
 
-**Files:** create the three front-desk routes, focused UI components/CSS module, staff API methods/types and tests; update `staff-dashboard-shell.tsx`, `staff-navigation.ts`, room-board UI, and the public booking confirmation only where needed.
+**Files:** modify `apps/web/src/components/booking/booking-flow.tsx`, `apps/web/src/components/booking/booking-flow.test.tsx`, and `apps/web/src/app/(public)/booking/page.tsx`.
+
+- [ ] Add failing component tests for a configured hotel phone, `contactPhone: null`, and the guest's own submitted phone after a successful public request. Assert no empty `tel:` anchor or placeholder contact is rendered.
+- [ ] Run `pnpm --filter @hotel/web test -- booking-flow.test.tsx`; confirm the missing follow-up copy/contact state causes the failures.
+- [ ] Pass the public hotel's nullable contact phone from the existing server route into `BookingFlow`. Retain the guest-entered phone in client state only for the current confirmation view; do not add it to the public booking response, route, URL, or logs.
+- [ ] Keep the result explicitly `PENDING_CONFIRMATION`, show the booking reference, say staff will follow up using the submitted number, and render a property call link only for a configured valid phone.
+- [ ] Run the focused component test and public booking Playwright after the fix. Keep the change localized to the confirmation function and its route prop; do not reformat unrelated booking-form code.
+
+### Task 7: Responsive Persian front-desk workspaces
+
+**Files:** create the three front-desk routes, focused UI components/CSS module, staff API methods/types and tests; update `staff-dashboard-shell.tsx`, `staff-navigation.ts`, and room-board UI.
 
 - [ ] Add failing component tests for role denial, loading/empty/error/retry, due-in and due-out states, readiness blockers, check-in/no-show confirmation, manager-only early override, walk-in idempotency UI, amendment preview, room move validation, and success/error focus handling.
 - [ ] Run the new web unit tests and verify failures describe missing UI states.
 - [ ] Build desktop worklist/detail layouts and mobile cards for arrivals, in-house, and departures. Show arrivals due today and overdue separately; show checked-in stays in-house and due-outs without a fake checkout action. Keep search/date/filter state after actions and refresh server state after success.
 - [ ] Add walk-in creation to arrivals, full assignment/readiness feedback and check-in/no-show actions to due-ins, a reasoned room-move action to in-house stays, future-only amendments in stay detail, and an informational departures list. Link assignment blockers to `/staff/rooms`.
 - [ ] Add role-aware navigation for ADMIN/MANAGER/RECEPTIONIST and set role home routes to the appropriate front-desk queue without exposing worklists to housekeeping.
-- [ ] Update public confirmation to state the request remains pending, show its reference, explain staff follow-up uses the submitted phone, and render a property call link only for a configured non-empty phone. Add tests for both `contactPhone: null` and a configured number.
 - [ ] Read the Next.js 16 route and data-fetching guides before route edits. Use the existing staff client, RTL tokens, CSS modules, accessible labels/focus/live announcements, confirmation semantics, 44px touch targets, and no horizontal overflow at 320px/390px.
 - [ ] Run focused component tests, TypeScript, scoped ESLint, `git diff --check`, and frontend Playwright before Designer review. Capture desktop and mobile screenshots.
 
-### Task 7: Specialist review, release evidence, and merge
+### Task 8: Specialist review, release evidence, and merge
 
 **Files:** update `docs/implementation-tickets.md`, this plan, API OpenAPI annotations/DTO docs, and only release-relevant setup documentation; do not update root `README.md` until HPM-010.
 
