@@ -171,7 +171,7 @@ describe('Staff room board HTTP API', () => {
       ],
     });
 
-    await f
+    const cleared = await f
       .client()
       .put(route)
       .set(reception.headers)
@@ -179,8 +179,17 @@ describe('Staff room board HTTP API', () => {
       .expect(200)
       .expect('Cache-Control', 'private, no-store');
     const unassigned = await board(f.checkIn);
+    const { revision: clearedRevision } = cleared.body as { revision: string };
+    expect(clearedRevision).not.toBe(expectedRevision);
     expect(unassigned.body).toMatchObject({
-      assignableBookings: [{ reference: booking.publicReference, unassignedRoomQuantity: 2 }],
+      assignableBookings: [
+        {
+          reference: booking.publicReference,
+          unassignedRoomQuantity: 2,
+          revision: clearedRevision,
+          assignments: [],
+        },
+      ],
     });
   });
 

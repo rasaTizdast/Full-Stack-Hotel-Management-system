@@ -41,12 +41,12 @@ function assignmentDto(record: Assignment, reference: string): RoomAssignmentDto
 }
 
 function assignmentSetDto(
-  bookingId: string,
+  revision: string,
   reference: string,
   assignments: Assignment[],
 ): RoomAssignmentSetDto {
   return {
-    revision: assignmentRevision(bookingId, assignments),
+    revision,
     assignments: assignments.map((assignment) => assignmentDto(assignment, reference)),
   };
 }
@@ -91,12 +91,15 @@ export class RoomAssignmentService {
       if (lockedBooking.status !== 'CONFIRMED') {
         throw new ConflictException({ code: 'BOOKING_STATUS_CONFLICT' });
       }
-      // The booking lock protects the complete active set until this transaction commits.
-      const current = await transaction.roomAssignment.findMany({
-        where: { bookingId, isActive: true },
+      // The booking lock protects the assignment history until this transaction commits.
+      const historyQuery = {
+        where: { bookingId },
         orderBy: { id: 'asc' },
         select: assignmentSelect,
-      });
+      } as const;
+      const history = await transaction.roomAssignment.findMany(historyQuery);
+      const revision = assignmentRevision(bookingId, history);
+      const current = history.filter((assignment) => assignment.isActive);
       const currentByInterval = new Map(
         current.map((assignment) => [intervalKey(assignment), assignment]),
       );
@@ -105,9 +108,9 @@ export class RoomAssignmentService {
         return assignment ? [assignment] : [];
       });
       if (current.length === desired.length && retained.length === desired.length) {
-        return assignmentSetDto(bookingId, reference, retained);
+        return assignmentSetDto(revision, reference, retained);
       }
-      if (dto.expectedRevision !== assignmentRevision(bookingId, current)) {
+      if (dto.expectedRevision !== revision) {
         throw new ConflictException({ code: 'ROOM_ASSIGNMENT_STALE' });
       }
       if (desired.length > lockedBooking.roomQuantity) {
@@ -172,7 +175,12 @@ export class RoomAssignmentService {
         });
         assignments.push(assignment);
       }
-      return assignmentSetDto(bookingId, reference, assignments);
+      const updatedHistory = await transaction.roomAssignment.findMany(historyQuery);
+      return assignmentSetDto(
+        assignmentRevision(bookingId, updatedHistory),
+        reference,
+        assignments,
+      );
     });
   }
 

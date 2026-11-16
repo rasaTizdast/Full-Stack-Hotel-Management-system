@@ -135,7 +135,7 @@ class RoomBoardAssignableBookingDto {
   @ApiProperty()
   roomQuantity!: number;
 
-  @ApiProperty({ description: 'Opaque revision of the complete active assignment set.' })
+  @ApiProperty({ description: 'Opaque revision of the booking assignment history.' })
   revision!: string;
 
   @ApiProperty({ description: 'Number of units without assignments on the selected board date.' })

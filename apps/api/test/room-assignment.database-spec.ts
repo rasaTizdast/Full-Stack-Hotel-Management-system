@@ -250,7 +250,9 @@ describe('PostgreSQL room assignment invariants', () => {
     const result = await unassign();
     const repeated = await unassign();
     expect(repeated.body).toEqual(result.body);
-    expect(result.body).toEqual({ revision: expectedRevision, assignments: [] });
+    const resultSet = result.body as { revision: string; assignments: unknown[] };
+    expect(resultSet.assignments).toEqual([]);
+    expect(resultSet.revision).not.toBe(expectedRevision);
     expect(await f.prisma.roomAssignment.findUnique({ where: { id } })).toMatchObject({
       isActive: false,
       changeReason: f.reason,
@@ -372,6 +374,68 @@ describe('PostgreSQL room assignment invariants', () => {
         select: { eventName: true, reason: true },
       }),
     ).toEqual([{ eventName: 'ROOM_ASSIGNED', reason: 'First editor' }]);
+  });
+
+  it('rejects the original edit after an assignment is created and cleared', async () => {
+    const { type, rooms } = await f.createProperty();
+    const booking = await f.booking(type.id);
+    const reference = booking.publicReference;
+    const initialRevision = await revisionFor(booking);
+    const editor = await f.staff('MANAGER');
+    const desired = [interval(rooms[0].id)];
+    const assigned = await replace(
+      reference,
+      desired,
+      initialRevision,
+      'Assign initial room',
+      editor,
+    ).expect(200);
+    const { revision: assignedRevision, assignments } = assigned.body as {
+      revision: string;
+      assignments: [{ id: string }];
+    };
+    const cleared = await replace(
+      reference,
+      [],
+      assignedRevision,
+      'Clear initial room',
+      editor,
+    ).expect(200);
+    const repeatedClear = await replace(
+      reference,
+      [],
+      assignedRevision,
+      'Clear initial room',
+      editor,
+    ).expect(200);
+    expect(repeatedClear.body).toEqual(cleared.body);
+
+    const stale = await replace(
+      reference,
+      desired,
+      initialRevision,
+      'Assign initial room',
+      editor,
+    ).expect(409);
+    expect(stale.body).toMatchObject({ code: 'ROOM_ASSIGNMENT_STALE' });
+    const { revision: clearedRevision } = cleared.body as { revision: string };
+    expect(clearedRevision).not.toBe(initialRevision);
+    expect(await revisionFor(booking)).toBe(clearedRevision);
+    const rows = await f.prisma.roomAssignment.findMany({
+      where: { bookingId: booking.id },
+      select: { id: true, roomId: true, isActive: true },
+    });
+    expect(rows).toEqual([{ id: assignments[0].id, roomId: rooms[0].id, isActive: false }]);
+    expect(
+      await f.prisma.auditEvent.findMany({
+        where: { actorStaffUserId: editor.id, targetType: 'ROOM_ASSIGNMENT' },
+        orderBy: { createdAt: 'asc' },
+        select: { eventName: true, reason: true },
+      }),
+    ).toEqual([
+      { eventName: 'ROOM_ASSIGNED', reason: 'Assign initial room' },
+      { eventName: 'ROOM_UNASSIGNED', reason: 'Clear initial room' },
+    ]);
   });
 
   it('serializes competing bookings even when callers send the same rooms in reversed order', async () => {

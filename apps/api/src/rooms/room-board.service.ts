@@ -109,13 +109,13 @@ export class RoomBoardService {
             checkOut: true,
             roomQuantity: true,
             assignments: {
-              where: { isActive: true },
               orderBy: [{ roomId: 'asc' }, { startDate: 'asc' }, { id: 'asc' }],
               select: {
                 id: true,
                 startDate: true,
                 endDate: true,
                 roomId: true,
+                isActive: true,
                 room: { select: { roomNumber: true } },
               },
             },
@@ -156,8 +156,11 @@ export class RoomBoardService {
           ...header,
           items,
           assignableBookings: bookings.map((booking) => {
+            const activeAssignments = booking.assignments.filter(
+              (assignment) => assignment.isActive,
+            );
             const assignedToday = new Set(
-              booking.assignments.flatMap(({ startDate, endDate, roomId }) =>
+              activeAssignments.flatMap(({ startDate, endDate, roomId }) =>
                 startDate <= date && date < endDate ? [roomId] : [],
               ),
             );
@@ -171,7 +174,7 @@ export class RoomBoardService {
               roomQuantity: booking.roomQuantity,
               revision: assignmentRevision(booking.id, booking.assignments),
               unassignedRoomQuantity: Math.max(0, booking.roomQuantity - assignedToday.size),
-              assignments: booking.assignments.map(({ id, roomId, room, startDate, endDate }) => ({
+              assignments: activeAssignments.map(({ id, roomId, room, startDate, endDate }) => ({
                 id,
                 roomId,
                 roomNumber: room.roomNumber,

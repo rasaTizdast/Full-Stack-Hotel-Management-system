@@ -1,23 +1,24 @@
 import { createHash } from 'node:crypto';
 
-type ActiveAssignmentInterval = {
+type AssignmentHistoryRow = {
   id: string;
   roomId: string;
   startDate: Date;
   endDate: Date;
+  isActive: boolean;
 };
 
 export function assignmentRevision(
   bookingId: string,
-  assignments: readonly ActiveAssignmentInterval[],
+  history: readonly AssignmentHistoryRow[],
 ): string {
-  const intervals = assignments
-    .map(({ id, roomId, startDate, endDate }) =>
-      JSON.stringify([id, roomId, startDate.getTime(), endDate.getTime()]),
+  const rows = history
+    .map(({ id, roomId, startDate, endDate, isActive }) =>
+      JSON.stringify([id, roomId, startDate.getTime(), endDate.getTime(), isActive]),
     )
     .sort();
 
   return createHash('sha256')
-    .update(JSON.stringify([bookingId, intervals]))
+    .update(JSON.stringify([bookingId, rows]))
     .digest('hex');
 }

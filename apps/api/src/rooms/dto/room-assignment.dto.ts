@@ -76,7 +76,7 @@ export class RoomAssignmentDto {
 }
 
 export class RoomAssignmentSetDto {
-  @ApiProperty({ description: 'Opaque revision of the returned assignment set.' })
+  @ApiProperty({ description: 'Opaque revision of the booking assignment history.' })
   revision!: string;
 
   @ApiProperty({ type: [RoomAssignmentDto] })
