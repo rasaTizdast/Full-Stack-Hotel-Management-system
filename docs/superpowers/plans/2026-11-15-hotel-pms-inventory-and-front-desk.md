@@ -57,7 +57,7 @@
 
 ### Task 1: Assignment operations and room-board API
 
-- Add assignment and unassignment DTOs and authenticated staff routes. Assignment accepts a confirmed booking, room, an inclusive-start/exclusive-end interval contained in that booking, and a reason. Unassignment deactivates the assignment row so its history is retained. Repeating an identical active assignment is safe and does not duplicate audit events.
+- Add assignment and unassignment DTOs and authenticated staff routes. API/database dates are Gregorian YYYY-MM-DD, timestamps are UTC, the hotel timezone defines business date, and intervals are inclusive-start/exclusive-end. Assignment accepts a confirmed booking, room, an interval contained in that booking, and a reason. Unassignment deactivates the assignment row so its history is retained. Repeating an identical active assignment is safe and does not duplicate audit events. Enforce the staff capability server-side, audit consequential changes atomically, and return private, no-store responses.
 - Enforce matching room type, active room, no conflicting active assignment or active block over the requested interval, and at most one distinct assigned room per booked unit. Assignment operations do not change booking or nightly inventory counters or public booking idempotency.
 - When staff cancels a confirmed booking, deactivate its active room assignments and write safe audit history in the same transaction as the existing cancellation/inventory release. Preserve lock order: booking row, room type, affected room rows in sorted order, then inventory rows.
 - In one transaction, lock the room-type row before the physical room row, then serialize against concurrent assignments and deactivation. Re-read current booking/room/assignment state after locks, write safe audit events atomically, and return stable conflict codes.
@@ -66,7 +66,7 @@
 
 ### Task 2: Staff room-board page and assignment workflow
 
-- Add protected /staff/rooms using the current role-aware staff shell, RTL tokens, CSS modules, and the Next.js 16 route guide. Keep /staff/rooms/manage as the physical catalog page; navigation must expose the operational board to authorized reception staff.
+- Add protected /staff/rooms using the current role-aware staff shell, RTL tokens, CSS modules, and the Next.js 16 route guide. Keep /staff/rooms/manage as the physical catalog page; navigation must expose the operational board to authorized reception staff. Browser requests for private staff data must set fetch cache to 'no-store'.
 - Render all rooms and any stay context with explicit Persian text and icon labels, including vacant+inspected, vacant+dirty, arriving/reserved, departing, active blocks, and true occupied state when the API has lifecycle evidence. Do not infer occupancy from a reservation assignment.
 - Add filters for date, room type, floor, housekeeping, and block/stay context. Default to the API business date, refresh every 30 seconds, provide manual refresh and last-updated time, retain the last board on refresh failure, and mark stale data clearly.
 - Let staff assign an eligible confirmed booking to a room and unassign an active assignment with a reason; show the assigned stay dates and minimal reference/guest name context without contact details.
