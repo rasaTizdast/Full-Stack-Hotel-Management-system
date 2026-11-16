@@ -14,6 +14,9 @@ enum BookingStatus {
   REJECTED
   CANCELLED
   EXPIRED
+  CHECKED_IN
+  CHECKED_OUT
+  NO_SHOW
 
   @@map("booking_status")
 }
@@ -169,35 +172,46 @@ model RoomNightInventory {
 }
 
 model Booking {
-  id                     String           @id @default(uuid()) @db.Uuid
-  publicReference        String           @unique @map("public_reference") @db.VarChar(16)
-  idempotencyKey         String?          @unique @map("idempotency_key") @db.VarChar(128)
-  idempotencyRequestHash String?          @map("idempotency_request_hash") @db.Char(64)
-  status                 BookingStatus    @default(PENDING_CONFIRMATION)
-  checkIn                DateTime         @map("check_in") @db.Date
-  checkOut               DateTime         @map("check_out") @db.Date
-  guestCount             Int              @map("guest_count")
-  roomTypeId             String           @map("room_type_id") @db.Uuid
-  roomQuantity           Int              @map("room_quantity")
-  guestName              String           @map("guest_name") @db.VarChar(160)
-  guestPhone             String           @map("guest_phone") @db.VarChar(32)
-  guestEmail             String?          @map("guest_email") @db.VarChar(254)
-  totalPriceToman        BigInt           @map("total_price_toman")
-  createdAt              DateTime         @default(now()) @map("created_at") @db.Timestamptz(3)
-  expiresAt              DateTime         @map("expires_at") @db.Timestamptz(3)
-  confirmedAt            DateTime?        @map("confirmed_at") @db.Timestamptz(3)
-  rejectedAt             DateTime?        @map("rejected_at") @db.Timestamptz(3)
-  cancelledAt            DateTime?        @map("cancelled_at") @db.Timestamptz(3)
-  expiredAt              DateTime?        @map("expired_at") @db.Timestamptz(3)
-  internalNote           String?          @map("internal_note") @db.VarChar(1000)
-  cancellationReason     String?          @map("cancellation_reason") @db.VarChar(500)
-  roomType               RoomType         @relation(fields: [roomTypeId], references: [id], onDelete: Restrict)
-  nights                 BookingNight[]
-  assignments            RoomAssignment[]
+  id                      String           @id @default(uuid()) @db.Uuid
+  publicReference         String           @unique @map("public_reference") @db.VarChar(16)
+  idempotencyKey          String?          @unique @map("idempotency_key") @db.VarChar(128)
+  idempotencyRequestHash  String?          @map("idempotency_request_hash") @db.Char(64)
+  status                  BookingStatus    @default(PENDING_CONFIRMATION)
+  checkIn                 DateTime         @map("check_in") @db.Date
+  checkOut                DateTime         @map("check_out") @db.Date
+  guestCount              Int              @map("guest_count")
+  roomTypeId              String           @map("room_type_id") @db.Uuid
+  roomQuantity            Int              @map("room_quantity")
+  guestName               String           @map("guest_name") @db.VarChar(160)
+  guestPhone              String           @map("guest_phone") @db.VarChar(32)
+  guestEmail              String?          @map("guest_email") @db.VarChar(254)
+  totalPriceToman         BigInt           @map("total_price_toman")
+  createdAt               DateTime         @default(now()) @map("created_at") @db.Timestamptz(3)
+  expiresAt               DateTime         @map("expires_at") @db.Timestamptz(3)
+  confirmedAt             DateTime?        @map("confirmed_at") @db.Timestamptz(3)
+  rejectedAt              DateTime?        @map("rejected_at") @db.Timestamptz(3)
+  cancelledAt             DateTime?        @map("cancelled_at") @db.Timestamptz(3)
+  expiredAt               DateTime?        @map("expired_at") @db.Timestamptz(3)
+  checkedInAt             DateTime?        @map("checked_in_at") @db.Timestamptz(3)
+  checkedInByStaffUserId  String?          @map("checked_in_by_staff_user_id") @db.Uuid
+  checkedOutAt            DateTime?        @map("checked_out_at") @db.Timestamptz(3)
+  checkedOutByStaffUserId String?          @map("checked_out_by_staff_user_id") @db.Uuid
+  noShowAt                DateTime?        @map("no_show_at") @db.Timestamptz(3)
+  noShowByStaffUserId     String?          @map("no_show_by_staff_user_id") @db.Uuid
+  noShowReason            String?          @map("no_show_reason") @db.VarChar(500)
+  internalNote            String?          @map("internal_note") @db.VarChar(1000)
+  cancellationReason      String?          @map("cancellation_reason") @db.VarChar(500)
+  roomType                RoomType         @relation(fields: [roomTypeId], references: [id], onDelete: Restrict)
+  checkedInBy             StaffUser?       @relation("BookingCheckInActor", fields: [checkedInByStaffUserId], references: [id], onDelete: Restrict)
+  checkedOutBy            StaffUser?       @relation("BookingCheckOutActor", fields: [checkedOutByStaffUserId], references: [id], onDelete: Restrict)
+  noShowBy                StaffUser?       @relation("BookingNoShowActor", fields: [noShowByStaffUserId], references: [id], onDelete: Restrict)
+  nights                  BookingNight[]
+  assignments             RoomAssignment[]
 
   @@unique([id, roomTypeId])
   @@index([status, createdAt])
   @@index([status, checkIn])
+  @@index([status, checkOut])
   @@index([roomTypeId, checkIn])
   @@map("bookings")
 }
@@ -230,6 +244,9 @@ model StaffUser {
   sessions               StaffSession[]
   createdRoomBlocks      RoomBlock[]      @relation("RoomBlockCreator")
   createdRoomAssignments RoomAssignment[] @relation("RoomAssignmentCreator")
+  checkedInBookings      Booking[]        @relation("BookingCheckInActor")
+  checkedOutBookings     Booking[]        @relation("BookingCheckOutActor")
+  noShowBookings         Booking[]        @relation("BookingNoShowActor")
   auditEvents            AuditEvent[]
 
   @@index([isActive, role])

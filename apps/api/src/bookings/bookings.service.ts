@@ -54,7 +54,7 @@ type BookingRecord = {
   }>;
 };
 
-export type StaffBookingAction = Exclude<BookingAction, 'EXPIRE'>;
+export type StaffBookingAction = Exclude<BookingAction, 'EXPIRE' | 'CHECK_IN' | 'NO_SHOW'>;
 
 export interface BookingTransitionOptions {
   internalNote?: string;

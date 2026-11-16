@@ -8,6 +8,9 @@ const BOOKING_STATUSES = [
   'REJECTED',
   'CANCELLED',
   'EXPIRED',
+  'CHECKED_IN',
+  'CHECKED_OUT',
+  'NO_SHOW',
 ] as const;
 
 function trimQueryValue(value: unknown): unknown {

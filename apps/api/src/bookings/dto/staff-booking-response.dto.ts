@@ -13,7 +13,16 @@ export class StaffBookingListItemDto {
   reference!: string;
 
   @ApiProperty({
-    enum: ['PENDING_CONFIRMATION', 'CONFIRMED', 'REJECTED', 'CANCELLED', 'EXPIRED'],
+    enum: [
+      'PENDING_CONFIRMATION',
+      'CONFIRMED',
+      'REJECTED',
+      'CANCELLED',
+      'EXPIRED',
+      'CHECKED_IN',
+      'CHECKED_OUT',
+      'NO_SHOW',
+    ],
     example: 'PENDING_CONFIRMATION',
   })
   status!: string;
