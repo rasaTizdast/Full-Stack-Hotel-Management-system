@@ -191,8 +191,9 @@ export class StaffBookingsService {
     reference: string,
     action: StaffBookingAction,
     options: BookingTransitionOptions = {},
+    actorStaffUserId?: string,
   ): Promise<StaffBookingDetailDto> {
-    await this.bookings.transition(reference, action, options);
+    await this.bookings.transition(reference, action, options, actorStaffUserId);
     return this.get(reference);
   }
 }

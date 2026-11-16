@@ -1,6 +1,8 @@
 import { ConflictException, Injectable, NotFoundException } from '@nestjs/common';
 import { Prisma } from '../generated/prisma/client';
 import { PrismaService } from '../database/prisma.service';
+import { AuditService } from '../audit/audit.service';
+import type { AuditSnapshot } from '../audit/audit.types';
 import { CreateRoomDto } from './dto/create-room.dto';
 import { StaffRoomsQueryDto } from './dto/staff-rooms-query.dto';
 import { StaffRoomDto, StaffRoomListDto } from './dto/staff-room-response.dto';
@@ -45,6 +47,7 @@ export class RoomsService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly capacity: RoomCapacityService,
+    private readonly audit: AuditService,
   ) {}
 
   async list(query: StaffRoomsQueryDto): Promise<StaffRoomListDto> {
@@ -70,7 +73,7 @@ export class RoomsService {
     return { items: rooms.map(toRoomDto) };
   }
 
-  async create(dto: CreateRoomDto): Promise<StaffRoomDto> {
+  async create(actorStaffUserId: string, dto: CreateRoomDto): Promise<StaffRoomDto> {
     return this.prisma.$transaction(async (transaction) => {
       if (!(await this.capacity.lockRoomType(transaction, dto.roomTypeId))) {
         throw new NotFoundException({ code: 'ROOM_TYPE_NOT_FOUND' });
@@ -112,45 +115,79 @@ export class RoomsService {
         hotelBusinessDate(roomType.hotel.timezone),
       );
       await this.capacity.persistProjection(transaction, inventory);
+      await this.audit.record(transaction, {
+        actorStaffUserId,
+        eventName: 'ROOM_CREATED',
+        targetType: 'ROOM',
+        targetId: room.id,
+        after: { roomNumber: room.roomNumber, isActive: room.isActive },
+      });
       return toRoomDto(room);
     });
   }
 
-  async update(roomId: string, dto: UpdateRoomDto): Promise<StaffRoomDto> {
-    const current = await this.prisma.room.findUnique({
-      where: { id: roomId },
-      select: roomSelect,
-    });
-    if (!current) throw new NotFoundException({ code: 'ROOM_NOT_FOUND' });
-    const roomNumberChanged = dto.roomNumber !== undefined && dto.roomNumber !== current.roomNumber;
-    if (!roomNumberChanged && dto.floor === undefined && dto.features === undefined) {
-      return toRoomDto(current);
-    }
-
-    try {
-      const updated = await this.prisma.room.update({
+  async update(
+    actorStaffUserId: string,
+    roomId: string,
+    dto: UpdateRoomDto,
+  ): Promise<StaffRoomDto> {
+    return this.prisma.$transaction(async (transaction) => {
+      await transaction.$queryRaw`SELECT "id" FROM "rooms" WHERE "id" = ${roomId}::uuid FOR UPDATE`;
+      const current = await transaction.room.findUnique({
         where: { id: roomId },
-        data: {
-          ...(roomNumberChanged && dto.roomNumber !== undefined
-            ? { roomNumber: dto.roomNumber, isGenerated: false }
-            : {}),
-          ...(dto.floor !== undefined ? { floor: dto.floor?.trim() || null } : {}),
-          ...(dto.features !== undefined
-            ? { features: dto.features.map((feature) => feature.trim()) }
-            : {}),
-        },
         select: roomSelect,
       });
-      return toRoomDto(updated);
-    } catch (error) {
-      if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002') {
-        throw domainConflict('ROOM_NUMBER_TAKEN');
+      if (!current) throw new NotFoundException({ code: 'ROOM_NOT_FOUND' });
+      const roomNumberChanged =
+        dto.roomNumber !== undefined && dto.roomNumber !== current.roomNumber;
+      if (!roomNumberChanged && dto.floor === undefined && dto.features === undefined) {
+        return toRoomDto(current);
       }
-      throw error;
-    }
+
+      try {
+        const updated = await transaction.room.update({
+          where: { id: roomId },
+          data: {
+            ...(roomNumberChanged && dto.roomNumber !== undefined
+              ? { roomNumber: dto.roomNumber, isGenerated: false }
+              : {}),
+            ...(dto.floor !== undefined ? { floor: dto.floor?.trim() || null } : {}),
+            ...(dto.features !== undefined
+              ? { features: dto.features.map((feature) => feature.trim()) }
+              : {}),
+          },
+          select: roomSelect,
+        });
+        const before: AuditSnapshot = {};
+        const after: AuditSnapshot = {};
+        if (roomNumberChanged) {
+          before.roomNumber = current.roomNumber;
+          after.roomNumber = updated.roomNumber;
+          before.isGenerated = current.isGenerated;
+          after.isGenerated = updated.isGenerated;
+        }
+        if (dto.floor !== undefined) {
+          before.floor = current.floor;
+          after.floor = updated.floor;
+        }
+        await this.audit.record(transaction, {
+          actorStaffUserId,
+          eventName: 'ROOM_UPDATED',
+          targetType: 'ROOM',
+          targetId: updated.id,
+          ...(Object.keys(before).length > 0 ? { before, after } : {}),
+        });
+        return toRoomDto(updated);
+      } catch (error) {
+        if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002') {
+          throw domainConflict('ROOM_NUMBER_TAKEN');
+        }
+        throw error;
+      }
+    });
   }
 
-  async deactivate(roomId: string): Promise<StaffRoomDto> {
+  async deactivate(actorStaffUserId: string, roomId: string): Promise<StaffRoomDto> {
     return this.prisma.$transaction(async (transaction) => {
       const initialRoom = await transaction.room.findUnique({
         where: { id: roomId },
@@ -201,11 +238,19 @@ export class RoomsService {
         where: { id: roomId },
         select: roomSelect,
       });
+      await this.audit.record(transaction, {
+        actorStaffUserId,
+        eventName: 'ROOM_DEACTIVATED',
+        targetType: 'ROOM',
+        targetId: roomId,
+        before: { isActive: true },
+        after: { isActive: false },
+      });
       return toRoomDto(updated);
     });
   }
 
-  async reactivate(roomId: string): Promise<StaffRoomDto> {
+  async reactivate(actorStaffUserId: string, roomId: string): Promise<StaffRoomDto> {
     return this.prisma.$transaction(async (transaction) => {
       const initialRoom = await transaction.room.findUnique({
         where: { id: roomId },
@@ -241,6 +286,16 @@ export class RoomsService {
         where: { id: roomId },
         select: roomSelect,
       });
+      if (!room.isActive) {
+        await this.audit.record(transaction, {
+          actorStaffUserId,
+          eventName: 'ROOM_REACTIVATED',
+          targetType: 'ROOM',
+          targetId: roomId,
+          before: { isActive: false },
+          after: { isActive: true },
+        });
+      }
       return toRoomDto(updated);
     });
   }

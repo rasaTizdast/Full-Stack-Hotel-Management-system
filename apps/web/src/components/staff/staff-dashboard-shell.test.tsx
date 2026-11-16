@@ -6,6 +6,7 @@ const receptionist = {
   username: 'reception',
   email: 'reception@example.test',
   role: 'RECEPTIONIST' as const,
+  mustChangePassword: false,
 };
 
 describe('StaffDashboardShell', () => {
@@ -53,6 +54,80 @@ describe('StaffDashboardShell', () => {
     );
   });
 
+  it('shows current shipped destinations according to each staff role', () => {
+    const { rerender } = render(
+      <StaffDashboardShell staff={{ ...receptionist, role: 'MANAGER' }} onLogout={vi.fn()}>
+        <p>صفحه مدیر</p>
+      </StaffDashboardShell>,
+    );
+
+    expect(screen.getByRole('link', { name: /^درخواست‌های رزرو/ })).toHaveAttribute(
+      'href',
+      '/staff/bookings',
+    );
+    expect(screen.getByRole('link', { name: /^اتاق‌های فیزیکی/ })).toHaveAttribute(
+      'href',
+      '/staff/rooms/manage',
+    );
+    expect(screen.getByRole('link', { name: /^ظرفیت و نرخ‌ها/ })).toHaveAttribute(
+      'href',
+      '/staff/inventory',
+    );
+    expect(screen.queryByRole('link', { name: /^حساب‌های کارکنان/ })).not.toBeInTheDocument();
+
+    rerender(
+      <StaffDashboardShell staff={receptionist} onLogout={vi.fn()}>
+        <p>صفحه پذیرش</p>
+      </StaffDashboardShell>,
+    );
+    expect(screen.queryByRole('link', { name: /^اتاق‌های فیزیکی/ })).not.toBeInTheDocument();
+    expect(screen.queryByRole('link', { name: /^ظرفیت و نرخ‌ها/ })).not.toBeInTheDocument();
+    expect(screen.queryByRole('link', { name: /^حساب‌های کارکنان/ })).not.toBeInTheDocument();
+  });
+
+  it('limits forced-password sessions to the password-change route', () => {
+    render(
+      <StaffDashboardShell
+        staff={{ ...receptionist, role: 'CASHIER', mustChangePassword: true }}
+        onLogout={vi.fn()}
+        currentPath="/staff/change-password"
+      >
+        <p>تغییر گذرواژه</p>
+      </StaffDashboardShell>,
+    );
+
+    expect(screen.getByRole('link', { name: /^تغییر گذرواژه الزامی/ })).toHaveAttribute(
+      'href',
+      '/staff/change-password',
+    );
+    expect(screen.queryByRole('link', { name: /^درخواست‌های رزرو/ })).not.toBeInTheDocument();
+    expect(screen.queryByRole('link', { name: /^ظرفیت و نرخ‌ها/ })).not.toBeInTheDocument();
+    expect(screen.queryByRole('link', { name: /^حساب‌های کارکنان/ })).not.toBeInTheDocument();
+  });
+
+  it('labels all named roles in Persian', () => {
+    const { rerender } = render(
+      <StaffDashboardShell staff={{ ...receptionist, role: 'MANAGER' }} onLogout={vi.fn()}>
+        <p>صفحه مدیر</p>
+      </StaffDashboardShell>,
+    );
+    expect(screen.getByText('مدیر شیفت')).toBeInTheDocument();
+
+    rerender(
+      <StaffDashboardShell staff={{ ...receptionist, role: 'HOUSEKEEPER' }} onLogout={vi.fn()}>
+        <p>صفحه خانه‌داری</p>
+      </StaffDashboardShell>,
+    );
+    expect(screen.getByText('خانه‌داری')).toBeInTheDocument();
+
+    rerender(
+      <StaffDashboardShell staff={{ ...receptionist, role: 'CASHIER' }} onLogout={vi.fn()}>
+        <p>صفحه صندوق</p>
+      </StaffDashboardShell>,
+    );
+    expect(screen.getByText('صندوق')).toBeInTheDocument();
+  });
+
   it('shows the physical rooms navigation to administrators and marks the active route', () => {
     render(
       <StaffDashboardShell
@@ -76,9 +151,28 @@ describe('StaffDashboardShell', () => {
     );
   });
 
-  it('scrolls the active route into view and includes an overflow cue', () => {
+  it('keeps the active route visible using only the nav scroll container', () => {
+    const originalScrollBy = HTMLElement.prototype.scrollBy;
+    const originalGetBoundingClientRect = HTMLElement.prototype.getBoundingClientRect;
     const originalScrollIntoView = HTMLElement.prototype.scrollIntoView;
+    const scrollBy = vi.fn();
     const scrollIntoView = vi.fn();
+    Object.defineProperty(HTMLElement.prototype, 'scrollBy', {
+      configurable: true,
+      value: scrollBy,
+    });
+    Object.defineProperty(HTMLElement.prototype, 'getBoundingClientRect', {
+      configurable: true,
+      value: function (this: HTMLElement) {
+        if (this.matches('.staff-nav')) {
+          return { left: 0, right: 100 } as DOMRect;
+        }
+        if (this.matches('.staff-nav a[aria-current="page"]')) {
+          return { left: -20, right: 60 } as DOMRect;
+        }
+        return originalGetBoundingClientRect.call(this);
+      },
+    });
     Object.defineProperty(HTMLElement.prototype, 'scrollIntoView', {
       configurable: true,
       value: scrollIntoView,
@@ -99,10 +193,9 @@ describe('StaffDashboardShell', () => {
         'aria-hidden',
         'true',
       );
-      expect(scrollIntoView).toHaveBeenCalledWith(
-        expect.objectContaining({ block: 'nearest', inline: 'nearest' }),
-      );
-      scrollIntoView.mockClear();
+      expect(scrollBy).toHaveBeenCalledWith({ left: -28, behavior: 'instant' });
+      expect(scrollIntoView).not.toHaveBeenCalled();
+      scrollBy.mockClear();
 
       rerender(
         <StaffDashboardShell
@@ -114,14 +207,25 @@ describe('StaffDashboardShell', () => {
         </StaffDashboardShell>,
       );
 
-      expect(scrollIntoView).toHaveBeenCalledWith(
-        expect.objectContaining({ block: 'nearest', inline: 'nearest' }),
-      );
+      expect(scrollBy).toHaveBeenCalledWith({ left: -28, behavior: 'instant' });
+      expect(scrollIntoView).not.toHaveBeenCalled();
       expect(screen.getByRole('link', { name: /^ظرفیت و نرخ‌ها/ })).toHaveAttribute(
         'aria-current',
         'page',
       );
     } finally {
+      if (originalScrollBy) {
+        Object.defineProperty(HTMLElement.prototype, 'scrollBy', {
+          configurable: true,
+          value: originalScrollBy,
+        });
+      } else {
+        delete (HTMLElement.prototype as Partial<HTMLElement>).scrollBy;
+      }
+      Object.defineProperty(HTMLElement.prototype, 'getBoundingClientRect', {
+        configurable: true,
+        value: originalGetBoundingClientRect,
+      });
       if (originalScrollIntoView) {
         Object.defineProperty(HTMLElement.prototype, 'scrollIntoView', {
           configurable: true,

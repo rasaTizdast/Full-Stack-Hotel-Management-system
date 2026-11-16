@@ -8,6 +8,7 @@ import {
 } from '@nestjs/common';
 import { Prisma } from '../generated/prisma/client';
 import { PrismaService } from '../database/prisma.service';
+import { AuditService } from '../audit/audit.service';
 import { getHotelBusinessDate, parseAvailabilityCriteria } from '../availability/date-range';
 import { assertGuestCapacity, calculateBookingTotal, hashBookingRequest } from './booking-rules';
 import {
@@ -102,7 +103,10 @@ const bookingPublicSelect = {
 
 @Injectable()
 export class BookingsService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly audit: AuditService,
+  ) {}
 
   async create(dto: CreateBookingDto, idempotencyKey: string): Promise<BookingResponseDto> {
     const criteria = parseAvailabilityCriteria({
@@ -229,6 +233,7 @@ export class BookingsService {
     reference: string,
     action: StaffBookingAction,
     options: BookingTransitionOptions = {},
+    actorStaffUserId?: string,
   ): Promise<BookingTransitionResult> {
     return this.prisma.$transaction(async (transaction) => {
       const booking = await this.lockBookingByReference(transaction, reference);
@@ -299,6 +304,18 @@ export class BookingsService {
       }
       if (internalNote) updateData.internalNote = internalNote;
       await transaction.booking.update({ where: { id: booking.id }, data: updateData });
+
+      if (actorStaffUserId) {
+        await this.audit.record(transaction, {
+          actorStaffUserId,
+          eventName: `BOOKING_${action}`,
+          targetType: 'BOOKING',
+          targetId: booking.id,
+          ...(cancellationReason ? { reason: cancellationReason } : {}),
+          before: { status: booking.status },
+          after: { status: decision.nextStatus },
+        });
+      }
 
       return { reference: booking.publicReference, status: decision.nextStatus };
     });

@@ -1,35 +1,25 @@
-import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
-import { expect } from '@playwright/test';
+import { expect, type Page } from '@playwright/test';
 import AxeBuilder from '@axe-core/playwright';
 import { test } from './staff-fixtures';
+import { getE2eEnvironmentValue } from './test-database';
 
 const apiPort = process.env.HBE_E2E_API_PORT ?? '4015';
 const webPort = process.env.HBE_E2E_WEB_PORT ?? '3015';
 const webOrigin = `http://localhost:${webPort}`;
 const apiBaseUrl = `http://localhost:${apiPort}/api/v1`;
 
-function localEnvValue(name: string): string | undefined {
-  const envPath = resolve(process.cwd(), '../../.env');
-  const line = readFileSync(envPath, 'utf8')
-    .split(/\r?\n/)
-    .find((entry) => entry.trimStart().startsWith(`${name}=`));
-  return line
-    ?.slice(line.indexOf('=') + 1)
-    .trim()
-    .replace(/^['"]|['"]$/g, '');
-}
-
 function demoCredentials() {
-  const email = process.env.DEMO_ADMIN_EMAIL ?? localEnvValue('DEMO_ADMIN_EMAIL');
-  const password = process.env.DEMO_ADMIN_PASSWORD ?? localEnvValue('DEMO_ADMIN_PASSWORD');
+  const workspaceRoot = resolve(process.cwd(), '../..');
+  const email = process.env.DEMO_ADMIN_EMAIL ?? getE2eEnvironmentValue('DEMO_ADMIN_EMAIL', workspaceRoot);
+  const password = process.env.DEMO_ADMIN_PASSWORD ?? getE2eEnvironmentValue('DEMO_ADMIN_PASSWORD', workspaceRoot);
   if (!email || !password) {
     throw new Error('Set fictional DEMO_ADMIN_EMAIL and DEMO_ADMIN_PASSWORD in the local .env.');
   }
   return { email, password };
 }
 
-async function signIn(page: import('@playwright/test').Page) {
+async function signIn(page: Page) {
   const credentials = demoCredentials();
   await page.goto('/staff/login');
   await page.getByLabel('ایمیل کاری').fill(credentials.email);
@@ -60,6 +50,7 @@ test('keeps signed-out staff routes private and the API denies direct calls', as
 test('allows staff to sign in and log out with the server session', async ({ page }) => {
   await signIn(page);
   await expect(page.getByRole('link', { name: /^ظرفیت و نرخ‌ها/ })).toBeVisible();
+  await expect(page.locator('html')).toHaveCSS('scroll-behavior', 'auto');
 
   const sessionCookie = (await page.context().cookies()).find(
     (cookie) => cookie.name === 'hotel_staff_session',
@@ -92,7 +83,8 @@ test('allows staff to sign in and log out with the server session', async ({ pag
   await page.reload();
   await expect(page.getByRole('link', { name: /^ظرفیت و نرخ‌ها/ })).toBeVisible();
 
-  await page.getByRole('button', { name: 'خروج از پنل' }).click();
+  const logoutButton = page.getByRole('button', { name: 'خروج از پنل' });
+  await logoutButton.click();
   await expect(page).toHaveURL(/\/staff\/login$/);
   expect(
     (await page.context().cookies()).some((cookie) => cookie.name === 'hotel_staff_session'),

@@ -1,6 +1,7 @@
 import * as argon2 from 'argon2';
 import { randomBytes } from 'node:crypto';
-import { Injectable, UnauthorizedException } from '@nestjs/common';
+import { BadRequestException, Injectable, UnauthorizedException } from '@nestjs/common';
+import { AuditService } from '../audit/audit.service';
 import { PrismaService } from '../database/prisma.service';
 import { hashCredential } from './credential-hash';
 import { STAFF_SESSION_TTL_SECONDS } from './staff-auth.cookies';
@@ -18,7 +19,10 @@ export class StaffAuthService {
     type: argon2.argon2id,
   });
 
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly audit: AuditService,
+  ) {}
 
   async login(email: string, password: string): Promise<StaffLoginResult> {
     const normalizedEmail = email.trim().toLowerCase();
@@ -72,15 +76,69 @@ export class StaffAuthService {
     });
   }
 
+  async changePassword(
+    staffUserId: string,
+    sessionId: string,
+    currentPassword: string,
+    newPassword: string,
+  ): Promise<void> {
+    const user = await this.prisma.staffUser.findUnique({
+      where: { id: staffUserId },
+      select: { id: true, passwordHash: true, mustChangePassword: true },
+    });
+    let currentPasswordMatches = false;
+    if (user) {
+      try {
+        currentPasswordMatches = await argon2.verify(user.passwordHash, currentPassword);
+      } catch {
+        currentPasswordMatches = false;
+      }
+    }
+    if (!user || !currentPasswordMatches) {
+      throw new UnauthorizedException('The current password is incorrect.');
+    }
+    if (await argon2.verify(user.passwordHash, newPassword)) {
+      throw new BadRequestException({
+        code: 'PASSWORD_REUSE',
+        message: 'Choose a password different from the current password.',
+      });
+    }
+
+    const passwordHash = await argon2.hash(newPassword, { type: argon2.argon2id });
+    await this.prisma.$transaction(async (transaction) => {
+      const update = await transaction.staffUser.updateMany({
+        where: { id: user.id, passwordHash: user.passwordHash },
+        data: { passwordHash, mustChangePassword: false },
+      });
+      if (update.count !== 1) {
+        throw new UnauthorizedException('The current password is incorrect.');
+      }
+      await transaction.staffSession.updateMany({
+        where: { staffUserId: user.id, id: { not: sessionId }, revokedAt: null },
+        data: { revokedAt: new Date() },
+      });
+      await this.audit.record(transaction, {
+        actorStaffUserId: user.id,
+        eventName: 'STAFF_PASSWORD_CHANGED',
+        targetType: 'STAFF_ACCOUNT',
+        targetId: user.id,
+        before: { mustChangePassword: user.mustChangePassword },
+        after: { mustChangePassword: false },
+      });
+    });
+  }
+
   toPublicStaff(user: {
     username: string;
     email: string;
-    role: 'ADMIN' | 'RECEPTIONIST';
+    role: 'ADMIN' | 'MANAGER' | 'RECEPTIONIST' | 'HOUSEKEEPER' | 'CASHIER';
+    mustChangePassword: boolean;
   }): PublicStaff {
     return {
       username: user.username,
       email: user.email,
       role: user.role,
+      mustChangePassword: user.mustChangePassword,
     };
   }
 }

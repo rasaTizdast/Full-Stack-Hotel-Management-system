@@ -1,88 +1,104 @@
 'use client';
 
-import { useStaffSession } from '@/components/staff/staff-session-provider';
 import Link from 'next/link';
+import { useStaffSession } from '@/components/staff/staff-session-provider';
+import { getStaffRoleLabel } from '@/lib/staff-navigation';
+
+const operationalLinks = {
+  inventory: {
+    href: '/staff/inventory',
+    title: 'مدیریت ظرفیت و نرخ‌ها',
+    detail: 'برنامه ظرفیت و نرخ اقامت را مشاهده و به‌روزرسانی کنید.',
+  },
+  rooms: {
+    href: '/staff/rooms/manage',
+    title: 'مدیریت اتاق‌های فیزیکی',
+    detail: 'شماره، وضعیت و ویژگی اتاق‌های اقامتگاه را مدیریت کنید.',
+  },
+  bookings: {
+    href: '/staff/bookings',
+    title: 'مشاهده درخواست‌های رزرو',
+    detail: 'درخواست‌های رزرو ثبت‌شده را بررسی و پیگیری کنید.',
+  },
+  accounts: {
+    href: '/staff/staff',
+    title: 'مدیریت کارکنان',
+    detail: 'حساب‌های کارکنان و سطح دسترسی آن‌ها را مدیریت کنید.',
+  },
+};
+
+function WorkspaceLink({ link }: { link: (typeof operationalLinks)[keyof typeof operationalLinks] }) {
+  return (
+    <Link className="staff-overview__action" href={link.href}>
+      <span className="staff-overview__action-icon" aria-hidden="true">
+        <svg viewBox="0 0 24 24" fill="none"><path d="M4 19.5h16M5.5 19V7.5h13V19M8 10h3v3H8zM13 10h3v3h-3z" /></svg>
+      </span>
+      <strong>{link.title}</strong>
+      <span className="staff-overview__action-description">{link.detail}</span>
+      <span className="staff-overview__action-link">رفتن به بخش <span aria-hidden="true">←</span></span>
+    </Link>
+  );
+}
 
 export default function StaffDashboardPage() {
   const { status, staff } = useStaffSession();
   if (status !== 'authenticated' || !staff) return null;
 
+  const links = staff.role === 'ADMIN'
+    ? [operationalLinks.accounts, operationalLinks.bookings, operationalLinks.rooms, operationalLinks.inventory]
+    : staff.role === 'MANAGER'
+      ? [operationalLinks.inventory, operationalLinks.rooms, operationalLinks.bookings]
+      : staff.role === 'RECEPTIONIST'
+        ? [operationalLinks.bookings]
+        : [];
+  const heading = staff.role === 'ADMIN'
+    ? 'مدیریت حساب‌های کارکنان'
+    : staff.role === 'MANAGER'
+      ? 'فضای مدیر اقامتگاه'
+      : staff.role === 'HOUSEKEEPER'
+        ? 'فضای خانه‌داری شما آماده است'
+        : staff.role === 'CASHIER'
+          ? 'فضای صندوق شما آماده است'
+          : 'فضای پذیرش';
+
   return (
-    <section className="staff-overview" aria-labelledby="staff-overview-title">
+    <section className="staff-overview" aria-labelledby="staff-home-title">
       <header className="staff-overview__hero">
         <div className="staff-overview__hero-copy">
-          <h1 id="staff-overview-title">رسیدگی به اقامت مهمانان</h1>
+          <p className="staff-overview__note-index">خانه‌باغ نارنج · شیراز</p>
+          <h1 id="staff-home-title">{heading}</h1>
           <p className="staff-overview__intro">
-            درخواست‌ها را بررسی کنید و ظرفیت اتاق‌ها را به‌روز نگه دارید.
+            {staff.role === 'ADMIN'
+              ? 'حساب‌های همکاران و دسترسی‌های پنل را از اینجا مدیریت کنید.'
+              : `خوش آمدید، ${staff.username}. فضای کاری ${getStaffRoleLabel(staff.role)} در دسترس شماست.`}
           </p>
-          <div className="staff-overview__hero-actions">
-            <Link className="staff-overview__primary-link" href="/staff/bookings">
-              مشاهده درخواست‌های رزرو
-            </Link>
-            {staff.role === 'ADMIN' && (
-              <Link className="staff-overview__secondary-link" href="/staff/inventory">
-                مدیریت ظرفیت و نرخ‌ها
-              </Link>
-            )}
-          </div>
         </div>
-        <aside className="staff-overview__hero-note" aria-label="یادآوری روند کار">
-          <span className="staff-overview__note-index">روال رسیدگی</span>
-          <div className="staff-overview__note-mark" aria-hidden="true">
-            <svg viewBox="0 0 48 48" fill="none">
-              <path d="M10 24.5 19.5 34 38 14" />
-              <circle cx="24" cy="24" r="20" />
-            </svg>
-          </div>
-          <strong>بررسی، سپس تأیید</strong>
-          <p>درخواست مهمان پس از پاسخ کارکنان به رزرو تبدیل می‌شود.</p>
+        <aside className="staff-overview__hero-note" aria-label="وضعیت فضای کاری">
+          <span className="staff-overview__note-mark" aria-hidden="true">✦</span>
+          <strong>{getStaffRoleLabel(staff.role)}</strong>
+          <p>دسترسی‌ها بر اساس نقش کاری شما تنظیم شده‌اند.</p>
         </aside>
       </header>
 
-      <div className="staff-overview__section-heading">
-        <div>
-          <h2>دسترسی سریع</h2>
-        </div>
-        <p>درخواست‌ها را پاسخ دهید یا ظرفیت اتاق‌ها را تنظیم کنید.</p>
-      </div>
-
-      <nav className="staff-overview__actions" aria-label="دسترسی سریع پنل">
-        <Link
-          className="staff-overview__action staff-overview__action--bookings"
-          href="/staff/bookings"
-        >
-          <span className="staff-overview__action-icon" aria-hidden="true">
-            <svg viewBox="0 0 28 28" fill="none">
-              <rect x="4.5" y="4.5" width="19" height="19" rx="4" />
-              <path d="M9 10h10M9 14h10M9 18h6" />
-            </svg>
-          </span>
-          <strong>درخواست‌های اقامت</strong>
-          <span className="staff-overview__action-description">
-            جزئیات هر درخواست را ببینید و پاسخ خود را ثبت کنید.
-          </span>
-          <span className="staff-overview__action-link">رفتن به فهرست درخواست‌ها</span>
-        </Link>
-
-        {staff.role === 'ADMIN' && (
-          <Link
-            className="staff-overview__action staff-overview__action--inventory"
-            href="/staff/inventory"
-          >
-            <span className="staff-overview__action-icon" aria-hidden="true">
-              <svg viewBox="0 0 28 28" fill="none">
-                <path d="m4.5 9 9.5-4.5L23.5 9 14 13.5 4.5 9Z" />
-                <path d="m4.5 14 9.5 4.5 9.5-4.5M4.5 19l9.5 4.5 9.5-4.5" />
-              </svg>
-            </span>
-            <strong>ظرفیت و نرخ اتاق‌ها</strong>
-            <span className="staff-overview__action-description">
-              ظرفیت و قیمت شبانه را برای بازه اقامت تنظیم کنید.
-            </span>
-            <span className="staff-overview__action-link">رفتن به برنامه اتاق‌ها</span>
-          </Link>
-        )}
-      </nav>
+      {links.length > 0 ? (
+        <>
+          <div className="staff-overview__section-heading">
+            <h2>دسترسی‌های کاری</h2>
+            <p>بخش‌های قابل استفاده برای نقش شما</p>
+          </div>
+          <div className="staff-overview__actions">
+            {links.map((link) => <WorkspaceLink key={link.href} link={link} />)}
+          </div>
+        </>
+      ) : (
+        <section className="staff-overview__quiet-state" aria-label="وضعیت کارهای امروز">
+          <span aria-hidden="true">✓</span>
+          <div>
+            <h2>هیچ کاری برای انجام در این لحظه ثبت نشده است.</h2>
+            <p>در صورت نیاز به پیگیری، از سرپرست شیفت راهنمایی بگیرید.</p>
+          </div>
+        </section>
+      )}
     </section>
   );
 }

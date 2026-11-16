@@ -29,6 +29,7 @@ describe('StaffRolesGuard', () => {
       username: 'admin@example.invalid',
       email: 'admin@example.invalid',
       role: 'ADMIN',
+      mustChangePassword: false,
     });
 
     expect(guard.canActivate(context)).toBe(true);
@@ -41,6 +42,7 @@ describe('StaffRolesGuard', () => {
       username: 'reception@example.invalid',
       email: 'reception@example.invalid',
       role: 'RECEPTIONIST',
+      mustChangePassword: false,
     });
 
     expect(() => guard.canActivate(context)).toThrow(ForbiddenException);

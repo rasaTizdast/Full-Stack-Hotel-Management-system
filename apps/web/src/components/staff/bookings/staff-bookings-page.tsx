@@ -82,7 +82,7 @@ function isActionable(booking: StaffBookingDetail): boolean {
 }
 
 export function StaffBookingsPage() {
-  const { csrfToken } = useStaffSession();
+  const { status, staff, csrfToken } = useStaffSession();
   const [draft, setDraft] = useState<FilterDraft>(EMPTY_FILTERS);
   const [filters, setFilters] = useState<StaffBookingFilters>({ page: 1, pageSize: PAGE_SIZE });
   const [filterErrors, setFilterErrors] = useState<
@@ -112,8 +112,10 @@ export function StaffBookingsPage() {
   const actionHeadingRef = useRef<HTMLHeadingElement>(null);
   const detailHeadingRef = useRef<HTMLHeadingElement>(null);
   const triggerRef = useRef<HTMLButtonElement>(null);
+  const canViewBookings = status === 'authenticated' && Boolean(staff && ['ADMIN', 'MANAGER', 'RECEPTIONIST'].includes(staff.role));
 
   useEffect(() => {
+    if (!canViewBookings) return;
     let active = true;
 
     listStaffBookings(filters)
@@ -132,10 +134,10 @@ export function StaffBookingsPage() {
     return () => {
       active = false;
     };
-  }, [filters, listRefresh]);
+  }, [canViewBookings, filters, listRefresh]);
 
   useEffect(() => {
-    if (!selectedReference) return;
+    if (!canViewBookings || !selectedReference) return;
 
     let active = true;
 
@@ -154,7 +156,7 @@ export function StaffBookingsPage() {
     return () => {
       active = false;
     };
-  }, [selectedReference]);
+  }, [canViewBookings, selectedReference]);
 
   useEffect(() => {
     if (actionDraft) actionHeadingRef.current?.focus();
@@ -205,6 +207,16 @@ export function StaffBookingsPage() {
     setListState('loading');
     setListError(null);
     setListRefresh((value) => value + 1);
+  }
+
+  if (status !== 'authenticated' || !staff) return null;
+  if (!canViewBookings) {
+    return (
+      <section className="staff-bookings-denied" aria-labelledby="staff-bookings-denied-title">
+        <h1 id="staff-bookings-denied-title">دسترسی به درخواست‌های رزرو</h1>
+        <p role="alert">این بخش برای مدیر اقامتگاه، مدیر شیفت و پذیرش در دسترس است.</p>
+      </section>
+    );
   }
 
   function retryDetail() {

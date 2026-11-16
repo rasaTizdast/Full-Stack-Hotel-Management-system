@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Header, Put, Query } from '@nestjs/common';
+import { Body, Controller, Get, Header, Put, Query, Req } from '@nestjs/common';
 import {
   ApiBadRequestResponse,
   ApiConflictResponse,
@@ -11,7 +11,8 @@ import {
   ApiUnauthorizedResponse,
 } from '@nestjs/swagger';
 import { ApiErrorResponseDto } from '../common/openapi-response.dto';
-import { RequireStaffRoles } from '../staff-auth/require-staff-roles.decorator';
+import { RequireStaffCapabilities } from '../staff-auth/require-staff-capabilities.decorator';
+import type { StaffRequest } from '../staff-auth/staff-auth.types';
 import { StaffInventoryRangeQueryDto } from './dto/staff-inventory-range-query.dto';
 import {
   StaffInventoryResponseDto,
@@ -26,21 +27,21 @@ import { StaffInventoryService } from './staff-inventory.service';
 export class StaffInventoryController {
   constructor(private readonly staffInventory: StaffInventoryService) {}
 
-  @RequireStaffRoles('ADMIN')
+  @RequireStaffCapabilities('MANAGE_INVENTORY')
   @Get('room-types')
   @Header('Cache-Control', 'private, no-store')
-  @ApiOperation({ summary: 'List active and inactive room types for the admin inventory editor.' })
+  @ApiOperation({ summary: 'List active and inactive room types for the staff inventory editor.' })
   @ApiOkResponse({ type: StaffInventoryRoomTypeOptionDto, isArray: true })
   @ApiUnauthorizedResponse({ type: ApiErrorResponseDto })
   @ApiForbiddenResponse({
     type: ApiErrorResponseDto,
-    description: 'Administrator access is required.',
+    description: 'Staff without inventory-management capability are not allowed.',
   })
   findRoomTypeOptions(): Promise<StaffInventoryRoomTypeOptionDto[]> {
     return this.staffInventory.findRoomTypeOptions();
   }
 
-  @RequireStaffRoles('ADMIN')
+  @RequireStaffCapabilities('MANAGE_INVENTORY')
   @Get()
   @Header('Cache-Control', 'private, no-store')
   @ApiOperation({
@@ -55,7 +56,7 @@ export class StaffInventoryController {
     return this.staffInventory.findRange(query);
   }
 
-  @RequireStaffRoles('ADMIN')
+  @RequireStaffCapabilities('MANAGE_INVENTORY')
   @Put()
   @Header('Cache-Control', 'private, no-store')
   @ApiOperation({
@@ -72,7 +73,10 @@ export class StaffInventoryController {
     type: ApiErrorResponseDto,
     description: 'Capacity cannot be lower than held plus booked rooms.',
   })
-  updateRange(@Body() dto: UpdateStaffInventoryDto): Promise<StaffInventoryResponseDto> {
-    return this.staffInventory.updateRange(dto);
+  updateRange(
+    @Req() request: StaffRequest,
+    @Body() dto: UpdateStaffInventoryDto,
+  ): Promise<StaffInventoryResponseDto> {
+    return this.staffInventory.updateRange(dto, request.staff!.id);
   }
 }

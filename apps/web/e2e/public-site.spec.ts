@@ -12,6 +12,7 @@ test('guests can browse API-backed hotel and room information', async ({ page })
 
   await expect(page.locator('html')).toHaveAttribute('lang', 'fa');
   await expect(page.locator('html')).toHaveAttribute('dir', 'rtl');
+  await expect(page.locator('html')).toHaveCSS('scroll-behavior', 'smooth');
   await expect(
     page.getByRole('heading', { level: 1, name: 'خانه‌باغ نارنج؛ هتل نمایشی' }),
   ).toBeVisible();

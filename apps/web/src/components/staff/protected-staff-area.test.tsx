@@ -3,11 +3,11 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { ProtectedStaffArea } from './protected-staff-area';
 import { getCurrentStaff, StaffApiError } from '@/lib/staff-api';
 
-const router = vi.hoisted(() => ({ replace: vi.fn() }));
+const router = vi.hoisted(() => ({ replace: vi.fn(), path: '/staff' }));
 
 vi.mock('next/navigation', () => ({
   useRouter: () => router,
-  usePathname: () => '/staff',
+  usePathname: () => router.path,
 }));
 vi.mock('@/lib/staff-api', async (importOriginal) => {
   const actual = await importOriginal<typeof import('@/lib/staff-api')>();
@@ -15,7 +15,10 @@ vi.mock('@/lib/staff-api', async (importOriginal) => {
 });
 
 describe('ProtectedStaffArea', () => {
-  beforeEach(() => router.replace.mockReset());
+  beforeEach(() => {
+    router.replace.mockReset();
+    router.path = '/staff';
+  });
 
   it('does not render protected content and redirects when the API session is missing', async () => {
     vi.mocked(getCurrentStaff).mockRejectedValue(
@@ -34,7 +37,12 @@ describe('ProtectedStaffArea', () => {
 
   it('returns to sign-in when a protected API call reports session expiry', async () => {
     vi.mocked(getCurrentStaff).mockResolvedValue({
-      staff: { username: 'admin', email: 'admin@example.test', role: 'ADMIN' },
+      staff: {
+        username: 'admin',
+        email: 'admin@example.test',
+        role: 'ADMIN',
+        mustChangePassword: false,
+      },
       csrfToken: 'in-memory-csrf-token',
     });
 
@@ -49,5 +57,50 @@ describe('ProtectedStaffArea', () => {
 
     await waitFor(() => expect(router.replace).toHaveBeenCalledWith('/staff/login'));
     expect(window.localStorage.length).toBe(0);
+  });
+
+  it('redirects a forced first-login session away from operational routes', async () => {
+    router.path = '/staff/bookings';
+    vi.mocked(getCurrentStaff).mockResolvedValue({
+      staff: {
+        username: 'new-reception',
+        email: 'reception@example.test',
+        role: 'RECEPTIONIST',
+        mustChangePassword: true,
+      },
+      csrfToken: 'initial-csrf-token',
+    });
+
+    render(
+      <ProtectedStaffArea>
+        <p>اطلاعات رزروها</p>
+      </ProtectedStaffArea>,
+    );
+
+    await waitFor(() => expect(router.replace).toHaveBeenCalledWith('/staff/change-password'));
+    expect(screen.queryByText('اطلاعات رزروها')).not.toBeInTheDocument();
+    expect(screen.queryByRole('link', { name: /درخواست‌های رزرو/ })).not.toBeInTheDocument();
+  });
+
+  it('sends sessions that completed the forced change to their role home', async () => {
+    router.path = '/staff/change-password';
+    vi.mocked(getCurrentStaff).mockResolvedValue({
+      staff: {
+        username: 'reception',
+        email: 'reception@example.test',
+        role: 'RECEPTIONIST',
+        mustChangePassword: false,
+      },
+      csrfToken: 'rotated-csrf-token',
+    });
+
+    render(
+      <ProtectedStaffArea>
+        <p>تغییر گذرواژه</p>
+      </ProtectedStaffArea>,
+    );
+
+    await waitFor(() => expect(router.replace).toHaveBeenCalledWith('/staff/bookings'));
+    expect(screen.queryByText('تغییر گذرواژه')).not.toBeInTheDocument();
   });
 });

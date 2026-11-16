@@ -2,14 +2,15 @@ import { ArgumentsHost, BadRequestException } from '@nestjs/common';
 import { ApiExceptionFilter } from './api-exception.filter';
 
 describe('ApiExceptionFilter safe availability errors', () => {
-  function getResponseFor(exception: BadRequestException) {
+  function getResponseFor(exception: BadRequestException, path = '/') {
     const response = {
       status: jest.fn().mockReturnThis(),
       json: jest.fn((payload: unknown) => payload),
+      setHeader: jest.fn(),
     };
     const host = {
       switchToHttp: () => ({
-        getRequest: () => ({ requestId: 'request-123' }),
+        getRequest: () => ({ requestId: 'request-123', path }),
         getResponse: () => response,
       }),
     } as unknown as ArgumentsHost;
@@ -50,5 +51,14 @@ describe('ApiExceptionFilter safe availability errors', () => {
       requestId: 'request-123',
     });
     expect(JSON.stringify(payload)).not.toContain('sensitive caller data');
+  });
+
+  it('marks staff API errors private and non-cacheable', () => {
+    const response = getResponseFor(
+      new BadRequestException('Bad request.'),
+      '/api/v1/staff/admin/accounts',
+    );
+
+    expect(response.setHeader).toHaveBeenCalledWith('Cache-Control', 'private, no-store');
   });
 });

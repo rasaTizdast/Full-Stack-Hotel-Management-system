@@ -73,12 +73,14 @@ describe('Staff physical room API (e2e)', () => {
   const suffix = randomUUID();
   const hotelId = randomUUID();
   const adminId = randomUUID();
+  const managerId = randomUUID();
   const receptionistId = randomUUID();
   let app: INestApplication<App>;
   let prisma: PrismaService;
   let physicalSchemaAvailable = false;
   let roomTypeId: string;
   let admin: { cookie: string; csrfToken: string };
+  let manager: { cookie: string; csrfToken: string };
   let receptionist: { cookie: string; csrfToken: string };
 
   async function signIn(email: string, password: string) {
@@ -95,7 +97,7 @@ describe('Staff physical room API (e2e)', () => {
     };
   }
 
-  async function createStaffUser(id: string, role: 'ADMIN' | 'RECEPTIONIST') {
+  async function createStaffUser(id: string, role: 'ADMIN' | 'MANAGER' | 'RECEPTIONIST') {
     const email = `rooms-${role.toLowerCase()}-${suffix}@example.invalid`;
     const password = `rooms-${role.toLowerCase()}-e2e-password`;
     await prisma.staffUser.create({
@@ -152,6 +154,7 @@ describe('Staff physical room API (e2e)', () => {
     });
     roomTypeId = roomType.id;
     admin = await createStaffUser(adminId, 'ADMIN');
+    manager = await createStaffUser(managerId, 'MANAGER');
     receptionist = await createStaffUser(receptionistId, 'RECEPTIONIST');
   }, 30000);
 
@@ -161,9 +164,12 @@ describe('Staff physical room API (e2e)', () => {
     if (prisma) {
       await cleanFixtures();
       await prisma.staffSession.deleteMany({
-        where: { staffUserId: { in: [adminId, receptionistId] } },
+        where: { staffUserId: { in: [adminId, managerId, receptionistId] } },
       });
-      await prisma.staffUser.deleteMany({ where: { id: { in: [adminId, receptionistId] } } });
+      await prisma.staffUser.updateMany({
+        where: { id: { in: [adminId, managerId, receptionistId] } },
+        data: { isActive: false },
+      });
       await prisma.roomType.deleteMany({ where: { id: roomTypeId } });
       await prisma.hotel.deleteMany({ where: { id: hotelId } });
     }
@@ -173,8 +179,8 @@ describe('Staff physical room API (e2e)', () => {
   it('creates, edits, and filters physical rooms using stable public fields', async () => {
     const created = await request(app.getHttpServer())
       .post('/api/v1/staff/rooms')
-      .set('Cookie', admin.cookie)
-      .set('X-CSRF-Token', admin.csrfToken)
+      .set('Cookie', manager.cookie)
+      .set('X-CSRF-Token', manager.csrfToken)
       .expect('Cache-Control', 'private, no-store')
       .send({ roomTypeId, roomNumber: '201', floor: '2', features: ['balcony'] })
       .expect(201);
@@ -189,11 +195,19 @@ describe('Staff physical room API (e2e)', () => {
       isGenerated: false,
     });
     const roomId = createdRoom.id;
+    const creationAudit = await prisma.auditEvent.findFirst({
+      where: { eventName: 'ROOM_CREATED', targetId: roomId },
+    });
+    expect(creationAudit).toMatchObject({
+      actorStaffUserId: managerId,
+      targetType: 'ROOM',
+      after: { roomNumber: '201', isActive: true },
+    });
 
     const updated = await request(app.getHttpServer())
       .patch(`/api/v1/staff/rooms/${roomId}`)
-      .set('Cookie', admin.cookie)
-      .set('X-CSRF-Token', admin.csrfToken)
+      .set('Cookie', manager.cookie)
+      .set('X-CSRF-Token', manager.csrfToken)
       .expect('Cache-Control', 'private, no-store')
       .send({ floor: '3', features: ['balcony', 'city-view'] })
       .expect(200);
@@ -205,13 +219,29 @@ describe('Staff physical room API (e2e)', () => {
 
     const listed = await request(app.getHttpServer())
       .get('/api/v1/staff/rooms')
-      .set('Cookie', admin.cookie)
+      .set('Cookie', manager.cookie)
       .query({ roomTypeId, floor: '3', isActive: 'true', search: '201' })
       .expect('Cache-Control', 'private, no-store')
       .expect(200);
     const listedRooms = bodyAs<RoomsApiResponse>(listed).items;
     expect(listedRooms).toHaveLength(1);
     expect(listedRooms[0]).toMatchObject({ id: roomId, roomNumber: '201', floor: '3' });
+
+    const receptionistBoard = await request(app.getHttpServer())
+      .get('/api/v1/staff/rooms')
+      .set('Cookie', receptionist.cookie)
+      .query({ search: '201' })
+      .expect(200);
+    expect(bodyAs<RoomsApiResponse>(receptionistBoard).items[0].id).toBe(roomId);
+
+    await request(app.getHttpServer())
+      .get('/api/v1/staff/inventory/room-types')
+      .set('Cookie', manager.cookie)
+      .expect(200);
+    await request(app.getHttpServer())
+      .get('/api/v1/staff/inventory/room-types')
+      .set('Cookie', receptionist.cookie)
+      .expect(403);
   });
 
   it('rejects duplicate room numbers within the property', async () => {
@@ -567,8 +597,8 @@ describe('Staff physical room API (e2e)', () => {
     );
     const response = await request(app.getHttpServer())
       .put('/api/v1/staff/inventory')
-      .set('Cookie', admin.cookie)
-      .set('X-CSRF-Token', admin.csrfToken)
+      .set('Cookie', manager.cookie)
+      .set('X-CSRF-Token', manager.csrfToken)
       .expect('Cache-Control', 'private, no-store')
       .send({
         roomTypeId,
@@ -577,6 +607,18 @@ describe('Staff physical room API (e2e)', () => {
         nightlyPriceToman: '2500',
       })
       .expect(200);
+
+    await request(app.getHttpServer())
+      .put('/api/v1/staff/inventory')
+      .set('Cookie', receptionist.cookie)
+      .set('X-CSRF-Token', receptionist.csrfToken)
+      .send({
+        roomTypeId,
+        startDate: '2027-07-03',
+        endDate: '2027-07-04',
+        nightlyPriceToman: '2600',
+      })
+      .expect(403);
 
     expect(bodyAs<InventoryApiResponse>(response).nights[0]).toMatchObject({
       totalRooms: 2,

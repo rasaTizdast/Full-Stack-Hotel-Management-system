@@ -1,6 +1,7 @@
 import { ConflictException, NotFoundException } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
 import { PrismaService } from '../database/prisma.service';
+import { AuditService } from '../audit/audit.service';
 import { RoomCapacityService } from '../rooms/room-capacity.service';
 import { StaffInventoryRangeQueryDto } from './dto/staff-inventory-range-query.dto';
 import { UpdateStaffInventoryDto } from './dto/update-staff-inventory.dto';
@@ -24,6 +25,7 @@ describe('StaffInventoryService', () => {
     lockAndProjectInventory: jest.Mock;
     persistProjection: jest.Mock;
   };
+  const audit = { record: jest.fn().mockResolvedValue(undefined) };
 
   const roomType = {
     id: '30cd1675-e815-42b2-91ed-037bd00553f5',
@@ -104,6 +106,7 @@ describe('StaffInventoryService', () => {
         StaffInventoryService,
         { provide: PrismaService, useValue: prisma },
         { provide: RoomCapacityService, useValue: capacity },
+        { provide: AuditService, useValue: audit },
       ],
     }).compile();
     service = moduleFixture.get(StaffInventoryService);
@@ -174,7 +177,7 @@ describe('StaffInventoryService', () => {
       nightlyPriceToman: '4500000',
     };
 
-    const result = await service.updateRange(dto);
+    const result = await service.updateRange(dto, 'inventory-actor');
 
     expect(capacity.lockRoomType).toHaveBeenCalledWith(transaction, roomType.id);
     expect(transaction.roomNightInventory.createMany).toHaveBeenCalledWith({
@@ -215,6 +218,7 @@ describe('StaffInventoryService', () => {
       data: { nightlyPriceToman: 4_500_000n },
     });
     expect(result.nights).toHaveLength(2);
+    expect(audit.record).toHaveBeenCalledTimes(2);
   });
 
   it('does not update rates when the projection would violate held/booked capacity', async () => {
@@ -226,7 +230,9 @@ describe('StaffInventoryService', () => {
       nightlyPriceToman: '4500000',
     };
 
-    await expect(service.updateRange(dto)).rejects.toBeInstanceOf(ConflictException);
+    await expect(service.updateRange(dto, 'inventory-actor')).rejects.toBeInstanceOf(
+      ConflictException,
+    );
     expect(transaction.roomNightInventory.updateMany).not.toHaveBeenCalled();
   });
 
@@ -275,7 +281,7 @@ describe('StaffInventoryService', () => {
       nightlyPriceToman: '4500000',
     };
 
-    await expect(service.updateRange(dto)).rejects.toMatchObject({
+    await expect(service.updateRange(dto, 'inventory-actor')).rejects.toMatchObject({
       response: { code: 'HISTORICAL_INVENTORY_READ_ONLY' },
     });
     expect(transaction.roomNightInventory.createMany).not.toHaveBeenCalled();

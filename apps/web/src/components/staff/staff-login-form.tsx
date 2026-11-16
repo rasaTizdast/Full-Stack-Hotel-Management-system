@@ -3,6 +3,7 @@
 import { useRouter } from 'next/navigation';
 import { useState, type FormEvent } from 'react';
 import { loginStaff, StaffApiError } from '@/lib/staff-api';
+import { getStaffHomePath } from '@/lib/staff-navigation';
 
 export function StaffLoginForm() {
   const router = useRouter();
@@ -17,8 +18,10 @@ export function StaffLoginForm() {
     setSubmitting(true);
 
     try {
-      await loginStaff(email.trim(), password);
-      router.replace('/staff');
+      const session = await loginStaff(email.trim(), password);
+      router.replace(
+        session.staff.mustChangePassword ? '/staff/change-password' : getStaffHomePath(session.staff.role),
+      );
     } catch (cause) {
       if (cause instanceof StaffApiError && cause.status === 401) {
         setError('ایمیل یا گذرواژه درست نیست.');

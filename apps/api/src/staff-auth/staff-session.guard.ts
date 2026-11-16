@@ -14,6 +14,11 @@ import type { StaffRequest } from './staff-auth.types';
 
 const STAFF_API_PREFIX = '/api/v1/staff/';
 const SAFE_METHODS = new Set(['GET', 'HEAD', 'OPTIONS']);
+const FORCED_PASSWORD_CHANGE_ROUTES = new Set([
+  '/api/v1/staff/auth/me',
+  '/api/v1/staff/auth/change-password',
+  '/api/v1/staff/auth/logout',
+]);
 
 @Injectable()
 export class StaffSessionGuard implements CanActivate {
@@ -49,7 +54,14 @@ export class StaffSessionGuard implements CanActivate {
       },
       include: {
         staffUser: {
-          select: { id: true, username: true, email: true, role: true, isActive: true },
+          select: {
+            id: true,
+            username: true,
+            email: true,
+            role: true,
+            isActive: true,
+            mustChangePassword: true,
+          },
         },
       },
     });
@@ -62,6 +74,7 @@ export class StaffSessionGuard implements CanActivate {
       username: session.staffUser.username,
       email: session.staffUser.email,
       role: session.staffUser.role,
+      mustChangePassword: session.staffUser.mustChangePassword,
     };
     request.staffSession = { id: session.id, csrfTokenHash: session.csrfTokenHash };
 
@@ -77,6 +90,13 @@ export class StaffSessionGuard implements CanActivate {
       ) {
         throw new ForbiddenException('A valid CSRF token is required.');
       }
+    }
+
+    if (session.staffUser.mustChangePassword && !FORCED_PASSWORD_CHANGE_ROUTES.has(request.path)) {
+      throw new ForbiddenException({
+        code: 'PASSWORD_CHANGE_REQUIRED',
+        message: 'Change your password before accessing staff operations.',
+      });
     }
 
     return true;

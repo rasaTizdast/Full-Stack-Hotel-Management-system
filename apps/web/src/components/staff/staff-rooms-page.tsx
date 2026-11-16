@@ -143,6 +143,7 @@ export function StaffRoomsPage() {
   const actionTrigger = useRef<HTMLButtonElement | null>(null);
   const roomListHeading = useRef<HTMLHeadingElement>(null);
   const editorHeading = useRef<HTMLHeadingElement>(null);
+  const canManageRooms = Boolean(staff && ['ADMIN', 'MANAGER'].includes(staff.role));
 
   async function loadRooms(query: StaffRoomsQuery, nextFilters?: RoomFilters) {
     const requestId = ++loadRequestId.current;
@@ -167,7 +168,7 @@ export function StaffRoomsPage() {
   }
 
   useEffect(() => {
-    if (status !== 'authenticated' || staff?.role !== 'ADMIN') return;
+    if (status !== 'authenticated' || !canManageRooms) return;
     let active = true;
     const requestId = ++loadRequestId.current;
     Promise.all([getStaffRooms(), getStaffInventoryRoomTypes()])
@@ -192,7 +193,7 @@ export function StaffRoomsPage() {
     return () => {
       active = false;
     };
-  }, [staff?.role, status]);
+  }, [canManageRooms, status]);
 
   useEffect(() => {
     if (pendingAction) confirmationButton.current?.focus();
@@ -217,11 +218,11 @@ export function StaffRoomsPage() {
 
   if (status !== 'authenticated' || !staff) return null;
 
-  if (staff.role !== 'ADMIN') {
+  if (!canManageRooms) {
     return (
       <section className="staff-rooms-denied" aria-labelledby="staff-rooms-denied-title">
         <h1 id="staff-rooms-denied-title">دسترسی به مدیریت اتاق‌ها</h1>
-        <p role="alert">این بخش فقط برای مدیر اقامتگاه در دسترس است.</p>
+        <p role="alert">این بخش برای مدیر اقامتگاه و مدیر شیفت در دسترس است.</p>
       </section>
     );
   }

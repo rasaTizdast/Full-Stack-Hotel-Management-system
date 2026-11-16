@@ -9,7 +9,7 @@ const session = vi.hoisted(() => ({
     staff: {
       username: 'reception',
       email: 'reception@example.test',
-      role: 'RECEPTIONIST' as 'RECEPTIONIST' | 'ADMIN',
+      role: 'RECEPTIONIST' as 'RECEPTIONIST' | 'ADMIN' | 'MANAGER',
     },
     csrfToken: 'csrf-token',
     error: null,
@@ -150,6 +150,14 @@ describe('StaffInventoryPage', () => {
         expect.objectContaining({ roomTypeId: inactiveRoomTypeOption.id }),
       );
     });
+  });
+
+  it('allows managers to load capacity and rates', async () => {
+    session.current.staff.role = 'MANAGER';
+    render(<StaffInventoryPage />);
+
+    expect(await screen.findByRole('table', { name: 'وضعیت ظرفیت و نرخ هر شب' })).toBeInTheDocument();
+    expect(inventoryApi.getStaffInventoryRoomTypes).toHaveBeenCalledOnce();
   });
 
   it('marks missing historical capacity as unavailable instead of displaying zero', async () => {

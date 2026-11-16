@@ -31,11 +31,20 @@ describe('StaffLoginForm', () => {
     expect(screen.getByRole('alert')).not.toHaveTextContent('staff@example.test');
   });
 
-  it('sends credentials to the staff API and opens the dashboard after sign-in', async () => {
+  it('sends credentials to the staff API and opens the role workspace after sign-in', async () => {
     vi.mocked(fetch).mockResolvedValue(
-      new Response(JSON.stringify({ staff: { email: 'admin@example.test', role: 'ADMIN' } }), {
-        status: 200,
-      }),
+      new Response(
+        JSON.stringify({
+          staff: {
+            username: 'admin',
+            email: 'admin@example.test',
+            role: 'ADMIN',
+            mustChangePassword: false,
+          },
+          csrfToken: 'csrf-login',
+        }),
+        { status: 200 },
+      ),
     );
 
     render(<StaffLoginForm />);
@@ -47,7 +56,7 @@ describe('StaffLoginForm', () => {
     });
     fireEvent.click(screen.getByRole('button', { name: 'ورود به پنل' }));
 
-    await waitFor(() => expect(router.replace).toHaveBeenCalledWith('/staff'));
+    await waitFor(() => expect(router.replace).toHaveBeenCalledWith('/staff/staff'));
     expect(fetch).toHaveBeenCalledWith(
       'http://localhost:4000/api/v1/staff/auth/login',
       expect.objectContaining({
@@ -56,5 +65,30 @@ describe('StaffLoginForm', () => {
         body: JSON.stringify({ email: 'admin@example.test', password: 'local-demo-password-123' }),
       }),
     );
+  });
+
+  it('sends first-login staff to the required password update', async () => {
+    vi.mocked(fetch).mockResolvedValue(
+      Response.json({
+        staff: {
+          username: 'new-cashier',
+          email: 'cashier@example.test',
+          role: 'CASHIER',
+          mustChangePassword: true,
+        },
+        csrfToken: 'csrf-login',
+      }),
+    );
+
+    render(<StaffLoginForm />);
+    fireEvent.change(screen.getByLabelText('ایمیل کاری'), {
+      target: { value: 'cashier@example.test' },
+    });
+    fireEvent.change(screen.getByLabelText('گذرواژه'), {
+      target: { value: 'initial-password' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'ورود به پنل' }));
+
+    await waitFor(() => expect(router.replace).toHaveBeenCalledWith('/staff/change-password'));
   });
 });

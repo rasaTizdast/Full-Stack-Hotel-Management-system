@@ -19,6 +19,7 @@ interface StaffSessionContextValue {
   error: string | null;
   logoutError: string | null;
   isLoggingOut: boolean;
+  refreshSession: () => Promise<Awaited<ReturnType<typeof getCurrentStaff>>>;
   logout: () => Promise<void>;
 }
 
@@ -37,8 +38,33 @@ export function StaffSessionProvider({ children }: Readonly<{ children: React.Re
     setStatus('loading');
     setStaff(null);
     setCsrfToken(null);
+    setError(null);
     router.replace('/staff/login');
   }, [router]);
+
+  const refreshSession = useCallback(async () => {
+    setStatus('loading');
+    setError(null);
+    try {
+      const session = await getCurrentStaff();
+      setStaff(session.staff);
+      setCsrfToken(session.csrfToken);
+      setStatus('authenticated');
+      return session;
+    } catch (cause) {
+      if (cause instanceof StaffApiError && cause.status === 401) {
+        expireSession();
+        throw cause;
+      }
+      setError(
+        cause instanceof Error
+          ? cause.message
+          : 'وضعیت ورود بررسی نشد. اتصال را بررسی و دوباره تلاش کنید.',
+      );
+      setStatus('error');
+      throw cause;
+    }
+  }, [expireSession]);
 
   useEffect(() => {
     let current = true;
@@ -100,8 +126,17 @@ export function StaffSessionProvider({ children }: Readonly<{ children: React.Re
   }, [csrfToken, expireSession, router]);
 
   const value = useMemo(
-    () => ({ status, staff, csrfToken, error, logoutError, isLoggingOut, logout }),
-    [status, staff, csrfToken, error, logoutError, isLoggingOut, logout],
+    () => ({
+      status,
+      staff,
+      csrfToken,
+      error,
+      logoutError,
+      isLoggingOut,
+      refreshSession,
+      logout,
+    }),
+    [status, staff, csrfToken, error, logoutError, isLoggingOut, refreshSession, logout],
   );
 
   return <StaffSessionContext.Provider value={value}>{children}</StaffSessionContext.Provider>;

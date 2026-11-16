@@ -229,8 +229,11 @@ describe('Staff bookings API (e2e)', () => {
       await prisma.staffSession.deleteMany({
         where: { staffUserId: { in: [adminId, receptionistId] } },
       });
+      await prisma.staffUser.updateMany({
+        where: { id: { in: [adminId, receptionistId] } },
+        data: { isActive: false },
+      });
       await prisma.roomType.deleteMany({ where: { id: roomTypeId } });
-      await prisma.staffUser.deleteMany({ where: { id: { in: [adminId, receptionistId] } } });
       await prisma.hotel.deleteMany({ where: { id: hotelId } });
     }
     await app?.close();
@@ -390,6 +393,20 @@ describe('Staff bookings API (e2e)', () => {
     expect(detail.internalNote).toBe('Receptionist confirmation note.');
     expect(retry.status).toBe('CONFIRMED');
     expect(retry.internalNote).toBe('Receptionist confirmation note.');
+    const bookingRow = await prisma.booking.findUniqueOrThrow({
+      where: { publicReference: actionFixtures.pendingConfirm.reference },
+      select: { id: true },
+    });
+    const confirmationAudit = await prisma.auditEvent.findFirst({
+      where: { targetId: bookingRow.id, eventName: 'BOOKING_CONFIRM' },
+    });
+    expect(confirmationAudit).toMatchObject({
+      actorStaffUserId: receptionistId,
+      targetType: 'BOOKING',
+      before: { status: 'PENDING_CONFIRMATION' },
+      after: { status: 'CONFIRMED' },
+    });
+    expect(JSON.stringify(confirmationAudit)).not.toContain('HBE-011 Fictional Guest');
     const counters = await prisma.roomNightInventory.findMany({
       where: { roomTypeId },
       orderBy: { stayDate: 'asc' },

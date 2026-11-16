@@ -1,4 +1,14 @@
-import { Body, Controller, Get, HttpCode, HttpStatus, Param, Post, Query } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Get,
+  HttpCode,
+  HttpStatus,
+  Param,
+  Post,
+  Query,
+  Req,
+} from '@nestjs/common';
 import {
   ApiBadRequestResponse,
   ApiCookieAuth,
@@ -12,7 +22,8 @@ import {
   ApiUnauthorizedResponse,
 } from '@nestjs/swagger';
 import { ApiErrorResponseDto } from '../common/openapi-response.dto';
-import { RequireStaffRoles } from '../staff-auth/require-staff-roles.decorator';
+import { RequireStaffCapabilities } from '../staff-auth/require-staff-capabilities.decorator';
+import type { StaffRequest } from '../staff-auth/staff-auth.types';
 import { StaffBookingActionDto, CancelStaffBookingDto } from './dto/staff-booking-action.dto';
 import { StaffBookingParamsDto } from './dto/staff-booking-params.dto';
 import { StaffBookingsQueryDto } from './dto/staff-bookings-query.dto';
@@ -21,7 +32,7 @@ import { StaffBookingsService } from './staff-bookings.service';
 
 @ApiTags('Staff booking requests')
 @ApiCookieAuth('staffSession')
-@RequireStaffRoles('ADMIN', 'RECEPTIONIST')
+@RequireStaffCapabilities('MANAGE_BOOKINGS')
 @Controller('staff/bookings')
 export class StaffBookingsController {
   constructor(private readonly staffBookings: StaffBookingsService) {}
@@ -64,12 +75,18 @@ export class StaffBookingsController {
     description: 'The request can no longer be confirmed.',
   })
   confirm(
+    @Req() request: StaffRequest,
     @Param() params: StaffBookingParamsDto,
     @Body() dto: StaffBookingActionDto,
   ): Promise<StaffBookingDetailDto> {
-    return this.staffBookings.transition(params.reference, 'CONFIRM', {
-      internalNote: dto.internalNote,
-    });
+    return this.staffBookings.transition(
+      params.reference,
+      'CONFIRM',
+      {
+        internalNote: dto.internalNote,
+      },
+      request.staff!.id,
+    );
   }
 
   @Post(':reference/reject')
@@ -86,12 +103,18 @@ export class StaffBookingsController {
     description: 'The request can no longer be rejected.',
   })
   reject(
+    @Req() request: StaffRequest,
     @Param() params: StaffBookingParamsDto,
     @Body() dto: StaffBookingActionDto,
   ): Promise<StaffBookingDetailDto> {
-    return this.staffBookings.transition(params.reference, 'REJECT', {
-      internalNote: dto.internalNote,
-    });
+    return this.staffBookings.transition(
+      params.reference,
+      'REJECT',
+      {
+        internalNote: dto.internalNote,
+      },
+      request.staff!.id,
+    );
   }
 
   @Post(':reference/cancel')
@@ -105,11 +128,17 @@ export class StaffBookingsController {
   @ApiForbiddenResponse({ type: ApiErrorResponseDto })
   @ApiConflictResponse({ type: ApiErrorResponseDto })
   cancel(
+    @Req() request: StaffRequest,
     @Param() params: StaffBookingParamsDto,
     @Body() dto: CancelStaffBookingDto,
   ): Promise<StaffBookingDetailDto> {
-    return this.staffBookings.transition(params.reference, 'CANCEL', {
-      cancellationReason: dto.reason,
-    });
+    return this.staffBookings.transition(
+      params.reference,
+      'CANCEL',
+      {
+        cancellationReason: dto.reason,
+      },
+      request.staff!.id,
+    );
   }
 }

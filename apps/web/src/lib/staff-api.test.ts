@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { getCurrentStaff, loginStaff } from './staff-api';
+import { changeStaffPassword, getCurrentStaff, loginStaff } from './staff-api';
 
 afterEach(() => {
   vi.unstubAllGlobals();
@@ -29,6 +29,28 @@ describe('getCurrentStaff', () => {
       ),
     );
     await expect(Promise.all([first, second])).resolves.toHaveLength(2);
+  });
+});
+
+describe('changeStaffPassword', () => {
+  it('posts only the current and new password with CSRF and private-fetch settings', async () => {
+    const fetchMock = vi.fn().mockResolvedValue(new Response(null, { status: 204 }));
+    vi.stubGlobal('fetch', fetchMock);
+
+    await expect(
+      changeStaffPassword('initial-password', 'new-password', 'csrf-token'),
+    ).resolves.toBeUndefined();
+
+    expect(fetchMock).toHaveBeenCalledWith(
+      'http://localhost:4000/api/v1/staff/auth/change-password',
+      expect.objectContaining({
+        method: 'POST',
+        cache: 'no-store',
+        credentials: 'include',
+        headers: expect.objectContaining({ 'X-CSRF-Token': 'csrf-token' }),
+        body: JSON.stringify({ currentPassword: 'initial-password', newPassword: 'new-password' }),
+      }),
+    );
   });
 });
 

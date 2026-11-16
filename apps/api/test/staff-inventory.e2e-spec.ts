@@ -152,7 +152,10 @@ describe('Staff inventory API (e2e)', () => {
       await prisma.staffSession.deleteMany({
         where: { staffUserId: { in: [adminId, receptionistId] } },
       });
-      await prisma.staffUser.deleteMany({ where: { id: { in: [adminId, receptionistId] } } });
+      await prisma.staffUser.updateMany({
+        where: { id: { in: [adminId, receptionistId] } },
+        data: { isActive: false },
+      });
       await prisma.roomType.deleteMany({ where: { hotelId } });
       await prisma.hotel.deleteMany({ where: { id: hotelId } });
     }

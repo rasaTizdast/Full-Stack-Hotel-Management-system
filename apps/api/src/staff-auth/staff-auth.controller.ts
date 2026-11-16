@@ -4,6 +4,7 @@ import {
   Get,
   HttpCode,
   HttpStatus,
+  UnauthorizedException,
   Post,
   Req,
   Res,
@@ -24,10 +25,13 @@ import {
 } from '@nestjs/swagger';
 import type { Response } from 'express';
 import { ApiErrorResponseDto } from '../common/openapi-response.dto';
+import { ChangePasswordDto } from './dto/change-password.dto';
 import { LoginDto } from './dto/login.dto';
 import { StaffAuthResponseDto } from './dto/staff-auth-response.dto';
 import { LoginOriginGuard } from './login-origin.guard';
 import { LoginRateLimitGuard } from './login-rate-limit.guard';
+import { getLoginClientIp } from './login-rate-limit.guard';
+import { LoginRateLimitService } from './login-rate-limit.service';
 import { PublicRoute } from './public-route.decorator';
 import {
   STAFF_CSRF_COOKIE,
@@ -46,6 +50,7 @@ export class StaffAuthController {
   constructor(
     private readonly auth: StaffAuthService,
     config: ConfigService,
+    private readonly rateLimit: LoginRateLimitService,
   ) {
     this.secureCookies = config.get<string>('NODE_ENV') === 'production';
   }
@@ -75,8 +80,27 @@ export class StaffAuthController {
     description: 'The credentials are invalid.',
   })
   @ApiTooManyRequestsResponse({ type: ApiErrorResponseDto })
-  async login(@Body() dto: LoginDto, @Res({ passthrough: true }) response: Response) {
-    const result = await this.auth.login(dto.email, dto.password);
+  async login(
+    @Body() dto: LoginDto,
+    @Req() request: StaffRequest,
+    @Res({ passthrough: true }) response: Response,
+  ) {
+    const clientIp = getLoginClientIp(request);
+    this.rateLimit.assertIdentityAllowed(clientIp, dto.email);
+
+    let result: Awaited<ReturnType<StaffAuthService['login']>>;
+    try {
+      result = await this.auth.login(dto.email, dto.password);
+    } catch (error) {
+      if (error instanceof UnauthorizedException) {
+        this.rateLimit.recordFailure(clientIp, dto.email);
+      } else {
+        this.rateLimit.releaseAttempt(clientIp, dto.email);
+      }
+      throw error;
+    }
+
+    this.rateLimit.recordSuccess(clientIp, dto.email);
     response.append(
       'Set-Cookie',
       serializeStaffCookie(STAFF_SESSION_COOKIE, result.sessionToken, this.secureCookies),
@@ -102,6 +126,30 @@ export class StaffAuthController {
       serializeStaffCookie(STAFF_CSRF_COOKIE, csrfToken, this.secureCookies),
     );
     return { staff: this.auth.toPublicStaff(request.staff!), csrfToken };
+  }
+
+  @Post('change-password')
+  @HttpCode(HttpStatus.NO_CONTENT)
+  @ApiCookieAuth('staffSession')
+  @ApiOperation({
+    summary: 'Change the current staff password and clear any forced-change requirement.',
+    description: 'Requires the current password, the staff session cookie, and a CSRF token.',
+  })
+  @ApiHeader({ name: 'X-CSRF-Token', required: true })
+  @ApiResponse({ status: HttpStatus.NO_CONTENT, description: 'The password was changed.' })
+  @ApiBadRequestResponse({ type: ApiErrorResponseDto })
+  @ApiForbiddenResponse({ type: ApiErrorResponseDto })
+  @ApiUnauthorizedResponse({ type: ApiErrorResponseDto })
+  async changePassword(
+    @Req() request: StaffRequest,
+    @Body() dto: ChangePasswordDto,
+  ): Promise<void> {
+    await this.auth.changePassword(
+      request.staff!.id,
+      request.staffSession!.id,
+      dto.currentPassword,
+      dto.newPassword,
+    );
   }
 
   @Post('logout')
