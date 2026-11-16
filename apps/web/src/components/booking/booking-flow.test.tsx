@@ -169,6 +169,22 @@ describe('BookingFlow', () => {
     expect(screen.getByText('+989123456789')).toBeVisible();
   });
 
+  it('omits the property call link when the configured phone is malformed', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue(Response.json(bookingResponse, { status: 201 })),
+    );
+    const { container } = renderBookingFlow('---');
+    fillGuestDetails();
+    fireEvent.click(screen.getByRole('button', { name: 'ثبت درخواست اقامت' }));
+    await screen.findByRole('heading', { name: 'درخواست اقامت شما ثبت شد' });
+
+    expect(container.querySelector('a[href^="tel:"]')).toBeNull();
+    expect(screen.queryByRole('link', { name: /تماس با اقامتگاه/ })).not.toBeInTheDocument();
+    expect(screen.getByText(/پذیرش برای پیگیری درخواست با این شماره تماس می‌گیرد/)).toBeVisible();
+    expect(screen.getByText('+989123456789')).toBeVisible();
+  });
+
   it('shows the submitted phone as the number reception will use for follow-up', async () => {
     vi.stubGlobal(
       'fetch',
