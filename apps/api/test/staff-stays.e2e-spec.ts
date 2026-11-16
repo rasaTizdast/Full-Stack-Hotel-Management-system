@@ -77,6 +77,8 @@ describe('Staff stay worklists HTTP API', () => {
   let hotelBusinessDate: string;
   let nextDate: string;
   let checkoutEdgeDate: string;
+  let literalSearchDate: string;
+  let tieBreakDate: string;
   let roomType: Awaited<ReturnType<RoomBoardFixtureType['createProperty']>>['type'];
   let rooms: Awaited<ReturnType<RoomBoardFixtureType['createProperty']>>['rooms'];
   const stays: Record<string, StayFixture> = {};
@@ -88,8 +90,10 @@ describe('Staff stay worklists HTTP API', () => {
     checkOut: string,
     guestName: string,
     roomIndex?: number,
+    referenceOverride?: string,
   ): Promise<StayFixture> {
-    const reference = randomUUID().replaceAll('-', '').slice(0, 16).toUpperCase();
+    const reference =
+      referenceOverride ?? randomUUID().replaceAll('-', '').slice(0, 16).toUpperCase();
     const guestPhone = `+98912${randomUUID().replaceAll('-', '').slice(0, 8)}`;
     const guestEmail = `${randomUUID()}@example.invalid`;
     const now = new Date();
@@ -141,6 +145,8 @@ describe('Staff stay worklists HTTP API', () => {
     hotelBusinessDate = dateAtTimeZone(timeZone);
     nextDate = addDays(hotelBusinessDate, 1);
     checkoutEdgeDate = addDays(hotelBusinessDate, 2);
+    literalSearchDate = addDays(hotelBusinessDate, 4);
+    tieBreakDate = addDays(hotelBusinessDate, 6);
 
     await createStay(
       'overdueArrival',
@@ -179,6 +185,45 @@ describe('Staff stay worklists HTTP API', () => {
       nextDate,
       addDays(nextDate, 2),
       'HPM004 Tomorrow Arrival Guest',
+    );
+    await createStay(
+      'literalPercent',
+      'CONFIRMED',
+      literalSearchDate,
+      addDays(literalSearchDate, 2),
+      'HPM004 Literal % Guest',
+    );
+    await createStay(
+      'literalUnderscore',
+      'CONFIRMED',
+      literalSearchDate,
+      addDays(literalSearchDate, 2),
+      'HPM004 Literal _ Guest',
+    );
+    await createStay(
+      'literalBackslash',
+      'CONFIRMED',
+      literalSearchDate,
+      addDays(literalSearchDate, 2),
+      'HPM004 Literal \\ Guest',
+    );
+    await createStay(
+      'tieBreakFirst',
+      'CONFIRMED',
+      tieBreakDate,
+      addDays(tieBreakDate, 2),
+      'HPM004 Pagination First Guest',
+      undefined,
+      'HPM004PAGE000001',
+    );
+    await createStay(
+      'tieBreakSecond',
+      'CONFIRMED',
+      tieBreakDate,
+      addDays(tieBreakDate, 2),
+      'HPM004 Pagination Second Guest',
+      undefined,
+      'HPM004PAGE000002',
     );
   }, 30000);
 
@@ -299,6 +344,45 @@ describe('Staff stay worklists HTTP API', () => {
     ]);
     expect(bodyOf<StayWorklist>(byPhone.body).items).toEqual([]);
     expect(bodyOf<StayWorklist>(byEmail.body).items).toEqual([]);
+  });
+
+  it.each([
+    ['%', 'literalPercent'],
+    ['_', 'literalUnderscore'],
+    ['\\', 'literalBackslash'],
+  ])('search treats %s as a literal character', async (search, stayKey) => {
+    const response = await f
+      .client()
+      .get(worklistRoutes[0])
+      .set(receptionist.headers)
+      .query({ date: literalSearchDate, search })
+      .expect(200);
+
+    expect(bodyOf<StayWorklist>(response.body).items.map(({ reference }) => reference)).toEqual([
+      stays[stayKey].reference,
+    ]);
+  });
+
+  it('orders same-date arrivals by reference across paginated pages', async () => {
+    const first = await f
+      .client()
+      .get(worklistRoutes[0])
+      .set(receptionist.headers)
+      .query({ date: tieBreakDate, page: 1, pageSize: 1 })
+      .expect(200);
+    const second = await f
+      .client()
+      .get(worklistRoutes[0])
+      .set(receptionist.headers)
+      .query({ date: tieBreakDate, page: 2, pageSize: 1 })
+      .expect(200);
+
+    expect(bodyOf<StayWorklist>(first.body).items.map(({ reference }) => reference)).toEqual([
+      stays.tieBreakFirst.reference,
+    ]);
+    expect(bodyOf<StayWorklist>(second.body).items.map(({ reference }) => reference)).toEqual([
+      stays.tieBreakSecond.reference,
+    ]);
   });
 
   it('paginates arrivals by date then reference and omits contact and billing data', async () => {

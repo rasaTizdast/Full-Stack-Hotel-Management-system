@@ -35,6 +35,10 @@ function dateOnly(value: Date): string {
   return value.toISOString().slice(0, 10);
 }
 
+function escapeLikeWildcards(value: string): string {
+  return value.replace(/[\\%_]/g, '\\$&');
+}
+
 function toWorklistItem(record: WorklistRecord): StaffStayWorklistItemDto {
   return {
     reference: record.publicReference,
@@ -96,14 +100,15 @@ export class StaffStaysService {
 
     const search = query.search?.trim();
     if (search) {
+      const literalSearch = escapeLikeWildcards(search);
       where.OR = [
-        { publicReference: { contains: search, mode: 'insensitive' } },
-        { guestName: { contains: search, mode: 'insensitive' } },
+        { publicReference: { contains: literalSearch, mode: 'insensitive' } },
+        { guestName: { contains: literalSearch, mode: 'insensitive' } },
         {
           assignments: {
             some: {
               isActive: true,
-              room: { roomNumber: { contains: search, mode: 'insensitive' } },
+              room: { roomNumber: { contains: literalSearch, mode: 'insensitive' } },
             },
           },
         },
@@ -114,16 +119,22 @@ export class StaffStaysService {
       kind === 'ARRIVALS'
         ? [{ checkIn: 'asc' }, { publicReference: 'asc' }]
         : [{ checkOut: 'asc' }, { publicReference: 'asc' }];
-    const [records, totalItems] = await this.prisma.$transaction([
-      this.prisma.booking.findMany({
-        where,
-        orderBy,
-        skip: (page - 1) * pageSize,
-        take: pageSize,
-        select: worklistSelect,
-      }),
-      this.prisma.booking.count({ where }),
-    ]);
+    const { records, totalItems } = await this.prisma.$transaction(
+      async (tx) => {
+        const [records, totalItems] = await Promise.all([
+          tx.booking.findMany({
+            where,
+            orderBy,
+            skip: (page - 1) * pageSize,
+            take: pageSize,
+            select: worklistSelect,
+          }),
+          tx.booking.count({ where }),
+        ]);
+        return { records, totalItems };
+      },
+      { isolationLevel: Prisma.TransactionIsolationLevel.RepeatableRead },
+    );
 
     return {
       date: dateOnly(selectedDate),
