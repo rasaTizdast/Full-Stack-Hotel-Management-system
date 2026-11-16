@@ -117,6 +117,28 @@ describe('OpenAPI documentation (e2e)', () => {
       expect.objectContaining({ name: 'X-CSRF-Token', in: 'header', required: true }),
     );
 
+    const roomMove = rawDocument.paths['/api/v1/staff/bookings/{reference}/room-move']?.post;
+    expect(roomMove?.requestBody).toMatchObject({
+      content: {
+        'application/json': { schema: { $ref: '#/components/schemas/MoveStaffRoomDto' } },
+      },
+    });
+    expect(rawDocument.components?.schemas?.MoveStaffRoomDto).toMatchObject({
+      required: ['sourceAssignmentId', 'targetRoomId', 'reason'],
+      properties: { sourceAssignmentId: { type: 'string', format: 'uuid' } },
+    });
+    const sourceSchema = rawDocument.components?.schemas?.MoveStaffRoomDto;
+    expect(isRecord(sourceSchema) ? sourceSchema.properties : undefined).not.toHaveProperty(
+      'sourceRoomId',
+    );
+    const assignedRoomSchema = rawDocument.components?.schemas?.StaffStayAssignedRoomDto;
+    expect(isRecord(assignedRoomSchema) ? assignedRoomSchema.required : undefined).toContain(
+      'assignmentId',
+    );
+    expect(assignedRoomSchema).toMatchObject({
+      properties: { assignmentId: { type: 'string', format: 'uuid' } },
+    });
+
     const createBookingSchema = rawDocument.components?.schemas?.CreateBookingDto;
     const createBookingProperties = isRecord(createBookingSchema)
       ? createBookingSchema.properties

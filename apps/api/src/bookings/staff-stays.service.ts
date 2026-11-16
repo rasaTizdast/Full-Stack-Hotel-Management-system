@@ -22,6 +22,7 @@ const worklistSelect = {
     where: { isActive: true },
     orderBy: [{ startDate: 'asc' }, { roomId: 'asc' }, { id: 'asc' }],
     select: {
+      id: true,
       startDate: true,
       endDate: true,
       room: { select: { roomNumber: true, housekeepingStatus: true } },
@@ -51,6 +52,7 @@ function toWorklistItem(record: WorklistRecord): StaffStayWorklistItemDto {
     confirmedAt: record.confirmedAt?.toISOString() ?? null,
     checkedInAt: record.checkedInAt?.toISOString() ?? null,
     assignedRooms: record.assignments.map((assignment) => ({
+      assignmentId: assignment.id,
       roomNumber: assignment.room.roomNumber,
       housekeepingStatus: assignment.room.housekeepingStatus,
       startDate: dateOnly(assignment.startDate),

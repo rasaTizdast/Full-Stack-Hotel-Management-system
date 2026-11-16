@@ -184,13 +184,13 @@ export class StaffBookingsController {
   @ApiOperation({
     summary: 'Move an in-house stay to an inspected room of the same type.',
     description:
-      'The move takes effect on the current property business date. A retry with an inactive source assignment returns a conflict.',
+      'The move takes effect on the current property business date. Use the current source assignment ID from the worklist. A replay against an inactive assignment returns a conflict.',
   })
   @ApiHeader({ name: 'X-CSRF-Token', required: true })
   @ApiOkResponse({ type: StaffStayMutationDto })
   @ApiBadRequestResponse({
     type: ApiErrorResponseDto,
-    description: 'Invalid room IDs or a missing or invalid reason.',
+    description: 'Invalid assignment or target room ID, or a missing or invalid reason.',
   })
   @ApiUnauthorizedResponse({ type: ApiErrorResponseDto })
   @ApiForbiddenResponse({ type: ApiErrorResponseDto })

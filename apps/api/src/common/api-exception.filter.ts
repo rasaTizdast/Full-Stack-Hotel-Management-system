@@ -102,7 +102,8 @@ const SAFE_DOMAIN_ERRORS: Record<string, { statusCode: number; message: string }
   },
   ROOM_MOVE_SOURCE_NOT_ASSIGNED: {
     statusCode: 409,
-    message: 'The source room is no longer assigned to the stay for the current business date.',
+    message:
+      'The source assignment is no longer active for this stay on the current business date.',
   },
   ROOM_MOVE_REASON_REQUIRED: { statusCode: 400, message: 'A room move reason is required.' },
   ROOM_MOVE_REASON_INVALID: {

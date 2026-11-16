@@ -68,9 +68,12 @@ export class AmendStaffStayDto extends PartialType(
 }
 
 export class MoveStaffRoomDto {
-  @ApiProperty({ format: 'uuid', description: 'The room currently assigned to the stay.' })
+  @ApiProperty({
+    format: 'uuid',
+    description: 'The active room assignment ID from the in-house worklist.',
+  })
   @IsUUID()
-  sourceRoomId!: string;
+  sourceAssignmentId!: string;
 
   @ApiProperty({ format: 'uuid', description: 'An inspected room of the same room type.' })
   @IsUUID()

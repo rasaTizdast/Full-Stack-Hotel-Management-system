@@ -129,9 +129,14 @@ describe('Front-desk mutations over HTTP and PostgreSQL', () => {
     return fixture.client().patch(bookingRoute(reference)).set(receptionist.headers).send(body);
   }
 
-  function move(reference: string, targetIndex = 1, moveReason: unknown = 'Room repair needed') {
+  function move(
+    reference: string,
+    sourceAssignmentId: string,
+    targetIndex = 1,
+    moveReason: unknown = 'Room repair needed',
+  ) {
     return action(reference, 'room-move', {
-      sourceRoomId: property.rooms[0].id,
+      sourceAssignmentId,
       targetRoomId: property.rooms[targetIndex].id,
       reason: moveReason,
     });
@@ -789,7 +794,12 @@ describe('Front-desk mutations over HTTP and PostgreSQL', () => {
     const source = await assign(booking.id, 0, start);
     const original = await persisted(booking.id);
     const originalCounters = await counters();
-    const result = await move(booking.publicReference, 1, '  Room repair needed  ').expect(200);
+    const result = await move(
+      booking.publicReference,
+      source.id,
+      1,
+      '  Room repair needed  ',
+    ).expect(200);
     expect(result.body as unknown).toMatchObject({
       status: 'CHECKED_IN',
       checkIn: start,
@@ -834,22 +844,32 @@ describe('Front-desk mutations over HTTP and PostgreSQL', () => {
     const booking = await stay(today, dayAfter, 1, 'CHECKED_IN');
     const confirmed = await stay();
     const departing = await stay(yesterday, today, 1, 'CHECKED_IN');
-    await assign(booking.id);
-    await assign(departing.id, 0, yesterday, today);
+    const source = await assign(booking.id);
+    const departingAssignment = await assign(departing.id, 0, yesterday, today);
     const original = await persisted(booking.id);
-    const missing = await move(booking.publicReference, 1, '  ').expect(400);
+    const missing = await move(booking.publicReference, source.id, 1, '  ').expect(400);
     expect(missing.body as unknown).toMatchObject({ code: 'ROOM_MOVE_REASON_REQUIRED' });
-    const dirty = await move(booking.publicReference).expect(409);
+    const dirty = await move(booking.publicReference, source.id).expect(409);
     expect(dirty.body as unknown).toMatchObject({ code: 'ROOM_NOT_INSPECTED' });
-    await move(booking.publicReference, 0).expect(409);
+    await move(booking.publicReference, source.id, 0).expect(409);
     await inspectTarget();
-    await move(confirmed.publicReference).expect(409);
-    await move(departing.publicReference).expect(409);
+    await move(confirmed.publicReference, source.id).expect(409);
+    await move(departing.publicReference, departingAssignment.id).expect(409);
+    const foreignAssignment = await move(booking.publicReference, departingAssignment.id).expect(
+      409,
+    );
+    expect(foreignAssignment.body as unknown).toMatchObject({
+      code: 'ROOM_MOVE_SOURCE_NOT_ASSIGNED',
+    });
+    const unknownAssignment = await move(booking.publicReference, randomUUID()).expect(409);
+    expect(unknownAssignment.body as unknown).toMatchObject({
+      code: 'ROOM_MOVE_SOURCE_NOT_ASSIGNED',
+    });
     await fixture.prisma.room.update({
       where: { id: property.rooms[1].id },
       data: { isActive: false },
     });
-    const inactive = await move(booking.publicReference).expect(409);
+    const inactive = await move(booking.publicReference, source.id).expect(409);
     expect(inactive.body as unknown).toMatchObject({ code: 'ROOM_INACTIVE' });
     const otherType = await fixture.roomType(property.hotel.id);
     const otherRoom = await fixture.prisma.room.create({
@@ -863,7 +883,7 @@ describe('Front-desk mutations over HTTP and PostgreSQL', () => {
     });
     const sendTarget = (targetRoomId: string) =>
       action(booking.publicReference, 'room-move', {
-        sourceRoomId: property.rooms[0].id,
+        sourceAssignmentId: source.id,
         targetRoomId,
         reason: 'Room repair',
       });
@@ -880,7 +900,7 @@ describe('Front-desk mutations over HTTP and PostgreSQL', () => {
       await inspectTarget();
       const multiRoom = conflict === 'same booking';
       const booking = await stay(today, dayAfter, multiRoom ? 2 : 1, 'CHECKED_IN');
-      await assign(booking.id);
+      const source = await assign(booking.id);
       if (conflict === 'block') {
         await fixture.prisma.roomBlock.create({
           data: {
@@ -895,7 +915,7 @@ describe('Front-desk mutations over HTTP and PostgreSQL', () => {
         await assign(other.id, 1, tomorrow);
       }
       const original = await persisted(booking.id);
-      const res = await move(booking.publicReference).expect(409);
+      const res = await move(booking.publicReference, source.id).expect(409);
       expect(res.body as unknown).toMatchObject({
         code: conflict === 'block' ? 'ROOM_BLOCKED' : 'ROOM_ASSIGNMENT_OVERLAP',
       });
@@ -904,16 +924,57 @@ describe('Front-desk mutations over HTTP and PostgreSQL', () => {
     },
   );
 
+  it('rejects a replay after a guest returns to the original room', async () => {
+    await inspectTarget();
+    const booking = await stay(today, dayAfter, 1, 'CHECKED_IN');
+    const source = await assign(booking.id);
+    const reference = booking.publicReference;
+    const targetRoomId = property.rooms[1].id;
+    const originalMove = {
+      sourceAssignmentId: source.id,
+      targetRoomId,
+      reason: 'Room repair needed',
+    };
+
+    await action(reference, 'room-move', originalMove).expect(200);
+    await fixture.prisma.room.update({
+      where: { id: source.roomId },
+      data: { housekeepingStatus: 'INSPECTED' },
+    });
+    const targetAssignment = await fixture.prisma.roomAssignment.findFirstOrThrow({
+      where: { bookingId: booking.id, roomId: targetRoomId, isActive: true },
+    });
+    await action(reference, 'room-move', {
+      sourceAssignmentId: targetAssignment.id,
+      targetRoomId: source.roomId,
+      reason: 'Repairs completed',
+    }).expect(200);
+    await inspectTarget();
+
+    const beforeReplay = await persisted(booking.id);
+    const beforeAudits = await audits(booking.id);
+    expect(beforeReplay.assignments).toHaveLength(3);
+    const activeAssignments = beforeReplay.assignments.filter(({ isActive }) => isActive);
+    expect(activeAssignments).toMatchObject([{ roomId: source.roomId }]);
+    expect(activeAssignments[0].id).not.toBe(source.id);
+    expect(beforeAudits).toHaveLength(2);
+    const replay = await action(reference, 'room-move', originalMove);
+    expect(replay.status).toBe(409);
+    expect(replay.body as unknown).toMatchObject({ code: 'ROOM_MOVE_SOURCE_NOT_ASSIGNED' });
+    expect(await persisted(booking.id)).toEqual(beforeReplay);
+    expect(await audits(booking.id)).toEqual(beforeAudits);
+  });
+
   it('rolls back a move when audit fails and applies a concurrent retry only once', async () => {
     await inspectTarget();
     const booking = await stay(today, dayAfter, 1, 'CHECKED_IN');
-    await assign(booking.id);
+    const source = await assign(booking.id);
     const original = await persisted(booking.id);
     const record = jest
       .spyOn(AuditService.prototype, 'record')
       .mockRejectedValueOnce(new Error('Fixture audit failure'));
     try {
-      await move(booking.publicReference).expect(500);
+      await move(booking.publicReference, source.id).expect(500);
     } finally {
       record.mockRestore();
     }
@@ -921,10 +982,13 @@ describe('Front-desk mutations over HTTP and PostgreSQL', () => {
     expect((await sourceRoom()).housekeepingStatus).toBe('INSPECTED');
     expect(await audits(booking.id)).toEqual([]);
     const retries = await Promise.all([
-      move(booking.publicReference),
-      move(booking.publicReference),
+      move(booking.publicReference, source.id),
+      move(booking.publicReference, source.id),
     ]);
     expect(retries.map(({ status }) => status).sort()).toEqual([200, 409]);
+    expect(retries.find(({ status }) => status === 409)?.body as unknown).toMatchObject({
+      code: 'ROOM_MOVE_SOURCE_NOT_ASSIGNED',
+    });
     expect((await persisted(booking.id)).assignments).toHaveLength(2);
     expect(await audits(booking.id)).toHaveLength(1);
   });

@@ -9,6 +9,9 @@ export class StaffStayRoomTypeDto {
 }
 
 export class StaffStayAssignedRoomDto {
+  @ApiProperty({ format: 'uuid', description: 'Identifier for this active assignment interval.' })
+  assignmentId!: string;
+
   @ApiProperty({ example: '101' })
   roomNumber!: string;
 

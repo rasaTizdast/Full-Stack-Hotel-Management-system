@@ -503,19 +503,18 @@ export class BookingsService {
     const reason = this.normalizeOptionalText(dto.reason, 500, 'ROOM_MOVE_REASON_INVALID');
     if (!reason) throw new BadRequestException({ code: 'ROOM_MOVE_REASON_REQUIRED' });
 
-    const sourceRoomId = dto.sourceRoomId.toLowerCase();
+    const sourceAssignmentId = dto.sourceAssignmentId.toLowerCase();
     const targetRoomId = dto.targetRoomId.toLowerCase();
-    if (sourceRoomId === targetRoomId) {
-      throw new ConflictException({ code: 'ROOM_ASSIGNMENT_DUPLICATE_ROOM' });
-    }
 
     return this.prisma.$transaction(async (transaction) => {
       const booking = await lockBookingByReference(transaction, reference);
       if (booking.status !== 'CHECKED_IN') throw this.statusConflict();
-      await this.assignments.lockAffectedRooms(transaction, booking.roomTypeId, [
-        sourceRoomId,
+      await this.assignments.lockRoomsForMove(
+        transaction,
+        booking,
+        sourceAssignmentId,
         targetRoomId,
-      ]);
+      );
       const stay = await transaction.booking.findUniqueOrThrow({
         where: { id: booking.id },
         select: {
@@ -533,7 +532,7 @@ export class BookingsService {
       await this.assignments.moveCheckedInRoom(transaction, {
         booking,
         actorStaffUserId,
-        sourceRoomId,
+        sourceAssignmentId,
         targetRoomId,
         businessDate,
         checkOut: stay.checkOut,

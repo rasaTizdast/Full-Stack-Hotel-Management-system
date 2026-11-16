@@ -20,6 +20,7 @@ type StayFixture = {
   guestName: string;
   guestPhone: string;
   guestEmail: string;
+  assignmentId?: string;
 };
 
 type StayWorklistItem = {
@@ -33,6 +34,7 @@ type StayWorklistItem = {
   confirmedAt: string | null;
   checkedInAt: string | null;
   assignedRooms: Array<{
+    assignmentId: string;
     roomNumber: string;
     housekeepingStatus: string;
     startDate: string;
@@ -118,8 +120,9 @@ describe('Staff stay worklists HTTP API', () => {
           : {}),
       },
     });
+    let assignmentId: string | undefined;
     if (roomIndex !== undefined) {
-      await f.prisma.roomAssignment.create({
+      const assignment = await f.prisma.roomAssignment.create({
         data: {
           bookingId: booking.id,
           roomId: rooms[roomIndex].id,
@@ -131,8 +134,18 @@ describe('Staff stay worklists HTTP API', () => {
           changeReason: 'Fictional worklist fixture',
         },
       });
+      assignmentId = assignment.id;
     }
-    const stay = { reference, status, checkIn, checkOut, guestName, guestPhone, guestEmail };
+    const stay = {
+      reference,
+      status,
+      checkIn,
+      checkOut,
+      guestName,
+      guestPhone,
+      guestEmail,
+      assignmentId,
+    };
     stays[key] = stay;
     return stay;
   }
@@ -296,7 +309,12 @@ describe('Staff stay worklists HTTP API', () => {
     expect(departures.items[0]).toMatchObject({
       status: 'CHECKED_IN',
       assignedRooms: [
-        { roomNumber: '201', housekeepingStatus: 'DIRTY', endDate: hotelBusinessDate },
+        {
+          assignmentId: stays.dueOut.assignmentId,
+          roomNumber: '201',
+          housekeepingStatus: 'DIRTY',
+          endDate: hotelBusinessDate,
+        },
       ],
     });
     expect(typeof departures.items[0]?.checkedInAt).toBe('string');
@@ -411,6 +429,7 @@ describe('Staff stay worklists HTTP API', () => {
     expect(first.text).not.toMatch(/guestPhone|guestEmail|1250000|totalPriceToman/);
     expect(result.items[0].assignedRooms).toEqual([
       {
+        assignmentId: stays.overdueArrival.assignmentId,
         roomNumber: '101',
         housekeepingStatus: 'INSPECTED',
         startDate: addDays(hotelBusinessDate, -1),
@@ -428,7 +447,7 @@ describe('Staff stay worklists HTTP API', () => {
           .client()
           .post(bookingRoute(reference) + '/room-move')
           .send({
-            sourceRoomId: rooms[0].id,
+            sourceAssignmentId: stays.todayArrival.assignmentId,
             targetRoomId: rooms[1].id,
             reason: 'Operational move',
           }),
@@ -499,15 +518,46 @@ describe('Staff stay worklists HTTP API', () => {
         housekeepingStatus: 'INSPECTED',
       },
     });
+    const inHouseStay = () =>
+      f
+        .client()
+        .get(worklistRoutes[1])
+        .set(receptionist.headers)
+        .query({ search: checkedIn.reference })
+        .expect(200);
+    const before = bodyOf<StayWorklist>((await inHouseStay()).body);
+    const sourceAssignmentId = before.items[0].assignedRooms[0].assignmentId;
+    expect(sourceAssignmentId).toBe(checkedIn.assignmentId);
+
     const moveRoute = bookingRoute(checkedIn.reference) + '/room-move';
-    const move = f.client().post(moveRoute).set(receptionist.headers);
-    const moved = await move
+    const move = () => f.client().post(moveRoute).set(receptionist.headers);
+    await move()
       .send({
         sourceRoomId: rooms[2].id,
         targetRoomId: target.id,
         reason: 'Private operational reason',
       })
+      .expect(400);
+    const moved = await move()
+      .send({
+        sourceAssignmentId,
+        targetRoomId: target.id,
+        reason: 'Private operational reason',
+      })
       .expect(200);
+
+    const after = bodyOf<StayWorklist>((await inHouseStay()).body);
+    const targetAssignment = await f.prisma.roomAssignment.findFirstOrThrow({
+      where: {
+        booking: { publicReference: checkedIn.reference },
+        roomId: target.id,
+        isActive: true,
+      },
+    });
+    expect(after.items[0].assignedRooms).toMatchObject([
+      { assignmentId: targetAssignment.id, roomNumber: '301' },
+    ]);
+    expect(targetAssignment.id).not.toBe(sourceAssignmentId);
 
     for (const response of [amendment, moved]) {
       expect(response.headers['cache-control']).toBe('private, no-store');
