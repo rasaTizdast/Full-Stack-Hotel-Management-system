@@ -39,7 +39,7 @@ The following tickets extend the original booking engine into the single-propert
 - **Depends on:** HPM-000
 - **Owner:** Backend senior + Front-end design master
 - **Status:** Done
-- **Branch/worktree:** `codex/hpm-002-staff-controls` — `../Hotel Booking system-worktrees/HPM-002`
+- **Branch/worktree:** `codex/hpm-002-staff-controls` — merged to `main` as `6d1eb1c`; worktree and branch removed.
 - **Plan:** `docs/superpowers/plans/2026-11-15-hotel-pms-staff-controls-and-daily-operations.md`
 - **Acceptance criteria:** Named roles `ADMIN`, `MANAGER`, `RECEPTIONIST`, `HOUSEKEEPER`, and `CASHIER` have explicit server-enforced capabilities; admin can create/change/deactivate accounts; the staff list is paginated; a forced initial password change is enforced through `/staff/change-password`; case-normalized duplicate usernames/emails fail; deactivation revokes sessions; account changes cannot remove the last active admin; high-impact changes and their audit record commit atomically without secrets/full guest payloads.
 - **Code changes:** Added the role-capability matrix and applied it to shipped staff APIs; admin account listing/creation/role-change/deactivation; forced password change; hashed-identity login throttling that avoids locking out a shared hotel NAT after successful logins; append-only audit records for staff, booking, room, inventory, and password changes; safe DTO/cache behavior; role-aware staff navigation and responsive account management (desktop table, mobile cards). Password-change audit writes only the forced-change state transition, never credential material. Commits: API `18e32de`, `80b7b28`, `c260dd3`, `7a11858`; web `79aa9a1`, `250e2a0`.
