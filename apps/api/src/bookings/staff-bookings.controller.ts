@@ -2,6 +2,7 @@ import {
   Body,
   Controller,
   Get,
+  Headers,
   HttpCode,
   HttpStatus,
   Param,
@@ -13,6 +14,7 @@ import {
   ApiBadRequestResponse,
   ApiCookieAuth,
   ApiConflictResponse,
+  ApiCreatedResponse,
   ApiForbiddenResponse,
   ApiHeader,
   ApiNotFoundResponse,
@@ -24,10 +26,16 @@ import {
 import { ApiErrorResponseDto } from '../common/openapi-response.dto';
 import { RequireStaffCapabilities } from '../staff-auth/require-staff-capabilities.decorator';
 import type { StaffRequest } from '../staff-auth/staff-auth.types';
+import { CreateBookingDto } from './dto/create-booking.dto';
 import { StaffBookingActionDto, CancelStaffBookingDto } from './dto/staff-booking-action.dto';
 import { StaffBookingParamsDto } from './dto/staff-booking-params.dto';
 import { StaffBookingsQueryDto } from './dto/staff-bookings-query.dto';
 import { StaffBookingDetailDto, StaffBookingListDto } from './dto/staff-booking-response.dto';
+import {
+  CheckInStaffStayDto,
+  NoShowStaffStayDto,
+  StaffStayMutationDto,
+} from './dto/staff-stay-action.dto';
 import { StaffBookingsService } from './staff-bookings.service';
 
 @ApiTags('Staff booking requests')
@@ -59,6 +67,86 @@ export class StaffBookingsController {
   @ApiForbiddenResponse({ type: ApiErrorResponseDto })
   get(@Param() params: StaffBookingParamsDto): Promise<StaffBookingDetailDto> {
     return this.staffBookings.get(params.reference);
+  }
+
+  @Post('walk-ins')
+  @ApiOperation({
+    summary: 'Create a confirmed walk-in for the current property business date.',
+  })
+  @ApiHeader({ name: 'X-CSRF-Token', required: true })
+  @ApiHeader({
+    name: 'Idempotency-Key',
+    required: true,
+    description: '16–128 characters. Reuse the key only when retrying the same walk-in.',
+  })
+  @ApiCreatedResponse({ type: StaffStayMutationDto })
+  @ApiBadRequestResponse({ type: ApiErrorResponseDto, description: 'Invalid key or stay details.' })
+  @ApiUnauthorizedResponse({ type: ApiErrorResponseDto })
+  @ApiForbiddenResponse({ type: ApiErrorResponseDto })
+  @ApiNotFoundResponse({ type: ApiErrorResponseDto, description: 'Room type unavailable.' })
+  @ApiConflictResponse({
+    type: ApiErrorResponseDto,
+    description: 'Capacity or idempotency conflict.',
+  })
+  createWalkIn(
+    @Req() request: StaffRequest,
+    @Body() dto: CreateBookingDto,
+    @Headers('idempotency-key') key?: string,
+  ): Promise<StaffStayMutationDto> {
+    return this.staffBookings.createWalkIn(dto, key, request.staff!);
+  }
+
+  @Post(':reference/check-in')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({
+    summary: 'Check in a confirmed stay with inspected rooms for the remaining nights.',
+  })
+  @ApiHeader({ name: 'X-CSRF-Token', required: true })
+  @ApiOkResponse({ type: StaffStayMutationDto })
+  @ApiBadRequestResponse({
+    type: ApiErrorResponseDto,
+    description: 'Invalid or missing override reason.',
+  })
+  @ApiUnauthorizedResponse({ type: ApiErrorResponseDto })
+  @ApiForbiddenResponse({
+    type: ApiErrorResponseDto,
+    description: 'Capability or early check-in permission denied.',
+  })
+  @ApiNotFoundResponse({ type: ApiErrorResponseDto })
+  @ApiConflictResponse({
+    type: ApiErrorResponseDto,
+    description: 'Stay status, arrival window or room readiness conflict.',
+  })
+  checkIn(
+    @Req() request: StaffRequest,
+    @Param() params: StaffBookingParamsDto,
+    @Body() dto: CheckInStaffStayDto,
+  ): Promise<StaffStayMutationDto> {
+    return this.staffBookings.checkIn(params.reference, request.staff!, dto.earlyCheckInReason);
+  }
+
+  @Post(':reference/no-show')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Record an explicit no-show and release remaining booked capacity.' })
+  @ApiHeader({ name: 'X-CSRF-Token', required: true })
+  @ApiOkResponse({ type: StaffStayMutationDto })
+  @ApiBadRequestResponse({
+    type: ApiErrorResponseDto,
+    description: 'Invalid or missing no-show reason.',
+  })
+  @ApiUnauthorizedResponse({ type: ApiErrorResponseDto })
+  @ApiForbiddenResponse({ type: ApiErrorResponseDto })
+  @ApiNotFoundResponse({ type: ApiErrorResponseDto })
+  @ApiConflictResponse({
+    type: ApiErrorResponseDto,
+    description: 'Stay is outside the no-show window or was already handled.',
+  })
+  noShow(
+    @Req() request: StaffRequest,
+    @Param() params: StaffBookingParamsDto,
+    @Body() dto: NoShowStaffStayDto,
+  ): Promise<StaffStayMutationDto> {
+    return this.staffBookings.noShow(params.reference, request.staff!, dto.reason);
   }
 
   @Post(':reference/confirm')

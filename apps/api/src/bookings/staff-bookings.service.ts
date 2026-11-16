@@ -1,8 +1,11 @@
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { Prisma } from '../generated/prisma/client';
 import { PrismaService } from '../database/prisma.service';
+import type { StaffPrincipal } from '../staff-auth/staff-auth.types';
 import type { StaffBookingAction, BookingTransitionOptions } from './bookings.service';
 import { BookingsService } from './bookings.service';
+import type { CreateBookingDto } from './dto/create-booking.dto';
+import type { StaffStayMutationDto } from './dto/staff-stay-action.dto';
 import { StaffBookingsQueryDto } from './dto/staff-bookings-query.dto';
 import type {
   StaffBookingDetailDto,
@@ -125,6 +128,26 @@ export class StaffBookingsService {
     private readonly prisma: PrismaService,
     private readonly bookings: BookingsService,
   ) {}
+
+  createWalkIn(
+    dto: CreateBookingDto,
+    key: string | undefined,
+    actor: StaffPrincipal,
+  ): Promise<StaffStayMutationDto> {
+    return this.bookings.createWalkIn(dto, key, actor.id);
+  }
+
+  checkIn(
+    reference: string,
+    actor: StaffPrincipal,
+    earlyCheckInReason?: string,
+  ): Promise<StaffStayMutationDto> {
+    return this.bookings.checkIn(reference, actor, earlyCheckInReason);
+  }
+
+  noShow(reference: string, actor: StaffPrincipal, reason: string): Promise<StaffStayMutationDto> {
+    return this.bookings.noShow(reference, actor, reason);
+  }
 
   async list(query: StaffBookingsQueryDto): Promise<StaffBookingListDto> {
     const page = query.page ?? 1;

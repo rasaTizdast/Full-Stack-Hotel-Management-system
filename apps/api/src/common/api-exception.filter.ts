@@ -92,6 +92,35 @@ const SAFE_DOMAIN_ERRORS: Record<string, { statusCode: number; message: string }
     statusCode: 409,
     message: 'A confirmed booking cannot be cancelled after check-in begins.',
   },
+  WALK_IN_ARRIVAL_DATE_INVALID: {
+    statusCode: 400,
+    message: "Walk-ins must arrive on the hotel's current business date.",
+  },
+  STAY_OUTSIDE_ARRIVAL_WINDOW: {
+    statusCode: 409,
+    message: 'This stay is not due for arrival on the current business date.',
+  },
+  EARLY_CHECK_IN_FORBIDDEN: {
+    statusCode: 403,
+    message: 'Only an administrator or manager can authorize an early check-in.',
+  },
+  EARLY_CHECK_IN_REASON_REQUIRED: {
+    statusCode: 400,
+    message: 'An early check-in reason is required.',
+  },
+  EARLY_CHECK_IN_REASON_INVALID: {
+    statusCode: 400,
+    message: 'The early check-in reason exceeds its maximum length.',
+  },
+  NO_SHOW_TOO_EARLY: {
+    statusCode: 409,
+    message: 'A no-show can be recorded from the configured arrival time.',
+  },
+  NO_SHOW_REASON_REQUIRED: { statusCode: 400, message: 'A no-show reason is required.' },
+  NO_SHOW_REASON_INVALID: {
+    statusCode: 400,
+    message: 'The no-show reason exceeds its maximum length.',
+  },
   CANCELLATION_REASON_REQUIRED: {
     statusCode: 400,
     message: 'A cancellation reason is required for confirmed bookings.',
@@ -125,6 +154,14 @@ const SAFE_DOMAIN_ERRORS: Record<string, { statusCode: number; message: string }
   ROOM_ASSIGNMENT_LIMIT: {
     statusCode: 409,
     message: 'The assignment set exceeds the number of booked rooms.',
+  },
+  ROOM_ASSIGNMENT_INCOMPLETE: {
+    statusCode: 409,
+    message: 'Assign one distinct room per booked unit for every remaining night.',
+  },
+  ROOM_NOT_INSPECTED: {
+    statusCode: 409,
+    message: 'Assigned rooms must be inspected before check-in.',
   },
   ROOM_ASSIGNMENT_OVERLAP: {
     statusCode: 409,

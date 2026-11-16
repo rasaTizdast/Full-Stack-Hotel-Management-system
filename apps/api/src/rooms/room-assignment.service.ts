@@ -190,15 +190,7 @@ export class RoomAssignmentService {
     booking: { id: string; roomTypeId: string },
     actorStaffUserId?: string,
   ): Promise<void> {
-    const current = await transaction.roomAssignment.findMany({
-      where: { bookingId: booking.id, isActive: true },
-      select: { roomId: true },
-    });
-    await this.lockAffectedRooms(
-      transaction,
-      booking.roomTypeId,
-      current.map(({ roomId }) => roomId),
-    );
+    await this.lockAssignedRooms(transaction, booking);
     const activeAssignments = await transaction.roomAssignment.findMany({
       where: { bookingId: booking.id, isActive: true },
       select: { id: true },
@@ -212,6 +204,69 @@ export class RoomAssignmentService {
           : undefined,
       );
     }
+  }
+
+  // Call after locking the booking so assignment changes cannot add a room to the set.
+  async lockAssignedRooms(
+    transaction: TransactionClient,
+    booking: { id: string; roomTypeId: string },
+  ): Promise<void> {
+    const current = await transaction.roomAssignment.findMany({
+      where: { bookingId: booking.id, isActive: true },
+      select: { roomId: true },
+    });
+    await this.lockAffectedRooms(
+      transaction,
+      booking.roomTypeId,
+      current.map(({ roomId }) => roomId),
+    );
+  }
+
+  // The booking, its room type, and assigned rooms are already locked.
+  async assertCheckInReadiness(
+    transaction: TransactionClient,
+    booking: { id: string; roomTypeId: string; roomQuantity: number },
+    startDate: Date,
+    endDate: Date,
+  ): Promise<void> {
+    const assignments = await transaction.roomAssignment.findMany({
+      where: {
+        bookingId: booking.id,
+        isActive: true,
+        startDate: { lt: endDate },
+        endDate: { gt: startDate },
+      },
+      select: { roomId: true, startDate: true, endDate: true },
+    });
+    const remaining = assignments.map((assignment) => ({
+      roomId: assignment.roomId,
+      startDate: assignment.startDate > startDate ? assignment.startDate : startDate,
+      endDate: assignment.endDate < endDate ? assignment.endDate : endDate,
+    }));
+    for (let date = startDate.getTime(); date < endDate.getTime(); date += 86_400_000) {
+      const rooms = new Set(
+        remaining
+          .filter(
+            (interval) => interval.startDate.getTime() <= date && date < interval.endDate.getTime(),
+          )
+          .map(({ roomId }) => roomId),
+      );
+      if (rooms.size !== booking.roomQuantity) {
+        throw new ConflictException({
+          code: 'ROOM_ASSIGNMENT_INCOMPLETE',
+          message: 'Assign one distinct room per booked unit for every remaining night.',
+        });
+      }
+    }
+    await this.assertRoomsAssignable(transaction, booking.id, booking.roomTypeId, remaining, true);
+  }
+
+  // The caller records assignment release in the single booking no-show event.
+  async deactivateForNoShow(transaction: TransactionClient, bookingId: string): Promise<void> {
+    await transaction.roomAssignment.updateMany({
+      where: { bookingId, isActive: true },
+      data: { isActive: false },
+    });
   }
 
   private async lockAffectedRooms(
@@ -230,18 +285,26 @@ export class RoomAssignmentService {
     bookingId: string,
     roomTypeId: string,
     desired: AssignmentInterval[],
+    requireInspected = false,
   ): Promise<void> {
     if (desired.length === 0) return;
+    const roomIds = [...new Set(desired.map(({ roomId }) => roomId))];
     const rooms = await transaction.room.findMany({
-      where: { id: { in: desired.map(({ roomId }) => roomId) } },
-      select: { roomTypeId: true, isActive: true },
+      where: { id: { in: roomIds } },
+      select: { roomTypeId: true, isActive: true, housekeepingStatus: true },
     });
-    if (rooms.length !== desired.length) throw new NotFoundException({ code: 'ROOM_NOT_FOUND' });
+    if (rooms.length !== roomIds.length) throw new NotFoundException({ code: 'ROOM_NOT_FOUND' });
     if (rooms.some((room) => room.roomTypeId !== roomTypeId)) {
       throw new ConflictException({ code: 'ROOM_TYPE_MISMATCH' });
     }
     if (rooms.some((room) => !room.isActive)) {
       throw new ConflictException({ code: 'ROOM_INACTIVE' });
+    }
+    if (requireInspected && rooms.some((room) => room.housekeepingStatus !== 'INSPECTED')) {
+      throw new ConflictException({
+        code: 'ROOM_NOT_INSPECTED',
+        message: 'Assigned rooms must be inspected before check-in.',
+      });
     }
 
     const overlaps = desired.map(({ roomId, startDate, endDate }) => ({

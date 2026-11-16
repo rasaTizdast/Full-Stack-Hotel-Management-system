@@ -65,8 +65,12 @@ export function assertGuestCapacity(
   }
 }
 
-export function hashBookingRequest(input: BookingRequestFingerprintInput): string {
+export function hashBookingRequest(
+  input: BookingRequestFingerprintInput,
+  source?: 'WALK_IN',
+): string {
   const normalized = {
+    ...(source ? { source } : {}),
     roomTypeSlug: input.roomTypeSlug,
     checkIn: input.checkIn,
     checkOut: input.checkOut,
