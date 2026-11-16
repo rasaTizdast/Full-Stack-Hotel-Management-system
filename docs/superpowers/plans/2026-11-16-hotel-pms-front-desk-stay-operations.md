@@ -80,12 +80,12 @@
 
 **Files:** modify `bookings.service.ts`, `staff-bookings.service.ts`, `room-assignment.service.ts`, and front-desk DTO/controller files; add unit and PostgreSQL tests in `apps/api/src/bookings/` and `apps/api/test/staff-stays.database-spec.ts`.
 
-- [ ] Add failing PostgreSQL tests for walk-in idempotency, two requests competing for the final room, check-in without a complete assignment set, dirty/uninspected/blocked/conflicting rooms, manager early-check-in reason/role, unchanged check-in counters, no-show reason, one-time future-only release, and check-in/no-show race serialization.
-- [ ] Run only `staff-stays.database-spec.ts` on the isolated test database; verify the new cases fail because their operations do not yet exist.
-- [ ] Implement `POST /staff/bookings/walk-ins` with a required idempotency key. It creates a same-business-date confirmed stay, locks inventory nights in order, creates immutable `BookingNight` prices, increments `bookedRooms` directly (never held rooms), and audits the actor atomically.
-- [ ] Implement `POST /staff/bookings/:reference/check-in`. Lock the booking first, then the room type and sorted assigned room rows. Re-read status, hotel business date/time, assignments, blocks, room activity/type/readiness, and require room-quantity coverage for every remaining stay night. Manager override affects only the time threshold.
-- [ ] Implement `POST /staff/bookings/:reference/no-show` with required reason. Allow it only for an unhandled due-in stay after the configured same-day check-in time or on a later business date before checkout. Lock booking, room type, rooms, and future inventory in that order; deactivate assignments and decrement only current/future `bookedRooms`; preserve past snapshots and write one audit event. An exact repeated no-show returns the stored state without another decrement/audit.
-- [ ] Add real unit/API/PostgreSQL checks for status, actor/time fields, response privacy, all-or-nothing rollback, duplicate idempotency, and races. Run the focused tests to green and commit this slice.
+- [x] Add failing PostgreSQL tests for walk-in idempotency, two requests competing for the final room, check-in without a complete assignment set, dirty/uninspected/blocked/conflicting rooms, manager early-check-in reason/role, unchanged check-in counters, no-show reason, one-time future-only release, and check-in/no-show race serialization.
+- [x] Run only `staff-stays.database-spec.ts` on the isolated test database; verify the new cases fail because their operations do not yet exist.
+- [x] Implement `POST /staff/bookings/walk-ins` with a required idempotency key. It creates a same-business-date confirmed stay, locks inventory nights in order, creates immutable `BookingNight` prices, increments `bookedRooms` directly (never held rooms), and audits the actor atomically.
+- [x] Implement `POST /staff/bookings/:reference/check-in`. Lock the booking first, then the room type and sorted assigned room rows. Re-read status, hotel business date/time, assignments, blocks, room activity/type/readiness, and require room-quantity coverage for every remaining stay night. Manager override affects only the time threshold.
+- [x] Implement `POST /staff/bookings/:reference/no-show` with required reason. Allow it only for an unhandled due-in stay after the configured same-day check-in time or on a later business date before checkout. Lock booking, room type, rooms, and future inventory in that order; deactivate assignments and decrement only current/future `bookedRooms`; preserve past snapshots and write one audit event. An exact repeated no-show returns the stored state without another decrement/audit.
+- [x] Add real unit/API/PostgreSQL checks for status, actor/time fields, response privacy, all-or-nothing rollback, duplicate idempotency, and races. Run the focused tests to green and commit this slice.
 
 ### Task 4: Future amendments and in-house room moves
 
@@ -105,6 +105,7 @@
 - [ ] Add a failing API test proving a checked-in reservation is shown as `OCCUPIED` with its active room context while a merely confirmed reservation remains reserved/arriving.
 - [ ] Run the focused room-board tests and verify that checked-in assignment contexts are currently omitted or mislabeled.
 - [ ] Include checked-in bookings in occupancy context while keeping the assignable editor limited to confirmed stays. Preserve date filtering, complete assignment intervals, and all HPM-003 revision semantics.
+- [ ] Replace the existing room-block relation join with a separately awaited query inside the same RepeatableRead transaction to remove the pg@9 concurrent-query deprecation; preserve room occupancy and assignment semantics.
 - [ ] Update client status unions and Persian text labels; verify occupancy is never conveyed by color alone and private data remains absent.
 - [ ] Run room-board API/web unit tests and focused desktop/mobile board Playwright; commit the integration.
 
