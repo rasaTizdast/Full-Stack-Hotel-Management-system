@@ -1,6 +1,7 @@
 import * as argon2 from 'argon2';
 import { randomBytes } from 'node:crypto';
 import { BadRequestException, Injectable, UnauthorizedException } from '@nestjs/common';
+import { AuditService } from '../audit/audit.service';
 import { PrismaService } from '../database/prisma.service';
 import { hashCredential } from './credential-hash';
 import { STAFF_SESSION_TTL_SECONDS } from './staff-auth.cookies';
@@ -18,7 +19,10 @@ export class StaffAuthService {
     type: argon2.argon2id,
   });
 
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly audit: AuditService,
+  ) {}
 
   async login(email: string, password: string): Promise<StaffLoginResult> {
     const normalizedEmail = email.trim().toLowerCase();
@@ -80,7 +84,7 @@ export class StaffAuthService {
   ): Promise<void> {
     const user = await this.prisma.staffUser.findUnique({
       where: { id: staffUserId },
-      select: { id: true, passwordHash: true },
+      select: { id: true, passwordHash: true, mustChangePassword: true },
     });
     let currentPasswordMatches = false;
     if (user) {
@@ -112,6 +116,14 @@ export class StaffAuthService {
       await transaction.staffSession.updateMany({
         where: { staffUserId: user.id, id: { not: sessionId }, revokedAt: null },
         data: { revokedAt: new Date() },
+      });
+      await this.audit.record(transaction, {
+        actorStaffUserId: user.id,
+        eventName: 'STAFF_PASSWORD_CHANGED',
+        targetType: 'STAFF_ACCOUNT',
+        targetId: user.id,
+        before: { mustChangePassword: user.mustChangePassword },
+        after: { mustChangePassword: false },
       });
     });
   }

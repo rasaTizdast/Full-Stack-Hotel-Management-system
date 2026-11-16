@@ -1,5 +1,6 @@
 import { Module } from '@nestjs/common';
 import { APP_GUARD } from '@nestjs/core';
+import { AuditModule } from '../audit/audit.module';
 import { PrismaModule } from '../database/prisma.module';
 import { LoginOriginGuard } from './login-origin.guard';
 import { LoginOriginPolicyService } from './login-origin-policy.service';
@@ -12,7 +13,7 @@ import { StaffRolesGuard } from './staff-roles.guard';
 import { StaffSessionGuard } from './staff-session.guard';
 
 @Module({
-  imports: [PrismaModule],
+  imports: [PrismaModule, AuditModule],
   controllers: [StaffAuthController],
   providers: [
     LoginOriginGuard,

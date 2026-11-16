@@ -1,6 +1,7 @@
 import * as argon2 from 'argon2';
 import { createHash, randomUUID } from 'node:crypto';
 import { UnauthorizedException } from '@nestjs/common';
+import { AuditService } from '../audit/audit.service';
 import type { PrismaService } from '../database/prisma.service';
 import { StaffAuthService } from './staff-auth.service';
 
@@ -19,9 +20,13 @@ describe('StaffAuthService', () => {
     isActive: boolean;
     mustChangePassword: boolean;
   };
+  let auditEvents: Array<Record<string, unknown>>;
+  let auditTransactionStates: boolean[];
+  let transactionActive: boolean;
   let prisma: {
     staffUser: { findUnique: jest.Mock; updateMany: jest.Mock };
     staffSession: { create: jest.Mock; update: jest.Mock; updateMany: jest.Mock };
+    auditEvent: { create: jest.Mock };
     $transaction: jest.Mock;
   };
   let service: StaffAuthService;
@@ -36,6 +41,9 @@ describe('StaffAuthService', () => {
       isActive: true,
       mustChangePassword: false,
     };
+    auditEvents = [];
+    auditTransactionStates = [];
+    transactionActive = false;
     prisma = {
       staffUser: {
         findUnique: jest.fn(({ where }: { where: { email?: string; id?: string } }) =>
@@ -51,11 +59,23 @@ describe('StaffAuthService', () => {
         update: jest.fn().mockResolvedValue(undefined),
         updateMany: jest.fn().mockResolvedValue({ count: 1 }),
       },
-      $transaction: jest.fn(async (operation: (tx: unknown) => Promise<unknown>) =>
-        operation(prisma),
-      ),
+      auditEvent: {
+        create: jest.fn(({ data }: { data: Record<string, unknown> }) => {
+          auditEvents.push(data);
+          auditTransactionStates.push(transactionActive);
+          return Promise.resolve(data);
+        }),
+      },
+      $transaction: jest.fn(async (operation: (tx: unknown) => Promise<unknown>) => {
+        transactionActive = true;
+        try {
+          return await operation(prisma);
+        } finally {
+          transactionActive = false;
+        }
+      }),
     };
-    service = new StaffAuthService(prisma as unknown as PrismaService);
+    service = new StaffAuthService(prisma as unknown as PrismaService, new AuditService());
   });
 
   it('verifies Argon2id passwords and persists only hashed session credentials', async () => {
@@ -114,5 +134,27 @@ describe('StaffAuthService', () => {
     >;
     expect(updateCalls[0][0].where).toEqual({ id: 'session-id', revokedAt: null });
     expect(updateCalls[0][0].data.revokedAt).toBeInstanceOf(Date);
+  });
+
+  it('audits forced password changes without recording password material', async () => {
+    user.mustChangePassword = true;
+    const nextPassword = 'another-test-only-password-long';
+
+    await service.changePassword(user.id, 'current-session-id', password, nextPassword);
+
+    expect(auditEvents).toEqual([
+      expect.objectContaining({
+        actorStaffUserId: user.id,
+        eventName: 'STAFF_PASSWORD_CHANGED',
+        targetType: 'STAFF_ACCOUNT',
+        targetId: user.id,
+        before: { mustChangePassword: true },
+        after: { mustChangePassword: false },
+      }),
+    ]);
+    expect(JSON.stringify(auditEvents)).not.toContain(password);
+    expect(JSON.stringify(auditEvents)).not.toContain(nextPassword);
+    expect(JSON.stringify(auditEvents)).not.toContain('passwordHash');
+    expect(auditTransactionStates).toEqual([true]);
   });
 });
