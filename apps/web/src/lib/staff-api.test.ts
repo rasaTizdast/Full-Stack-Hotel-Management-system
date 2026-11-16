@@ -90,6 +90,23 @@ describe('room board API', () => {
     );
   });
 
+  it('accepts and serializes the in-house stay-context filter', async () => {
+    const fetchMock = vi.fn().mockResolvedValue(
+      new Response(
+        JSON.stringify({ date: '2026-11-17', businessDate: '2026-11-17', updatedAt: '', items: [], assignableBookings: [] }),
+        { status: 200 },
+      ),
+    );
+    vi.stubGlobal('fetch', fetchMock);
+
+    await staffApi.getStaffRoomBoard({ date: '2026-11-17', stayContext: 'IN_HOUSE' });
+
+    expect(fetchMock).toHaveBeenCalledWith(
+      'http://localhost:4000/api/v1/staff/rooms/board?date=2026-11-17&stayContext=IN_HOUSE',
+      expect.objectContaining({ cache: 'no-store', credentials: 'include' }),
+    );
+  });
+
   it('saves the complete revisioned assignment set and preserves the stale conflict code', async () => {
     const replaceAssignments = Reflect.get(staffApi, 'replaceStaffBookingRoomAssignments');
     expect(replaceAssignments).toBeTypeOf('function');

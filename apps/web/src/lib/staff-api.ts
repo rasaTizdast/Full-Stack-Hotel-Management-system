@@ -73,7 +73,7 @@ export interface StaffRoomListResponse {
 }
 
 export type StaffRoomOccupancy = 'VACANT' | 'UNKNOWN' | 'OCCUPIED';
-export type StaffRoomStayContext = 'ARRIVING' | 'RESERVED' | 'DEPARTING';
+export type StaffRoomStayContext = 'ARRIVING' | 'RESERVED' | 'IN_HOUSE' | 'DEPARTING';
 export type StaffRoomBlockKind = 'OUT_OF_ORDER' | 'CAPACITY_CLOSED';
 
 export interface StaffRoomBoardReservationContext {

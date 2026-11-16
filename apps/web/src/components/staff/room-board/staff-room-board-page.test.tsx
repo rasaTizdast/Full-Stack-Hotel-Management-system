@@ -157,6 +157,41 @@ describe('StaffRoomBoardPage', () => {
     expect(screen.getByRole('heading', { name: 'اتاق‌های ۱۴۰۵/۰۸/۲۷' })).toBeVisible();
   });
 
+  it('shows checked-in reservations as in-house and physically occupied', async () => {
+    const checkedInBoard = copyBoard();
+    const checkedInRoom = checkedInBoard.items[0];
+    checkedInRoom.occupancy = 'OCCUPIED';
+    Reflect.set(checkedInRoom.reservationContexts[0], 'stayContext', 'IN_HOUSE');
+    boardApi.getStaffRoomBoard.mockResolvedValueOnce(checkedInBoard);
+
+    render(<StaffRoomBoardPage />);
+
+    const checkedInCard = await screen.findByRole('article', { name: /اتاق ۱۰۱/ });
+    expect(within(checkedInCard).getByText('اقامت در جریان')).toBeVisible();
+    expect(within(checkedInCard).getByText('اشغال؛ پذیرش انجام شده')).toBeVisible();
+    expect(screen.getByRole('option', { name: 'اقامت در جریان' })).toHaveValue('IN_HOUSE');
+
+    fireEvent.change(screen.getByLabelText('وضعیت رزرو'), { target: { value: 'IN_HOUSE' } });
+    fireEvent.click(screen.getByRole('button', { name: 'اعمال فیلترها' }));
+    expect(screen.getByRole('article', { name: /اتاق ۱۰۱/ })).toBeVisible();
+    expect(screen.queryByRole('article', { name: /اتاق ۱۰۲/ })).not.toBeInTheDocument();
+  });
+
+  it('keeps a checkout-day departure distinct from physical occupancy', async () => {
+    const checkoutDayBoard = copyBoard();
+    checkoutDayBoard.date = '2026-11-20';
+    checkoutDayBoard.items[0].occupancy = 'UNKNOWN';
+    Reflect.set(checkoutDayBoard.items[0].reservationContexts[0], 'stayContext', 'DEPARTING');
+    boardApi.getStaffRoomBoard.mockResolvedValueOnce(checkoutDayBoard);
+
+    render(<StaffRoomBoardPage />);
+
+    const departingCard = await screen.findByRole('article', { name: /اتاق ۱۰۱/ });
+    expect(within(departingCard).getByText('خروج امروز')).toBeVisible();
+    expect(within(departingCard).getByText('رزرو دارد؛ حضور ثبت نشده')).toBeVisible();
+    expect(within(departingCard).queryByText('اشغال؛ پذیرش انجام شده')).not.toBeInTheDocument();
+  });
+
   it('filters visible rooms locally while retaining complete out-of-date booking intervals for editing', async () => {
     render(<StaffRoomBoardPage />);
     await screen.findByRole('article', { name: /اتاق ۱۰۱/ });

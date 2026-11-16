@@ -87,6 +87,7 @@ const housekeepingLabels: Record<StaffRoomBoardItem['housekeepingStatus'], strin
 const stayLabels: Record<StaffRoomStayContext, string> = {
   ARRIVING: 'ورود امروز',
   RESERVED: 'رزرو در جریان',
+  IN_HOUSE: 'اقامت در جریان',
   DEPARTING: 'خروج امروز',
 };
 
@@ -259,6 +260,7 @@ export function RoomBoardFiltersForm({
             <option value="NONE">بدون رزرو فعال</option>
             <option value="ARRIVING">ورود امروز</option>
             <option value="RESERVED">رزرو در جریان</option>
+            <option value="IN_HOUSE">اقامت در جریان</option>
             <option value="DEPARTING">خروج امروز</option>
           </select>
         </div>
