@@ -105,7 +105,7 @@ function safeErrorMessage(error: unknown): string {
       return 'ورود ثبت نشد؛ وضعیت بازرسی اتاق‌ها باید از سوی سامانه تأیید شود.';
     case 'ROOM_ASSIGNMENT_OVERLAP':
     case 'ROOM_BLOCKED':
-      return 'ورود ثبت نشد؛ یکی از اتاق‌ها با یک رزرو یا محدودیت هم‌پوشانی دارد. وضعیت اتاق‌ها را بررسی کنید.';
+      return 'این عملیات ثبت نشد؛ یکی از اتاق‌ها با یک رزرو یا محدودیت هم‌پوشانی دارد. وضعیت اتاق‌ها را بررسی کنید.';
     case 'IDEMPOTENCY_KEY_REUSED':
       return 'شناسه امن درخواست قبلاً برای اطلاعات دیگری استفاده شده است. پیش از شروع درخواست تازه، وضعیت ثبت قبلی را بررسی کنید.';
     default:
@@ -207,6 +207,7 @@ export function StaffFrontDeskPage({ queue, roomTypes = [] }: StaffFrontDeskPage
   const actionHeadingRef = useRef<HTMLHeadingElement>(null);
   const dialogTriggerRef = useRef<HTMLElement | null>(null);
   const dialogWasOpenRef = useRef(false);
+  const moveRoomsRequestIdRef = useRef(0);
   const walkInKeyRef = useRef<{ signature: string; key: string; input: StaffWalkInInput } | null>(null);
   const successRef = useRef<HTMLParagraphElement>(null);
   const selectedDate = worklist?.date ?? query.date;
@@ -344,20 +345,29 @@ export function StaffFrontDeskPage({ queue, roomTypes = [] }: StaffFrontDeskPage
       }
     }
     if (nextDialog?.kind === 'move') {
+      const requestId = ++moveRoomsRequestIdRef.current;
       setMoveRooms([]);
       setMoveRoomsLoading(true);
       getStaffRoomBoard({ date: worklist?.businessDate ?? query.date, roomTypeId: nextDialog.stay.roomType.id })
-        .then((board) => setMoveRooms(board.items))
-        .catch((error: unknown) => setDialogError(safeErrorMessage(error)))
-        .finally(() => setMoveRoomsLoading(false));
+        .then((board) => {
+          if (requestId === moveRoomsRequestIdRef.current) setMoveRooms(board.items);
+        })
+        .catch((error: unknown) => {
+          if (requestId === moveRoomsRequestIdRef.current) setDialogError(safeErrorMessage(error));
+        })
+        .finally(() => {
+          if (requestId === moveRoomsRequestIdRef.current) setMoveRoomsLoading(false);
+        });
     }
   }
 
   function closeDialog() {
     if (dialogBusy) return;
+    moveRoomsRequestIdRef.current += 1;
     setDialog(null);
     setDialogError(null);
     setDialogRoomRecovery(false);
+    setMoveRoomsLoading(false);
   }
 
   async function submitAction(event: FormEvent<HTMLFormElement>) {

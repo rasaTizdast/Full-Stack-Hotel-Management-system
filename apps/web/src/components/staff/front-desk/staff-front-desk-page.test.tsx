@@ -1,6 +1,6 @@
-import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
+import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { StaffApiError } from '@/lib/staff-api';
+import { StaffApiError, type StaffRoomBoardResponse } from '@/lib/staff-api';
 import type { StaffStayWorklist } from '@/lib/staff-front-desk-api';
 import { formatGregorianAsJalali } from '@/lib/jalali-date';
 import { StaffFrontDeskPage } from './staff-front-desk-page';
@@ -77,6 +77,22 @@ function worklist(items: StaffStayWorklist['items']): StaffStayWorklist {
 
 function copyStay(stay: StaffStayWorklist['items'][number] = todayStay) {
   return structuredClone(stay);
+}
+
+function deferred<T>() {
+  let resolve!: (value: T) => void;
+  const promise = new Promise<T>((resolvePromise) => { resolve = resolvePromise; });
+  return { promise, resolve };
+}
+
+function roomBoardWithTarget(roomNumber: string): StaffRoomBoardResponse {
+  return {
+    date: '2026-11-18',
+    businessDate: '2026-11-18',
+    updatedAt: '2026-11-18T08:00:00Z',
+    items: [{ id: `target-${roomNumber}`, roomNumber, floor: null, features: [], housekeepingStatus: 'INSPECTED', isActive: true, isGenerated: false, roomType: { id: 'type-double', name: 'اتاق دوتخته', slug: 'garden-double' }, occupancy: 'VACANT', reservationContexts: [], blocks: [] }],
+    assignableBookings: [],
+  };
 }
 
 describe('StaffFrontDeskPage', () => {
@@ -439,9 +455,59 @@ describe('StaffFrontDeskPage', () => {
 
       const error = await within(dialog).findByRole('alert');
       expect(error).toHaveTextContent('یکی از اتاق‌ها با یک رزرو یا محدودیت هم‌پوشانی دارد');
+      expect(error).not.toHaveTextContent('ورود ثبت نشد');
       expect(within(error).getByRole('link', { name: 'بررسی وضعیت اتاق‌ها' })).toHaveAttribute('href', '/staff/rooms');
     },
   );
+
+  it('ignores stale room-board responses when move dialogs are reopened quickly', async () => {
+    const firstStay = copyStay();
+    firstStay.reference = 'FIRST1234567';
+    firstStay.status = 'CHECKED_IN';
+    firstStay.checkedInAt = '2026-11-18T09:00:00.000Z';
+    const secondStay = copyStay(firstStay);
+    secondStay.reference = 'SECOND123456';
+    const currentStay = copyStay(firstStay);
+    currentStay.reference = 'CURRENT12345';
+    frontDeskApi.getStaffStayWorklist.mockResolvedValueOnce(worklist([firstStay, secondStay, currentStay]));
+
+    const firstRequest = deferred<StaffRoomBoardResponse>();
+    const secondRequest = deferred<StaffRoomBoardResponse>();
+    const currentRequest = deferred<StaffRoomBoardResponse>();
+    roomApi.getStaffRoomBoard
+      .mockReset()
+      .mockReturnValueOnce(firstRequest.promise)
+      .mockReturnValueOnce(secondRequest.promise)
+      .mockReturnValueOnce(currentRequest.promise);
+    renderPage('in-house');
+
+    const firstCard = await screen.findByRole('article', { name: /FIRST1234567/ });
+    fireEvent.click(within(firstCard).getByRole('button', { name: 'انتقال اتاق' }));
+    const firstDialog = await screen.findByRole('dialog', { name: 'انتقال مهمان به اتاق دیگر' });
+    fireEvent.click(within(firstDialog).getByRole('button', { name: 'بازگشت' }));
+
+    const secondCard = screen.getByRole('article', { name: /SECOND123456/ });
+    fireEvent.click(within(secondCard).getByRole('button', { name: 'انتقال اتاق' }));
+    const secondDialog = await screen.findByRole('dialog', { name: 'انتقال مهمان به اتاق دیگر' });
+    fireEvent.click(within(secondDialog).getByRole('button', { name: 'بازگشت' }));
+
+    const currentCard = screen.getByRole('article', { name: /CURRENT12345/ });
+    fireEvent.click(within(currentCard).getByRole('button', { name: 'انتقال اتاق' }));
+    const currentDialog = await screen.findByRole('dialog', { name: 'انتقال مهمان به اتاق دیگر' });
+    expect(within(currentDialog).getByText('در حال بررسی اتاق‌های پیشنهادی…')).toBeVisible();
+
+    await act(async () => { secondRequest.resolve(roomBoardWithTarget('۲۰۲')); await secondRequest.promise; });
+    expect(within(currentDialog).getByText('در حال بررسی اتاق‌های پیشنهادی…')).toBeVisible();
+    expect(within(currentDialog).queryByRole('option', { name: 'اتاق ۲۰۲' })).not.toBeInTheDocument();
+
+    await act(async () => { firstRequest.resolve(roomBoardWithTarget('۲۰۱')); await firstRequest.promise; });
+    expect(within(currentDialog).getByText('در حال بررسی اتاق‌های پیشنهادی…')).toBeVisible();
+    expect(within(currentDialog).queryByRole('option', { name: 'اتاق ۲۰۱' })).not.toBeInTheDocument();
+
+    await act(async () => { currentRequest.resolve(roomBoardWithTarget('۲۰۳')); await currentRequest.promise; });
+    expect(await within(currentDialog).findByRole('option', { name: 'اتاق ۲۰۳' })).toBeVisible();
+    expect(within(currentDialog).queryByText('در حال بررسی اتاق‌های پیشنهادی…')).not.toBeInTheDocument();
+  });
 
   it('explains and blocks a move when no assignment covers the business date', async () => {
     const checkedIn = copyStay();
