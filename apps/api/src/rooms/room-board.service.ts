@@ -1,6 +1,7 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { HOTEL_TIME_ZONE, parseDateOnly } from '../availability/date-range';
 import { PrismaService } from '../database/prisma.service';
+import { assignmentRevision } from './assignment-revision';
 import type { RoomBoardDto, RoomBoardItemDto, RoomBoardQueryDto } from './dto/room-board.dto';
 import { reservationContextOn } from './room-board-context';
 import { hotelBusinessDate } from './room-capacity.service';
@@ -100,6 +101,7 @@ export class RoomBoardService {
           },
           orderBy: [{ checkIn: 'asc' }, { publicReference: 'asc' }],
           select: {
+            id: true,
             publicReference: true,
             guestName: true,
             roomType: { select: { id: true, name: true } },
@@ -113,7 +115,8 @@ export class RoomBoardService {
                 id: true,
                 startDate: true,
                 endDate: true,
-                room: { select: { id: true, roomNumber: true } },
+                roomId: true,
+                room: { select: { roomNumber: true } },
               },
             },
           },
@@ -154,8 +157,8 @@ export class RoomBoardService {
           items,
           assignableBookings: bookings.map((booking) => {
             const assignedToday = new Set(
-              booking.assignments.flatMap(({ startDate, endDate, room }) =>
-                startDate <= date && date < endDate ? [room.id] : [],
+              booking.assignments.flatMap(({ startDate, endDate, roomId }) =>
+                startDate <= date && date < endDate ? [roomId] : [],
               ),
             );
             return {
@@ -166,10 +169,11 @@ export class RoomBoardService {
               checkIn: dateOnly(booking.checkIn),
               checkOut: dateOnly(booking.checkOut),
               roomQuantity: booking.roomQuantity,
+              revision: assignmentRevision(booking.id, booking.assignments),
               unassignedRoomQuantity: Math.max(0, booking.roomQuantity - assignedToday.size),
-              assignments: booking.assignments.map(({ id, room, startDate, endDate }) => ({
+              assignments: booking.assignments.map(({ id, roomId, room, startDate, endDate }) => ({
                 id,
-                roomId: room.id,
+                roomId,
                 roomNumber: room.roomNumber,
                 startDate: dateOnly(startDate),
                 endDate: dateOnly(endDate),

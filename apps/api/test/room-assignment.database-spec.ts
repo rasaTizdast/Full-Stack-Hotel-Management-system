@@ -30,13 +30,19 @@ describe('PostgreSQL room assignment invariants', () => {
   function replace(
     reference: string,
     assignments: ReturnType<typeof interval>[],
+    expectedRevision: string,
     reason = f.reason,
+    editor = staff,
   ) {
     return f
       .client()
       .put(assignmentsRoute(reference))
-      .set(staff.headers)
-      .send({ assignments, reason });
+      .set(editor.headers)
+      .send({ assignments, reason, expectedRevision });
+  }
+
+  function revisionFor(booking: { publicReference: string; roomTypeId: string }) {
+    return f.assignmentRevision(booking, staff.headers);
   }
 
   function cancel(reference: string) {
@@ -160,16 +166,34 @@ describe('PostgreSQL room assignment invariants', () => {
         reason: 'Fixture',
       },
     });
-    await replace(first.publicReference, [interval(rooms[0].id, f.checkIn, f.next)]).expect(200);
-    const overlap = await replace(second.publicReference, [interval(rooms[0].id)]).expect(409);
+    await replace(
+      first.publicReference,
+      [interval(rooms[0].id, f.checkIn, f.next)],
+      await revisionFor(first),
+    ).expect(200);
+    const overlap = await replace(
+      second.publicReference,
+      [interval(rooms[0].id)],
+      await revisionFor(second),
+    ).expect(409);
     expect(overlap.body).toMatchObject({ code: 'ROOM_ASSIGNMENT_OVERLAP' });
-    await replace(second.publicReference, [interval(rooms[0].id, f.next)]).expect(200);
-    const blocked = await replace(second.publicReference, [interval(rooms[1].id)]).expect(409);
+    await replace(
+      second.publicReference,
+      [interval(rooms[0].id, f.next)],
+      await revisionFor(second),
+    ).expect(200);
+    const blocked = await replace(
+      second.publicReference,
+      [interval(rooms[1].id)],
+      await revisionFor(second),
+    ).expect(409);
     expect(blocked.body).toMatchObject({ code: 'ROOM_BLOCKED' });
     const adjacentBlock = await f.booking(type.id);
-    await replace(adjacentBlock.publicReference, [interval(rooms[1].id, f.checkIn, f.next)]).expect(
-      200,
-    );
+    await replace(
+      adjacentBlock.publicReference,
+      [interval(rooms[1].id, f.checkIn, f.next)],
+      await revisionFor(adjacentBlock),
+    ).expect(200);
   });
 
   it('allows one distinct assigned room per unit and leaves booking and inventory untouched', async () => {
@@ -187,34 +211,46 @@ describe('PostgreSQL room assignment invariants', () => {
         orderBy: { stayDate: 'asc' },
       });
     const before = await inventory();
+    const expectedRevision = await revisionFor(booking);
 
-    const wrongType = await replace(reference, [interval(wrongRoom.id)]).expect(409);
+    const wrongType = await replace(reference, [interval(wrongRoom.id)], expectedRevision).expect(
+      409,
+    );
     expect(wrongType.body).toMatchObject({ code: 'ROOM_TYPE_MISMATCH' });
-    const outside = await replace(reference, [
-      interval(rooms[0].id, addDays(f.checkIn, -1)),
-    ]).expect(409);
+    const outside = await replace(
+      reference,
+      [interval(rooms[0].id, addDays(f.checkIn, -1))],
+      expectedRevision,
+    ).expect(409);
     expect(outside.body).toMatchObject({ code: 'ROOM_ASSIGNMENT_OUTSIDE_BOOKING' });
 
     const desired = [interval(rooms[0].id, f.checkIn, f.next), interval(rooms[1].id)];
     const [first, replay] = await Promise.all([
-      replace(reference, desired).expect(200),
-      replace(reference, [...desired].reverse()).expect(200),
+      replace(reference, desired, expectedRevision).expect(200),
+      replace(reference, [...desired].reverse(), expectedRevision).expect(200),
     ]);
     expect(replay.body).toEqual(first.body);
-    const { assignments } = first.body as { assignments: Array<{ id: string; roomId: string }> };
+    const { assignments, revision } = first.body as {
+      assignments: Array<{ id: string; roomId: string }>;
+      revision: string;
+    };
     const { id } = assignments.find((entry) => entry.roomId === rooms[0].id)!;
-    const duplicate = await replace(reference, [...desired, interval(rooms[0].id, f.next)]).expect(
+    const duplicate = await replace(
+      reference,
+      [...desired, interval(rooms[0].id, f.next)],
+      revision,
+    ).expect(409);
+    expect(duplicate.body).toMatchObject({ code: 'ROOM_ASSIGNMENT_DUPLICATE_ROOM' });
+    const limit = await replace(reference, [...desired, interval(rooms[2].id)], revision).expect(
       409,
     );
-    expect(duplicate.body).toMatchObject({ code: 'ROOM_ASSIGNMENT_DUPLICATE_ROOM' });
-    const limit = await replace(reference, [...desired, interval(rooms[2].id)]).expect(409);
     expect(limit.body).toMatchObject({ code: 'ROOM_ASSIGNMENT_LIMIT' });
 
-    const unassign = () => replace(reference, [], 'Allocation corrected').expect(200);
+    const unassign = () => replace(reference, [], revision, 'Allocation corrected').expect(200);
     const result = await unassign();
     const repeated = await unassign();
     expect(repeated.body).toEqual(result.body);
-    expect(result.body).toEqual({ assignments: [] });
+    expect(result.body).toEqual({ revision: expectedRevision, assignments: [] });
     expect(await f.prisma.roomAssignment.findUnique({ where: { id } })).toMatchObject({
       isActive: false,
       changeReason: f.reason,
@@ -242,7 +278,11 @@ describe('PostgreSQL room assignment invariants', () => {
     const { type, rooms } = await f.createProperty();
     const booking = await f.booking(type.id, 2);
     const reference = booking.publicReference;
-    const original = await replace(reference, [interval(rooms[0].id)]).expect(200);
+    const expectedRevision = await revisionFor(booking);
+    const original = await replace(reference, [interval(rooms[0].id)], expectedRevision).expect(
+      200,
+    );
+    const { revision } = original.body as { revision: string };
     await f.prisma.roomBlock.create({
       data: {
         roomId: rooms[2].id,
@@ -251,21 +291,24 @@ describe('PostgreSQL room assignment invariants', () => {
         reason: 'Fixture',
       },
     });
-    const failed = await replace(reference, [interval(rooms[1].id), interval(rooms[2].id)]).expect(
-      409,
-    );
+    const failed = await replace(
+      reference,
+      [interval(rooms[1].id), interval(rooms[2].id)],
+      revision,
+    ).expect(409);
     expect(failed.body).toMatchObject({ code: 'ROOM_BLOCKED' });
 
-    const replay = await replace(reference, [interval(rooms[0].id)]).expect(200);
+    const replay = await replace(reference, [interval(rooms[0].id)], expectedRevision).expect(200);
     expect(replay.body).toEqual(original.body);
     const actual = await f.prisma.roomAssignment.findMany({ where: { bookingId: booking.id } });
     expect(actual).toMatchObject([{ roomId: rooms[0].id, isActive: true }]);
     expect(await f.prisma.auditEvent.count({ where: { targetId: actual[0].id } })).toBe(1);
 
-    const swapped = await replace(reference, [
-      interval(rooms[0].id, f.next),
-      interval(rooms[1].id),
-    ]).expect(200);
+    const swapped = await replace(
+      reference,
+      [interval(rooms[0].id, f.next), interval(rooms[1].id)],
+      revision,
+    ).expect(200);
     const { assignments } = swapped.body as { assignments: unknown[] };
     expect(assignments).toHaveLength(2);
     expect(assignments).toEqual(
@@ -279,14 +322,66 @@ describe('PostgreSQL room assignment invariants', () => {
     );
   });
 
+  it('keeps the first edit and its audit when two staff replace from one revision', async () => {
+    const { type, rooms } = await f.createProperty();
+    const booking = await f.booking(type.id);
+    const reference = booking.publicReference;
+    const competingStaff = await f.staff('RECEPTIONIST');
+    const expectedRevision = await revisionFor(booking);
+    const lock = await holdRoom(rooms[0].id);
+    let firstEdit: PromiseLike<unknown> | undefined;
+    let competingEdit: PromiseLike<unknown> | undefined;
+    try {
+      firstEdit = replace(
+        reference,
+        [interval(rooms[0].id)],
+        expectedRevision,
+        'First editor',
+      ).then(({ status, body }) => ({ status, body: body as unknown }));
+      await waitForDatabaseLock('FROM "rooms"', lock);
+      competingEdit = replace(
+        reference,
+        [interval(rooms[1].id)],
+        expectedRevision,
+        'Second editor',
+        competingStaff,
+      ).then(({ status, body }) => ({ status, body: body as unknown }));
+      await waitForDatabaseLock('WHERE public_reference =');
+    } finally {
+      await lock.query('ROLLBACK');
+      lock.release();
+      await Promise.allSettled([firstEdit, competingEdit]);
+    }
+
+    expect(await firstEdit).toMatchObject({
+      status: 200,
+      body: { assignments: [{ roomId: rooms[0].id }] },
+    });
+    expect(await competingEdit).toMatchObject({
+      status: 409,
+      body: { code: 'ROOM_ASSIGNMENT_STALE' },
+    });
+    const assignmentRows = await f.prisma.roomAssignment.findMany({
+      where: { bookingId: booking.id },
+      select: { id: true, roomId: true, isActive: true },
+    });
+    expect(assignmentRows).toMatchObject([{ roomId: rooms[0].id, isActive: true }]);
+    expect(
+      await f.prisma.auditEvent.findMany({
+        where: { targetId: { in: assignmentRows.map(({ id }) => id) } },
+        select: { eventName: true, reason: true },
+      }),
+    ).toEqual([{ eventName: 'ROOM_ASSIGNED', reason: 'First editor' }]);
+  });
+
   it('serializes competing bookings even when callers send the same rooms in reversed order', async () => {
     const { type, rooms } = await f.createProperty();
     const first = await f.booking(type.id, 2);
     const second = await f.booking(type.id, 2);
     const desired = [interval(rooms[0].id), interval(rooms[1].id)];
     const results = await Promise.all([
-      replace(first.publicReference, desired),
-      replace(second.publicReference, [...desired].reverse()),
+      replace(first.publicReference, desired, await revisionFor(first)),
+      replace(second.publicReference, [...desired].reverse(), await revisionFor(second)),
     ]);
     expect(results.map(({ status }) => status).sort()).toEqual([200, 409]);
     expect(results.find(({ status }) => status === 409)?.body).toMatchObject({
@@ -303,11 +398,12 @@ describe('PostgreSQL room assignment invariants', () => {
     const { type, rooms } = await f.createProperty();
     const booking = await f.booking(type.id);
     const room = rooms[0];
+    const expectedRevision = await revisionFor(booking);
     const lock = await holdRoom(room.id);
     let allocation: PromiseLike<unknown> | undefined;
     let deactivation: PromiseLike<unknown> | undefined;
     try {
-      allocation = replace(booking.publicReference, [interval(room.id)])
+      allocation = replace(booking.publicReference, [interval(room.id)], expectedRevision)
         .expect(200)
         .then((result) => result.body as unknown);
       await waitForDatabaseLock('FROM "rooms"', lock);
@@ -392,6 +488,7 @@ describe('PostgreSQL room assignment invariants', () => {
       },
     });
 
+    const expectedRevision = await revisionFor(booking);
     const lock = await holdRoom(rooms[0].id);
     let cancellation: PromiseLike<unknown> | undefined;
     let allocation: PromiseLike<unknown> | undefined;
@@ -400,7 +497,7 @@ describe('PostgreSQL room assignment invariants', () => {
         .expect(200)
         .then((result) => result.body as unknown);
       await waitForDatabaseLock('FROM "rooms"', lock);
-      allocation = replace(booking.publicReference, [interval(rooms[1].id)])
+      allocation = replace(booking.publicReference, [interval(rooms[1].id)], expectedRevision)
         .expect(409)
         .then((result) => result.body as unknown);
     } finally {

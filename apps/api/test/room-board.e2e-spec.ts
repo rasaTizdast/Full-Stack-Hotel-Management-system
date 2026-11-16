@@ -51,6 +51,7 @@ describe('Staff room board HTTP API', () => {
     const { type, rooms } = await f.createProperty();
     const booking = await f.booking(type.id, 2);
     const route = assignmentsRoute(booking.publicReference);
+    const expectedRevision = await f.assignmentRevision(booking, reception.headers);
     const assign = await f
       .client()
       .put(route)
@@ -61,9 +62,13 @@ describe('Staff room board HTTP API', () => {
           { roomId: rooms[2].id, startDate: f.next, endDate: f.checkOut },
         ],
         reason: f.reason,
+        expectedRevision,
       })
       .expect(200)
       .expect('Cache-Control', 'private, no-store');
+    const { revision } = assign.body as { revision: string };
+    expect(revision).toMatch(/^[0-9a-f]{64}$/);
+    expect(revision).not.toBe(expectedRevision);
     const assignmentId = (
       assign.body as { assignments: Array<{ id: string; roomId: string }> }
     ).assignments.find(({ roomId }) => roomId === rooms[0].id)!.id;
@@ -117,8 +122,9 @@ describe('Staff room board HTTP API', () => {
       ],
     });
     const { assignableBookings } = arrivals.body as {
-      assignableBookings: [{ assignments: unknown[] }];
+      assignableBookings: [{ assignments: unknown[]; revision: string }];
     };
+    expect(assignableBookings[0].revision).toBe(revision);
     expect(assignableBookings[0].assignments).toHaveLength(2);
     expect(assignableBookings[0].assignments).toEqual(
       expect.arrayContaining([
@@ -136,7 +142,9 @@ describe('Staff room board HTTP API', () => {
     const inRange = await board(f.next, { stayContext: 'RESERVED', floor: '1' });
     expect(inRange.body).toMatchObject({
       items: [{ id: rooms[0].id, occupancy: 'UNKNOWN' }],
-      assignableBookings: [{ reference: booking.publicReference, unassignedRoomQuantity: 0 }],
+      assignableBookings: [
+        { reference: booking.publicReference, unassignedRoomQuantity: 0, revision },
+      ],
     });
     const blocked = await board(f.next, { stayContext: 'NONE', blockKind: 'OUT_OF_ORDER' });
     expect(blocked.body).toMatchObject({
@@ -167,7 +175,7 @@ describe('Staff room board HTTP API', () => {
       .client()
       .put(route)
       .set(reception.headers)
-      .send({ assignments: [], reason: 'Allocation corrected' })
+      .send({ assignments: [], reason: 'Allocation corrected', expectedRevision: revision })
       .expect(200)
       .expect('Cache-Control', 'private, no-store');
     const unassigned = await board(f.checkIn);
@@ -179,6 +187,7 @@ describe('Staff room board HTTP API', () => {
   it('filters by occupancy independently of reservation context', async () => {
     const { type, rooms } = await f.createProperty();
     const booking = await f.booking(type.id);
+    const expectedRevision = await f.assignmentRevision(booking, reception.headers);
     await f
       .client()
       .put(assignmentsRoute(booking.publicReference))
@@ -186,6 +195,7 @@ describe('Staff room board HTTP API', () => {
       .send({
         assignments: [{ roomId: rooms[0].id, startDate: f.checkIn, endDate: f.checkOut }],
         reason: f.reason,
+        expectedRevision,
       })
       .expect(200);
     const board = (occupancy: string) =>
@@ -207,13 +217,16 @@ describe('Staff room board HTTP API', () => {
     expect((await board('OCCUPIED')).body).toMatchObject({ items: [] });
   });
 
-  it('requires a nonblank reason and validates every interval in the desired set', async () => {
+  it('requires a nonblank reason, valid revision, and valid interval rows', async () => {
     const { type } = await f.createProperty();
     const booking = await f.booking(type.id);
+    const expectedRevision = await f.assignmentRevision(booking, reception.headers);
     for (const body of [
-      { assignments: [] },
-      { assignments: [], reason: '  ' },
-      { assignments: [null], reason: f.reason },
+      { assignments: [], expectedRevision },
+      { assignments: [], reason: '  ', expectedRevision },
+      { assignments: [null], reason: f.reason, expectedRevision },
+      { assignments: [], reason: f.reason },
+      { assignments: [], reason: f.reason, expectedRevision: 'invalid' },
     ]) {
       const response = await f
         .client()
@@ -228,6 +241,7 @@ describe('Staff room board HTTP API', () => {
   it('rejects malformed, impossible, and empty date intervals', async () => {
     const { type, rooms } = await f.createProperty();
     const booking = await f.booking(type.id);
+    const expectedRevision = await f.assignmentRevision(booking, reception.headers);
     for (const [startDate, endDate] of [
       ['2026-02-30', f.checkOut],
       [f.checkIn + 'T00:00:00.000Z', f.checkOut],
@@ -238,7 +252,11 @@ describe('Staff room board HTTP API', () => {
         .client()
         .put(assignmentsRoute(booking.publicReference))
         .set(reception.headers)
-        .send({ assignments: [{ roomId: rooms[0].id, startDate, endDate }], reason: f.reason })
+        .send({
+          assignments: [{ roomId: rooms[0].id, startDate, endDate }],
+          reason: f.reason,
+          expectedRevision,
+        })
         .expect(400);
     }
     await f

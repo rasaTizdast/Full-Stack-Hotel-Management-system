@@ -10,6 +10,7 @@ import {
 } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
 
+const revisionPattern = /^[0-9a-f]{64}$/;
 const datePattern = /^\d{4}-\d{2}-\d{2}$/;
 
 export class RoomAssignmentIntervalDto {
@@ -36,6 +37,13 @@ export class ReplaceRoomAssignmentsDto {
   @ValidateNested({ each: true })
   @Type(() => RoomAssignmentIntervalDto)
   assignments!: RoomAssignmentIntervalDto[];
+
+  @ApiProperty({
+    pattern: revisionPattern.source,
+    description: 'Opaque revision from the board or the latest successful assignment replacement.',
+  })
+  @Matches(revisionPattern)
+  expectedRevision!: string;
 
   @ApiProperty({ minLength: 1, maxLength: 500 })
   @Transform(({ value }: { value: unknown }) => (typeof value === 'string' ? value.trim() : value))
@@ -68,6 +76,9 @@ export class RoomAssignmentDto {
 }
 
 export class RoomAssignmentSetDto {
+  @ApiProperty({ description: 'Opaque revision of the returned assignment set.' })
+  revision!: string;
+
   @ApiProperty({ type: [RoomAssignmentDto] })
   assignments!: RoomAssignmentDto[];
 }

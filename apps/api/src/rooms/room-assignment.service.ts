@@ -9,6 +9,7 @@ import { parseDateOnly } from '../availability/date-range';
 import { lockBookingByReference } from '../bookings/booking-row-lock';
 import { PrismaService } from '../database/prisma.service';
 import type { Prisma } from '../generated/prisma/client';
+import { assignmentRevision } from './assignment-revision';
 import type {
   ReplaceRoomAssignmentsDto,
   RoomAssignmentDto,
@@ -36,6 +37,17 @@ function assignmentDto(record: Assignment, reference: string): RoomAssignmentDto
     endDate: record.endDate.toISOString().slice(0, 10),
     isActive: record.isActive,
     updatedAt: record.updatedAt.toISOString(),
+  };
+}
+
+function assignmentSetDto(
+  bookingId: string,
+  reference: string,
+  assignments: Assignment[],
+): RoomAssignmentSetDto {
+  return {
+    revision: assignmentRevision(bookingId, assignments),
+    assignments: assignments.map((assignment) => assignmentDto(assignment, reference)),
   };
 }
 
@@ -76,14 +88,35 @@ export class RoomAssignmentService {
     return this.prisma.$transaction(async (transaction) => {
       const lockedBooking = await lockBookingByReference(transaction, reference);
       const { id: bookingId, roomTypeId } = lockedBooking;
+      if (lockedBooking.status !== 'CONFIRMED') {
+        throw new ConflictException({ code: 'BOOKING_STATUS_CONFLICT' });
+      }
+      // The booking lock protects the complete active set until this transaction commits.
+      const current = await transaction.roomAssignment.findMany({
+        where: { bookingId, isActive: true },
+        orderBy: { id: 'asc' },
+        select: assignmentSelect,
+      });
+      const currentByInterval = new Map(
+        current.map((assignment) => [intervalKey(assignment), assignment]),
+      );
+      const retained = desired.flatMap((interval) => {
+        const assignment = currentByInterval.get(intervalKey(interval));
+        return assignment ? [assignment] : [];
+      });
+      if (current.length === desired.length && retained.length === desired.length) {
+        return assignmentSetDto(bookingId, reference, retained);
+      }
+      if (dto.expectedRevision !== assignmentRevision(bookingId, current)) {
+        throw new ConflictException({ code: 'ROOM_ASSIGNMENT_STALE' });
+      }
       if (desired.length > lockedBooking.roomQuantity) {
         throw new ConflictException({ code: 'ROOM_ASSIGNMENT_LIMIT' });
       }
-      await this.lockAffectedRooms(
-        transaction,
-        lockedBooking,
-        desired.map(({ roomId }) => roomId),
-      );
+      await this.lockAffectedRooms(transaction, roomTypeId, [
+        ...current.map(({ roomId }) => roomId),
+        ...desired.map(({ roomId }) => roomId),
+      ]);
 
       const booking = await transaction.booking.findUniqueOrThrow({
         where: { id: bookingId },
@@ -101,16 +134,9 @@ export class RoomAssignmentService {
       }
       await this.assertRoomsAssignable(transaction, bookingId, roomTypeId, desired);
 
-      const current = await transaction.roomAssignment.findMany({
-        where: { bookingId, isActive: true },
-        select: assignmentSelect,
-      });
-      const currentByInterval = new Map(
-        current.map((assignment) => [intervalKey(assignment), assignment]),
-      );
-      const desiredKeys = new Set(desired.map(intervalKey));
+      const retainedIds = new Set(retained.map(({ id }) => id));
       for (const assignment of current) {
-        if (!desiredKeys.has(intervalKey(assignment))) {
+        if (!retainedIds.has(assignment.id)) {
           await this.deactivate(transaction, assignment.id, {
             actorStaffUserId,
             eventName: 'ROOM_UNASSIGNED',
@@ -119,11 +145,11 @@ export class RoomAssignmentService {
         }
       }
 
-      const assignments: RoomAssignmentDto[] = [];
+      const assignments: Assignment[] = [];
       for (const interval of desired) {
-        const retained = currentByInterval.get(intervalKey(interval));
-        if (retained) {
-          assignments.push(assignmentDto(retained, reference));
+        const previous = currentByInterval.get(intervalKey(interval));
+        if (previous) {
+          assignments.push(previous);
           continue;
         }
         const assignment = await transaction.roomAssignment.create({
@@ -144,9 +170,9 @@ export class RoomAssignmentService {
           reason: dto.reason,
           after: { isActive: true },
         });
-        assignments.push(assignmentDto(assignment, reference));
+        assignments.push(assignment);
       }
-      return { assignments };
+      return assignmentSetDto(bookingId, reference, assignments);
     });
   }
 
@@ -156,7 +182,15 @@ export class RoomAssignmentService {
     booking: { id: string; roomTypeId: string },
     actorStaffUserId?: string,
   ): Promise<void> {
-    await this.lockAffectedRooms(transaction, booking);
+    const current = await transaction.roomAssignment.findMany({
+      where: { bookingId: booking.id, isActive: true },
+      select: { roomId: true },
+    });
+    await this.lockAffectedRooms(
+      transaction,
+      booking.roomTypeId,
+      current.map(({ roomId }) => roomId),
+    );
     const activeAssignments = await transaction.roomAssignment.findMany({
       where: { bookingId: booking.id, isActive: true },
       select: { id: true },
@@ -174,16 +208,11 @@ export class RoomAssignmentService {
 
   private async lockAffectedRooms(
     transaction: TransactionClient,
-    booking: { id: string; roomTypeId: string },
-    desiredRoomIds: string[] = [],
+    roomTypeId: string,
+    roomIds: string[],
   ): Promise<void> {
-    await this.capacity.lockRoomType(transaction, booking.roomTypeId);
-    const current = await transaction.roomAssignment.findMany({
-      where: { bookingId: booking.id, isActive: true },
-      select: { roomId: true },
-    });
-    const roomIds = new Set([...desiredRoomIds, ...current.map(({ roomId }) => roomId)]);
-    for (const roomId of [...roomIds].sort()) {
+    await this.capacity.lockRoomType(transaction, roomTypeId);
+    for (const roomId of [...new Set(roomIds)].sort()) {
       await this.capacity.lockRoom(transaction, roomId);
     }
   }

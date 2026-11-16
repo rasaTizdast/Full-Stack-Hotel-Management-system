@@ -72,6 +72,25 @@ export class RoomBoardFixture {
     return request(this.app.getHttpServer());
   }
 
+  async assignmentRevision(
+    booking: { publicReference: string; roomTypeId: string },
+    headers: Record<string, string>,
+  ): Promise<string> {
+    const result = await this.client()
+      .get(boardRoute)
+      .set(headers)
+      .query({ date: this.checkIn, roomTypeId: booking.roomTypeId })
+      .expect(200);
+    const data = result.body as {
+      assignableBookings: Array<{ reference: string; revision: string }>;
+    };
+    const revision = data.assignableBookings.find(
+      ({ reference }) => reference === booking.publicReference,
+    )?.revision;
+    if (typeof revision !== 'string') throw new Error('Missing booking assignment revision');
+    return revision;
+  }
+
   async createProperty(timezone = 'Asia/Tehran') {
     const slug = randomUUID();
     const hotel = await this.prisma.hotel.create({

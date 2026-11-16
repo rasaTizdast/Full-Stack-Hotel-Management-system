@@ -118,6 +118,10 @@ const SAFE_DOMAIN_ERRORS: Record<string, { statusCode: number; message: string }
     statusCode: 409,
     message: 'Each room may appear once in the assignment set.',
   },
+  ROOM_ASSIGNMENT_STALE: {
+    statusCode: 409,
+    message: 'Room assignments changed. Refresh the room board and review the current set.',
+  },
   ROOM_ASSIGNMENT_LIMIT: {
     statusCode: 409,
     message: 'The assignment set exceeds the number of booked rooms.',
