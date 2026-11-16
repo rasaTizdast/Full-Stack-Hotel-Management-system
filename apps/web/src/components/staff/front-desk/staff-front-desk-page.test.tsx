@@ -318,6 +318,7 @@ describe('StaffFrontDeskPage', () => {
   it('shows walk-in success and reuses the same idempotency key for a retry', async () => {
     frontDeskApi.createStaffWalkIn
       .mockRejectedValueOnce(new StaffApiError('Temporary network failure.', 0))
+      .mockRejectedValueOnce(new StaffApiError('Temporary network failure.', 0))
       .mockResolvedValueOnce({ reference: 'WALKIN123456', status: 'CONFIRMED' });
     renderPage('arrivals');
     fireEvent.click(await screen.findByRole('button', { name: 'ثبت ورود بدون رزرو قبلی' }));
@@ -327,11 +328,33 @@ describe('StaffFrontDeskPage', () => {
     fireEvent.change(within(dialog).getByLabelText('تعداد مهمانان'), { target: { value: '2' } });
     fireEvent.change(within(dialog).getByLabelText('تعداد اتاق'), { target: { value: '1' } });
     fireEvent.click(within(dialog).getByRole('button', { name: 'ثبت ورود قطعی' }));
-    expect(await within(dialog).findByRole('alert')).toHaveTextContent('ارتباط با سامانه برقرار نشد');
-    fireEvent.click(within(dialog).getByRole('button', { name: 'تلاش دوباره با همان درخواست' }));
+    expect(await within(dialog).findByText(/ارتباط با سامانه برقرار نشد/)).toBeVisible();
+    expect(within(dialog).getByText(/ممکن است اقامت تکراری ثبت شود/)).toBeVisible();
+
+    expect(within(dialog).getByLabelText('نام مهمان')).toBeDisabled();
+    expect(within(dialog).getByLabelText('شماره تماس')).toBeDisabled();
+    fireEvent.click(within(dialog).getByRole('button', { name: 'بازگشت' }));
+    expect(screen.queryByRole('dialog', { name: 'ثبت ورود بدون رزرو قبلی' })).not.toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'ثبت ورود بدون رزرو قبلی' }));
+    const reopenedDialog = await screen.findByRole('dialog', { name: 'ثبت ورود بدون رزرو قبلی' });
+    expect(within(reopenedDialog).getByLabelText('نام مهمان')).toBeDisabled();
+    expect(within(reopenedDialog).getByRole('button', { name: 'تلاش دوباره با همان درخواست' })).toBeVisible();
+
+    fireEvent.change(within(reopenedDialog).getByLabelText('نام مهمان'), { target: { value: 'مهمان متفاوت' } });
+    fireEvent.click(within(reopenedDialog).getByRole('button', { name: 'تلاش دوباره با همان درخواست' }));
     await waitFor(() => expect(frontDeskApi.createStaffWalkIn).toHaveBeenCalledTimes(2));
     expect(frontDeskApi.createStaffWalkIn.mock.calls[1]).toEqual(frontDeskApi.createStaffWalkIn.mock.calls[0]);
+    expect(await within(reopenedDialog).findByText(/ارتباط با سامانه برقرار نشد/)).toBeVisible();
+
+    fireEvent.click(within(reopenedDialog).getByRole('button', { name: 'لغو تلاش و شروع درخواست جدید' }));
+    expect(within(reopenedDialog).getByLabelText('نام مهمان')).toBeEnabled();
+    fireEvent.change(within(reopenedDialog).getByLabelText('نام مهمان'), { target: { value: 'مهمان جدید' } });
+    fireEvent.click(within(reopenedDialog).getByRole('button', { name: 'ثبت ورود قطعی' }));
+    await waitFor(() => expect(frontDeskApi.createStaffWalkIn).toHaveBeenCalledTimes(3));
+    expect(frontDeskApi.createStaffWalkIn.mock.calls[2][0].guestName).toBe('مهمان جدید');
+    expect(frontDeskApi.createStaffWalkIn.mock.calls[2][2]).not.toBe(frontDeskApi.createStaffWalkIn.mock.calls[0][2]);
     expect(await screen.findByText(/WALKIN123456/)).toBeVisible();
+    expect(screen.queryByRole('dialog', { name: 'ثبت ورود بدون رزرو قبلی' })).not.toBeInTheDocument();
   });
 
   it('shows in-house due-outs without offering a move on the exclusive checkout date', async () => {

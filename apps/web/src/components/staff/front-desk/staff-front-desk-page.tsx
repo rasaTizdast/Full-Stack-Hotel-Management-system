@@ -207,7 +207,7 @@ export function StaffFrontDeskPage({ queue, roomTypes = [] }: StaffFrontDeskPage
   const actionHeadingRef = useRef<HTMLHeadingElement>(null);
   const dialogTriggerRef = useRef<HTMLElement | null>(null);
   const dialogWasOpenRef = useRef(false);
-  const walkInKeyRef = useRef<{ signature: string; key: string } | null>(null);
+  const walkInKeyRef = useRef<{ signature: string; key: string; input: StaffWalkInInput } | null>(null);
   const successRef = useRef<HTMLParagraphElement>(null);
   const selectedDate = worklist?.date ?? query.date;
   const detailCanAmend = Boolean(detail && detail.status === 'CONFIRMED' && detail.checkIn >= (worklist?.businessDate ?? query.date));
@@ -327,16 +327,21 @@ export function StaffFrontDeskPage({ queue, roomTypes = [] }: StaffFrontDeskPage
     setDialogReason('');
     setDialogError(null);
     setDialogRoomRecovery(false);
-    setWalkInError(null);
-    setWalkInFieldError(null);
+    const preserveWalkInAttempt = nextDialog?.kind === 'walk-in' && walkInRetry && walkInKeyRef.current !== null;
+    if (!preserveWalkInAttempt) {
+      setWalkInError(null);
+      setWalkInFieldError(null);
+    }
     if (nextDialog?.kind === 'walk-in') {
-      const businessDate = worklist?.businessDate ?? query.date;
-      setWalkInDraft((current) => ({
-        ...current,
-        roomTypeSlug: current.roomTypeSlug || roomTypes[0]?.slug || '',
-        checkOut: dateLabel(nextIsoDate(businessDate)),
-      }));
-      setWalkInRetry(false);
+      if (!preserveWalkInAttempt) {
+        const businessDate = worklist?.businessDate ?? query.date;
+        setWalkInDraft((current) => ({
+          ...current,
+          roomTypeSlug: current.roomTypeSlug || roomTypes[0]?.slug || '',
+          checkOut: dateLabel(nextIsoDate(businessDate)),
+        }));
+        setWalkInRetry(false);
+      }
     }
     if (nextDialog?.kind === 'move') {
       setMoveRooms([]);
@@ -417,38 +422,44 @@ export function StaffFrontDeskPage({ queue, roomTypes = [] }: StaffFrontDeskPage
 
   async function submitWalkIn(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    if (!csrfToken || !worklist) return;
+    if (!csrfToken) return;
     setWalkInError(null);
     setWalkInFieldError(null);
-    if (query.date !== worklist.businessDate) {
-      setWalkInFieldError('ثبت ورود حضوری فقط برای تاریخ کاری جاری در دسترس است.');
-      return;
+    let attempt = walkInRetry ? walkInKeyRef.current : null;
+    if (!attempt) {
+      if (!worklist) return;
+      if (query.date !== worklist.businessDate) {
+        setWalkInFieldError('ثبت ورود حضوری فقط برای تاریخ کاری جاری در دسترس است.');
+        return;
+      }
+      const checkOut = toGregorianIso(walkInDraft.checkOut);
+      if (!checkOut || checkOut <= worklist.businessDate) {
+        setWalkInFieldError('تاریخ خروج باید پس از تاریخ کاری امروز باشد.');
+        return;
+      }
+      const input: StaffWalkInInput = {
+        roomTypeSlug: walkInDraft.roomTypeSlug,
+        checkIn: worklist.businessDate,
+        checkOut,
+        guestCount: Number(walkInDraft.guestCount),
+        roomQuantity: Number(walkInDraft.roomQuantity),
+        guestName: walkInDraft.guestName.trim(),
+        guestPhone: walkInDraft.guestPhone.trim(),
+        ...(walkInDraft.guestEmail.trim() ? { guestEmail: walkInDraft.guestEmail.trim() } : {}),
+      };
+      const signature = JSON.stringify(input);
+      if (!walkInKeyRef.current || walkInKeyRef.current.signature !== signature) {
+        const key = typeof crypto !== 'undefined' && 'randomUUID' in crypto
+          ? crypto.randomUUID()
+          : `${Date.now().toString(36)}-${Math.random().toString(36).slice(2)}-walkin`;
+        walkInKeyRef.current = { signature, key, input };
+      }
+      attempt = walkInKeyRef.current;
     }
-    const checkOut = toGregorianIso(walkInDraft.checkOut);
-    if (!checkOut || checkOut <= worklist.businessDate) {
-      setWalkInFieldError('تاریخ خروج باید پس از تاریخ کاری امروز باشد.');
-      return;
-    }
-    const input: StaffWalkInInput = {
-      roomTypeSlug: walkInDraft.roomTypeSlug,
-      checkIn: worklist.businessDate,
-      checkOut,
-      guestCount: Number(walkInDraft.guestCount),
-      roomQuantity: Number(walkInDraft.roomQuantity),
-      guestName: walkInDraft.guestName.trim(),
-      guestPhone: walkInDraft.guestPhone.trim(),
-      ...(walkInDraft.guestEmail.trim() ? { guestEmail: walkInDraft.guestEmail.trim() } : {}),
-    };
-    const signature = JSON.stringify(input);
-    if (!walkInKeyRef.current || walkInKeyRef.current.signature !== signature) {
-      const key = typeof crypto !== 'undefined' && 'randomUUID' in crypto
-        ? crypto.randomUUID()
-        : `${Date.now().toString(36)}-${Math.random().toString(36).slice(2)}-walkin`;
-      walkInKeyRef.current = { signature, key };
-    }
+    if (!attempt) return;
     setDialogBusy(true);
     try {
-      const result = await createStaffWalkIn(input, csrfToken, walkInKeyRef.current.key);
+      const result = await createStaffWalkIn(attempt.input, csrfToken, attempt.key);
       setDialog(null);
       setWalkInRetry(false);
       walkInKeyRef.current = null;
@@ -460,6 +471,14 @@ export function StaffFrontDeskPage({ queue, roomTypes = [] }: StaffFrontDeskPage
     } finally {
       setDialogBusy(false);
     }
+  }
+
+  function startNewWalkInRequest() {
+    if (dialogBusy) return;
+    walkInKeyRef.current = null;
+    setWalkInRetry(false);
+    setWalkInError(null);
+    setWalkInFieldError(null);
   }
 
   async function submitAmendment(event: FormEvent<HTMLFormElement>) {
@@ -631,6 +650,7 @@ export function StaffFrontDeskPage({ queue, roomTypes = [] }: StaffFrontDeskPage
           busy={dialogBusy}
           headingRef={actionHeadingRef}
           onClose={closeDialog}
+          onStartNewRequest={startNewWalkInRequest}
           onDraftChange={(key, value) => setWalkInDraft((current) => ({ ...current, [key]: value }))}
           onSubmit={submitWalkIn}
         />
@@ -801,29 +821,34 @@ interface WalkInDialogProps {
   busy: boolean;
   headingRef: React.RefObject<HTMLHeadingElement | null>;
   onClose: () => void;
+  onStartNewRequest: () => void;
   onDraftChange: (key: keyof WalkInDraft, value: string) => void;
   onSubmit: (event: FormEvent<HTMLFormElement>) => void;
 }
 
-function WalkInDialog({ roomTypes, draft, error, fieldError, retry, busy, headingRef, onClose, onDraftChange, onSubmit }: WalkInDialogProps) {
+function WalkInDialog({ roomTypes, draft, error, fieldError, retry, busy, headingRef, onClose, onStartNewRequest, onDraftChange, onSubmit }: WalkInDialogProps) {
   return (
     <div className={styles.dialogBackdrop}>
       <section className={styles.dialog} role="dialog" aria-modal="true" aria-labelledby="walk-in-title" onKeyDown={(event) => handleDialogKeyDown(event, onClose)}>
         <h2 id="walk-in-title" tabIndex={-1} ref={headingRef}>ثبت ورود بدون رزرو قبلی</h2>
         <p>این اقامت با تاریخ کاری امروز ثبت می‌شود. ظرفیت و نرخ نهایی را سامانه بررسی می‌کند.</p>
         <form className={styles.formGrid} onSubmit={onSubmit}>
-          <label>نام مهمان<input aria-label="نام مهمان" required minLength={2} maxLength={160} value={draft.guestName} onChange={(event) => onDraftChange('guestName', event.target.value)} /></label>
-          <label>شماره تماس<input aria-label="شماره تماس" required inputMode="tel" dir="ltr" value={draft.guestPhone} onChange={(event) => onDraftChange('guestPhone', event.target.value)} /></label>
-          <label>نوع اتاق<select aria-label="نوع اتاق" required value={draft.roomTypeSlug} onChange={(event) => onDraftChange('roomTypeSlug', event.target.value)}>
+          <label>نام مهمان<input aria-label="نام مهمان" required minLength={2} maxLength={160} value={draft.guestName} disabled={busy || retry} onChange={(event) => onDraftChange('guestName', event.target.value)} /></label>
+          <label>شماره تماس<input aria-label="شماره تماس" required inputMode="tel" dir="ltr" value={draft.guestPhone} disabled={busy || retry} onChange={(event) => onDraftChange('guestPhone', event.target.value)} /></label>
+          <label>نوع اتاق<select aria-label="نوع اتاق" required value={draft.roomTypeSlug} disabled={busy || retry} onChange={(event) => onDraftChange('roomTypeSlug', event.target.value)}>
             <option value="">انتخاب کنید</option>{roomTypes.map((roomType) => <option key={roomType.slug} value={roomType.slug}>{roomType.name}</option>)}
           </select></label>
-          <label>تاریخ خروج<input aria-label="تاریخ خروج" required inputMode="numeric" placeholder="۱۴۰۵/۰۸/۲۸" value={draft.checkOut} onChange={(event) => onDraftChange('checkOut', event.target.value)} /></label>
-          <label>تعداد مهمانان<input aria-label="تعداد مهمانان" type="number" min="1" max="20" required value={draft.guestCount} onChange={(event) => onDraftChange('guestCount', event.target.value)} /></label>
-          <label>تعداد اتاق<input aria-label="تعداد اتاق" type="number" min="1" max="20" required value={draft.roomQuantity} onChange={(event) => onDraftChange('roomQuantity', event.target.value)} /></label>
-          <label className={styles.wideField}>رایانامه، در صورت تمایل<input aria-label="رایانامه" type="email" dir="ltr" value={draft.guestEmail} onChange={(event) => onDraftChange('guestEmail', event.target.value)} /></label>
+          <label>تاریخ خروج<input aria-label="تاریخ خروج" required inputMode="numeric" placeholder="۱۴۰۵/۰۸/۲۸" value={draft.checkOut} disabled={busy || retry} onChange={(event) => onDraftChange('checkOut', event.target.value)} /></label>
+          <label>تعداد مهمانان<input aria-label="تعداد مهمانان" type="number" min="1" max="20" required value={draft.guestCount} disabled={busy || retry} onChange={(event) => onDraftChange('guestCount', event.target.value)} /></label>
+          <label>تعداد اتاق<input aria-label="تعداد اتاق" type="number" min="1" max="20" required value={draft.roomQuantity} disabled={busy || retry} onChange={(event) => onDraftChange('roomQuantity', event.target.value)} /></label>
+          <label className={styles.wideField}>رایانامه، در صورت تمایل<input aria-label="رایانامه" type="email" dir="ltr" value={draft.guestEmail} disabled={busy || retry} onChange={(event) => onDraftChange('guestEmail', event.target.value)} /></label>
           {fieldError && <p className={styles.error} role="alert">{fieldError}</p>}
           {error && <p className={styles.error} role="alert">{error}</p>}
-          {retry && <p className={styles.retryNote}>در صورت تکرار، همان اطلاعات با همان شناسه امن درخواست ارسال می‌شود.</p>}
+          {retry && <div className={styles.retryNote} role="note" aria-label="هشدار درباره درخواست ناموفق">
+            <p>پاسخ درخواست قبلی دریافت نشد و ممکن است در سامانه ثبت شده باشد. برای جلوگیری از ثبت تکراری، تلاش دوباره با همان اطلاعات و همان شناسه امن انجام می‌شود.</p>
+            <p>اگر اطلاعات را تغییر دهید و درخواست تازه‌ای بسازید، ممکن است اقامت تکراری ثبت شود. ابتدا وضعیت درخواست قبلی را بررسی کنید.</p>
+            <button className={styles.secondaryButton} type="button" onClick={onStartNewRequest} disabled={busy}>لغو تلاش و شروع درخواست جدید</button>
+          </div>}
           <div className={styles.dialogActions}>
             <button className={styles.primaryButton} type="submit" disabled={busy || roomTypes.length === 0}>{busy ? 'در حال ثبت…' : retry ? 'تلاش دوباره با همان درخواست' : 'ثبت ورود قطعی'}</button>
             <button className={styles.secondaryButton} type="button" onClick={onClose} disabled={busy}>بازگشت</button>
