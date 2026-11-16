@@ -70,11 +70,11 @@
 
 **Files:** create the front-desk query/response DTOs and focused query/service module under `apps/api/src/bookings/`; extend `staff-bookings.controller.ts` or register a small controller in `bookings.module.ts`; add tests in `apps/api/test/staff-stays.e2e-spec.ts`.
 
-- [ ] Add failing HTTP tests for business-date defaulting, explicit valid Gregorian date, inclusive arrival and exclusive checkout, overdue due-ins, checked-in in-house stays, due-outs, filters by guest/reference/room, pagination, and private no-store headers.
-- [ ] Run the focused API e2e spec against the isolated `_test` database and verify the expected `404`/empty/list failures before adding endpoints.
-- [ ] Define `GET /staff/front-desk/arrivals`, `/in-house`, and `/departures` with `date`, `search`, `page`, and `pageSize`. Return only reference, guest name, stay dates, room type, unit count, minimal assigned-room/readiness state, and lifecycle timestamps needed by reception; omit phone, email, and folio amounts from worklist cards.
-- [ ] Require `MANAGE_BOOKINGS`, staff session, CSRF for mutations, and private no-store responses. Search only reference/name/room number. Sort deterministically by due date, then reference.
-- [ ] Run the focused API e2e suite and commit the query/API contract once the date boundaries, permission denial, privacy shape, and no-store assertions pass.
+- [x] Add failing HTTP tests for business-date defaulting, explicit valid Gregorian date, inclusive arrival and exclusive checkout, overdue due-ins, checked-in in-house stays, due-outs, filters by guest/reference/room, pagination, and private no-store headers.
+- [x] Run the focused API e2e spec against the isolated `_test` database and verify the expected `404`/empty/list failures before adding endpoints.
+- [x] Define `GET /staff/front-desk/arrivals`, `/in-house`, and `/departures` with `date`, `search`, `page`, and `pageSize`. Return only reference, guest name, stay dates, room type, unit count, minimal assigned-room/readiness state, and lifecycle timestamps needed by reception; omit phone, email, and folio amounts from worklist cards.
+- [x] Require `MANAGE_BOOKINGS`, staff session, CSRF for mutations, and private no-store responses. Search only reference/name/room number. Sort deterministically by due date, then reference.
+- [x] Run the focused API e2e suite and commit the query/API contract once the date boundaries, permission denial, privacy shape, and no-store assertions pass.
 
 ### Task 3: Walk-in, check-in, and no-show transactions
 
