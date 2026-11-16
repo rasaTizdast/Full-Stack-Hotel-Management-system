@@ -38,7 +38,7 @@ The following tickets extend the original booking engine into the single-propert
 - **Priority:** P0
 - **Depends on:** HPM-000
 - **Owner:** Backend senior + Front-end design master
-- **Status:** Not started
+- **Status:** In progress
 - **Branch/worktree:** `codex/hpm-002-staff-controls` — `../Hotel Booking system-worktrees/HPM-002`
 - **Plan:** `docs/superpowers/plans/2026-11-15-hotel-pms-staff-controls-and-daily-operations.md`
 - **Acceptance criteria:** Named roles `ADMIN`, `MANAGER`, `RECEPTIONIST`, `HOUSEKEEPER`, and `CASHIER` have explicit server-enforced capabilities; admin can create/change/deactivate accounts; a forced initial password change is enforced through `/staff/change-password`; duplicate accounts fail; deactivation revokes sessions; high-impact changes and their audit record commit atomically without secrets/full guest payloads.
