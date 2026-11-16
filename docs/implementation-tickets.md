@@ -50,7 +50,7 @@ The following tickets extend the original booking engine into the single-propert
 - **Priority:** P0
 - **Depends on:** HPM-001, HPM-002
 - **Owner:** Backend senior + Front-end design master
-- **Status:** Not started
+- **Status:** In progress
 - **Branch/worktree:** `codex/hpm-003-room-board-assignment` — `../Hotel Booking system-worktrees/HPM-003`
 - **Plan:** `docs/superpowers/plans/2026-11-15-hotel-pms-inventory-and-front-desk.md`
 - **Acceptance criteria:** Staff see all rooms with occupancy, assignments, housekeeping state, and blocks; board defaults to business date, refreshes every 30 seconds, shows last updated/stale state and explicit combinations; HPM-003 adds assignment operations on the persistence foundation created by HPM-001; distinct room units are assigned per booking; assignments match room type and stay dates and cannot overlap assignments/blocks; multi-room arrivals require enough distinct rooms; assignment/check-in share HPM-001's room-row lock, and transactions needing both room type and room locks acquire them in room-type-then-room order.
