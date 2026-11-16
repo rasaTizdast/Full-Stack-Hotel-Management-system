@@ -106,8 +106,8 @@ function safeErrorMessage(error: unknown): string {
     case 'ROOM_ASSIGNMENT_OVERLAP':
     case 'ROOM_BLOCKED':
       return 'ورود ثبت نشد؛ یکی از اتاق‌ها با یک رزرو یا محدودیت هم‌پوشانی دارد. وضعیت اتاق‌ها را بررسی کنید.';
-    case 'IDEMPOTENCY_CONFLICT':
-      return 'درخواست قبلی با همین کلید، اطلاعات متفاوتی داشت. فرم را ببندید و ورود را دوباره ثبت کنید.';
+    case 'IDEMPOTENCY_KEY_REUSED':
+      return 'شناسه امن درخواست قبلاً برای اطلاعات دیگری استفاده شده است. پیش از شروع درخواست تازه، وضعیت ثبت قبلی را بررسی کنید.';
     default:
       return error.message || 'درخواست انجام نشد. دوباره تلاش کنید.';
   }
@@ -678,6 +678,7 @@ export function StaffFrontDeskPage({ queue, roomTypes = [] }: StaffFrontDeskPage
           loading={moveRoomsLoading}
           reason={dialogReason}
           error={dialogError}
+          roomRecovery={dialogRoomRecovery}
           busy={dialogBusy}
           headingRef={actionHeadingRef}
           onReasonChange={setDialogReason}
@@ -866,6 +867,7 @@ interface MoveDialogProps {
   loading: boolean;
   reason: string;
   error: string | null;
+  roomRecovery: boolean;
   busy: boolean;
   headingRef: React.RefObject<HTMLHeadingElement | null>;
   onReasonChange: (value: string) => void;
@@ -873,7 +875,7 @@ interface MoveDialogProps {
   onSubmit: (event: FormEvent<HTMLFormElement>) => void;
 }
 
-function MoveDialog({ stay, businessDate, rooms, loading, reason, error, busy, headingRef, onReasonChange, onClose, onSubmit }: MoveDialogProps) {
+function MoveDialog({ stay, businessDate, rooms, loading, reason, error, roomRecovery, busy, headingRef, onReasonChange, onClose, onSubmit }: MoveDialogProps) {
   const activeAssignments = assignmentsOnDate(stay, businessDate);
   return (
     <div className={styles.dialogBackdrop}>
@@ -893,7 +895,7 @@ function MoveDialog({ stay, businessDate, rooms, loading, reason, error, busy, h
           {loading && <p role="status">در حال بررسی اتاق‌های پیشنهادی…</p>}
           {!loading && rooms.length === 0 && <p className={styles.notice}>اتاق بازرسی‌شده و آزاد برای بررسی پیدا نشد. امکان نهایی انتقال را سامانه تعیین می‌کند.</p>}
           <label>دلیل انتقال<textarea aria-label="دلیل انتقال" required maxLength={500} value={reason} onChange={(event) => onReasonChange(event.target.value)} /></label>
-          {error && <p className={styles.error} role="alert">{error}</p>}
+          {error && <p className={styles.error} role="alert">{error}{roomRecovery && <> <Link href="/staff/rooms">بررسی وضعیت اتاق‌ها</Link></>}</p>}
           <div className={styles.dialogActions}>
             <button className={styles.primaryButton} type="submit" disabled={busy || loading || activeAssignments.length === 0 || rooms.length === 0}>{busy ? 'در حال ثبت…' : 'ثبت انتقال'}</button>
             <button className={styles.secondaryButton} type="button" onClick={onClose} disabled={busy}>بازگشت</button>

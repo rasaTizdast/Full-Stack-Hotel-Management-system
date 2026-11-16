@@ -357,6 +357,23 @@ describe('StaffFrontDeskPage', () => {
     expect(screen.queryByRole('dialog', { name: 'ثبت ورود بدون رزرو قبلی' })).not.toBeInTheDocument();
   });
 
+  it('shows localized guidance when the server rejects a reused walk-in key', async () => {
+    frontDeskApi.createStaffWalkIn.mockRejectedValueOnce(
+      new StaffApiError('Idempotency key was reused.', 409, 'IDEMPOTENCY_KEY_REUSED'),
+    );
+    renderPage('arrivals');
+    fireEvent.click(await screen.findByRole('button', { name: 'ثبت ورود بدون رزرو قبلی' }));
+    const dialog = await screen.findByRole('dialog', { name: 'ثبت ورود بدون رزرو قبلی' });
+    fireEvent.change(within(dialog).getByLabelText('نام مهمان'), { target: { value: 'مهمان حضوری' } });
+    fireEvent.change(within(dialog).getByLabelText('شماره تماس'), { target: { value: '09120000000' } });
+    fireEvent.change(within(dialog).getByLabelText('تعداد مهمانان'), { target: { value: '2' } });
+    fireEvent.click(within(dialog).getByRole('button', { name: 'ثبت ورود قطعی' }));
+
+    expect(await within(dialog).findByRole('alert')).toHaveTextContent(
+      'شناسه امن درخواست قبلاً برای اطلاعات دیگری استفاده شده است. پیش از شروع درخواست تازه، وضعیت ثبت قبلی را بررسی کنید.',
+    );
+  });
+
   it('shows in-house due-outs without offering a move on the exclusive checkout date', async () => {
     const checkedIn = copyStay();
     checkedIn.status = 'CHECKED_IN';
@@ -401,6 +418,30 @@ describe('StaffFrontDeskPage', () => {
       { sourceAssignmentId: 'assign-current', targetRoomId: 'target-room', reason: 'درخواست مهمان' },
     ));
   });
+
+  it.each(['ROOM_BLOCKED', 'ROOM_ASSIGNMENT_OVERLAP'] as const)(
+    'links a %s move conflict to room recovery',
+    async (code) => {
+      const checkedIn = copyStay();
+      checkedIn.status = 'CHECKED_IN';
+      checkedIn.checkOut = '2026-11-20';
+      checkedIn.checkedInAt = '2026-11-18T09:00:00.000Z';
+      frontDeskApi.getStaffStayWorklist.mockResolvedValueOnce(worklist([checkedIn]));
+      frontDeskApi.moveStaffStayRoom.mockRejectedValueOnce(new StaffApiError('Room move conflicted.', 409, code));
+      renderPage('in-house');
+
+      const card = await screen.findByRole('article', { name: /ABC123456789/ });
+      fireEvent.click(within(card).getByRole('button', { name: 'انتقال اتاق' }));
+      const dialog = await screen.findByRole('dialog', { name: 'انتقال مهمان به اتاق دیگر' });
+      fireEvent.change(within(dialog).getByLabelText('اتاق مقصد'), { target: { value: 'target-room' } });
+      fireEvent.change(within(dialog).getByLabelText('دلیل انتقال'), { target: { value: 'درخواست مهمان' } });
+      fireEvent.click(within(dialog).getByRole('button', { name: 'ثبت انتقال' }));
+
+      const error = await within(dialog).findByRole('alert');
+      expect(error).toHaveTextContent('یکی از اتاق‌ها با یک رزرو یا محدودیت هم‌پوشانی دارد');
+      expect(within(error).getByRole('link', { name: 'بررسی وضعیت اتاق‌ها' })).toHaveAttribute('href', '/staff/rooms');
+    },
+  );
 
   it('explains and blocks a move when no assignment covers the business date', async () => {
     const checkedIn = copyStay();
