@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { useEffect, useMemo, useRef, useState, type FormEvent, type KeyboardEvent as ReactKeyboardEvent, type RefObject } from 'react';
 import { useStaffSession } from '@/components/staff/staff-session-provider';
 import { getStaffBooking, type StaffBookingDetail } from '@/lib/staff-bookings-api';
@@ -72,6 +73,7 @@ type DialogState =
 interface StaffFrontDeskPageProps {
   queue: StaffStayQueue;
   roomTypes?: PublicRoomType[];
+  roomTypesStatus?: 'ready' | 'error';
 }
 
 interface WalkInDraft {
@@ -165,16 +167,20 @@ function handleDialogKeyDown(event: ReactKeyboardEvent<HTMLElement>, onClose: ()
   }
   const first = focusable[0];
   const last = focusable[focusable.length - 1];
-  if (event.shiftKey && (document.activeElement === first || document.activeElement === event.currentTarget)) {
+  const activeElement = document.activeElement;
+  const activeNonTabbableChild = activeElement instanceof HTMLElement &&
+    event.currentTarget.contains(activeElement) && activeElement.tabIndex < 0;
+  if (event.shiftKey && (activeElement === first || activeElement === event.currentTarget || activeNonTabbableChild)) {
     event.preventDefault();
     last.focus();
-  } else if (!event.shiftKey && document.activeElement === last) {
+  } else if (!event.shiftKey && activeElement === last) {
     event.preventDefault();
     first.focus();
   }
 }
 
-export function StaffFrontDeskPage({ queue, roomTypes = [] }: StaffFrontDeskPageProps) {
+export function StaffFrontDeskPage({ queue, roomTypes = [], roomTypesStatus = 'ready' }: StaffFrontDeskPageProps) {
+  const router = useRouter();
   const { status, staff, csrfToken } = useStaffSession();
   const allowed = status === 'authenticated' && Boolean(staff && ALLOWED_ROLES.includes(staff.role));
   const copy = QUEUE_COPY[queue];
@@ -653,6 +659,7 @@ export function StaffFrontDeskPage({ queue, roomTypes = [] }: StaffFrontDeskPage
       {dialog?.kind === 'walk-in' && (
         <WalkInDialog
           roomTypes={roomTypes}
+          roomTypesStatus={roomTypesStatus}
           draft={walkInDraft}
           error={walkInError}
           fieldError={walkInFieldError}
@@ -661,6 +668,7 @@ export function StaffFrontDeskPage({ queue, roomTypes = [] }: StaffFrontDeskPage
           headingRef={actionHeadingRef}
           onClose={closeDialog}
           onStartNewRequest={startNewWalkInRequest}
+          onRetryRoomTypes={() => router.refresh()}
           onDraftChange={(key, value) => setWalkInDraft((current) => ({ ...current, [key]: value }))}
           onSubmit={submitWalkIn}
         />
@@ -825,6 +833,7 @@ function ActionDialog({ kind, stay, manager, reason, error, roomRecovery, busy, 
 
 interface WalkInDialogProps {
   roomTypes: PublicRoomType[];
+  roomTypesStatus: 'ready' | 'error';
   draft: WalkInDraft;
   error: string | null;
   fieldError: string | null;
@@ -833,35 +842,47 @@ interface WalkInDialogProps {
   headingRef: React.RefObject<HTMLHeadingElement | null>;
   onClose: () => void;
   onStartNewRequest: () => void;
+  onRetryRoomTypes: () => void;
   onDraftChange: (key: keyof WalkInDraft, value: string) => void;
   onSubmit: (event: FormEvent<HTMLFormElement>) => void;
 }
 
-function WalkInDialog({ roomTypes, draft, error, fieldError, retry, busy, headingRef, onClose, onStartNewRequest, onDraftChange, onSubmit }: WalkInDialogProps) {
+function WalkInDialog({ roomTypes, roomTypesStatus, draft, error, fieldError, retry, busy, headingRef, onClose, onStartNewRequest, onRetryRoomTypes, onDraftChange, onSubmit }: WalkInDialogProps) {
   return (
     <div className={styles.dialogBackdrop}>
       <section className={styles.dialog} role="dialog" aria-modal="true" aria-labelledby="walk-in-title" onKeyDown={(event) => handleDialogKeyDown(event, onClose)}>
         <h2 id="walk-in-title" tabIndex={-1} ref={headingRef}>ثبت ورود بدون رزرو قبلی</h2>
         <p>این اقامت با تاریخ کاری امروز ثبت می‌شود. ظرفیت و نرخ نهایی را سامانه بررسی می‌کند.</p>
         <form className={styles.formGrid} onSubmit={onSubmit}>
-          <label>نام مهمان<input aria-label="نام مهمان" required minLength={2} maxLength={160} value={draft.guestName} disabled={busy || retry} onChange={(event) => onDraftChange('guestName', event.target.value)} /></label>
-          <label>شماره تماس<input aria-label="شماره تماس" required inputMode="tel" dir="ltr" value={draft.guestPhone} disabled={busy || retry} onChange={(event) => onDraftChange('guestPhone', event.target.value)} /></label>
-          <label>نوع اتاق<select aria-label="نوع اتاق" required value={draft.roomTypeSlug} disabled={busy || retry} onChange={(event) => onDraftChange('roomTypeSlug', event.target.value)}>
-            <option value="">انتخاب کنید</option>{roomTypes.map((roomType) => <option key={roomType.slug} value={roomType.slug}>{roomType.name}</option>)}
-          </select></label>
-          <label>تاریخ خروج<input aria-label="تاریخ خروج" required inputMode="numeric" placeholder="۱۴۰۵/۰۸/۲۸" value={draft.checkOut} disabled={busy || retry} onChange={(event) => onDraftChange('checkOut', event.target.value)} /></label>
-          <label>تعداد مهمانان<input aria-label="تعداد مهمانان" type="number" min="1" max="20" required value={draft.guestCount} disabled={busy || retry} onChange={(event) => onDraftChange('guestCount', event.target.value)} /></label>
-          <label>تعداد اتاق<input aria-label="تعداد اتاق" type="number" min="1" max="20" required value={draft.roomQuantity} disabled={busy || retry} onChange={(event) => onDraftChange('roomQuantity', event.target.value)} /></label>
-          <label className={styles.wideField}>رایانامه، در صورت تمایل<input aria-label="رایانامه" type="email" dir="ltr" value={draft.guestEmail} disabled={busy || retry} onChange={(event) => onDraftChange('guestEmail', event.target.value)} /></label>
-          {fieldError && <p className={styles.error} role="alert">{fieldError}</p>}
-          {error && <p className={styles.error} role="alert">{error}</p>}
-          {retry && <div className={styles.retryNote} role="note" aria-label="هشدار درباره درخواست ناموفق">
-            <p>پاسخ درخواست قبلی دریافت نشد و ممکن است در سامانه ثبت شده باشد. برای جلوگیری از ثبت تکراری، تلاش دوباره با همان اطلاعات و همان شناسه امن انجام می‌شود.</p>
-            <p>اگر اطلاعات را تغییر دهید و درخواست تازه‌ای بسازید، ممکن است اقامت تکراری ثبت شود. ابتدا وضعیت درخواست قبلی را بررسی کنید.</p>
-            <button className={styles.secondaryButton} type="button" onClick={onStartNewRequest} disabled={busy}>لغو تلاش و شروع درخواست جدید</button>
-          </div>}
+          {roomTypes.length === 0 ? (
+            <div className={styles.notice}>
+              {roomTypesStatus === 'error'
+                ? <p className={styles.error} role="alert">فهرست نوع اتاق دریافت نشد. اتصال را بررسی و دوباره تلاش کنید.</p>
+                : <p role="status">هیچ نوع اتاق فعالی برای ثبت ورود حضوری در دسترس نیست.</p>}
+              <button className={styles.secondaryButton} type="button" onClick={onRetryRoomTypes} disabled={busy}>
+                {roomTypesStatus === 'error' ? 'تلاش دوباره برای دریافت فهرست نوع اتاق‌ها' : 'به‌روزرسانی فهرست نوع اتاق‌ها'}
+              </button>
+            </div>
+          ) : <>
+            <label>نام مهمان<input aria-label="نام مهمان" required minLength={2} maxLength={160} value={draft.guestName} disabled={busy || retry} onChange={(event) => onDraftChange('guestName', event.target.value)} /></label>
+            <label>شماره تماس<input aria-label="شماره تماس" required inputMode="tel" dir="ltr" value={draft.guestPhone} disabled={busy || retry} onChange={(event) => onDraftChange('guestPhone', event.target.value)} /></label>
+            <label>نوع اتاق<select aria-label="نوع اتاق" required value={draft.roomTypeSlug} disabled={busy || retry} onChange={(event) => onDraftChange('roomTypeSlug', event.target.value)}>
+              <option value="">انتخاب کنید</option>{roomTypes.map((roomType) => <option key={roomType.slug} value={roomType.slug}>{roomType.name}</option>)}
+            </select></label>
+            <label>تاریخ خروج<input aria-label="تاریخ خروج" required inputMode="numeric" placeholder="۱۴۰۵/۰۸/۲۸" value={draft.checkOut} disabled={busy || retry} onChange={(event) => onDraftChange('checkOut', event.target.value)} /></label>
+            <label>تعداد مهمانان<input aria-label="تعداد مهمانان" type="number" min="1" max="20" required value={draft.guestCount} disabled={busy || retry} onChange={(event) => onDraftChange('guestCount', event.target.value)} /></label>
+            <label>تعداد اتاق<input aria-label="تعداد اتاق" type="number" min="1" max="20" required value={draft.roomQuantity} disabled={busy || retry} onChange={(event) => onDraftChange('roomQuantity', event.target.value)} /></label>
+            <label className={styles.wideField}>رایانامه، در صورت تمایل<input aria-label="رایانامه" type="email" dir="ltr" value={draft.guestEmail} disabled={busy || retry} onChange={(event) => onDraftChange('guestEmail', event.target.value)} /></label>
+            {fieldError && <p className={styles.error} role="alert">{fieldError}</p>}
+            {error && <p className={styles.error} role="alert">{error}</p>}
+            {retry && <div className={styles.retryNote} role="note" aria-label="هشدار درباره درخواست ناموفق">
+              <p>پاسخ درخواست قبلی دریافت نشد و ممکن است در سامانه ثبت شده باشد. برای جلوگیری از ثبت تکراری، تلاش دوباره با همان اطلاعات و همان شناسه امن انجام می‌شود.</p>
+              <p>اگر اطلاعات را تغییر دهید و درخواست تازه‌ای بسازید، ممکن است اقامت تکراری ثبت شود. ابتدا وضعیت درخواست قبلی را بررسی کنید.</p>
+              <button className={styles.secondaryButton} type="button" onClick={onStartNewRequest} disabled={busy}>لغو تلاش و شروع درخواست جدید</button>
+            </div>}
+          </>}
           <div className={styles.dialogActions}>
-            <button className={styles.primaryButton} type="submit" disabled={busy || roomTypes.length === 0}>{busy ? 'در حال ثبت…' : retry ? 'تلاش دوباره با همان درخواست' : 'ثبت ورود قطعی'}</button>
+            {roomTypes.length > 0 && <button className={styles.primaryButton} type="submit" disabled={busy}>{busy ? 'در حال ثبت…' : retry ? 'تلاش دوباره با همان درخواست' : 'ثبت ورود قطعی'}</button>}
             <button className={styles.secondaryButton} type="button" onClick={onClose} disabled={busy}>بازگشت</button>
           </div>
         </form>

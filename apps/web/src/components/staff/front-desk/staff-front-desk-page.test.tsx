@@ -1,4 +1,4 @@
-import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
+import { act, createEvent, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { StaffApiError, type StaffRoomBoardResponse } from '@/lib/staff-api';
 import type { StaffStayWorklist } from '@/lib/staff-front-desk-api';
@@ -29,8 +29,10 @@ const frontDeskApi = vi.hoisted(() => ({
 const bookingApi = vi.hoisted(() => ({ getStaffBooking: vi.fn() }));
 const roomApi = vi.hoisted(() => ({ getStaffRoomBoard: vi.fn() }));
 const publicApi = vi.hoisted(() => ({ getPublicRoomTypes: vi.fn() }));
+const navigation = vi.hoisted(() => ({ router: { refresh: vi.fn() } }));
 
 vi.mock('../staff-session-provider', () => ({ useStaffSession: () => session.current }));
+vi.mock('next/navigation', () => ({ useRouter: () => navigation.router }));
 vi.mock('@/lib/staff-front-desk-api', () => frontDeskApi);
 vi.mock('@/lib/staff-bookings-api', () => bookingApi);
 vi.mock('@/lib/staff-api', async (importOriginal) => {
@@ -124,6 +126,7 @@ describe('StaffFrontDeskPage', () => {
     publicApi.getPublicRoomTypes.mockReset().mockResolvedValue([
       { slug: 'garden-double', name: 'اتاق دوتخته', description: '', maxGuestsPerRoom: 2, amenities: [] },
     ]);
+    navigation.router.refresh.mockReset();
   });
 
   it('denies housekeeping without requesting a private worklist', () => {
@@ -300,6 +303,35 @@ describe('StaffFrontDeskPage', () => {
     expect(document.activeElement).toBe(screen.getByRole('status'));
   });
 
+  it('wraps Shift+Tab from the walk-in dialog heading to its final control', async () => {
+    renderPage('arrivals');
+    fireEvent.click(await screen.findByRole('button', { name: 'ثبت ورود بدون رزرو قبلی' }));
+    const dialog = await screen.findByRole('dialog', { name: 'ثبت ورود بدون رزرو قبلی' });
+    const heading = within(dialog).getByRole('heading', { name: 'ثبت ورود بدون رزرو قبلی' });
+    expect(document.activeElement).toBe(heading);
+
+    const shiftTab = createEvent.keyDown(dialog, { key: 'Tab', shiftKey: true });
+    fireEvent(dialog, shiftTab);
+
+    expect(shiftTab.defaultPrevented).toBe(true);
+    expect(document.activeElement).toBe(within(dialog).getByRole('button', { name: 'بازگشت' }));
+  });
+
+  it('wraps Shift+Tab from a shared action-dialog heading to its final control', async () => {
+    renderPage('arrivals');
+    const card = await screen.findByRole('article', { name: /ABC123456789/ });
+    fireEvent.click(within(card).getByRole('button', { name: 'ثبت ورود' }));
+    const dialog = await screen.findByRole('dialog', { name: 'تأیید ورود مهمان' });
+    const heading = within(dialog).getByRole('heading', { name: 'تأیید ورود مهمان' });
+    expect(document.activeElement).toBe(heading);
+
+    const shiftTab = createEvent.keyDown(dialog, { key: 'Tab', shiftKey: true });
+    fireEvent(dialog, shiftTab);
+
+    expect(shiftTab.defaultPrevented).toBe(true);
+    expect(document.activeElement).toBe(within(dialog).getByRole('button', { name: 'بازگشت' }));
+  });
+
   it('allows a manager-only early-check-in reason and blocks a receptionist from sending one', async () => {
     session.current.staff.role = 'MANAGER';
     const manager = renderPage('arrivals');
@@ -388,6 +420,29 @@ describe('StaffFrontDeskPage', () => {
     expect(await within(dialog).findByRole('alert')).toHaveTextContent(
       'شناسه امن درخواست قبلاً برای اطلاعات دیگری استفاده شده است. پیش از شروع درخواست تازه، وضعیت ثبت قبلی را بررسی کنید.',
     );
+  });
+
+  it('explains a room-type catalog load failure and lets staff retry it', async () => {
+    render(<StaffFrontDeskPage queue="arrivals" roomTypes={[]} roomTypesStatus="error" />);
+    fireEvent.click(await screen.findByRole('button', { name: 'ثبت ورود بدون رزرو قبلی' }));
+    const dialog = await screen.findByRole('dialog', { name: 'ثبت ورود بدون رزرو قبلی' });
+
+    expect(within(dialog).getByRole('alert')).toHaveTextContent('فهرست نوع اتاق دریافت نشد');
+    expect(within(dialog).getByRole('button', { name: 'تلاش دوباره برای دریافت فهرست نوع اتاق‌ها' })).toBeEnabled();
+    expect(within(dialog).queryByRole('button', { name: 'ثبت ورود قطعی' })).not.toBeInTheDocument();
+    fireEvent.click(within(dialog).getByRole('button', { name: 'تلاش دوباره برای دریافت فهرست نوع اتاق‌ها' }));
+
+    expect(navigation.router.refresh).toHaveBeenCalledOnce();
+  });
+
+  it('distinguishes a successfully loaded empty room-type catalog', async () => {
+    render(<StaffFrontDeskPage queue="arrivals" roomTypes={[]} roomTypesStatus="ready" />);
+    fireEvent.click(await screen.findByRole('button', { name: 'ثبت ورود بدون رزرو قبلی' }));
+    const dialog = await screen.findByRole('dialog', { name: 'ثبت ورود بدون رزرو قبلی' });
+
+    expect(within(dialog).getByRole('status')).toHaveTextContent('هیچ نوع اتاق فعالی برای ثبت ورود حضوری در دسترس نیست');
+    expect(within(dialog).queryByRole('alert')).not.toBeInTheDocument();
+    expect(within(dialog).getByRole('button', { name: 'به‌روزرسانی فهرست نوع اتاق‌ها' })).toBeEnabled();
   });
 
   it('shows in-house due-outs without offering a move on the exclusive checkout date', async () => {

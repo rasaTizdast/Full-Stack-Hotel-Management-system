@@ -1,9 +1,13 @@
 import { getPublicRoomTypes, type PublicRoomType } from './public-api';
 
-export async function getFrontDeskRoomTypes(): Promise<PublicRoomType[]> {
+export type FrontDeskRoomTypesResult =
+  | { status: 'ready'; roomTypes: PublicRoomType[] }
+  | { status: 'error'; roomTypes: [] };
+
+export async function getFrontDeskRoomTypes(): Promise<FrontDeskRoomTypesResult> {
   try {
-    return await getPublicRoomTypes();
+    return { status: 'ready', roomTypes: await getPublicRoomTypes() };
   } catch {
-    return [];
+    return { status: 'error', roomTypes: [] };
   }
 }
