@@ -236,10 +236,11 @@ export function StaffRoomBoardPage() {
       return;
     }
     const startDate = selectedBooking.checkIn > board.date ? selectedBooking.checkIn : board.date;
+    const assignmentKey = ++nextDraftKey.current;
     setDraftAssignments((current) => [
       ...current,
       {
-        key: ++nextDraftKey.current,
+        key: assignmentKey,
         roomId: availableRoom.id,
         roomNumber: availableRoom.roomNumber,
         startDate: formatGregorianAsJalali(startDate) ?? startDate,

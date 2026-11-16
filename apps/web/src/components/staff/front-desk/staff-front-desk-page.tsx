@@ -977,7 +977,7 @@ function StayDetail({ reference, detail, loading, error, canAmend, editing, draf
     toGregorianIso(draft.checkOut) !== detail.checkOut ? 'تاریخ خروج تغییر می‌کند.' : null,
   ].filter(Boolean) : [];
   return (
-    <section className={styles.detailPanel} role="region" aria-label={`جزئیات اقامت ${reference}`}>
+    <section className={styles.detailPanel} aria-label={`جزئیات اقامت ${reference}`}>
       <header><div><p className={styles.eyebrow}>جزئیات اقامت</p><h2>{reference}</h2></div><button className={styles.secondaryButton} type="button" onClick={onClose}>بستن جزئیات</button></header>
       {loading && <p role="status">در حال دریافت جزئیات اقامت…</p>}
       {error && <p role="alert" className={styles.error}>{error}</p>}
@@ -998,7 +998,7 @@ function StayDetail({ reference, detail, loading, error, canAmend, editing, draf
           <label>تعداد اتاق<input type="number" min="1" max="20" aria-label="تعداد اتاق" value={draft.roomQuantity} onChange={(event) => onDraftChange('roomQuantity', event.target.value)} /></label>
           <label>ورود<input inputMode="numeric" value={draft.checkIn} onChange={(event) => onDraftChange('checkIn', event.target.value)} /></label>
           <label>خروج<input inputMode="numeric" value={draft.checkOut} onChange={(event) => onDraftChange('checkOut', event.target.value)} /></label>
-          <section className={styles.preview} role="region" aria-label="پیش‌نمایش تغییرات"><h3>پیش‌نمایش تغییرات</h3>{changes.length ? <ul>{changes.map((change) => <li key={change}>{change}</li>)}</ul> : <p>تغییری وارد نشده است.</p>}<p>این پیش‌نمایش فقط فیلدهای تغییرکرده را نشان می‌دهد؛ وضعیت و جزئیات نهایی پس از پاسخ سامانه تازه‌سازی می‌شود.</p></section>
+          <section className={styles.preview} aria-label="پیش‌نمایش تغییرات"><h3>پیش‌نمایش تغییرات</h3>{changes.length ? <ul>{changes.map((change) => <li key={change}>{change}</li>)}</ul> : <p>تغییری وارد نشده است.</p>}<p>این پیش‌نمایش فقط فیلدهای تغییرکرده را نشان می‌دهد؛ وضعیت و جزئیات نهایی پس از پاسخ سامانه تازه‌سازی می‌شود.</p></section>
           <div className={styles.dialogActions}><button className={styles.primaryButton} type="submit" disabled={busy}>{busy ? 'در حال ثبت…' : 'ثبت تغییرات'}</button><button className={styles.secondaryButton} type="button" onClick={onCancelEdit} disabled={busy}>انصراف</button></div>
         </form>}
       </>}
