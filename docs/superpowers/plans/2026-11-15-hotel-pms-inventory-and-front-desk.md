@@ -59,9 +59,10 @@
 
 - Add assignment and unassignment DTOs and authenticated staff routes. Assignment accepts a confirmed booking, room, an inclusive-start/exclusive-end interval contained in that booking, and a reason. Unassignment deactivates the assignment row so its history is retained. Repeating an identical active assignment is safe and does not duplicate audit events.
 - Enforce matching room type, active room, no conflicting active assignment or active block over the requested interval, and at most one distinct assigned room per booked unit. Assignment operations do not change booking or nightly inventory counters or public booking idempotency.
+- When staff cancels a confirmed booking, deactivate its active room assignments and write safe audit history in the same transaction as the existing cancellation/inventory release. Preserve lock order: booking row, room type, affected room rows in sorted order, then inventory rows.
 - In one transaction, lock the room-type row before the physical room row, then serialize against concurrent assignments and deactivation. Re-read current booking/room/assignment state after locks, write safe audit events atomically, and return stable conflict codes.
 - Add a private, no-store room-board query defaulting to the hotel's business date, with date, room type, floor, housekeeping, stay-context, and block filters. Return occupancy and reservation context as separate fields and omit guest phone/email.
-- Add focused unit/API/PostgreSQL tests for overlap boundaries, wrong type, invalid dates, active blocks, multi-room assignment limits, unassigned confirmed bookings, idempotent retries, counters unchanged, unauthorized roles, and concurrent assignment/deactivation on the shared room lock.
+- Add focused unit/API/PostgreSQL tests for overlap boundaries, wrong type, invalid dates, active blocks, multi-room assignment limits, unassigned confirmed bookings, idempotent retries, counters unchanged, unauthorized roles, concurrent assignment/deactivation on the shared room lock, and cancellation-versus-assignment with atomic assignment release.
 
 ### Task 2: Staff room-board page and assignment workflow
 
