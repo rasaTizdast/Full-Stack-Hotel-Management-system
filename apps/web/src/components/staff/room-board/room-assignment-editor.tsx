@@ -1,9 +1,10 @@
 import { useEffect, useRef, type FormEvent } from 'react';
-import { formatPersianInteger, toGregorianIso } from '@/lib/jalali-date';
+import { formatPersianInteger } from '@/lib/jalali-date';
 import type {
   StaffRoomBoardAssignableBooking,
   StaffRoomBoardItem,
 } from '@/lib/staff-api';
+import { isDateWithinAssignmentInterval } from './room-board-date';
 import { displayRoomBoardDate } from './room-board-view';
 import styles from './room-board.module.css';
 
@@ -38,13 +39,6 @@ interface RoomAssignmentEditorProps {
   onLoadLatest: () => void;
   onChooseLatest: (booking: StaffRoomBoardAssignableBooking) => void;
   onReapplyDraft: (booking: StaffRoomBoardAssignableBooking) => void;
-}
-
-function includesDate(startInput: string, endInput: string, date: string): boolean {
-  const startDate = toGregorianIso(startInput);
-  const endDate = toGregorianIso(endInput);
-  if (startDate && endDate) return startDate <= date && date < endDate;
-  return false;
 }
 
 export function RoomAssignmentEditor({
@@ -149,7 +143,11 @@ export function RoomAssignmentEditor({
         <div className={styles.assignmentList}>
           {assignments.map((assignment, index) => {
             const options = roomOptionsFor(assignment);
-            const boardDateIncluded = includesDate(assignment.startDate, assignment.endDate, boardDate);
+            const boardDateIncluded = isDateWithinAssignmentInterval(
+              assignment.startDate,
+              assignment.endDate,
+              boardDate,
+            );
             const displayRoomNumber = assignment.roomNumber || String(index + 1);
             return (
               <fieldset className={styles.assignment} key={assignment.key} aria-label={`تخصیص اتاق ${displayRoomNumber}`}>

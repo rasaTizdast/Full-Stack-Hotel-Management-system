@@ -9,6 +9,7 @@ import type {
   StaffRoomOccupancy,
   StaffRoomStayContext,
 } from '@/lib/staff-api';
+import { isDateWithinAssignmentInterval } from './room-board-date';
 import styles from './room-board.module.css';
 
 export type RoomBoardFilters = {
@@ -351,7 +352,8 @@ interface AssignableBookingsProps {
 
 function assignmentCountOnDate(booking: StaffRoomBoardResponse['assignableBookings'][number], date: string) {
   return booking.assignments.filter(
-    (assignment) => assignment.startDate <= date && date < assignment.endDate,
+    (assignment) =>
+      isDateWithinAssignmentInterval(assignment.startDate, assignment.endDate, date),
   ).length;
 }
 

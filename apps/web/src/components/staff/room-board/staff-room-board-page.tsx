@@ -10,6 +10,7 @@ import {
 } from '@/lib/staff-api';
 import { formatGregorianAsJalali, toGregorianIso } from '@/lib/jalali-date';
 import { useStaffSession } from '../staff-session-provider';
+import { isDateWithinAssignmentInterval } from './room-board-date';
 import { RoomAssignmentEditor, type DraftAssignment, type StaleConflict } from './room-assignment-editor';
 import {
   AssignableBookings,
@@ -25,12 +26,6 @@ import {
 import styles from './room-board.module.css';
 
 const ROOM_BOARD_REFRESH_MS = 30_000;
-
-function dateContains(startInput: string, endInput: string, date: string): boolean {
-  const startDate = toGregorianIso(startInput);
-  const endDate = toGregorianIso(endInput);
-  return Boolean(startDate && endDate && startDate <= date && date < endDate);
-}
 
 function assignmentsForEditor(booking: StaffRoomBoardAssignableBooking, nextKey: () => number) {
   return booking.assignments.map((assignment) => ({
@@ -218,7 +213,7 @@ export function StaffRoomBoardPage() {
   function addAssignment() {
     if (!selectedBooking || !board) return;
     const selectedDateCount = draftAssignments.filter((assignment) =>
-      dateContains(assignment.startDate, assignment.endDate, board.date),
+      isDateWithinAssignmentInterval(assignment.startDate, assignment.endDate, board.date),
     ).length;
     if (selectedDateCount >= selectedBooking.roomQuantity) {
       setEditorError('همهٔ واحدهای رزروشده برای این تاریخ تخصیص دارند.');
