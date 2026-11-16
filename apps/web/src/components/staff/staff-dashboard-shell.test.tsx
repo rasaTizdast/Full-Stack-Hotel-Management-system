@@ -10,6 +10,32 @@ const receptionist = {
 };
 
 describe('StaffDashboardShell', () => {
+  it.each([
+    ['ADMIN', '/staff/front-desk/arrivals'],
+    ['MANAGER', '/staff/front-desk/arrivals'],
+    ['RECEPTIONIST', '/staff/front-desk/arrivals'],
+  ] as const)('offers the front-desk queue to %s', (role, href) => {
+    render(
+      <StaffDashboardShell staff={{ ...receptionist, role }} onLogout={vi.fn()} currentPath={href}>
+        <p>صفحه پذیرش</p>
+      </StaffDashboardShell>,
+    );
+
+    const link = screen.getByRole('link', { name: /^میز پذیرش/ });
+    expect(link).toHaveAttribute('href', href);
+    expect(link).toHaveAttribute('aria-current', 'page');
+  });
+
+  it('does not expose front-desk queues to housekeeping', () => {
+    render(
+      <StaffDashboardShell staff={{ ...receptionist, role: 'HOUSEKEEPER' }} onLogout={vi.fn()}>
+        <p>صفحه امن</p>
+      </StaffDashboardShell>,
+    );
+
+    expect(screen.queryByRole('link', { name: /^میز پذیرش/ })).not.toBeInTheDocument();
+  });
+
   it('keeps inventory navigation away from receptionists', () => {
     render(
       <StaffDashboardShell staff={receptionist} onLogout={vi.fn()}>

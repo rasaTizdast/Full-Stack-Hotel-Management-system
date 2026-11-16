@@ -3,8 +3,14 @@
 import Link from 'next/link';
 import { useStaffSession } from '@/components/staff/staff-session-provider';
 import { getStaffRoleLabel } from '@/lib/staff-navigation';
+import type { StaffRole } from '@/lib/staff-api';
 
 const operationalLinks = {
+  frontDesk: {
+    href: '/staff/front-desk/arrivals',
+    title: 'میز پذیرش',
+    detail: 'ورودهای امروز، مهمانان حاضر و موعدهای خروج را پیگیری کنید.',
+  },
   inventory: {
     href: '/staff/inventory',
     title: 'مدیریت ظرفیت و نرخ‌ها',
@@ -27,6 +33,36 @@ const operationalLinks = {
   },
 };
 
+type OperationalLink = (typeof operationalLinks)[keyof typeof operationalLinks];
+
+const roleWorkspace: Record<StaffRole, { heading: string; links: readonly OperationalLink[] }> = {
+  ADMIN: {
+    heading: 'مدیریت حساب‌های کارکنان',
+    links: [
+      operationalLinks.frontDesk,
+      operationalLinks.accounts,
+      operationalLinks.bookings,
+      operationalLinks.rooms,
+      operationalLinks.inventory,
+    ],
+  },
+  MANAGER: {
+    heading: 'فضای مدیر اقامتگاه',
+    links: [
+      operationalLinks.frontDesk,
+      operationalLinks.inventory,
+      operationalLinks.rooms,
+      operationalLinks.bookings,
+    ],
+  },
+  RECEPTIONIST: {
+    heading: 'فضای پذیرش',
+    links: [operationalLinks.frontDesk, operationalLinks.bookings],
+  },
+  HOUSEKEEPER: { heading: 'فضای خانه‌داری شما آماده است', links: [] },
+  CASHIER: { heading: 'فضای صندوق شما آماده است', links: [] },
+};
+
 function WorkspaceLink({ link }: { link: (typeof operationalLinks)[keyof typeof operationalLinks] }) {
   return (
     <Link className="staff-overview__action" href={link.href}>
@@ -44,22 +80,8 @@ export default function StaffDashboardPage() {
   const { status, staff } = useStaffSession();
   if (status !== 'authenticated' || !staff) return null;
 
-  const links = staff.role === 'ADMIN'
-    ? [operationalLinks.accounts, operationalLinks.bookings, operationalLinks.rooms, operationalLinks.inventory]
-    : staff.role === 'MANAGER'
-      ? [operationalLinks.inventory, operationalLinks.rooms, operationalLinks.bookings]
-      : staff.role === 'RECEPTIONIST'
-        ? [operationalLinks.bookings]
-        : [];
-  const heading = staff.role === 'ADMIN'
-    ? 'مدیریت حساب‌های کارکنان'
-    : staff.role === 'MANAGER'
-      ? 'فضای مدیر اقامتگاه'
-      : staff.role === 'HOUSEKEEPER'
-        ? 'فضای خانه‌داری شما آماده است'
-        : staff.role === 'CASHIER'
-          ? 'فضای صندوق شما آماده است'
-          : 'فضای پذیرش';
+  const workspace = roleWorkspace[staff.role];
+  const { heading, links } = workspace;
 
   return (
     <section className="staff-overview" aria-labelledby="staff-home-title">

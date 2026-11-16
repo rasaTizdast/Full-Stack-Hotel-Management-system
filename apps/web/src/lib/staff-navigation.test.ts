@@ -3,9 +3,9 @@ import { getStaffHomePath, getStaffRoleLabel } from './staff-navigation';
 
 describe('staff navigation by role', () => {
   it.each([
-    ['ADMIN', '/staff/staff'],
-    ['MANAGER', '/staff/inventory'],
-    ['RECEPTIONIST', '/staff/bookings'],
+    ['ADMIN', '/staff/front-desk/arrivals'],
+    ['MANAGER', '/staff/front-desk/arrivals'],
+    ['RECEPTIONIST', '/staff/front-desk/arrivals'],
     ['HOUSEKEEPER', '/staff'],
     ['CASHIER', '/staff'],
   ] as const)('sends %s to the first available workspace', (role, path) => {

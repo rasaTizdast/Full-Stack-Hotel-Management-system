@@ -151,6 +151,22 @@ export function StaffDashboardShell({
                 </Link>
                 {['ADMIN', 'MANAGER', 'RECEPTIONIST'].includes(staff.role) && (
                   <Link
+                    href="/staff/front-desk/arrivals"
+                    aria-current={currentPath.startsWith('/staff/front-desk') ? 'page' : undefined}
+                  >
+                    <span className="staff-nav__glyph" aria-hidden="true">
+                      <svg viewBox="0 0 24 24" fill="none">
+                        <path d="M4 19.5h16M6 19V6.5h12V19M9 9h6M9 12h6M9 15h3" />
+                      </svg>
+                    </span>
+                    <span className="staff-nav__copy">
+                      <strong>میز پذیرش</strong>
+                      <small>ورودها و اقامت‌های جاری</small>
+                    </span>
+                  </Link>
+                )}
+                {['ADMIN', 'MANAGER', 'RECEPTIONIST'].includes(staff.role) && (
+                  <Link
                     href="/staff/bookings"
                     aria-current={currentPath.startsWith('/staff/bookings') ? 'page' : undefined}
                   >

@@ -1,9 +1,9 @@
 import type { StaffRole } from './staff-api';
 
 const staffHomePaths: Record<StaffRole, string> = {
-  ADMIN: '/staff/staff',
-  MANAGER: '/staff/inventory',
-  RECEPTIONIST: '/staff/bookings',
+  ADMIN: '/staff/front-desk/arrivals',
+  MANAGER: '/staff/front-desk/arrivals',
+  RECEPTIONIST: '/staff/front-desk/arrivals',
   HOUSEKEEPER: '/staff',
   CASHIER: '/staff',
 };

@@ -24,6 +24,10 @@ describe('StaffDashboardPage', () => {
     render(<StaffDashboardPage />);
 
     expect(screen.getByRole('heading', { level: 1, name: 'فضای مدیر اقامتگاه' })).toBeVisible();
+    expect(screen.getByRole('link', { name: /^میز پذیرش/ })).toHaveAttribute(
+      'href',
+      '/staff/front-desk/arrivals',
+    );
     expect(screen.getByRole('link', { name: /^مدیریت ظرفیت و نرخ‌ها/ })).toHaveAttribute(
       'href',
       '/staff/inventory',
@@ -44,10 +48,26 @@ describe('StaffDashboardPage', () => {
     render(<StaffDashboardPage />);
 
     expect(screen.getByRole('heading', { level: 1, name: 'مدیریت حساب‌های کارکنان' })).toBeVisible();
+    expect(screen.getByRole('link', { name: /^میز پذیرش/ })).toHaveAttribute(
+      'href',
+      '/staff/front-desk/arrivals',
+    );
     expect(screen.getByRole('link', { name: /^مدیریت کارکنان/ })).toHaveAttribute(
       'href',
       '/staff/staff',
     );
+  });
+
+  it('gives receptionists a direct front-desk home without manager controls', () => {
+    session.current.staff.role = 'RECEPTIONIST';
+    render(<StaffDashboardPage />);
+
+    expect(screen.getByRole('heading', { level: 1, name: 'فضای پذیرش' })).toBeVisible();
+    expect(screen.getByRole('link', { name: /^میز پذیرش/ })).toHaveAttribute(
+      'href',
+      '/staff/front-desk/arrivals',
+    );
+    expect(screen.queryByRole('link', { name: /^مدیریت ظرفیت و نرخ‌ها/ })).not.toBeInTheDocument();
   });
 
   it.each([

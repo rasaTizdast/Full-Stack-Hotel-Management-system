@@ -123,13 +123,15 @@
 
 **Files:** create the three front-desk routes, focused UI components/CSS module, staff API methods/types and tests; update `staff-dashboard-shell.tsx`, `staff-navigation.ts`, and room-board UI.
 
-- [ ] Add failing component tests for role denial, loading/empty/error/retry, due-in and due-out states, readiness blockers, check-in/no-show confirmation, manager-only early override, walk-in idempotency UI, amendment preview, room move validation, and success/error focus handling.
-- [ ] Run the new web unit tests and verify failures describe missing UI states.
-- [ ] Build desktop worklist/detail layouts and mobile cards for arrivals, in-house, and departures. Show arrivals due today and overdue separately; show checked-in stays in-house and due-outs without a fake checkout action. Keep search/date/filter state after actions and refresh server state after success.
-- [ ] Add walk-in creation to arrivals, full assignment/readiness feedback and check-in/no-show actions to due-ins, a reasoned room-move action to in-house stays, future-only amendments in stay detail, and an informational departures list. Link assignment blockers to `/staff/rooms`.
-- [ ] Add role-aware navigation for ADMIN/MANAGER/RECEPTIONIST and set role home routes to the appropriate front-desk queue without exposing worklists to housekeeping.
-- [ ] Read the Next.js 16 route and data-fetching guides before route edits. Use the existing staff client, RTL tokens, CSS modules, accessible labels/focus/live announcements, confirmation semantics, 44px touch targets, and no horizontal overflow at 320px/390px.
+- [x] Add failing component tests for role denial, loading/empty/error/retry, due-in and due-out states, readiness blockers, check-in/no-show confirmation, manager-only early override, walk-in idempotency UI, amendment preview, room move validation, and success/error focus handling.
+- [x] Run the new web unit tests and verify failures describe missing UI states.
+- [x] Build desktop worklist/detail layouts and mobile cards for arrivals, in-house, and departures. Show arrivals due today and overdue separately; show checked-in stays in-house and due-outs without a fake checkout action. Keep search/date/filter state after actions and refresh server state after success.
+- [x] Add walk-in creation to arrivals, full assignment/readiness feedback and check-in/no-show actions to due-ins, a reasoned room-move action to in-house stays, future-only amendments in stay detail, and an informational departures list. Link assignment blockers to `/staff/rooms`.
+- [x] Add role-aware navigation for ADMIN/MANAGER/RECEPTIONIST and set role home routes to the appropriate front-desk queue without exposing worklists to housekeeping.
+- [ ] Read the Next.js 16 route and data-fetching guides before route edits. Use the existing staff client, RTL tokens, CSS modules, accessible labels/focus/live announcements, confirmation semantics, 44px touch targets, and no horizontal overflow at 320px/390px. (Guides and source patterns reviewed; browser verification at 320px/390px remains blocked.)
 - [ ] Run focused component tests, TypeScript, scoped ESLint, `git diff --check`, and frontend Playwright before Designer review. Capture desktop and mobile screenshots.
+
+Task 7 non-E2E implementation/check evidence is in `.superpowers/sdd/2026-11-16-hotel-pms-front-desk-stay-operations/task-7-web-report.md`. Unit tests, typecheck, scoped ESLint, and diff-check pass. Playwright server launch was rejected by command policy before execution; no screenshots or browser review are claimed.
 
 ### Task 8: Specialist review, release evidence, and merge
 

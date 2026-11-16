@@ -100,7 +100,7 @@ describe('ProtectedStaffArea', () => {
       </ProtectedStaffArea>,
     );
 
-    await waitFor(() => expect(router.replace).toHaveBeenCalledWith('/staff/bookings'));
+    await waitFor(() => expect(router.replace).toHaveBeenCalledWith('/staff/front-desk/arrivals'));
     expect(screen.queryByText('تغییر گذرواژه')).not.toBeInTheDocument();
   });
 });

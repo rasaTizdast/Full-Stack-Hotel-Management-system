@@ -56,7 +56,7 @@ describe('StaffLoginForm', () => {
     });
     fireEvent.click(screen.getByRole('button', { name: 'ورود به پنل' }));
 
-    await waitFor(() => expect(router.replace).toHaveBeenCalledWith('/staff/staff'));
+    await waitFor(() => expect(router.replace).toHaveBeenCalledWith('/staff/front-desk/arrivals'));
     expect(fetch).toHaveBeenCalledWith(
       'http://localhost:4000/api/v1/staff/auth/login',
       expect.objectContaining({
