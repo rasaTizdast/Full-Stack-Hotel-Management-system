@@ -9,7 +9,7 @@ import { StaffRoomDto, StaffRoomListDto } from './dto/staff-room-response.dto';
 import { UpdateRoomDto } from './dto/update-room.dto';
 import { hotelBusinessDate, RoomCapacityService } from './room-capacity.service';
 
-const roomSelect = {
+export const roomSelect = {
   id: true,
   roomNumber: true,
   floor: true,
@@ -132,7 +132,7 @@ export class RoomsService {
     dto: UpdateRoomDto,
   ): Promise<StaffRoomDto> {
     return this.prisma.$transaction(async (transaction) => {
-      await transaction.$queryRaw`SELECT "id" FROM "rooms" WHERE "id" = ${roomId}::uuid FOR UPDATE`;
+      await this.capacity.lockRoom(transaction, roomId);
       const current = await transaction.room.findUnique({
         where: { id: roomId },
         select: roomSelect,
@@ -196,17 +196,11 @@ export class RoomsService {
       if (!initialRoom) throw new NotFoundException({ code: 'ROOM_NOT_FOUND' });
       await this.capacity.lockRoomType(transaction, initialRoom.roomTypeId);
 
-      const lockedRoom = await transaction.$queryRaw<
-        Array<{ id: string; roomTypeId: string; isActive: boolean; timeZone: string }>
-      >`
-        SELECT room."id", room."room_type_id" AS "roomTypeId", room."is_active" AS "isActive",
-               hotel."timezone" AS "timeZone"
-        FROM "rooms" AS room
-        JOIN "hotels" AS hotel ON hotel."id" = room."hotel_id"
-        WHERE room."id" = ${roomId}::uuid
-        FOR UPDATE OF room
-      `;
-      const room = lockedRoom[0];
+      await this.capacity.lockRoom(transaction, roomId);
+      const room = await transaction.room.findUnique({
+        where: { id: roomId },
+        select: { roomTypeId: true, isActive: true, hotel: { select: { timezone: true } } },
+      });
       if (!room) throw new NotFoundException({ code: 'ROOM_NOT_FOUND' });
       if (!room.isActive) {
         const existing = await transaction.room.findUniqueOrThrow({
@@ -216,7 +210,7 @@ export class RoomsService {
         return toRoomDto(existing);
       }
 
-      const today = hotelBusinessDate(room.timeZone);
+      const today = hotelBusinessDate(room.hotel.timezone);
       const assignments = await transaction.$queryRaw<Array<{ id: string }>>`
         SELECT "id"
         FROM "room_assignments"
@@ -259,19 +253,13 @@ export class RoomsService {
       if (!initialRoom) throw new NotFoundException({ code: 'ROOM_NOT_FOUND' });
       await this.capacity.lockRoomType(transaction, initialRoom.roomTypeId);
 
-      const lockedRoom = await transaction.$queryRaw<
-        Array<{ id: string; roomTypeId: string; isActive: boolean; timeZone: string }>
-      >`
-        SELECT room."id", room."room_type_id" AS "roomTypeId", room."is_active" AS "isActive",
-               hotel."timezone" AS "timeZone"
-        FROM "rooms" AS room
-        JOIN "hotels" AS hotel ON hotel."id" = room."hotel_id"
-        WHERE room."id" = ${roomId}::uuid
-        FOR UPDATE OF room
-      `;
-      const room = lockedRoom[0];
+      await this.capacity.lockRoom(transaction, roomId);
+      const room = await transaction.room.findUnique({
+        where: { id: roomId },
+        select: { roomTypeId: true, isActive: true, hotel: { select: { timezone: true } } },
+      });
       if (!room) throw new NotFoundException({ code: 'ROOM_NOT_FOUND' });
-      const today = hotelBusinessDate(room.timeZone);
+      const today = hotelBusinessDate(room.hotel.timezone);
       if (!room.isActive) {
         await transaction.room.update({ where: { id: roomId }, data: { isActive: true } });
       }

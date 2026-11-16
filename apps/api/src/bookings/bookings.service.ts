@@ -18,6 +18,8 @@ import {
   type BookingStatus,
   type InventoryEffect,
 } from './booking-lifecycle';
+import { RoomAssignmentService } from '../rooms/room-assignment.service';
+import { lockBookingByReference, type LockedBooking } from './booking-row-lock';
 import { CreateBookingDto } from './dto/create-booking.dto';
 import { BookingResponseDto } from './dto/booking-response.dto';
 
@@ -64,16 +66,6 @@ export interface BookingTransitionResult {
   status: BookingStatus;
 }
 
-type LockedBooking = {
-  id: string;
-  publicReference: string;
-  status: BookingStatus;
-  checkIn: Date;
-  expiresAt: Date;
-  roomTypeId: string;
-  roomQuantity: number;
-};
-
 type LockedInventoryCounter = {
   id: string;
   stayDate: string;
@@ -106,6 +98,7 @@ export class BookingsService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly audit: AuditService,
+    private readonly assignments: RoomAssignmentService,
   ) {}
 
   async create(dto: CreateBookingDto, idempotencyKey: string): Promise<BookingResponseDto> {
@@ -236,7 +229,7 @@ export class BookingsService {
     actorStaffUserId?: string,
   ): Promise<BookingTransitionResult> {
     return this.prisma.$transaction(async (transaction) => {
-      const booking = await this.lockBookingByReference(transaction, reference);
+      const booking = await lockBookingByReference(transaction, reference);
       const decision = resolveBookingTransition(booking.status, action);
       if (!decision) {
         throw new ConflictException({
@@ -286,6 +279,9 @@ export class BookingsService {
         });
       }
 
+      if (booking.status === 'CONFIRMED' && action === 'CANCEL') {
+        await this.assignments.releaseForCancellation(transaction, booking, actorStaffUserId);
+      }
       await this.applyInventoryEffect(transaction, booking, decision.inventoryEffect);
 
       const updateData: {
@@ -350,32 +346,6 @@ export class BookingsService {
       });
       return true;
     });
-  }
-
-  private async lockBookingByReference(
-    transaction: Prisma.TransactionClient,
-    reference: string,
-  ): Promise<LockedBooking> {
-    const rows = await transaction.$queryRaw<LockedBooking[]>`
-      SELECT
-        id::text AS id,
-        public_reference AS "publicReference",
-        status::text AS status,
-        check_in AS "checkIn",
-        expires_at AS "expiresAt",
-        room_type_id::text AS "roomTypeId",
-        room_quantity AS "roomQuantity"
-      FROM bookings
-      WHERE public_reference = ${reference}
-      FOR UPDATE
-    `;
-    if (!rows[0]) {
-      throw new NotFoundException({
-        code: 'BOOKING_NOT_FOUND',
-        message: 'The booking was not found.',
-      });
-    }
-    return rows[0];
   }
 
   private async lockBookingById(

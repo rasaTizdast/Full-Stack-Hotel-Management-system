@@ -105,6 +105,28 @@ const SAFE_DOMAIN_ERRORS: Record<string, { statusCode: number; message: string }
     message: 'The internal note is invalid or exceeds its maximum length.',
   },
   ROOM_NOT_FOUND: { statusCode: 404, message: 'The physical room was not found.' },
+  ROOM_INACTIVE: { statusCode: 409, message: 'The physical room is inactive.' },
+  ROOM_TYPE_MISMATCH: {
+    statusCode: 409,
+    message: 'Every assigned room must match the booked room type.',
+  },
+  ROOM_ASSIGNMENT_OUTSIDE_BOOKING: {
+    statusCode: 409,
+    message: 'Every assignment interval must be within the booking dates.',
+  },
+  ROOM_ASSIGNMENT_DUPLICATE_ROOM: {
+    statusCode: 409,
+    message: 'Each room may appear once in the assignment set.',
+  },
+  ROOM_ASSIGNMENT_LIMIT: {
+    statusCode: 409,
+    message: 'The assignment set exceeds the number of booked rooms.',
+  },
+  ROOM_ASSIGNMENT_OVERLAP: {
+    statusCode: 409,
+    message: 'A physical room is already assigned for these dates.',
+  },
+  ROOM_BLOCKED: { statusCode: 409, message: 'A physical room is blocked for these dates.' },
   ROOM_NUMBER_TAKEN: { statusCode: 409, message: 'A room with this number already exists.' },
   ROOM_HAS_ACTIVE_ASSIGNMENTS: {
     statusCode: 409,

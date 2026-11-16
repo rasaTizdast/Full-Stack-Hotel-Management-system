@@ -33,7 +33,7 @@ function badRequest(code: keyof typeof DOMAIN_ERROR_MESSAGES): BadRequestExcepti
   return new BadRequestException({ code, message: DOMAIN_ERROR_MESSAGES[code] });
 }
 
-function parseDateOnly(value: string): Date {
+export function parseDateOnly(value: string): Date {
   if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) {
     throw badRequest('INVALID_DATE_RANGE');
   }

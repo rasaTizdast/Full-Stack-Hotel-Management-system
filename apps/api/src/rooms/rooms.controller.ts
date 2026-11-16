@@ -29,6 +29,8 @@ import {
 import { ApiErrorResponseDto } from '../common/openapi-response.dto';
 import { RequireStaffCapabilities } from '../staff-auth/require-staff-capabilities.decorator';
 import type { StaffRequest } from '../staff-auth/staff-auth.types';
+import { RoomBoardDto, RoomBoardQueryDto } from './dto/room-board.dto';
+import { RoomBoardService } from './room-board.service';
 import { CreateRoomDto } from './dto/create-room.dto';
 import { StaffRoomsQueryDto } from './dto/staff-rooms-query.dto';
 import { StaffRoomDto, StaffRoomListDto } from './dto/staff-room-response.dto';
@@ -39,7 +41,10 @@ import { RoomsService } from './rooms.service';
 @ApiCookieAuth('staffSession')
 @Controller('staff/rooms')
 export class RoomsController {
-  constructor(private readonly rooms: RoomsService) {}
+  constructor(
+    private readonly rooms: RoomsService,
+    private readonly board: RoomBoardService,
+  ) {}
 
   @Get()
   @RequireStaffCapabilities('VIEW_ROOM_BOARD')
@@ -53,6 +58,19 @@ export class RoomsController {
   @ApiForbiddenResponse({ type: ApiErrorResponseDto })
   list(@Query() query: StaffRoomsQueryDto): Promise<StaffRoomListDto> {
     return this.rooms.list(query);
+  }
+
+  @Get('board')
+  @RequireStaffCapabilities('VIEW_ROOM_BOARD')
+  @Header('Cache-Control', 'private, no-store')
+  @ApiOperation({ summary: 'Read the physical room board for a hotel business date.' })
+  @ApiOkResponse({ type: RoomBoardDto })
+  @ApiBadRequestResponse({ type: ApiErrorResponseDto })
+  @ApiUnauthorizedResponse({ type: ApiErrorResponseDto })
+  @ApiForbiddenResponse({ type: ApiErrorResponseDto })
+  @ApiNotFoundResponse({ type: ApiErrorResponseDto })
+  getBoard(@Query() query: RoomBoardQueryDto): Promise<RoomBoardDto> {
+    return this.board.get(query);
   }
 
   @Post()

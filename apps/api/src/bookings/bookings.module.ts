@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 import { AuditModule } from '../audit/audit.module';
 import { PrismaModule } from '../database/prisma.module';
+import { RoomsModule } from '../rooms/rooms.module';
 import { BookingRateLimitGuard } from './booking-rate-limit.guard';
 import { BookingRateLimitService } from './booking-rate-limit.service';
 import { BookingsController } from './bookings.controller';
@@ -10,7 +11,7 @@ import { StaffBookingsController } from './staff-bookings.controller';
 import { StaffBookingsService } from './staff-bookings.service';
 
 @Module({
-  imports: [PrismaModule, AuditModule],
+  imports: [PrismaModule, AuditModule, RoomsModule],
   controllers: [BookingsController, StaffBookingsController],
   providers: [
     BookingRateLimitGuard,

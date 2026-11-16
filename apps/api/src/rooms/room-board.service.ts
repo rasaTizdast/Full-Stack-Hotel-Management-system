@@ -1,0 +1,184 @@
+import { Injectable, NotFoundException } from '@nestjs/common';
+import { HOTEL_TIME_ZONE, parseDateOnly } from '../availability/date-range';
+import { PrismaService } from '../database/prisma.service';
+import type { RoomBoardDto, RoomBoardItemDto, RoomBoardQueryDto } from './dto/room-board.dto';
+import { reservationContextOn } from './room-board-context';
+import { hotelBusinessDate } from './room-capacity.service';
+import { roomSelect } from './rooms.service';
+
+const dateOnly = (date: Date) => date.toISOString().slice(0, 10);
+
+function matchesContextFilters(item: RoomBoardItemDto, query: RoomBoardQueryDto): boolean {
+  if (query.occupancy && item.occupancy !== query.occupancy) return false;
+  const matchesStay =
+    !query.stayContext ||
+    (query.stayContext === 'NONE'
+      ? item.reservationContexts.length === 0
+      : item.reservationContexts.some((context) => context.stayContext === query.stayContext));
+  const matchesBlock =
+    !query.blockKind ||
+    (query.blockKind === 'NONE'
+      ? item.blocks.length === 0
+      : item.blocks.some((block) => block.kind === query.blockKind));
+  return matchesStay && matchesBlock;
+}
+
+@Injectable()
+export class RoomBoardService {
+  constructor(private readonly prisma: PrismaService) {}
+
+  async get(query: RoomBoardQueryDto): Promise<RoomBoardDto> {
+    const requestedDate = query.date ? parseDateOnly(query.date) : undefined;
+    const now = new Date();
+    return this.prisma.$transaction(
+      async (transaction) => {
+        const roomType = query.roomTypeId
+          ? await transaction.roomType.findUnique({
+              where: { id: query.roomTypeId },
+              select: { hotel: { select: { id: true, timezone: true } } },
+            })
+          : undefined;
+        if (query.roomTypeId && !roomType)
+          throw new NotFoundException({ code: 'ROOM_TYPE_NOT_FOUND' });
+        const hotel =
+          roomType?.hotel ??
+          (await transaction.hotel.findFirst({
+            orderBy: [{ createdAt: 'asc' }, { id: 'asc' }],
+            select: { id: true, timezone: true },
+          }));
+
+        const businessDate = hotelBusinessDate(hotel?.timezone ?? HOTEL_TIME_ZONE, now);
+        const date = requestedDate ?? businessDate;
+        const header = {
+          date: dateOnly(date),
+          businessDate: dateOnly(businessDate),
+          updatedAt: now.toISOString(),
+        };
+        if (!hotel) return { ...header, items: [], assignableBookings: [] };
+
+        const rooms = await transaction.room.findMany({
+          where: {
+            hotelId: hotel.id,
+            roomTypeId: query.roomTypeId,
+            floor: query.floor,
+            housekeepingStatus: query.housekeepingStatus,
+          },
+          orderBy: [{ roomType: { displayOrder: 'asc' } }, { roomNumber: 'asc' }, { id: 'asc' }],
+          select: {
+            ...roomSelect,
+            assignments: {
+              where: {
+                isActive: true,
+                startDate: { lte: date },
+                endDate: { gte: date },
+                booking: { status: 'CONFIRMED' },
+              },
+              orderBy: [{ startDate: 'asc' }, { id: 'asc' }],
+              select: {
+                id: true,
+                startDate: true,
+                endDate: true,
+                booking: {
+                  select: { publicReference: true, guestName: true, checkIn: true, checkOut: true },
+                },
+              },
+            },
+            blocks: {
+              where: { isActive: true, startDate: { lte: date }, endDate: { gt: date } },
+              orderBy: [{ startDate: 'asc' }, { id: 'asc' }],
+              select: { id: true, kind: true, startDate: true, endDate: true },
+            },
+          },
+        });
+        const bookings = await transaction.booking.findMany({
+          where: {
+            status: 'CONFIRMED',
+            checkIn: { lte: date },
+            checkOut: { gt: date },
+            roomTypeId: query.roomTypeId,
+            roomType: { hotelId: hotel.id },
+          },
+          orderBy: [{ checkIn: 'asc' }, { publicReference: 'asc' }],
+          select: {
+            publicReference: true,
+            guestName: true,
+            roomType: { select: { id: true, name: true } },
+            checkIn: true,
+            checkOut: true,
+            roomQuantity: true,
+            assignments: {
+              where: { isActive: true },
+              orderBy: [{ roomId: 'asc' }, { startDate: 'asc' }, { id: 'asc' }],
+              select: {
+                id: true,
+                startDate: true,
+                endDate: true,
+                room: { select: { id: true, roomNumber: true } },
+              },
+            },
+          },
+        });
+
+        const items = rooms
+          .map<RoomBoardItemDto>(({ assignments, blocks, ...room }) => {
+            const reservationContexts = assignments.flatMap((assignment) => {
+              const stayContext = reservationContextOn(date, assignment);
+              return stayContext
+                ? [
+                    {
+                      assignmentId: assignment.id,
+                      reference: assignment.booking.publicReference,
+                      guestName: assignment.booking.guestName,
+                      startDate: dateOnly(assignment.startDate),
+                      endDate: dateOnly(assignment.endDate),
+                      stayContext,
+                    },
+                  ]
+                : [];
+            });
+            return {
+              ...room,
+              occupancy: reservationContexts.length ? 'UNKNOWN' : 'VACANT',
+              reservationContexts,
+              blocks: blocks.map((block) => ({
+                ...block,
+                startDate: dateOnly(block.startDate),
+                endDate: dateOnly(block.endDate),
+              })),
+            };
+          })
+          .filter((item) => matchesContextFilters(item, query));
+
+        return {
+          ...header,
+          items,
+          assignableBookings: bookings.map((booking) => {
+            const assignedToday = new Set(
+              booking.assignments.flatMap(({ startDate, endDate, room }) =>
+                startDate <= date && date < endDate ? [room.id] : [],
+              ),
+            );
+            return {
+              reference: booking.publicReference,
+              guestName: booking.guestName,
+              roomTypeId: booking.roomType.id,
+              roomTypeName: booking.roomType.name,
+              checkIn: dateOnly(booking.checkIn),
+              checkOut: dateOnly(booking.checkOut),
+              roomQuantity: booking.roomQuantity,
+              unassignedRoomQuantity: Math.max(0, booking.roomQuantity - assignedToday.size),
+              assignments: booking.assignments.map(({ id, room, startDate, endDate }) => ({
+                id,
+                roomId: room.id,
+                roomNumber: room.roomNumber,
+                startDate: dateOnly(startDate),
+                endDate: dateOnly(endDate),
+              })),
+            };
+          }),
+        };
+      },
+      { isolationLevel: 'RepeatableRead' },
+    );
+  }
+}

@@ -57,11 +57,12 @@ export class RoomCapacityService {
   }
 
   async lockRoomType(transaction: TransactionClient, roomTypeId: string): Promise<boolean> {
+    // Serialize type mutations without blocking foreign-key checks from public booking inserts.
     const rows = await transaction.$queryRaw<Array<{ id: string }>>`
       SELECT "id"
       FROM "room_types"
       WHERE "id" = ${roomTypeId}::uuid
-      FOR UPDATE
+      FOR NO KEY UPDATE
     `;
     return rows.length > 0;
   }
