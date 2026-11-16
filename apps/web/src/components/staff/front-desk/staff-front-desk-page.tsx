@@ -113,12 +113,29 @@ function safeErrorMessage(error: unknown): string {
   }
 }
 
+function hasRoomRecovery(error: unknown): boolean {
+  return error instanceof StaffApiError && [
+    'ROOM_ASSIGNMENT_INCOMPLETE',
+    'ROOM_NOT_INSPECTED',
+    'ROOM_ASSIGNMENT_OVERLAP',
+    'ROOM_BLOCKED',
+  ].includes(error.code ?? '');
+}
+
 function isManager(role: StaffRole | undefined): boolean {
   return role === 'ADMIN' || role === 'MANAGER';
 }
 
-function assignmentSummary(stay: StaffStayWorklistItem): string {
-  const assigned = stay.assignedRooms.length;
+function assignmentsOnDate(stay: StaffStayWorklistItem, date: string) {
+  return stay.assignedRooms.filter((room) => room.startDate <= date && date < room.endDate);
+}
+
+function isStayActiveOn(stay: StaffStayWorklistItem, date: string): boolean {
+  return stay.checkIn <= date && date < stay.checkOut;
+}
+
+function assignmentSummary(stay: StaffStayWorklistItem, businessDate: string): string {
+  const assigned = assignmentsOnDate(stay, businessDate).length;
   return `${formatPersianInteger(assigned)} از ${formatPersianInteger(stay.roomQuantity)} اتاق تخصیص یافته`;
 }
 
@@ -172,6 +189,7 @@ export function StaffFrontDeskPage({ queue, roomTypes = [] }: StaffFrontDeskPage
   const [dialog, setDialog] = useState<DialogState>(null);
   const [dialogReason, setDialogReason] = useState('');
   const [dialogError, setDialogError] = useState<string | null>(null);
+  const [dialogRoomRecovery, setDialogRoomRecovery] = useState(false);
   const [dialogBusy, setDialogBusy] = useState(false);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [selectedReference, setSelectedReference] = useState<string | null>(null);
@@ -308,6 +326,7 @@ export function StaffFrontDeskPage({ queue, roomTypes = [] }: StaffFrontDeskPage
     setDialog(nextDialog);
     setDialogReason('');
     setDialogError(null);
+    setDialogRoomRecovery(false);
     setWalkInError(null);
     setWalkInFieldError(null);
     if (nextDialog?.kind === 'walk-in') {
@@ -333,20 +352,30 @@ export function StaffFrontDeskPage({ queue, roomTypes = [] }: StaffFrontDeskPage
     if (dialogBusy) return;
     setDialog(null);
     setDialogError(null);
+    setDialogRoomRecovery(false);
   }
 
   async function submitAction(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (!dialog || !csrfToken) return;
     setDialogError(null);
+    setDialogRoomRecovery(false);
     setDialogBusy(true);
     try {
       if (dialog.kind === 'check-in') {
+        if (!isStayActiveOn(dialog.stay, worklist?.businessDate ?? query.date)) {
+          setDialogError('ورود فقط در بازه فعال این اقامت در تاریخ کاری جاری در دسترس است.');
+          return;
+        }
         await checkInStaffStay(dialog.stay.reference, csrfToken, {
           ...(isManager(staff?.role) && dialogReason.trim() ? { earlyCheckInReason: dialogReason.trim() } : {}),
         });
         setSuccessMessage(`ورود مهمان ${dialog.stay.guestName} ثبت شد.`);
       } else if (dialog.kind === 'no-show') {
+        if (!isStayActiveOn(dialog.stay, worklist?.businessDate ?? query.date)) {
+          setDialogError('ثبت عدم مراجعه فقط در بازه فعال این اقامت در تاریخ کاری جاری در دسترس است.');
+          return;
+        }
         if (!dialogReason.trim()) {
           setDialogError('ثبت دلیل برای عدم مراجعه الزامی است.');
           return;
@@ -357,9 +386,16 @@ export function StaffFrontDeskPage({ queue, roomTypes = [] }: StaffFrontDeskPage
         const form = new FormData(event.currentTarget);
         const targetRoomId = String(form.get('targetRoomId') ?? '');
         const sourceAssignmentId = String(form.get('sourceAssignmentId') ?? '');
-        const assignment = dialog.stay.assignedRooms.find((room) => room.assignmentId === sourceAssignmentId);
+        const businessDate = worklist?.businessDate ?? query.date;
+        if (dialog.stay.status !== 'CHECKED_IN' || !isStayActiveOn(dialog.stay, businessDate)) {
+          setDialogError('انتقال اتاق فقط در بازه فعال اقامت در تاریخ کاری جاری در دسترس است.');
+          return;
+        }
+        const assignment = assignmentsOnDate(dialog.stay, businessDate).find(
+          (room) => room.assignmentId === sourceAssignmentId,
+        );
         if (!assignment || !targetRoomId || !dialogReason.trim()) {
-          setDialogError('اتاق فعلی، اتاق مقصد و دلیل انتقال را کامل کنید.');
+          setDialogError(assignment ? 'اتاق مقصد و دلیل انتقال را کامل کنید.' : 'برای تاریخ کاری جاری تخصیص اتاق فعالی وجود ندارد؛ ابتدا برنامه اتاق را بررسی کنید.');
           return;
         }
         await moveStaffStayRoom(dialog.stay.reference, csrfToken, {
@@ -373,6 +409,7 @@ export function StaffFrontDeskPage({ queue, roomTypes = [] }: StaffFrontDeskPage
       refreshList();
     } catch (error) {
       setDialogError(safeErrorMessage(error));
+      setDialogRoomRecovery(hasRoomRecovery(error));
     } finally {
       setDialogBusy(false);
     }
@@ -383,6 +420,10 @@ export function StaffFrontDeskPage({ queue, roomTypes = [] }: StaffFrontDeskPage
     if (!csrfToken || !worklist) return;
     setWalkInError(null);
     setWalkInFieldError(null);
+    if (query.date !== worklist.businessDate) {
+      setWalkInFieldError('ثبت ورود حضوری فقط برای تاریخ کاری جاری در دسترس است.');
+      return;
+    }
     const checkOut = toGregorianIso(walkInDraft.checkOut);
     if (!checkOut || checkOut <= worklist.businessDate) {
       setWalkInFieldError('تاریخ خروج باید پس از تاریخ کاری امروز باشد.');
@@ -495,8 +536,15 @@ export function StaffFrontDeskPage({ queue, roomTypes = [] }: StaffFrontDeskPage
 
       {queue === 'arrivals' && (
         <div className={styles.actionBar}>
-          <button className={styles.primaryButton} type="button" onClick={(event) => openDialog({ kind: 'walk-in' }, event.currentTarget)}>ثبت ورود بدون رزرو قبلی</button>
-          <span>تاریخ ورود حضوری بر اساس تاریخ کاری سامانه ثبت می‌شود.</span>
+          <button
+            className={styles.primaryButton}
+            type="button"
+            disabled={listState !== 'ready' || !worklist || query.date !== worklist.businessDate}
+            onClick={(event) => openDialog({ kind: 'walk-in' }, event.currentTarget)}
+          >ثبت ورود بدون رزرو قبلی</button>
+          {listState === 'ready' && worklist && query.date !== worklist.businessDate
+            ? <span role="status">ثبت ورود حضوری فقط برای تاریخ کاری جاری در دسترس است.</span>
+            : <span>تاریخ ورود حضوری بر اساس تاریخ کاری سامانه ثبت می‌شود.</span>}
         </div>
       )}
 
@@ -517,9 +565,12 @@ export function StaffFrontDeskPage({ queue, roomTypes = [] }: StaffFrontDeskPage
             <div className={styles.groups}>
               <WorklistGroup
                 queue={queue}
-                title={queue === 'arrivals' ? 'ورودهای امروز' : queue === 'in-house' ? 'اقامت‌های در جریان' : 'موعدهای رسیده'}
+                title={queue === 'arrivals'
+                  ? query.date === worklist.businessDate ? 'ورودهای امروز' : 'ورودهای تاریخ انتخاب‌شده'
+                  : queue === 'in-house' ? 'اقامت‌های در جریان' : 'موعدهای رسیده'}
                 items={groupedItems.primary}
                 selectedDate={selectedDate}
+                businessDate={worklist.businessDate}
                 onCheckIn={(stay, trigger) => openDialog({ kind: 'check-in', stay }, trigger)}
                 onNoShow={(stay, trigger) => openDialog({ kind: 'no-show', stay }, trigger)}
                 onMove={(stay, trigger) => openDialog({ kind: 'move', stay }, trigger)}
@@ -528,9 +579,12 @@ export function StaffFrontDeskPage({ queue, roomTypes = [] }: StaffFrontDeskPage
               {groupedItems.secondary.length > 0 && (
                 <WorklistGroup
                   queue={queue}
-                  title={queue === 'arrivals' ? 'ورودهای معوق' : 'موعد خروج گذشته'}
+                  title={queue === 'arrivals'
+                    ? query.date === worklist.businessDate ? 'ورودهای معوق' : 'ورودهای پیش از تاریخ انتخاب‌شده'
+                    : 'موعد خروج گذشته'}
                   items={groupedItems.secondary}
                   selectedDate={selectedDate}
+                  businessDate={worklist.businessDate}
                   onCheckIn={(stay, trigger) => openDialog({ kind: 'check-in', stay }, trigger)}
                   onNoShow={(stay, trigger) => openDialog({ kind: 'no-show', stay }, trigger)}
                   onMove={(stay, trigger) => openDialog({ kind: 'move', stay }, trigger)}
@@ -588,6 +642,7 @@ export function StaffFrontDeskPage({ queue, roomTypes = [] }: StaffFrontDeskPage
           manager={isManager(staff.role)}
           reason={dialogReason}
           error={dialogError}
+          roomRecovery={dialogRoomRecovery}
           busy={dialogBusy}
           headingRef={actionHeadingRef}
           onReasonChange={setDialogReason}
@@ -598,6 +653,7 @@ export function StaffFrontDeskPage({ queue, roomTypes = [] }: StaffFrontDeskPage
       {dialog?.kind === 'move' && (
         <MoveDialog
           stay={dialog.stay}
+          businessDate={worklist?.businessDate ?? query.date}
           rooms={moveRooms.filter((room) => canMoveTo(room, dialog.stay.assignedRooms.map((assigned) => assigned.roomNumber)))}
           loading={moveRoomsLoading}
           reason={dialogReason}
@@ -618,28 +674,38 @@ interface WorklistGroupProps {
   title: string;
   items: StaffStayWorklistItem[];
   selectedDate: string;
+  businessDate: string;
   onCheckIn: (stay: StaffStayWorklistItem, trigger: HTMLElement) => void;
   onNoShow: (stay: StaffStayWorklistItem, trigger: HTMLElement) => void;
   onMove: (stay: StaffStayWorklistItem, trigger: HTMLElement) => void;
   onDetail: (stay: StaffStayWorklistItem) => void;
 }
 
-function WorklistGroup({ queue, title, items, selectedDate, onCheckIn, onNoShow, onMove, onDetail }: WorklistGroupProps) {
+function WorklistGroup({ queue, title, items, selectedDate, businessDate, onCheckIn, onNoShow, onMove, onDetail }: WorklistGroupProps) {
   if (items.length === 0) return null;
   return (
     <section className={styles.group} aria-label={title}>
       <header><h2>{title}</h2><span>{formatPersianInteger(items.length)} اقامت</span></header>
       <div className={styles.stayList}>
         {items.map((stay) => {
-          const assigned = stay.assignedRooms.length;
+          const activeAssignments = assignmentsOnDate(stay, businessDate);
+          const assigned = activeAssignments.length;
           const missingRooms = Math.max(0, stay.roomQuantity - assigned);
           const dueOut = stay.checkOut <= selectedDate;
+          const actionableToday = isStayActiveOn(stay, businessDate);
+          const canMoveToday = stay.status === 'CHECKED_IN' && actionableToday;
           return (
             <article className={styles.stayCard} key={stay.reference} aria-label={`${stay.guestName} · ${stay.reference}`}>
               <div className={styles.cardTop}>
                 <div><h3>{stay.guestName}</h3><p dir="ltr">{stay.reference}</p></div>
                 <span className={dueOut && queue === 'in-house' ? styles.statusDue : styles.statusNeutral}>
-                  {queue === 'arrivals' ? (stay.checkIn < selectedDate ? 'ورود معوق' : 'ورود امروز') : queue === 'in-house' ? (dueOut ? 'موعد خروج امروز' : 'اقامت در جریان') : 'موعد خروج رسیده'}
+                  {queue === 'arrivals'
+                    ? stay.checkIn < selectedDate
+                      ? selectedDate === businessDate ? 'ورود معوق' : 'ورود پیش از تاریخ انتخاب‌شده'
+                      : selectedDate === businessDate ? 'ورود امروز' : 'ورود در تاریخ انتخاب‌شده'
+                    : queue === 'in-house'
+                      ? dueOut ? selectedDate === businessDate ? 'موعد خروج امروز' : 'موعد خروج در تاریخ انتخاب‌شده' : 'اقامت در جریان'
+                      : 'موعد خروج رسیده'}
                 </span>
               </div>
               <dl className={styles.stayFacts}>
@@ -650,7 +716,7 @@ function WorklistGroup({ queue, title, items, selectedDate, onCheckIn, onNoShow,
               </dl>
               {queue !== 'departures' && (
                 <div className={styles.readiness}>
-                  <strong>{assignmentSummary(stay)}</strong>
+                  <strong>{assignmentSummary(stay, businessDate)}</strong>
                   {missingRooms > 0 && <Link href="/staff/rooms">تکمیل تخصیص اتاق‌ها ({formatPersianInteger(missingRooms)} اتاق)</Link>}
                   {stay.assignedRooms.length > 0 && (
                     <ul aria-label="اتاق‌های تخصیص‌یافته">
@@ -663,19 +729,21 @@ function WorklistGroup({ queue, title, items, selectedDate, onCheckIn, onNoShow,
                       ))}
                     </ul>
                   )}
-                  {stay.assignedRooms.some((room) => room.housekeepingStatus !== 'INSPECTED') && (
+                  {activeAssignments.some((room) => room.housekeepingStatus !== 'INSPECTED') && (
                     <Link href="/staff/rooms">بازبینی وضعیت و بازرسی اتاق‌ها</Link>
                   )}
-                  <small>آمادگی نهایی اتاق را سامانه هنگام ثبت ورود بررسی می‌کند.</small>
+                  <small>تعداد تخصیص برای تاریخ کاری جاری است؛ آمادگی کل بازه و محدودیت‌ها را سامانه هنگام ثبت ورود بررسی می‌کند.</small>
                 </div>
               )}
               {queue === 'departures' && <p className={styles.readOnlyNote}>فهرست اطلاع‌رسانی؛ ثبت خروج در این بخش انجام نمی‌شود.</p>}
               <div className={styles.cardActions}>
                 {queue === 'arrivals' && stay.status === 'CONFIRMED' && <>
-                  <button className={styles.primaryButton} type="button" onClick={(event) => onCheckIn(stay, event.currentTarget)}>ثبت ورود</button>
-                  <button className={styles.secondaryButton} type="button" onClick={(event) => onNoShow(stay, event.currentTarget)}>ثبت عدم مراجعه</button>
+                  <button className={styles.primaryButton} type="button" disabled={!actionableToday} onClick={(event) => onCheckIn(stay, event.currentTarget)}>ثبت ورود</button>
+                  <button className={styles.secondaryButton} type="button" disabled={!actionableToday} onClick={(event) => onNoShow(stay, event.currentTarget)}>ثبت عدم مراجعه</button>
                 </>}
-                {queue === 'in-house' && <button className={styles.secondaryButton} type="button" disabled={stay.assignedRooms.length === 0} onClick={(event) => onMove(stay, event.currentTarget)}>انتقال اتاق</button>}
+                {queue === 'arrivals' && stay.status === 'CONFIRMED' && !actionableToday && <span role="status">این اقامت خارج از بازه فعال تاریخ کاری جاری است؛ عملیات ورود و عدم مراجعه در دسترس نیست.</span>}
+                {queue === 'in-house' && <button className={styles.secondaryButton} type="button" disabled={!canMoveToday} onClick={(event) => onMove(stay, event.currentTarget)}>انتقال اتاق</button>}
+                {queue === 'in-house' && !canMoveToday && <span role="status">انتقال اتاق فقط برای اقامت واردشده در بازه فعال تاریخ کاری جاری در دسترس است.</span>}
                 {queue !== 'departures' && <button className={styles.textButton} type="button" onClick={() => onDetail(stay)}>نمایش جزئیات</button>}
               </div>
             </article>
@@ -692,6 +760,7 @@ interface ActionDialogProps {
   manager: boolean;
   reason: string;
   error: string | null;
+  roomRecovery: boolean;
   busy: boolean;
   headingRef: RefObject<HTMLHeadingElement | null>;
   onReasonChange: (value: string) => void;
@@ -699,7 +768,7 @@ interface ActionDialogProps {
   onSubmit: (event: FormEvent<HTMLFormElement>) => void;
 }
 
-function ActionDialog({ kind, stay, manager, reason, error, busy, headingRef, onReasonChange, onClose, onSubmit }: ActionDialogProps) {
+function ActionDialog({ kind, stay, manager, reason, error, roomRecovery, busy, headingRef, onReasonChange, onClose, onSubmit }: ActionDialogProps) {
   const checkIn = kind === 'check-in';
   const title = checkIn ? 'تأیید ورود مهمان' : 'ثبت عدم مراجعه مهمان';
   return (
@@ -713,7 +782,7 @@ function ActionDialog({ kind, stay, manager, reason, error, busy, headingRef, on
         {!checkIn && <label>دلیل عدم مراجعه <span>این توضیح در سابقه عملیات ثبت می‌شود.</span>
           <textarea aria-label="دلیل عدم مراجعه" value={reason} maxLength={500} onChange={(event) => onReasonChange(event.target.value)} />
         </label>}
-        {error && <p className={styles.error} role="alert">{error}</p>}
+        {error && <p className={styles.error} role="alert">{error}{roomRecovery && <> <Link href="/staff/rooms">بررسی وضعیت اتاق‌ها</Link></>}</p>}
         <form onSubmit={onSubmit} className={styles.dialogActions}>
           <button className={styles.primaryButton} type="submit" disabled={busy}>{busy ? 'در حال ثبت…' : checkIn ? 'تأیید و ثبت ورود' : 'ثبت عدم مراجعه'}</button>
           <button className={styles.secondaryButton} type="button" onClick={onClose} disabled={busy}>بازگشت</button>
@@ -767,6 +836,7 @@ function WalkInDialog({ roomTypes, draft, error, fieldError, retry, busy, headin
 
 interface MoveDialogProps {
   stay: StaffStayWorklistItem;
+  businessDate: string;
   rooms: StaffRoomBoardItem[];
   loading: boolean;
   reason: string;
@@ -778,16 +848,20 @@ interface MoveDialogProps {
   onSubmit: (event: FormEvent<HTMLFormElement>) => void;
 }
 
-function MoveDialog({ stay, rooms, loading, reason, error, busy, headingRef, onReasonChange, onClose, onSubmit }: MoveDialogProps) {
+function MoveDialog({ stay, businessDate, rooms, loading, reason, error, busy, headingRef, onReasonChange, onClose, onSubmit }: MoveDialogProps) {
+  const activeAssignments = assignmentsOnDate(stay, businessDate);
   return (
     <div className={styles.dialogBackdrop}>
       <section className={styles.dialog} role="dialog" aria-modal="true" aria-labelledby="move-dialog-title" onKeyDown={(event) => handleDialogKeyDown(event, onClose)}>
         <h2 id="move-dialog-title" tabIndex={-1} ref={headingRef}>انتقال مهمان به اتاق دیگر</h2>
         <p>انتقال از اتاق انتخاب‌شده در روز کاری جاری بررسی می‌شود؛ سامانه تداخل کل بازه باقی‌مانده را کنترل می‌کند.</p>
         <form onSubmit={onSubmit}>
-          <label>اتاق فعلی<select aria-label="اتاق فعلی" name="sourceAssignmentId" defaultValue={stay.assignedRooms[0]?.assignmentId ?? ''}>
-            {stay.assignedRooms.map((room) => <option key={room.assignmentId} value={room.assignmentId}>اتاق {room.roomNumber}</option>)}
+          <label>اتاق فعلی<select aria-label="اتاق فعلی" name="sourceAssignmentId" required disabled={activeAssignments.length === 0} defaultValue={activeAssignments[0]?.assignmentId ?? ''}>
+            {activeAssignments.length === 0
+              ? <option value="">تخصیص فعالی برای این تاریخ وجود ندارد</option>
+              : activeAssignments.map((room) => <option key={room.assignmentId} value={room.assignmentId}>اتاق {room.roomNumber}</option>)}
           </select></label>
+          {activeAssignments.length === 0 && <p className={styles.notice} role="status">برای تاریخ کاری جاری تخصیص اتاقی فعال نیست؛ پیش از انتقال، برنامه اتاق را بررسی کنید.</p>}
           <label>اتاق مقصد<select aria-label="اتاق مقصد" name="targetRoomId" required defaultValue="">
             <option value="">انتخاب اتاق بازرسی‌شده</option>{rooms.map((room) => <option key={room.id} value={room.id}>اتاق {room.roomNumber}</option>)}
           </select></label>
@@ -796,7 +870,7 @@ function MoveDialog({ stay, rooms, loading, reason, error, busy, headingRef, onR
           <label>دلیل انتقال<textarea aria-label="دلیل انتقال" required maxLength={500} value={reason} onChange={(event) => onReasonChange(event.target.value)} /></label>
           {error && <p className={styles.error} role="alert">{error}</p>}
           <div className={styles.dialogActions}>
-            <button className={styles.primaryButton} type="submit" disabled={busy || loading || rooms.length === 0}>{busy ? 'در حال ثبت…' : 'ثبت انتقال'}</button>
+            <button className={styles.primaryButton} type="submit" disabled={busy || loading || activeAssignments.length === 0 || rooms.length === 0}>{busy ? 'در حال ثبت…' : 'ثبت انتقال'}</button>
             <button className={styles.secondaryButton} type="button" onClick={onClose} disabled={busy}>بازگشت</button>
           </div>
         </form>
