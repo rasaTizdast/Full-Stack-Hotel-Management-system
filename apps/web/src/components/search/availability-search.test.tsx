@@ -67,7 +67,7 @@ describe('AvailabilitySearch', () => {
     const checkOut = screen.getByLabelText('تاریخ خروج') as HTMLInputElement;
 
     fireEvent.click(screen.getByRole('button', { name: 'بررسی اتاق‌های موجود' }));
-    expect(screen.getByRole('status')).toHaveTextContent('در حال بررسی اتاق‌های قابل رزرو');
+    expect(screen.getByRole('status')).toHaveTextContent('در حال بارگذاری و بررسی ظرفیت اتاق‌ها…');
     await waitFor(() => expect(fetchMock).toHaveBeenCalledOnce());
     expect(fetchMock.mock.calls[0][0]).toContain(`checkIn=${toGregorianIso(checkIn.value)}`);
     expect(fetchMock.mock.calls[0][0]).toContain(`checkOut=${toGregorianIso(checkOut.value)}`);
@@ -138,7 +138,7 @@ describe('AvailabilitySearch', () => {
     fetchMock.mockResolvedValueOnce(new Response(null, { status: 500 }));
     fireEvent.click(screen.getByRole('button', { name: 'بررسی اتاق‌های موجود' }));
     expect(await screen.findByRole('alert')).toHaveTextContent(
-      'سرویس بررسی اتاق‌ها موقتاً در دسترس نیست.',
+      'خطا در بررسی اتاق‌ها: سرویس موقتاً در دسترس نیست. کمی بعد دوباره تلاش کنید.',
     );
   });
 });
