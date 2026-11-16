@@ -9,7 +9,7 @@ const session = vi.hoisted(() => ({
     staff: {
       username: 'admin',
       email: 'admin@example.test',
-      role: 'ADMIN' as 'ADMIN' | 'RECEPTIONIST',
+      role: 'ADMIN' as 'ADMIN' | 'RECEPTIONIST' | 'MANAGER',
     },
     csrfToken: 'csrf-admin',
     error: null,
@@ -88,6 +88,15 @@ describe('StaffRoomsPage', () => {
     expect(screen.getByRole('heading', { name: 'دسترسی به مدیریت اتاق‌ها' })).toBeInTheDocument();
     expect(roomsApi.getStaffRooms).not.toHaveBeenCalled();
     expect(screen.queryByRole('form', { name: 'افزودن اتاق' })).not.toBeInTheDocument();
+  });
+
+  it('allows managers to load physical room inventory', async () => {
+    session.current.staff.role = 'MANAGER';
+    render(<StaffRoomsPage />);
+
+    expect(await screen.findByRole('heading', { name: 'اتاق‌ها' })).toBeVisible();
+    expect(roomsApi.getStaffRooms).toHaveBeenCalledOnce();
+    expect(roomsApi.getStaffInventoryRoomTypes).toHaveBeenCalledOnce();
   });
 
   it('announces loading and recovers from a list error with a retry action', async () => {

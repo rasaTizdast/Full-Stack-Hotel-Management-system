@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { HotelLogo } from '@/components/brand/hotel-logo';
 import type { StaffMember } from '@/lib/staff-api';
+import { getStaffHomePath, getStaffRoleLabel } from '@/lib/staff-navigation';
 
 interface StaffDashboardShellProps {
   staff: StaffMember;
@@ -30,15 +31,22 @@ export function StaffDashboardShell({
     if (!nav) return;
 
     const activeLink = nav.querySelector<HTMLElement>('a[aria-current="page"]');
-    if (activeLink && typeof activeLink.scrollIntoView === 'function') {
-      const prefersReducedMotion =
-        typeof window.matchMedia === 'function' &&
-        window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-      activeLink.scrollIntoView({
-        behavior: prefersReducedMotion ? 'auto' : 'smooth',
-        block: 'nearest',
-        inline: 'nearest',
-      });
+    if (activeLink && typeof nav.scrollBy === 'function') {
+      const navRect = nav.getBoundingClientRect();
+      const activeRect = activeLink.getBoundingClientRect();
+      const edgePadding = 8;
+      const leftEdge = navRect.left + edgePadding;
+      const rightEdge = navRect.right - edgePadding;
+      const horizontalDelta =
+        activeRect.left < leftEdge
+          ? activeRect.left - leftEdge
+          : activeRect.right > rightEdge
+            ? activeRect.right - rightEdge
+            : 0;
+
+      if (horizontalDelta !== 0) {
+        nav.scrollBy({ left: horizontalDelta, behavior: 'instant' });
+      }
     }
 
     const measureOverflow = () => {
@@ -55,7 +63,10 @@ export function StaffDashboardShell({
         رفتن به محتوای اصلی
       </a>
       <header className="staff-topbar">
-        <Link className="staff-brand" href="/staff">
+        <Link
+          className="staff-brand"
+          href={staff.mustChangePassword ? '/staff/change-password' : getStaffHomePath(staff.role)}
+        >
           <HotelLogo size={44} className="staff-brand__mark" />
           <span className="staff-brand__copy">
             <strong>خانه‌باغ نارنج</strong>
@@ -73,7 +84,7 @@ export function StaffDashboardShell({
             <span className="staff-identity__copy">
               <strong>{staff.username}</strong>
               <small className="staff-identity__role">
-                {staff.role === 'ADMIN' ? 'مدیر اقامتگاه' : 'پذیرش'}
+                {getStaffRoleLabel(staff.role)}
               </small>
             </span>
             {staff.email.toLowerCase() !== staff.username.trim().toLowerCase() && (
@@ -105,36 +116,57 @@ export function StaffDashboardShell({
           </div>
           <div className={`staff-nav-viewport${hasNavOverflow ? ' staff-nav-viewport--overflow' : ''}`}>
           <nav ref={staffNavRef} aria-label="منوی پنل کارکنان" className="staff-nav">
-            <Link
-              href="/staff"
-              aria-current={currentPath === '/staff' ? 'page' : undefined}
-            >
-              <span className="staff-nav__glyph" aria-hidden="true">
-                <svg viewBox="0 0 24 24" fill="none">
-                  <path d="M4 11.5 12 5l8 6.5M6.5 10v9h11v-9M9.5 19v-5.5h5V19" />
-                </svg>
-              </span>
-              <span className="staff-nav__copy">
-                <strong>نمای کلی</strong>
-                <small>شروع و دسترسی سریع</small>
-              </span>
-            </Link>
-            <Link
-              href="/staff/bookings"
-              aria-current={currentPath.startsWith('/staff/bookings') ? 'page' : undefined}
-            >
-              <span className="staff-nav__glyph" aria-hidden="true">
-                <svg viewBox="0 0 24 24" fill="none">
-                  <rect x="4.5" y="5" width="15" height="14" rx="2" />
-                  <path d="M8 9h8M8 12h8M8 15h5" />
-                </svg>
-              </span>
-              <span className="staff-nav__copy">
-                <strong>درخواست‌های رزرو</strong>
-                <small>بررسی و پاسخ به مهمانان</small>
-              </span>
-            </Link>
-            {staff.role === 'ADMIN' && (
+            {staff.mustChangePassword ? (
+              <Link
+                href="/staff/change-password"
+                aria-current={currentPath === '/staff/change-password' ? 'page' : undefined}
+              >
+                <span className="staff-nav__glyph" aria-hidden="true">
+                  <svg viewBox="0 0 24 24" fill="none">
+                    <rect x="5" y="10" width="14" height="10" rx="2" />
+                    <path d="M8 10V7.5a4 4 0 0 1 8 0V10M12 14v2" />
+                  </svg>
+                </span>
+                <span className="staff-nav__copy">
+                  <strong>تغییر گذرواژه</strong>
+                  {' '}
+                  <small>الزامی برای ادامه کار</small>
+                </span>
+              </Link>
+            ) : (
+              <>
+                <Link
+                  href="/staff"
+                  aria-current={currentPath === '/staff' ? 'page' : undefined}
+                >
+                  <span className="staff-nav__glyph" aria-hidden="true">
+                    <svg viewBox="0 0 24 24" fill="none">
+                      <path d="M4 11.5 12 5l8 6.5M6.5 10v9h11v-9M9.5 19v-5.5h5V19" />
+                    </svg>
+                  </span>
+                  <span className="staff-nav__copy">
+                    <strong>نمای کلی</strong>
+                    <small>شروع و دسترسی سریع</small>
+                  </span>
+                </Link>
+                {['ADMIN', 'MANAGER', 'RECEPTIONIST'].includes(staff.role) && (
+                  <Link
+                    href="/staff/bookings"
+                    aria-current={currentPath.startsWith('/staff/bookings') ? 'page' : undefined}
+                  >
+                    <span className="staff-nav__glyph" aria-hidden="true">
+                      <svg viewBox="0 0 24 24" fill="none">
+                        <rect x="4.5" y="5" width="15" height="14" rx="2" />
+                        <path d="M8 9h8M8 12h8M8 15h5" />
+                      </svg>
+                    </span>
+                    <span className="staff-nav__copy">
+                      <strong>درخواست‌های رزرو</strong>
+                      <small>بررسی و پاسخ به مهمانان</small>
+                    </span>
+                  </Link>
+                )}
+                {['ADMIN', 'MANAGER'].includes(staff.role) && (
               <Link
                 href="/staff/rooms/manage"
                 aria-current={currentPath.startsWith('/staff/rooms') ? 'page' : undefined}
@@ -146,12 +178,12 @@ export function StaffDashboardShell({
                 </span>
                 <span className="staff-nav__copy">
                   <strong>اتاق‌های فیزیکی</strong>
-                {' '}
+                  {' '}
                   <small>شماره و وضعیت اتاق‌ها</small>
                 </span>
               </Link>
-            )}
-            {staff.role === 'ADMIN' && (
+                )}
+                {['ADMIN', 'MANAGER'].includes(staff.role) && (
               <Link
                 href="/staff/inventory"
                 aria-current={currentPath.startsWith('/staff/inventory') ? 'page' : undefined}
@@ -168,6 +200,26 @@ export function StaffDashboardShell({
                   <small>تنظیم برنامه اتاق‌ها</small>
                 </span>
               </Link>
+                )}
+                {staff.role === 'ADMIN' && (
+                  <Link
+                    href="/staff/staff"
+                    aria-current={currentPath.startsWith('/staff/staff') ? 'page' : undefined}
+                  >
+                    <span className="staff-nav__glyph" aria-hidden="true">
+                      <svg viewBox="0 0 24 24" fill="none">
+                        <circle cx="9" cy="8" r="3" />
+                        <path d="M3.5 19a5.5 5.5 0 0 1 11 0M16 6.5a2.5 2.5 0 0 1 0 5M17 14a4 4 0 0 1 3.5 4" />
+                      </svg>
+                    </span>
+                    <span className="staff-nav__copy">
+                      <strong>حساب‌های کارکنان</strong>
+                      {' '}
+                      <small>مدیریت نقش‌ها و دسترسی</small>
+                    </span>
+                  </Link>
+                )}
+              </>
             )}
           </nav>
             <span className="staff-nav-overflow-cue" data-staff-nav-overflow-cue aria-hidden="true">

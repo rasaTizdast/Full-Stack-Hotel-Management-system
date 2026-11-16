@@ -1,9 +1,10 @@
-export type StaffRole = 'ADMIN' | 'RECEPTIONIST';
+export type StaffRole = 'ADMIN' | 'MANAGER' | 'RECEPTIONIST' | 'HOUSEKEEPER' | 'CASHIER';
 
 export interface StaffMember {
   username: string;
   email: string;
   role: StaffRole;
+  mustChangePassword: boolean;
 }
 
 export interface StaffSessionResponse {
@@ -215,6 +216,18 @@ export function logoutStaff(csrfToken: string): Promise<void> {
   return requestStaffApi<void>('auth/logout', {
     method: 'POST',
     headers: { 'X-CSRF-Token': csrfToken },
+  });
+}
+
+export function changeStaffPassword(
+  currentPassword: string,
+  newPassword: string,
+  csrfToken: string,
+): Promise<void> {
+  return requestStaffApi<void>('auth/change-password', {
+    method: 'POST',
+    headers: { 'X-CSRF-Token': csrfToken },
+    body: JSON.stringify({ currentPassword, newPassword }),
   });
 }
 

@@ -56,9 +56,10 @@ export function StaffInventoryPage() {
   const [isLoadingRange, setIsLoadingRange] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const rangeRequestId = useRef(0);
+  const canManageInventory = Boolean(staff && ['ADMIN', 'MANAGER'].includes(staff.role));
 
   useEffect(() => {
-    if (status !== 'authenticated' || staff?.role !== 'ADMIN') return;
+    if (status !== 'authenticated' || !canManageInventory) return;
     let active = true;
 
     async function loadRoomTypes() {
@@ -115,15 +116,15 @@ export function StaffInventoryPage() {
     return () => {
       active = false;
     };
-  }, [defaultRange, staff?.role, status]);
+  }, [canManageInventory, defaultRange, status]);
 
   if (status !== 'authenticated' || !staff) return null;
 
-  if (staff.role !== 'ADMIN') {
+  if (!canManageInventory) {
     return (
       <section className="staff-inventory-denied" aria-labelledby="staff-inventory-denied-title">
         <h1 id="staff-inventory-denied-title">دسترسی به مدیریت موجودی</h1>
-        <p role="alert">این بخش فقط برای مدیر اقامتگاه در دسترس است.</p>
+        <p role="alert">این بخش برای مدیر اقامتگاه و مدیر شیفت در دسترس است.</p>
       </section>
     );
   }

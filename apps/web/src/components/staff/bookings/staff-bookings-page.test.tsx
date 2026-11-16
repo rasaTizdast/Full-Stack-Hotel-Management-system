@@ -80,6 +80,7 @@ function pageOf(items: StaffBookingListItem[] = [booking]): StaffBookingPage {
 type ActionName = 'confirm' | 'reject' | 'cancel';
 
 interface MockApiOptions {
+  role?: 'ADMIN' | 'MANAGER' | 'RECEPTIONIST' | 'HOUSEKEEPER' | 'CASHIER';
   lists?: StaffBookingPage[];
   listErrors?: Array<{ status: number; body: unknown }>;
   details?: StaffBookingDetail[];
@@ -98,7 +99,12 @@ function setupApi(options: MockApiOptions = {}) {
     if (url.endsWith('/staff/auth/me')) {
       return new Response(
         JSON.stringify({
-          staff: { username: 'reception', email: 'reception@example.test', role: 'RECEPTIONIST' },
+          staff: {
+            username: 'reception',
+            email: 'reception@example.test',
+            role: options.role ?? 'RECEPTIONIST',
+            mustChangePassword: false,
+          },
           csrfToken: 'csrf-memory',
         }),
         { status: 200 },
@@ -140,6 +146,13 @@ afterEach(() => {
 
 describe('StaffBookingsPage', () => {
   beforeEach(() => router.replace.mockReset());
+
+  it('denies roles without booking access before requesting the booking list', async () => {
+    const { requests } = setupApi({ role: 'HOUSEKEEPER' });
+
+    expect(await screen.findByRole('heading', { name: 'دسترسی به درخواست‌های رزرو' })).toBeVisible();
+    expect(requests.some(({ url }) => url.includes('/staff/bookings'))).toBe(false);
+  });
 
   it('loads booking requests and opens authorized guest details', async () => {
     setupApi();
