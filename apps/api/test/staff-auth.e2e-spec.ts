@@ -191,6 +191,29 @@ describe('Staff authentication (e2e)', () => {
     await app.close();
   });
 
+  function allowMultipleLoginIdentities(): void {
+    const identities = new Map<string, typeof user>();
+    prisma.staffUser.findUnique.mockImplementation(
+      ({ where }: { where: { email?: string; id?: string } }) => {
+        if (where.email !== undefined) {
+          if (where.email === email) return Promise.resolve(user);
+          let identity = identities.get(where.email);
+          if (!identity) {
+            identity = {
+              ...user,
+              id: randomUUID(),
+              username: where.email,
+              email: where.email,
+            };
+            identities.set(where.email, identity);
+          }
+          return Promise.resolve(identity);
+        }
+        return Promise.resolve(where.id === user.id ? user : null);
+      },
+    );
+  }
+
   it('rejects unauthenticated access to the current-staff endpoint', async () => {
     const response = await request(app.getHttpServer())
       .get('/api/v1/staff/auth/me')
@@ -426,6 +449,76 @@ describe('Staff authentication (e2e)', () => {
 
     expect(bodyOf(response).code).toBe('TOO_MANY_REQUESTS');
     expect(response.text).not.toContain('incorrect-password-value');
+  });
+
+  it('allows six distinct successful staff identities from the same client IP', async () => {
+    allowMultipleLoginIdentities();
+
+    for (let index = 0; index < 6; index += 1) {
+      await request(app.getHttpServer())
+        .post('/api/v1/staff/auth/login')
+        .set('Origin', 'http://localhost:3000')
+        .send({ email: `shared-ip-staff-${index}@example.invalid`, password })
+        .expect(200);
+    }
+  });
+
+  it('limits failed credentials per normalized identity while allowing another identity on the IP', async () => {
+    allowMultipleLoginIdentities();
+    const sharedIpEmail = 'shared-ip-failure@example.invalid';
+
+    for (let attempt = 0; attempt < 5; attempt += 1) {
+      await request(app.getHttpServer())
+        .post('/api/v1/staff/auth/login')
+        .set('Origin', 'http://localhost:3000')
+        .send({ email: sharedIpEmail, password: 'incorrect-password-value' })
+        .expect(401);
+    }
+
+    await request(app.getHttpServer())
+      .post('/api/v1/staff/auth/login')
+      .set('Origin', 'http://localhost:3000')
+      .send({ email: sharedIpEmail.toUpperCase(), password: 'incorrect-password-value' })
+      .expect(429);
+
+    await request(app.getHttpServer())
+      .post('/api/v1/staff/auth/login')
+      .set('Origin', 'http://localhost:3000')
+      .send({ email: 'another-shared-ip-staff@example.invalid', password })
+      .expect(200);
+  });
+
+  it('clears the per-identity failure bucket after valid credentials', async () => {
+    allowMultipleLoginIdentities();
+    const resetEmail = 'reset-shared-ip@example.invalid';
+
+    for (let attempt = 0; attempt < 4; attempt += 1) {
+      await request(app.getHttpServer())
+        .post('/api/v1/staff/auth/login')
+        .set('Origin', 'http://localhost:3000')
+        .send({ email: resetEmail, password: 'incorrect-password-value' })
+        .expect(401);
+    }
+
+    await request(app.getHttpServer())
+      .post('/api/v1/staff/auth/login')
+      .set('Origin', 'http://localhost:3000')
+      .send({ email: resetEmail, password })
+      .expect(200);
+
+    for (let attempt = 0; attempt < 5; attempt += 1) {
+      await request(app.getHttpServer())
+        .post('/api/v1/staff/auth/login')
+        .set('Origin', 'http://localhost:3000')
+        .send({ email: resetEmail, password: 'incorrect-password-value' })
+        .expect(401);
+    }
+
+    await request(app.getHttpServer())
+      .post('/api/v1/staff/auth/login')
+      .set('Origin', 'http://localhost:3000')
+      .send({ email: resetEmail, password: 'incorrect-password-value' })
+      .expect(429);
   });
 
   it('enforces receptionist and admin roles on protected staff endpoints', async () => {
