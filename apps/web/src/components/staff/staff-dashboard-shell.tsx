@@ -166,10 +166,27 @@ export function StaffDashboardShell({
                     </span>
                   </Link>
                 )}
+                {['ADMIN', 'MANAGER', 'RECEPTIONIST'].includes(staff.role) && (
+                  <Link
+                    href="/staff/rooms"
+                    aria-current={currentPath === '/staff/rooms' ? 'page' : undefined}
+                  >
+                    <span className="staff-nav__glyph" aria-hidden="true">
+                      <svg viewBox="0 0 24 24" fill="none">
+                        <path d="M4 19.5h16M5.5 19V7.5h13V19M8 10h3v3H8zM13 10h3v3h-3zM8 15h3v4H8zM13 15h3v2h-3z" />
+                      </svg>
+                    </span>
+                    <span className="staff-nav__copy">
+                      <strong>وضعیت اتاق‌ها</strong>
+                      {' '}
+                      <small>تخصیص و وضعیت روزانه</small>
+                    </span>
+                  </Link>
+                )}
                 {['ADMIN', 'MANAGER'].includes(staff.role) && (
               <Link
                 href="/staff/rooms/manage"
-                aria-current={currentPath.startsWith('/staff/rooms') ? 'page' : undefined}
+                aria-current={currentPath.startsWith('/staff/rooms/manage') ? 'page' : undefined}
               >
                 <span className="staff-nav__glyph" aria-hidden="true">
                   <svg viewBox="0 0 24 24" fill="none">

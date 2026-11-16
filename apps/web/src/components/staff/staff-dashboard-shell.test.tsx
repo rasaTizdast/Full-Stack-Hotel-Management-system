@@ -26,6 +26,53 @@ describe('StaffDashboardShell', () => {
     expect(screen.getByText('صفحه امن')).toBeInTheDocument();
   });
 
+  it('exposes the operational room board to reception without exposing the catalog editor', () => {
+    render(
+      <StaffDashboardShell
+        staff={receptionist}
+        onLogout={vi.fn()}
+        currentPath="/staff/rooms"
+      >
+        <p>وضعیت اتاق‌ها</p>
+      </StaffDashboardShell>,
+    );
+
+    const boardLink = screen.getByRole('link', { name: /^وضعیت اتاق‌ها/ });
+    expect(boardLink).toHaveAttribute('href', '/staff/rooms');
+    expect(boardLink).toHaveAttribute('aria-current', 'page');
+    expect(screen.queryByRole('link', { name: /^اتاق‌های فیزیکی/ })).not.toBeInTheDocument();
+  });
+
+  it('keeps operational-board and physical-catalog active states distinct', () => {
+    const { rerender } = render(
+      <StaffDashboardShell
+        staff={{ ...receptionist, role: 'ADMIN' }}
+        onLogout={vi.fn()}
+        currentPath="/staff/rooms"
+      >
+        <p>وضعیت اتاق‌ها</p>
+      </StaffDashboardShell>,
+    );
+
+    const boardLink = screen.getByRole('link', { name: /^وضعیت اتاق‌ها/ });
+    const catalogLink = screen.getByRole('link', { name: /^اتاق‌های فیزیکی/ });
+    expect(boardLink).toHaveAttribute('aria-current', 'page');
+    expect(catalogLink).not.toHaveAttribute('aria-current', 'page');
+
+    rerender(
+      <StaffDashboardShell
+        staff={{ ...receptionist, role: 'ADMIN' }}
+        onLogout={vi.fn()}
+        currentPath="/staff/rooms/manage"
+      >
+        <p>مدیریت اتاق‌های فیزیکی</p>
+      </StaffDashboardShell>,
+    );
+
+    expect(boardLink).not.toHaveAttribute('aria-current', 'page');
+    expect(catalogLink).toHaveAttribute('aria-current', 'page');
+  });
+
   it('uses the demo hotel name in the staff brand', () => {
     render(
       <StaffDashboardShell staff={receptionist} onLogout={vi.fn()}>

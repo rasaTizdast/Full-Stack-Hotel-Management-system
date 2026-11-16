@@ -1,4 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
+import * as staffApi from './staff-api';
 import { changeStaffPassword, getCurrentStaff, loginStaff } from './staff-api';
 
 afterEach(() => {
@@ -51,6 +52,87 @@ describe('changeStaffPassword', () => {
         body: JSON.stringify({ currentPassword: 'initial-password', newPassword: 'new-password' }),
       }),
     );
+  });
+});
+
+describe('room board API', () => {
+  it('loads a filtered board through the private no-store staff client', async () => {
+    const getBoard = Reflect.get(staffApi, 'getStaffRoomBoard');
+    expect(getBoard).toBeTypeOf('function');
+    if (typeof getBoard !== 'function') return;
+
+    const board = {
+      date: '2026-11-17',
+      businessDate: '2026-11-17',
+      updatedAt: '2026-11-17T08:30:00.000Z',
+      items: [],
+      assignableBookings: [],
+    };
+    const fetchMock = vi.fn().mockResolvedValue(
+      new Response(JSON.stringify(board), { status: 200 }),
+    );
+    vi.stubGlobal('fetch', fetchMock);
+
+    await expect(
+      getBoard({
+        date: '2026-11-17',
+        roomTypeId: 'dcb44b37-514f-4f96-b55f-d9d9a76f3f44',
+        floor: '۲',
+        occupancy: 'UNKNOWN',
+        housekeepingStatus: 'DIRTY',
+        stayContext: 'ARRIVING',
+        blockKind: 'OUT_OF_ORDER',
+      }),
+    ).resolves.toEqual(board);
+    expect(fetchMock).toHaveBeenCalledWith(
+      'http://localhost:4000/api/v1/staff/rooms/board?date=2026-11-17&roomTypeId=dcb44b37-514f-4f96-b55f-d9d9a76f3f44&floor=%DB%B2&occupancy=UNKNOWN&housekeepingStatus=DIRTY&stayContext=ARRIVING&blockKind=OUT_OF_ORDER',
+      expect.objectContaining({ cache: 'no-store', credentials: 'include' }),
+    );
+  });
+
+  it('saves the complete revisioned assignment set and preserves the stale conflict code', async () => {
+    const replaceAssignments = Reflect.get(staffApi, 'replaceStaffBookingRoomAssignments');
+    expect(replaceAssignments).toBeTypeOf('function');
+    if (typeof replaceAssignments !== 'function') return;
+
+    const input = {
+      assignments: [
+        {
+          roomId: 'b0b97da9-811e-4d70-b0c1-ae0a0f58042a',
+          startDate: '2026-11-20',
+          endDate: '2026-11-23',
+        },
+      ],
+      expectedRevision: 'a'.repeat(64),
+      reason: 'تخصیص پیش از ورود',
+    };
+    const response = { revision: 'b'.repeat(64), assignments: [] };
+    const fetchMock = vi.fn()
+      .mockResolvedValueOnce(new Response(JSON.stringify(response), { status: 200 }))
+      .mockResolvedValueOnce(
+        new Response(
+          JSON.stringify({ message: 'Assignment changed elsewhere.', code: 'ROOM_ASSIGNMENT_STALE' }),
+          { status: 409 },
+        ),
+      );
+    vi.stubGlobal('fetch', fetchMock);
+
+    await expect(replaceAssignments('ABC123456789', input, 'csrf-token')).resolves.toEqual(response);
+    expect(fetchMock).toHaveBeenNthCalledWith(
+      1,
+      'http://localhost:4000/api/v1/staff/bookings/ABC123456789/room-assignments',
+      expect.objectContaining({
+        method: 'PUT',
+        cache: 'no-store',
+        credentials: 'include',
+        headers: expect.objectContaining({ 'X-CSRF-Token': 'csrf-token' }),
+        body: JSON.stringify(input),
+      }),
+    );
+    await expect(replaceAssignments('ABC123456789', input, 'csrf-token')).rejects.toMatchObject({
+      status: 409,
+      code: 'ROOM_ASSIGNMENT_STALE',
+    });
   });
 });
 

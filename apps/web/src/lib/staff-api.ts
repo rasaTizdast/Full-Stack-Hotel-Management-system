@@ -72,6 +72,92 @@ export interface StaffRoomListResponse {
   items: StaffRoom[];
 }
 
+export type StaffRoomOccupancy = 'VACANT' | 'UNKNOWN' | 'OCCUPIED';
+export type StaffRoomStayContext = 'ARRIVING' | 'RESERVED' | 'DEPARTING';
+export type StaffRoomBlockKind = 'OUT_OF_ORDER' | 'CAPACITY_CLOSED';
+
+export interface StaffRoomBoardReservationContext {
+  assignmentId: string;
+  reference: string;
+  guestName: string;
+  startDate: string;
+  endDate: string;
+  stayContext: StaffRoomStayContext;
+}
+
+export interface StaffRoomBoardBlock {
+  id: string;
+  kind: StaffRoomBlockKind;
+  startDate: string;
+  endDate: string;
+}
+
+export interface StaffRoomBoardItem extends StaffRoom {
+  occupancy: StaffRoomOccupancy;
+  reservationContexts: StaffRoomBoardReservationContext[];
+  blocks: StaffRoomBoardBlock[];
+}
+
+export interface StaffRoomBoardAssignmentInterval {
+  id: string;
+  roomId: string;
+  roomNumber: string;
+  startDate: string;
+  endDate: string;
+}
+
+export interface StaffRoomBoardAssignableBooking {
+  reference: string;
+  guestName: string;
+  roomTypeId: string;
+  roomTypeName: string;
+  checkIn: string;
+  checkOut: string;
+  roomQuantity: number;
+  revision: string;
+  unassignedRoomQuantity: number;
+  assignments: StaffRoomBoardAssignmentInterval[];
+}
+
+export interface StaffRoomBoardResponse {
+  date: string;
+  businessDate: string;
+  updatedAt: string;
+  items: StaffRoomBoardItem[];
+  assignableBookings: StaffRoomBoardAssignableBooking[];
+}
+
+export interface StaffRoomBoardQuery {
+  date?: string;
+  roomTypeId?: string;
+  floor?: string;
+  occupancy?: StaffRoomOccupancy;
+  housekeepingStatus?: StaffRoom['housekeepingStatus'];
+  stayContext?: 'NONE' | StaffRoomStayContext;
+  blockKind?: 'NONE' | StaffRoomBlockKind;
+}
+
+export interface ReplaceStaffBookingRoomAssignments {
+  assignments: Array<Pick<StaffRoomBoardAssignmentInterval, 'roomId' | 'startDate' | 'endDate'>>;
+  expectedRevision: string;
+  reason: string;
+}
+
+export interface StaffBookingRoomAssignment {
+  id: string;
+  roomId: string;
+  reference: string;
+  startDate: string;
+  endDate: string;
+  isActive: boolean;
+  updatedAt: string;
+}
+
+export interface StaffBookingRoomAssignmentSet {
+  revision: string;
+  assignments: StaffBookingRoomAssignment[];
+}
+
 export interface StaffRoomCreate {
   roomTypeId: string;
   roomNumber: string;
@@ -265,6 +351,38 @@ export function getStaffRooms(query: StaffRoomsQuery = {}): Promise<StaffRoomLis
   if (query.search) params.set('search', query.search);
   const search = params.toString();
   return requestStaffApi<StaffRoomListResponse>(`rooms${search ? `?${search}` : ''}`);
+}
+
+export function getStaffRoomBoard(
+  query: StaffRoomBoardQuery = {},
+): Promise<StaffRoomBoardResponse> {
+  const params = new URLSearchParams();
+  if (query.date) params.set('date', query.date);
+  if (query.roomTypeId) params.set('roomTypeId', query.roomTypeId);
+  if (query.floor) params.set('floor', query.floor);
+  if (query.occupancy) params.set('occupancy', query.occupancy);
+  if (query.housekeepingStatus) params.set('housekeepingStatus', query.housekeepingStatus);
+  if (query.stayContext) params.set('stayContext', query.stayContext);
+  if (query.blockKind) params.set('blockKind', query.blockKind);
+  const search = params.toString();
+  return requestStaffApi<StaffRoomBoardResponse>(
+    `rooms/board${search ? `?${search}` : ''}`,
+  );
+}
+
+export function replaceStaffBookingRoomAssignments(
+  reference: string,
+  replacement: ReplaceStaffBookingRoomAssignments,
+  csrfToken: string,
+): Promise<StaffBookingRoomAssignmentSet> {
+  return requestStaffApi<StaffBookingRoomAssignmentSet>(
+    `bookings/${encodeURIComponent(reference)}/room-assignments`,
+    {
+      method: 'PUT',
+      headers: { 'X-CSRF-Token': csrfToken },
+      body: JSON.stringify(replacement),
+    },
+  );
 }
 
 export function createStaffRoom(room: StaffRoomCreate, csrfToken: string): Promise<StaffRoom> {
