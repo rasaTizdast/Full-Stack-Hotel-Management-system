@@ -2,7 +2,11 @@ import { reservationContextOn } from './room-board-context';
 
 describe('physical room reservation context', () => {
   const date = (value: string) => new Date(value);
-  const booking = { checkIn: date('2027-06-01'), checkOut: date('2027-06-04') };
+  const booking = {
+    checkIn: date('2027-06-01'),
+    checkOut: date('2027-06-04'),
+    status: 'CONFIRMED' as const,
+  };
 
   it.each([
     ['2027-05-31', '2027-06-01', '2027-06-04', null],

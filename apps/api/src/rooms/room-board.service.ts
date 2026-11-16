@@ -72,7 +72,7 @@ export class RoomBoardService {
                 isActive: true,
                 startDate: { lte: date },
                 endDate: { gte: date },
-                booking: { status: 'CONFIRMED' },
+                booking: { status: { in: ['CONFIRMED', 'CHECKED_IN'] } },
               },
               orderBy: [{ startDate: 'asc' }, { id: 'asc' }],
               select: {
@@ -80,17 +80,36 @@ export class RoomBoardService {
                 startDate: true,
                 endDate: true,
                 booking: {
-                  select: { publicReference: true, guestName: true, checkIn: true, checkOut: true },
+                  select: {
+                    publicReference: true,
+                    guestName: true,
+                    checkIn: true,
+                    checkOut: true,
+                    status: true,
+                  },
                 },
               },
             },
-            blocks: {
-              where: { isActive: true, startDate: { lte: date }, endDate: { gt: date } },
-              orderBy: [{ startDate: 'asc' }, { id: 'asc' }],
-              select: { id: true, kind: true, startDate: true, endDate: true },
-            },
           },
         });
+        // Await blocks separately to avoid overlapping queries on the transaction client.
+        const blocks = await transaction.roomBlock.findMany({
+          where: {
+            roomId: { in: rooms.map(({ id }) => id) },
+            isActive: true,
+            startDate: { lte: date },
+            endDate: { gt: date },
+          },
+          orderBy: [{ startDate: 'asc' }, { id: 'asc' }],
+          select: { roomId: true, id: true, kind: true, startDate: true, endDate: true },
+        });
+        const blocksByRoom = new Map<string, RoomBoardItemDto['blocks']>();
+        for (const { roomId, id, kind, startDate, endDate } of blocks) {
+          const block = { id, kind, startDate: dateOnly(startDate), endDate: dateOnly(endDate) };
+          const roomBlocks = blocksByRoom.get(roomId);
+          if (roomBlocks) roomBlocks.push(block);
+          else blocksByRoom.set(roomId, [block]);
+        }
         const bookings = await transaction.booking.findMany({
           where: {
             status: 'CONFIRMED',
@@ -123,7 +142,7 @@ export class RoomBoardService {
         });
 
         const items = rooms
-          .map<RoomBoardItemDto>(({ assignments, blocks, ...room }) => {
+          .map<RoomBoardItemDto>(({ assignments, ...room }) => {
             const reservationContexts = assignments.flatMap((assignment) => {
               const stayContext = reservationContextOn(date, assignment);
               return stayContext
@@ -139,15 +158,18 @@ export class RoomBoardService {
                   ]
                 : [];
             });
+            const isOccupied = reservationContexts.some(
+              ({ stayContext }) => stayContext === 'IN_HOUSE',
+            );
             return {
               ...room,
-              occupancy: reservationContexts.length ? 'UNKNOWN' : 'VACANT',
+              occupancy: isOccupied
+                ? 'OCCUPIED'
+                : reservationContexts.length
+                  ? 'UNKNOWN'
+                  : 'VACANT',
               reservationContexts,
-              blocks: blocks.map((block) => ({
-                ...block,
-                startDate: dateOnly(block.startDate),
-                endDate: dateOnly(block.endDate),
-              })),
+              blocks: blocksByRoom.get(room.id) ?? [],
             };
           })
           .filter((item) => matchesContextFilters(item, query));

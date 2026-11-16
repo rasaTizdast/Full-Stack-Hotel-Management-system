@@ -1,9 +1,10 @@
 import type { ReservationContext } from './dto/room-board.dto';
+import type { BookingStatus } from '../generated/prisma/enums';
 
 type ReservationInterval = {
   startDate: Date;
   endDate: Date;
-  booking: { checkIn: Date; checkOut: Date };
+  booking: { checkIn: Date; checkOut: Date; status: BookingStatus };
 };
 
 export function reservationContextOn(
@@ -14,5 +15,6 @@ export function reservationContextOn(
     return 'DEPARTING';
   }
   if (day < startDate || day >= endDate) return null;
+  if (booking.status === 'CHECKED_IN') return 'IN_HOUSE';
   return day.getTime() === booking.checkIn.getTime() ? 'ARRIVING' : 'RESERVED';
 }

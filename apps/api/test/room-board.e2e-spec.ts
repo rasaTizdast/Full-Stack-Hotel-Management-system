@@ -226,6 +226,89 @@ describe('Staff room board HTTP API', () => {
     expect((await board('OCCUPIED')).body).toMatchObject({ items: [] });
   });
 
+  it('shows checked-in assignments as occupied and keeps the assignable list confirmed-only', async () => {
+    const { type, rooms } = await f.createProperty();
+    const inHouse = await f.booking(type.id, 1, f.today);
+    const confirmed = await f.booking(type.id, 1, f.today);
+    const assign = (booking: typeof confirmed, roomId: string, isActive = true) =>
+      f.prisma.roomAssignment.create({
+        data: {
+          bookingId: booking.id,
+          roomId,
+          roomTypeId: type.id,
+          startDate: booking.checkIn,
+          endDate: booking.checkOut,
+          isActive,
+        },
+      });
+    await f.prisma.booking.update({
+      where: { id: inHouse.id },
+      data: { status: 'CHECKED_IN', checkedInAt: new Date(), checkedInByStaffUserId: reception.id },
+    });
+    const current = await assign(inHouse, rooms[0].id);
+    await assign(confirmed, rooms[1].id);
+    await assign(inHouse, rooms[2].id, false);
+
+    const board = (date: string, filters: Record<string, string> = {}) =>
+      f
+        .client()
+        .get(boardRoute)
+        .set(reception.headers)
+        .query({ date, roomTypeId: type.id, ...filters })
+        .expect(200)
+        .expect('Cache-Control', 'private, no-store');
+
+    const today = await board(f.today);
+    expect(today.body).toMatchObject({
+      items: [
+        {
+          id: rooms[0].id,
+          occupancy: 'OCCUPIED',
+          reservationContexts: [
+            {
+              assignmentId: current.id,
+              reference: inHouse.publicReference,
+              guestName: inHouse.guestName,
+              startDate: f.today,
+              endDate: addDays(f.today, 2),
+              stayContext: 'IN_HOUSE',
+            },
+          ],
+        },
+        {
+          id: rooms[1].id,
+          occupancy: 'UNKNOWN',
+          reservationContexts: [{ reference: confirmed.publicReference, stayContext: 'ARRIVING' }],
+        },
+        { id: rooms[2].id, occupancy: 'VACANT', reservationContexts: [] },
+      ],
+      assignableBookings: [{ reference: confirmed.publicReference }],
+    });
+    expect(today.text).not.toMatch(/guestPhone|guestEmail|989121234567|guest@example\.invalid/);
+
+    const tomorrow = addDays(f.today, 1);
+    expect(
+      (await board(tomorrow, { occupancy: 'OCCUPIED', stayContext: 'IN_HOUSE' })).body,
+    ).toMatchObject({
+      items: [{ id: rooms[0].id }],
+      assignableBookings: [{ reference: confirmed.publicReference }],
+    });
+    expect((await board(tomorrow, { stayContext: 'RESERVED' })).body).toMatchObject({
+      items: [{ id: rooms[1].id, occupancy: 'UNKNOWN' }],
+    });
+    const checkout = addDays(f.today, 2);
+    expect((await board(checkout, { occupancy: 'OCCUPIED' })).body).toMatchObject({
+      items: [],
+      assignableBookings: [],
+    });
+    expect((await board(checkout, { stayContext: 'DEPARTING' })).body).toMatchObject({
+      items: [
+        { id: rooms[0].id, occupancy: 'UNKNOWN' },
+        { id: rooms[1].id, occupancy: 'UNKNOWN' },
+      ],
+    });
+  });
+
   it('requires a nonblank reason, valid revision, and valid interval rows', async () => {
     const { type } = await f.createProperty();
     const booking = await f.booking(type.id);

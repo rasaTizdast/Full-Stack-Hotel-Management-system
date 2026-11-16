@@ -126,15 +126,17 @@ export class RoomBoardFixture {
     });
   }
 
-  booking(roomTypeId: string, roomQuantity = 1) {
+  booking(roomTypeId: string, roomQuantity = 1, checkIn = this.checkIn) {
+    const next = addDays(checkIn, 1);
+    const checkOut = addDays(checkIn, 2);
     return this.prisma.booking.create({
       data: {
         publicReference: randomUUID().slice(0, 16),
         roomTypeId,
         roomQuantity,
         status: 'CONFIRMED',
-        checkIn: date(this.checkIn),
-        checkOut: date(this.checkOut),
+        checkIn: date(checkIn),
+        checkOut: date(checkOut),
         guestCount: 1,
         guestName: 'Test Guest',
         guestPhone: '+989121234567',
@@ -142,7 +144,7 @@ export class RoomBoardFixture {
         totalPriceToman: 3000n * BigInt(roomQuantity),
         expiresAt: new Date(),
         nights: {
-          create: [this.checkIn, this.next].map((stayDate) => ({
+          create: [checkIn, next].map((stayDate) => ({
             stayDate: date(stayDate),
             roomQuantity,
             nightlyPriceToman: 1500n,

@@ -3,7 +3,7 @@ import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { HousekeepingStatus, RoomBlockKind } from '../../generated/prisma/enums';
 import { StaffRoomDto } from './staff-room-response.dto';
 
-const stayContexts = ['ARRIVING', 'RESERVED', 'DEPARTING'] as const;
+const stayContexts = ['ARRIVING', 'RESERVED', 'IN_HOUSE', 'DEPARTING'] as const;
 const occupancies = ['VACANT', 'UNKNOWN', 'OCCUPIED'] as const;
 const stayContextFilters = ['NONE', ...stayContexts] as const;
 const blockKindFilters = ['NONE', ...Object.values(RoomBlockKind)] as const;
@@ -85,7 +85,7 @@ export class RoomBoardItemDto extends StaffRoomDto {
   @ApiProperty({
     enum: occupancies,
     description:
-      'UNKNOWN means the room has reservation context without evidence of a checked-in stay.',
+      'OCCUPIED means a checked-in stay has an active assignment covering the selected date. UNKNOWN indicates other reservation context.',
   })
   occupancy!: (typeof occupancies)[number];
 
