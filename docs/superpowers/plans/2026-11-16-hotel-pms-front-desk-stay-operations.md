@@ -112,11 +112,11 @@
 
 **Files:** modify `apps/web/src/components/booking/booking-flow.tsx`, `apps/web/src/components/booking/booking-flow.test.tsx`, and `apps/web/src/app/(public)/booking/page.tsx`.
 
-- [ ] Add failing component tests for a configured hotel phone, `contactPhone: null`, and the guest's own submitted phone after a successful public request. Assert no empty `tel:` anchor or placeholder contact is rendered.
-- [ ] Run `pnpm --filter @hotel/web test -- booking-flow.test.tsx`; confirm the missing follow-up copy/contact state causes the failures.
-- [ ] Pass the public hotel's nullable contact phone from the existing server route into `BookingFlow`. Retain the guest-entered phone in client state only for the current confirmation view; do not add it to the public booking response, route, URL, or logs.
-- [ ] Keep the result explicitly `PENDING_CONFIRMATION`, show the booking reference, say staff will follow up using the submitted number, and render a property call link only for a configured valid phone.
-- [ ] Run the focused component test and public booking Playwright after the fix. Keep the change localized to the confirmation function and its route prop; do not reformat unrelated booking-form code.
+- [x] Add failing component tests for a configured hotel phone, `contactPhone: null`, and the guest's own submitted phone after a successful public request. Assert no empty `tel:` anchor or placeholder contact is rendered.
+- [x] Run `pnpm --filter @hotel/web test -- booking-flow.test.tsx`; confirm the missing follow-up copy/contact state causes the failures.
+- [x] Pass the public hotel's nullable contact phone from the existing server route into `BookingFlow`. Retain the guest-entered phone in client state only for the current confirmation view; do not add it to the public booking response, route, URL, or logs.
+- [x] Keep the result explicitly `PENDING_CONFIRMATION`, show the booking reference, say staff will follow up using the submitted number, and render a property call link only for a configured valid phone.
+- [x] Run the focused component test and public booking Playwright after the fix. Keep the change localized to the confirmation function and its route prop; do not reformat unrelated booking-form code.
 
 ### Task 7: Responsive Persian front-desk workspaces
 
