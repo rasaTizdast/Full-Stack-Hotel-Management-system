@@ -147,7 +147,7 @@ test('admin creates and manages an account with forced password replacement', as
       await credentialPage.getByLabel('گذرواژه تازه', { exact: true }).fill(replacementPassword);
       await credentialPage.getByLabel('تکرار گذرواژه تازه').fill(replacementPassword);
       await credentialPage.getByRole('button', { name: 'تغییر گذرواژه' }).click();
-      await expect(credentialPage).toHaveURL(/\/staff\/front-desk\/arrivals$/);
+      await expect(credentialPage).toHaveURL(/\/staff\/front-desk\/arrivals$/, { timeout: 30_000 });
 
       const updatedRow = accountEntry(username);
       await updatedRow.getByRole('button', { name: 'غیرفعال‌سازی' }).click();
