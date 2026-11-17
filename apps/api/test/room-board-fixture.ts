@@ -91,10 +91,17 @@ export class RoomBoardFixture {
     return revision;
   }
 
-  async createProperty(timezone = 'Asia/Tehran') {
+  async createProperty(timezone = 'Asia/Tehran', createdAt?: Date) {
     const slug = randomUUID();
     const hotel = await this.prisma.hotel.create({
-      data: { slug, name: 'Room board test hotel', address: 'Test', description: 'Test', timezone },
+      data: {
+        slug,
+        name: 'Room board test hotel',
+        address: 'Test',
+        description: 'Test',
+        timezone,
+        ...(createdAt ? { createdAt } : {}),
+      },
     });
     this.hotelIds.push(hotel.id);
     const type = await this.roomType(hotel.id);
