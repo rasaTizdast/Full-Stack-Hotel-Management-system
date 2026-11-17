@@ -81,7 +81,7 @@ The following tickets extend the original booking engine into the single-propert
 - **Branch/worktree:** codex/hpm-005-housekeeping — ../Hotel Booking system-worktrees/HPM-005
 - **Plan:** docs/superpowers/plans/2026-11-15-hotel-pms-housekeeping-maintenance.md
 - **Acceptance criteria:** Staff distinguish occupancy from DIRTY/CLEAN/INSPECTED; manual tasks use OPEN/IN_PROGRESS/COMPLETED/CANCELLED and are assigned to housekeepers; assigned work completes idempotently; failed inspection creates a re-clean task; only inspection can set INSPECTED; housekeeping can report SLEEP/SKIP but cannot alter occupancy or access folios; only reception/manager/admin can resolve after the stay state matches the observation or dismiss with a reason; default check-in readiness is enforced; responses omit unnecessary guest PII.
-- **Required tests:** Task transition/lifecycle/idempotency and failed-inspection rework; PostgreSQL actor/audit history; discrepancy report/resolve/dismiss permissions; role/privacy/no-store; check-in gate; API HTTP E2E; web unit and frontend Playwright before tester manual review; designer desktop/tablet/mobile review. HPM-008 supplies checkout-based SKIP correction.
+- **Required tests:** Task transition/lifecycle/idempotency, failed-inspection rework, and overdue inclusion/order; PostgreSQL actor/audit history; discrepancy report/resolve/dismiss permissions; role/privacy/no-store; check-in gate; API HTTP E2E; web unit and frontend Playwright before tester manual review; designer desktop/tablet/mobile review. HPM-008 supplies checkout-based SKIP correction.
 
 ### HPM-006 — Maintenance requests and out-of-order blocks
 
