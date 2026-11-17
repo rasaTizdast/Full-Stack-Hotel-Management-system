@@ -96,7 +96,29 @@ export function StaffFrontDeskPage({ queue, roomTypes = EMPTY_ROOM_TYPES, roomTy
     if (successMessage) successRef.current?.focus();
   }, [successMessage]);
 
-  const openDetail = stayDetail.open;
+  const selectedDetail = selectedReference ? {
+    reference: selectedReference,
+    panelId: `stay-detail-${encodeURIComponent(selectedReference)}`,
+    panel: <StayDetail
+      id={`stay-detail-${encodeURIComponent(selectedReference)}`}
+      reference={selectedReference}
+      detail={detail}
+      loading={detailLoading}
+      error={detailError}
+      canAmend={Boolean(detailCanAmend)}
+      editing={editingDetail}
+      draft={amendDraft}
+      busy={detailSaving}
+      onClose={stayDetail.close}
+      onEdit={stayDetail.startEditing}
+      onCancelEdit={stayDetail.cancelEdit}
+      onDraftChange={stayDetail.updateDraft}
+      onSubmit={(event) => void stayDetail.submitAmendment(event, csrfToken, (reference) => {
+        setSuccessMessage(`تغییرات اقامت ${reference} ثبت شد؛ جزئیات تازه دریافت می‌شود.`);
+        refreshList();
+      })}
+    />,
+  } : null;
 
   if (status === 'loading') return <p className={styles.status} role="status">در حال بررسی دسترسی…</p>;
   if (status !== 'authenticated' || !staff) return <p className={styles.status} role="status">برای مشاهده این صفحه وارد پنل کارکنان شوید.</p>;
@@ -151,6 +173,7 @@ export function StaffFrontDeskPage({ queue, roomTypes = EMPTY_ROOM_TYPES, roomTy
       <FrontDeskQueueResults
         queue={queue}
         copy={copy}
+        selectedDetail={selectedDetail}
         model={{
           queryDate: query.date,
           page: query.page,
@@ -167,30 +190,15 @@ export function StaffFrontDeskPage({ queue, roomTypes = EMPTY_ROOM_TYPES, roomTy
           onCheckIn: (stay, trigger) => openDialog({ kind: 'check-in', stay }, trigger),
           onNoShow: (stay, trigger) => openDialog({ kind: 'no-show', stay }, trigger),
           onMove: (stay, trigger) => openDialog({ kind: 'move', stay }, trigger),
-          onDetail: (stay) => openDetail(stay.reference),
+          onDetail: (stay, trigger) => {
+            if (stay.reference === selectedReference) {
+              stayDetail.close();
+              return;
+            }
+            stayDetail.open(stay.reference, trigger);
+          },
         }}
       />
-
-      {selectedReference && (
-        <StayDetail
-          reference={selectedReference}
-          detail={detail}
-          loading={detailLoading}
-          error={detailError}
-          canAmend={Boolean(detailCanAmend)}
-          editing={editingDetail}
-          draft={amendDraft}
-          busy={detailSaving}
-          onClose={stayDetail.close}
-          onEdit={stayDetail.startEditing}
-          onCancelEdit={stayDetail.cancelEdit}
-          onDraftChange={stayDetail.updateDraft}
-          onSubmit={(event) => void stayDetail.submitAmendment(event, csrfToken, (reference) => {
-            setSuccessMessage(`تغییرات اقامت ${reference} ثبت شد؛ جزئیات تازه دریافت می‌شود.`);
-            refreshList();
-          })}
-        />
-      )}
 
       {dialog?.kind === 'walk-in' && (
         <WalkInDialog

@@ -371,6 +371,17 @@ describe('StaffFrontDeskPage', () => {
     renderPage('arrivals');
     fireEvent.click(await screen.findByRole('button', { name: 'ثبت ورود بدون رزرو قبلی' }));
     const dialog = await screen.findByRole('dialog', { name: 'ثبت ورود بدون رزرو قبلی' });
+    const guestName = within(dialog).getByLabelText('نام مهمان');
+    const guestPhone = within(dialog).getByLabelText('شماره تماس');
+    const guestEmail = within(dialog).getByLabelText('رایانامه');
+    expect(guestName).toHaveAttribute('name', 'guestName');
+    expect(guestName).toHaveAttribute('autoComplete', 'name');
+    expect(guestPhone).toHaveAttribute('name', 'guestPhone');
+    expect(guestPhone).toHaveAttribute('autoComplete', 'tel');
+    expect(guestPhone).toHaveAttribute('type', 'tel');
+    expect(guestEmail).toHaveAttribute('name', 'guestEmail');
+    expect(guestEmail).toHaveAttribute('autoComplete', 'email');
+    expect(guestEmail).toHaveAttribute('type', 'email');
     fireEvent.change(within(dialog).getByLabelText('نام مهمان'), { target: { value: 'مهمان حضوری' } });
     fireEvent.change(within(dialog).getByLabelText('شماره تماس'), { target: { value: '09120000000' } });
     fireEvent.change(within(dialog).getByLabelText('تعداد مهمانان'), { target: { value: '2' } });
@@ -590,14 +601,35 @@ describe('StaffFrontDeskPage', () => {
   it('previews only future amendment fields without a price quote or room-type control', async () => {
     renderPage('arrivals');
     const card = await screen.findByRole('article', { name: /ABC123456789/ });
-    fireEvent.click(within(card).getByRole('button', { name: 'نمایش جزئیات' }));
-    const detail = await screen.findByRole('region', { name: /جزئیات اقامت/ });
+    const detailTrigger = within(card).getByRole('button', { name: 'نمایش جزئیات' });
+    detailTrigger.focus();
+    fireEvent.click(detailTrigger);
+    expect(detailTrigger).toHaveAttribute('aria-expanded', 'true');
+    const detailId = detailTrigger.getAttribute('aria-controls');
+    expect(detailId).toBeTruthy();
+    const detail = await within(card).findByRole('region', { name: /جزئیات اقامت/ });
+    expect(detail).toHaveAttribute('id', detailId);
+    expect(document.activeElement).toBe(detailTrigger);
+    expect(detailTrigger).toHaveAccessibleName('پنهان کردن جزئیات');
     expect(bookingApi.getStaffBooking).toHaveBeenCalledWith(todayStay.reference);
     fireEvent.click(within(detail).getByRole('button', { name: 'ویرایش جزئیات اقامت' }));
     fireEvent.change(within(detail).getByLabelText('تعداد مهمانان'), { target: { value: '3' } });
     expect(within(detail).getByRole('region', { name: 'پیش‌نمایش تغییرات' })).toHaveTextContent('تعداد مهمانان: ۲ ← ۳');
     expect(within(detail).queryByText(/تومان|قیمت|مبلغ/)).not.toBeInTheDocument();
     expect(within(detail).queryByLabelText('نوع اتاق')).not.toBeInTheDocument();
+    const closeButton = within(detail).getByRole('button', { name: 'بستن جزئیات' });
+    closeButton.focus();
+    fireEvent.click(closeButton);
+    await waitFor(() => expect(document.activeElement).toBe(detailTrigger));
+    expect(within(card).queryByRole('region', { name: /جزئیات اقامت/ })).not.toBeInTheDocument();
+    expect(detailTrigger).toHaveAttribute('aria-expanded', 'false');
+    expect(detailTrigger).toHaveAccessibleName('نمایش جزئیات');
+
+    fireEvent.click(detailTrigger);
+    expect(await within(card).findByRole('region', { name: /جزئیات اقامت/ })).toBeVisible();
+    fireEvent.click(detailTrigger);
+    await waitFor(() => expect(within(card).queryByRole('region', { name: /جزئیات اقامت/ })).not.toBeInTheDocument());
+    expect(detailTrigger).toHaveAttribute('aria-expanded', 'false');
   });
 
   it('keeps departures read-only and handles API permission denial', async () => {

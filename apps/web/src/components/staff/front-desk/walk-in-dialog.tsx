@@ -50,15 +50,15 @@ interface WalkInFieldsProps {
 function WalkInFields({ roomTypes, draft, disabled, onDraftChange }: WalkInFieldsProps) {
   return (
     <>
-      <label>نام مهمان<input aria-label="نام مهمان" required minLength={2} maxLength={160} value={draft.guestName} disabled={disabled} onChange={(event) => onDraftChange('guestName', event.target.value)} /></label>
-      <label>شماره تماس<input aria-label="شماره تماس" required inputMode="tel" dir="ltr" value={draft.guestPhone} disabled={disabled} onChange={(event) => onDraftChange('guestPhone', event.target.value)} /></label>
+      <label>نام مهمان<input aria-label="نام مهمان" name="guestName" autoComplete="name" required minLength={2} maxLength={160} value={draft.guestName} disabled={disabled} onChange={(event) => onDraftChange('guestName', event.target.value)} /></label>
+      <label>شماره تماس<input aria-label="شماره تماس" name="guestPhone" type="tel" autoComplete="tel" required inputMode="tel" dir="ltr" value={draft.guestPhone} disabled={disabled} onChange={(event) => onDraftChange('guestPhone', event.target.value)} /></label>
       <label>نوع اتاق<select aria-label="نوع اتاق" required value={draft.roomTypeSlug} disabled={disabled} onChange={(event) => onDraftChange('roomTypeSlug', event.target.value)}>
         <option value="">انتخاب کنید</option>{roomTypes.map((roomType) => <option key={roomType.slug} value={roomType.slug}>{roomType.name}</option>)}
       </select></label>
       <label>تاریخ خروج<input aria-label="تاریخ خروج" required inputMode="numeric" placeholder="۱۴۰۵/۰۸/۲۸" value={draft.checkOut} disabled={disabled} onChange={(event) => onDraftChange('checkOut', event.target.value)} /></label>
       <label>تعداد مهمانان<input aria-label="تعداد مهمانان" type="number" min="1" max="20" required value={draft.guestCount} disabled={disabled} onChange={(event) => onDraftChange('guestCount', event.target.value)} /></label>
       <label>تعداد اتاق<input aria-label="تعداد اتاق" type="number" min="1" max="20" required value={draft.roomQuantity} disabled={disabled} onChange={(event) => onDraftChange('roomQuantity', event.target.value)} /></label>
-      <label className={styles.wideField}>رایانامه، در صورت تمایل<input aria-label="رایانامه" type="email" dir="ltr" value={draft.guestEmail} disabled={disabled} onChange={(event) => onDraftChange('guestEmail', event.target.value)} /></label>
+      <label className={styles.wideField}>رایانامه، در صورت تمایل<input aria-label="رایانامه" name="guestEmail" type="email" autoComplete="email" dir="ltr" value={draft.guestEmail} disabled={disabled} onChange={(event) => onDraftChange('guestEmail', event.target.value)} /></label>
     </>
   );
 }

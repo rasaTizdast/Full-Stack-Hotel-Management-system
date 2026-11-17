@@ -1,5 +1,6 @@
 'use client';
 
+import type { ReactNode } from 'react';
 import Link from 'next/link';
 import { formatPersianInteger } from '@/lib/jalali-date';
 import { type StaffStayQueue, type StaffStayWorklistItem } from '@/lib/staff-front-desk-api';
@@ -12,13 +13,14 @@ interface WorklistGroupProps {
   items: StaffStayWorklistItem[];
   selectedDate: string;
   businessDate: string;
+  selectedDetail: { reference: string; panelId: string; panel: ReactNode } | null;
   onCheckIn: (stay: StaffStayWorklistItem, trigger: HTMLElement) => void;
   onNoShow: (stay: StaffStayWorklistItem, trigger: HTMLElement) => void;
   onMove: (stay: StaffStayWorklistItem, trigger: HTMLElement) => void;
-  onDetail: (stay: StaffStayWorklistItem) => void;
+  onDetail: (stay: StaffStayWorklistItem, trigger: HTMLElement) => void;
 }
 
-export function WorklistGroup({ queue, title, items, selectedDate, businessDate, onCheckIn, onNoShow, onMove, onDetail }: WorklistGroupProps) {
+export function WorklistGroup({ queue, title, items, selectedDate, businessDate, selectedDetail, onCheckIn, onNoShow, onMove, onDetail }: WorklistGroupProps) {
   if (items.length === 0) return null;
   return (
     <section className={styles.group} aria-label={title}>
@@ -30,6 +32,7 @@ export function WorklistGroup({ queue, title, items, selectedDate, businessDate,
           const dueOut = stay.checkOut <= selectedDate;
           const actionableToday = isStayActiveOn(stay, businessDate);
           const canMoveToday = stay.status === 'CHECKED_IN' && actionableToday;
+          const detailIsOpen = selectedDetail?.reference === stay.reference;
           return (
             <article className={styles.stayCard} key={stay.reference} aria-label={`${stay.guestName} · ${stay.reference}`}>
               <div className={styles.cardTop}>
@@ -74,8 +77,15 @@ export function WorklistGroup({ queue, title, items, selectedDate, businessDate,
                 {queue === 'arrivals' && stay.status === 'CONFIRMED' && !actionableToday && <span role="status">این اقامت خارج از بازه فعال تاریخ کاری جاری است؛ عملیات ورود و عدم مراجعه در دسترس نیست.</span>}
                 {queue === 'in-house' && <button className={styles.secondaryButton} type="button" disabled={!canMoveToday} onClick={(event) => onMove(stay, event.currentTarget)}>انتقال اتاق</button>}
                 {queue === 'in-house' && !canMoveToday && <span role="status">انتقال اتاق فقط برای اقامت واردشده در بازه فعال تاریخ کاری جاری در دسترس است.</span>}
-                {queue !== 'departures' && <button className={styles.textButton} type="button" onClick={() => onDetail(stay)}>نمایش جزئیات</button>}
+                {queue !== 'departures' && <button
+                  className={styles.textButton}
+                  type="button"
+                  aria-expanded={detailIsOpen}
+                  aria-controls={detailIsOpen ? selectedDetail.panelId : undefined}
+                  onClick={(event) => onDetail(stay, event.currentTarget)}
+                >{detailIsOpen ? 'پنهان کردن جزئیات' : 'نمایش جزئیات'}</button>}
               </div>
+              {detailIsOpen && selectedDetail.panel}
             </article>
           );
         })}

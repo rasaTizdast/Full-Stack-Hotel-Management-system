@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, type FormEvent } from 'react';
+import { useEffect, useRef, useState, type FormEvent } from 'react';
 import { getStaffBooking, type StaffBookingDetail } from '@/lib/staff-bookings-api';
 import { toGregorianIso } from '@/lib/jalali-date';
 import { amendStaffStay } from '@/lib/staff-front-desk-api';
@@ -15,6 +15,7 @@ interface UseFrontDeskStayDetailOptions {
 }
 
 export function useFrontDeskStayDetail({ allowed, businessDate, refreshNumber }: UseFrontDeskStayDetailOptions) {
+  const returnFocusTarget = useRef<HTMLElement | null>(null);
   const [selectedReference, setSelectedReference] = useState<string | null>(null);
   const [detail, setDetail] = useState<StaffBookingDetail | null>(null);
   const [loading, setLoading] = useState(false);
@@ -55,7 +56,14 @@ export function useFrontDeskStayDetail({ allowed, businessDate, refreshNumber }:
     return () => { current = false; };
   }, [selectedReference, allowed, refreshNumber]);
 
-  function open(reference: string) {
+  useEffect(() => {
+    if (selectedReference || !returnFocusTarget.current) return;
+    returnFocusTarget.current.focus();
+    returnFocusTarget.current = null;
+  }, [selectedReference]);
+
+  function open(reference: string, trigger: HTMLElement) {
+    returnFocusTarget.current = trigger;
     setDetail(null);
     setError(null);
     setLoading(true);

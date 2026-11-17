@@ -1,5 +1,6 @@
 'use client';
 
+import type { ReactNode } from 'react';
 import { formatPersianInteger } from '@/lib/jalali-date';
 import { type StaffStayQueue, type StaffStayWorklist, type StaffStayWorklistItem } from '@/lib/staff-front-desk-api';
 import { dateLabel } from './front-desk-domain';
@@ -36,7 +37,13 @@ interface QueueResultActions {
   onCheckIn: (stay: StaffStayWorklistItem, trigger: HTMLElement) => void;
   onNoShow: (stay: StaffStayWorklistItem, trigger: HTMLElement) => void;
   onMove: (stay: StaffStayWorklistItem, trigger: HTMLElement) => void;
-  onDetail: (stay: StaffStayWorklistItem) => void;
+  onDetail: (stay: StaffStayWorklistItem, trigger: HTMLElement) => void;
+}
+
+interface SelectedStayDetail {
+  reference: string;
+  panelId: string;
+  panel: ReactNode;
 }
 
 interface FrontDeskQueueResultsProps {
@@ -44,9 +51,10 @@ interface FrontDeskQueueResultsProps {
   copy: StaffFrontDeskQueueCopy;
   model: QueueResultModel;
   actions: QueueResultActions;
+  selectedDetail: SelectedStayDetail | null;
 }
 
-export function FrontDeskQueueResults({ queue, copy, model, actions }: FrontDeskQueueResultsProps) {
+export function FrontDeskQueueResults({ queue, copy, model, actions, selectedDetail }: FrontDeskQueueResultsProps) {
   const { queryDate, page, worklist, listState, listError, items, selectedDate, groupedItems } = model;
 
   if (listState === 'loading') return <p className={styles.status} role="status">{copy.loading}</p>;
@@ -74,6 +82,7 @@ export function FrontDeskQueueResults({ queue, copy, model, actions }: FrontDesk
             items={groupedItems.primary}
             selectedDate={selectedDate}
             businessDate={worklist.businessDate}
+            selectedDetail={selectedDetail}
             onCheckIn={actions.onCheckIn}
             onNoShow={actions.onNoShow}
             onMove={actions.onMove}
@@ -86,6 +95,7 @@ export function FrontDeskQueueResults({ queue, copy, model, actions }: FrontDesk
               items={groupedItems.secondary}
               selectedDate={selectedDate}
               businessDate={worklist.businessDate}
+              selectedDetail={selectedDetail}
               onCheckIn={actions.onCheckIn}
               onNoShow={actions.onNoShow}
               onMove={actions.onMove}

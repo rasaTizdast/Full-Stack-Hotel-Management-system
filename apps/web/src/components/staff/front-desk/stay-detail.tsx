@@ -6,6 +6,7 @@ import type { AmendmentDraft } from './front-desk-types';
 import styles from './staff-front-desk.module.css';
 
 interface StayDetailProps {
+  id: string;
   reference: string;
   detail: StaffBookingDetail | null;
   loading: boolean;
@@ -79,9 +80,9 @@ function AmendmentForm({ detail, draft, busy, onDraftChange, onCancelEdit, onSub
   );
 }
 
-export function StayDetail({ reference, detail, loading, error, canAmend, editing, draft, busy, onClose, onEdit, onCancelEdit, onDraftChange, onSubmit }: StayDetailProps) {
+export function StayDetail({ id, reference, detail, loading, error, canAmend, editing, draft, busy, onClose, onEdit, onCancelEdit, onDraftChange, onSubmit }: StayDetailProps) {
   return (
-    <section className={styles.detailPanel} aria-label={`جزئیات اقامت ${reference}`}>
+    <section id={id} className={styles.detailPanel} aria-label={`جزئیات اقامت ${reference}`}>
       <header>
         <div><p className={styles.eyebrow}>جزئیات اقامت</p><h2>{reference}</h2></div>
         <button className={styles.secondaryButton} type="button" onClick={onClose}>بستن جزئیات</button>
