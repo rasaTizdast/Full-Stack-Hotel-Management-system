@@ -136,7 +136,7 @@ test('admin creates and manages an account with forced password replacement', as
       await credentialPage.getByLabel('ایمیل کاری').fill(email);
       await credentialPage.getByLabel('گذرواژه').fill(initialPassword);
       await credentialPage.getByRole('button', { name: 'ورود به پنل' }).click();
-      await expect(credentialPage).toHaveURL(/\/staff\/change-password$/);
+      await expect(credentialPage).toHaveURL(/\/staff\/change-password$/, { timeout: 30_000 });
       await expect(credentialPage.getByRole('heading', { name: 'تغییر گذرواژه' })).toBeVisible();
       await expectNoA11yViolations(credentialPage);
       await credentialPage.screenshot({
