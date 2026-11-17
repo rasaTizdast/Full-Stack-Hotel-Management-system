@@ -62,7 +62,7 @@
 - [ ] Serialize condition changes, active-assignment reads, task completion, and audit writes in one transaction using the existing roomType → room lock order before re-reading occupancy/readiness.
 - [ ] Completion of cleaning/re-clean updates condition to CLEAN; passing inspection sets INSPECTED; failed inspection sets DIRTY and atomically records the inspection result plus one OPEN RE_CLEAN task. Keep occupancy and sellable capacity unchanged.
 - [ ] Derive SLEEP/SKIP server-side from the expected occupancy snapshot and observedOccupied. Reject reports without a mismatch. Require current occupancy to match observation before resolution; require reason for dismissal.
-- [ ] Add failing then passing API/unit/PostgreSQL tests for permissions, check-in readiness, no occupancy mutation, idempotent retries/concurrency, audit actor/time, report/resolution history, response privacy, pagination, CSRF, and private no-store headers. Housekeeping serialization must omit guest identity/contact, reservation reference, rate, and folio data.
+- [ ] Add failing then passing API/unit/PostgreSQL tests for permissions, check-in readiness, no occupancy mutation, idempotent retries/concurrency, audit actor/time, both SLEEP and SKIP derivation/resolution history, response privacy, pagination, CSRF, and private no-store headers. Housekeeping serialization must omit guest identity/contact, reservation reference, rate, and folio data.
 
 ### Task 3 — Staff client, route, and operational board (Front-end design master)
 
@@ -79,7 +79,7 @@
 **Files:** apps/web E2E tests and HPM-005 completion evidence in docs/implementation-tickets.md and this plan.
 
 - [ ] Run API unit, focused PostgreSQL, API HTTP E2E, web unit, typecheck/lint, then frontend Playwright. Use only the isolated test database target authorized for this run; identify server, port, and database before any migration/test command. Do not reset/drop a database.
-- [ ] Playwright covers manager assignment, housekeeper assigned-task start/completion, failed-inspection re-clean, SLEEP and SKIP reports, receptionist/manager resolution or reasoned dismissal, check-in readiness, cashier denial, no-store/privacy, and no occupancy mutation.
+- [ ] Playwright covers manager assignment, housekeeper assigned-task start/completion, failed-inspection re-clean, real SLEEP reporting, receptionist/manager resolution or reasoned dismissal, check-in readiness, cashier denial, no-store/privacy, and no occupancy mutation. API/PostgreSQL E2E covers real SLEEP and SKIP derivation and resolution eligibility. A UI-only historical SKIP presentation test may stub the discrepancy response; do not create a checked-in stay solely for a browser test while checkout remains in HPM-008.
 - [ ] After frontend Playwright passes, tester manually checks real role sessions at desktop, tablet portrait/landscape, and 390px mobile. Designer reviews screenshots and source for hierarchy, responsive behavior, RTL, touch targets, keyboard/focus, error states, and fit with the existing design system. Record any fixes and repeat both automated and manual gates.
 - [ ] Complete HPM-005 only when migration, role/privacy, API and web checks pass, tester reports no outstanding issues, designer signs off, and the worktree is ready to merge.
 
