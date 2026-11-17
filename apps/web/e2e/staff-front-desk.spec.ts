@@ -115,7 +115,7 @@ test('staff records a walk-in from the arrivals workspace', async ({ page, reque
     await dialog.getByRole('button', { name: 'ثبت ورود قطعی' }).click();
     const confirmation = page.getByRole('status').filter({ hasText: 'ورود حضوری ثبت شد' });
     await expect(confirmation).toBeVisible();
-    const reference = (await confirmation.textContent())?.match(/[A-Z0-9_-]{12,16}/)?.[0];
+    const reference = (await confirmation.textContent())?.match(/[A-Za-z0-9_-]{12,16}/)?.[0];
     if (!reference) throw new Error('The walk-in confirmation did not expose a booking reference.');
     markBookingCreated(reference);
   });
