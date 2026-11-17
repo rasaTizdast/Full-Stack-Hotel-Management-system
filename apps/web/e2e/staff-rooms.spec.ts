@@ -174,6 +174,7 @@ test('admin manages physical rooms through filters, create, renumber, duplicate 
 
     const duplicateForm = page.getByRole('form', { name: 'افزودن اتاق' });
     await page.getByRole('button', { name: 'افزودن اتاق', exact: true }).click();
+    await duplicateForm.getByLabel('نوع اتاق').selectOption(roomTypeId);
     await duplicateForm.getByLabel('شماره اتاق').fill(replacementNumber);
     const duplicateResponsePromise = page.waitForResponse((response) => {
       const url = new URL(response.url());

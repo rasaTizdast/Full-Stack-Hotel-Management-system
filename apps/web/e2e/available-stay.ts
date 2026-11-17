@@ -8,6 +8,7 @@ const RUN_DAY_SEED = Math.floor(Date.now() / 60_000) % STAY_WINDOW_DAYS;
 export type AvailableStay = {
   checkInJalali: string;
   checkOutJalali: string;
+  roomTypeSlug: string;
 };
 
 function dateAfterUtcDays(days: number): string {
@@ -61,7 +62,7 @@ export async function findAvailableGardenStay(
       if (!checkInJalali || !checkOutJalali) {
         throw new Error('Could not format the available stay dates.');
       }
-      return { checkInJalali, checkOutJalali };
+      return { checkInJalali, checkOutJalali, roomTypeSlug: gardenRoom.slug };
     }
   }
 

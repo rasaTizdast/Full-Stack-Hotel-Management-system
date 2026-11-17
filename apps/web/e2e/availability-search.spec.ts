@@ -42,11 +42,13 @@ test('guests search Persian dates and see API-priced available rooms', async ({
   const results = page.locator('[aria-live="polite"]').filter({
     has: page.getByRole('heading', { name: 'اتاق‌های مناسب شما' }),
   });
-  const firstRoom = results.locator('article').first();
-  await expect(firstRoom).toBeVisible();
-  await expect(firstRoom).toContainText('حداکثر');
-  await expect(firstRoom).toContainText('تومان');
-  await expect(firstRoom).toContainText('اتاق در دسترس');
+  const gardenRoom = results.locator(
+    `article:has(a[href="/rooms/${encodeURIComponent(stay.roomTypeSlug)}"])`,
+  );
+  await expect(gardenRoom).toBeVisible();
+  await expect(gardenRoom).toContainText('حداکثر');
+  await expect(gardenRoom).toContainText('تومان');
+  await expect(gardenRoom).toContainText('اتاق در دسترس');
 
   const accessibility = await new AxeBuilder({ page })
     .withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa', 'wcag22aa'])
