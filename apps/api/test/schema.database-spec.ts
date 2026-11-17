@@ -282,6 +282,7 @@ describe('PostgreSQL schema and fictional seed', () => {
       demo_explicit_inspected_room_count: string;
       demo_generated_room_count: string;
       demo_generated_dirty_room_count: string;
+      inventory_count: string;
       future_inventory_count: string;
       admin_count: string;
       password_hash: string | null;
@@ -294,6 +295,7 @@ describe('PostgreSQL schema and fictional seed', () => {
          (SELECT count(*) FROM rooms r JOIN hotels h ON h.id = r.hotel_id WHERE h.slug = 'shiraz-garden-house' AND r.is_generated = false AND r.housekeeping_status = 'INSPECTED') AS demo_explicit_inspected_room_count,
          (SELECT count(*) FROM rooms r JOIN hotels h ON h.id = r.hotel_id WHERE h.slug = 'shiraz-garden-house' AND r.is_generated = true) AS demo_generated_room_count,
          (SELECT count(*) FROM rooms r JOIN hotels h ON h.id = r.hotel_id WHERE h.slug = 'shiraz-garden-house' AND r.is_generated = true AND r.housekeeping_status = 'DIRTY') AS demo_generated_dirty_room_count,
+         (SELECT count(*) FROM room_night_inventory i JOIN room_types rt ON rt.id = i.room_type_id JOIN hotels h ON h.id = rt.hotel_id WHERE h.slug = 'shiraz-garden-house') AS inventory_count,
          (SELECT count(*) FROM room_night_inventory i JOIN room_types rt ON rt.id = i.room_type_id JOIN hotels h ON h.id = rt.hotel_id WHERE h.slug = 'shiraz-garden-house' AND i.stay_date > CURRENT_DATE) AS future_inventory_count,
          (SELECT count(*) FROM staff_users WHERE email = $1) AS admin_count,
          (SELECT password_hash FROM staff_users WHERE email = $1) AS password_hash,
@@ -390,7 +392,7 @@ describe('PostgreSQL schema and fictional seed', () => {
       expect(second.rows[0]).toEqual({
         hotel_count: first.rows[0].hotel_count,
         room_type_count: first.rows[0].room_type_count,
-        inventory_count: first.rows[0].future_inventory_count,
+        inventory_count: first.rows[0].inventory_count,
         admin_count: first.rows[0].admin_count,
         booking_count: bookingsBeforeSeed.rows[0].booking_count,
       });
