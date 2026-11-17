@@ -128,19 +128,27 @@
 - [x] Build desktop worklist/detail layouts and mobile cards for arrivals, in-house, and departures. Show arrivals due today and overdue separately; show checked-in stays in-house and due-outs without a fake checkout action. Keep search/date/filter state after actions and refresh server state after success.
 - [x] Add walk-in creation to arrivals, full assignment/readiness feedback and check-in/no-show actions to due-ins, a reasoned room-move action to in-house stays, future-only amendments in stay detail, and an informational departures list. Link assignment blockers to `/staff/rooms`.
 - [x] Add role-aware navigation for ADMIN/MANAGER/RECEPTIONIST and set role home routes to the appropriate front-desk queue without exposing worklists to housekeeping.
-- [ ] Read the Next.js 16 route and data-fetching guides before route edits. Use the existing staff client, RTL tokens, CSS modules, accessible labels/focus/live announcements, confirmation semantics, 44px touch targets, and no horizontal overflow at 320px/390px. (Guides and source patterns reviewed; browser verification at 320px/390px remains blocked.)
-- [ ] Run focused component tests, TypeScript, scoped ESLint, `git diff --check`, and frontend Playwright before Designer review. Capture desktop and mobile screenshots.
+- [x] Read the Next.js 16 route and data-fetching guides before route edits. Use the existing staff client, RTL tokens, CSS modules, accessible labels/focus/live announcements, confirmation semantics, 44px touch targets, and no horizontal overflow at 320px/390px. Guides and source patterns were reviewed; Playwright and Tester checks passed at 1440px and 390px, with the Playwright suite also checking the smaller layout.
+- [x] Run focused component tests, TypeScript, scoped ESLint, git diff --check, and frontend Playwright before Designer review. Focused tests passed 27/27, web typecheck and scoped ESLint passed, and desktop/mobile Playwright passed 46/46. Temporary desktop/mobile screenshots were reviewed by Designer and Tester.
 
-Task 7 non-E2E implementation/check evidence is in `.superpowers/sdd/2026-11-16-hotel-pms-front-desk-stay-operations/task-7-web-report.md`. Unit tests, typecheck, scoped ESLint, and diff-check pass. Playwright server launch was rejected by command policy before execution; no screenshots or browser review are claimed.
+Task 7 completion evidence is recorded in the HPM-004 ticket entry below and in the local .superpowers/sdd/2026-11-16-hotel-pms-front-desk-stay-operations/task-7-web-report.md. The initial server-launch attempt was blocked, then the isolated services were started with the approved test-only URL; final desktop/mobile Playwright and manual UI reviews passed.
 
 ### Task 8: Specialist review, release evidence, and merge
 
 **Files:** update `docs/implementation-tickets.md`, this plan, API OpenAPI annotations/DTO docs, and only release-relevant setup documentation; do not update root `README.md` until HPM-010.
 
-- [ ] Run focused API unit, PostgreSQL, HTTP E2E, web unit, and room-board/front-desk Playwright; run `pnpm check` only after verifying its database URL resolves to the isolated test container. Do not test against the main `.env` database.
-- [ ] Have Backend Senior review transaction/lock/counter correctness; have FDM review the Next.js implementation; run frontend E2E before Designer and Tester browser review. For each found issue, fix test-first, rerun the affected E2E, and request reviewer recheck.
-- [ ] Have Designer review full-size desktop/mobile screenshots for Persian RTL hierarchy, focus/overflow, touch targets, and visible status/readiness; do not claim a Hallmark pass without a runnable project tool.
-- [ ] Have Tester verify guest request compatibility, receptionist and manager roles, walk-in, arrivals/in-house/departures, early/late/no-show, amendment/move, negative/retry paths, keyboard use, and responsive behavior after E2E passes.
-- [ ] Record exact commands/counts, isolated DB target, screenshots, review outcomes, and any manual-review limitations in the ticket register. Run `git diff --check` and inspect the complete branch diff for secrets/unrelated files.
-- [ ] Mark HPM-004 Done only after acceptance/checks/reviews pass, fast-forward merge into local `main`, confirm the merge commit, and remove the HPM-004 Git worktree registration and branch. Preserve unrelated dirty main-checkout paths.
+- [x] Run focused API unit, PostgreSQL, HTTP E2E, web unit, and room-board/front-desk Playwright against the isolated test container. The suites were run individually; no aggregate pnpm check was needed. The main .env database was not used or changed.
+- [x] Backend Senior reviewed the transaction/lock/counter implementation. FDM reviewed the Next.js changes. Frontend E2E passed before the final Designer and Tester rechecks; the two UI findings were fixed test-first, then focused tests and full Playwright were rerun.
+- [x] Designer reviewed final desktop/mobile screenshots and source for Persian RTL hierarchy, detail placement, field layout, and visible status/readiness. The project has no reproducible Hallmark runner; no Hallmark pass is claimed.
+- [x] After E2E passed, Tester verified public guest and staff/admin routes, responsive behavior, the detail toggle/focus behavior, and the walk-in UI at 1440px and 390px. Automated API/PostgreSQL tests and Playwright cover lifecycle, role, retry, and negative action paths; no unverified manual mutation is claimed.
+- [x] Recorded exact suite counts, isolated DB target, screenshot/review outcomes, and Hallmark limitation in the ticket register. git diff --check passed and the complete branch diff was reviewed for secrets and unrelated files.
+- [x] Mark HPM-004 Done after acceptance/checks/reviews pass, merge into local main, confirm the merge, and remove the HPM-004 Git worktree registration and branch. Preserve unrelated dirty main-checkout paths.
 
+
+## HPM-004 Completion Record (2026-11-17)
+
+- Full API and web gates passed; frontend Playwright passed 46/46 on desktop and mobile after the last UI commit.
+- Tester verified the final public/staff/admin routes, the card-local detail interaction and focus behavior, and the walk-in form at 1440px and 390px. Designer reviewed five final screenshots and approved the visual result; no Hallmark runner was available.
+- The checkout, invoice, settlement, and service-folio flow remains intentionally assigned to HPM-008.
+- All test records discussed in the ticket register were confined to hotel_hpm004_task1_fresh_test; the normal development DB and .env were untouched.
+- Root README changes remain deferred to HPM-010.

@@ -1,6 +1,7 @@
+import { execFileSync } from 'node:child_process';
 import { resolve } from 'node:path';
 import { expect, request as playwrightRequest, test as base, type Page } from '@playwright/test';
-import { getE2eEnvironmentValue } from './test-database';
+import { getE2eDatabaseUrl, getE2eEnvironmentValue } from './test-database';
 
 const apiPort = process.env.HBE_E2E_API_PORT ?? '4015';
 const webPort = process.env.HBE_E2E_WEB_PORT ?? '3015';
@@ -297,6 +298,127 @@ export async function withStaffBookingCleanup<T>(
     return scenario((foundReference) => {
       created = true;
       if (foundReference && /^[A-Za-z0-9_-]{12,16}$/.test(foundReference.trim())) {
+        reference = foundReference.trim();
+      }
+    });
+  });
+}
+
+async function findWalkInFixtureReferences(
+  page: Page,
+  headers: Record<string, string>,
+  guestPhone: string,
+): Promise<string[]> {
+  const query = new URLSearchParams({ search: guestPhone, page: '1', pageSize: '100' });
+  const response = await page.request.get(`${apiBaseUrl}/staff/bookings?${query.toString()}`, {
+    headers,
+  });
+  if (!response.ok()) {
+    throw new Error(`Walk-in fixture lookup failed with HTTP ${response.status()}.`);
+  }
+
+  const payload: unknown = await response.json();
+  if (!isRecord(payload) || !Array.isArray(payload.items)) {
+    throw new Error('Walk-in fixture lookup returned an invalid response.');
+  }
+
+  const matches: string[] = [];
+  for (const item of payload.items) {
+    if (!isRecord(item) || item.guestPhone !== guestPhone) continue;
+    if (
+      item.guestName !== 'مهمان آزمایشی پذیرش' ||
+      item.status !== 'CONFIRMED' ||
+      typeof item.reference !== 'string' ||
+      !/^[A-Za-z0-9_-]{12,16}$/.test(item.reference)
+    ) {
+      throw new Error('Walk-in fixture lookup found a booking that failed its exact-match guard.');
+    }
+    matches.push(item.reference);
+  }
+
+  if (matches.length > 1) {
+    throw new Error('Walk-in fixture lookup found multiple exact-phone bookings.');
+  }
+  return matches;
+}
+
+function cleanupWalkInFixture(reference: string, guestPhone: string): void {
+  if (!/^[A-Za-z0-9_-]{12,16}$/.test(reference) || !/^\+98915\d{7}$/.test(guestPhone)) {
+    throw new Error('Walk-in fixture cleanup refused an invalid reference or test phone.');
+  }
+  const workspaceRoot = resolve(process.cwd(), '../..');
+  const databaseUrl =
+    process.env.HBE_E2E_DATABASE_URL ??
+    process.env.DATABASE_URL ??
+    getE2eDatabaseUrl(workspaceRoot);
+  try {
+    const databaseName = decodeURIComponent(new URL(databaseUrl).pathname.replace(/^\/+/, ''));
+    if (!databaseName.endsWith('_test')) throw new Error('not a test database');
+  } catch {
+    throw new Error('Walk-in fixture cleanup requires an isolated _test database.');
+  }
+  const pnpm = process.platform === 'win32' ? 'pnpm.cmd' : 'pnpm';
+  try {
+    execFileSync(
+      pnpm,
+      [
+        '--filter',
+        '@hotel/api',
+        'exec',
+        'tsx',
+        'test/cleanup-walk-in-fixture.cli.ts',
+        reference,
+        guestPhone,
+      ],
+      {
+        cwd: workspaceRoot,
+        env: { ...process.env, DATABASE_URL: databaseUrl, HBE_E2E_DATABASE_URL: databaseUrl },
+        encoding: 'utf8',
+        shell: process.platform === 'win32',
+        stdio: 'pipe',
+      },
+    );
+  } catch (cause) {
+    const exitCode =
+      typeof cause === 'object' && cause !== null && 'status' in cause
+        ? String(cause.status)
+        : 'unknown';
+    throw new Error(`Walk-in fixture cleanup CLI failed with exit code ${exitCode}.`, {
+      cause,
+    });
+  }
+}
+
+export async function withStaffWalkInCleanup<T>(
+  page: Page,
+  guestPhone: string,
+  fallbackCookies: StaffBrowserCookie[],
+  scenario: (bookingCreated: BookingCreated) => Promise<T>,
+): Promise<T> {
+  return withFailureSafeCleanup(async (registerCleanup) => {
+    let created = false;
+    let reference: string | undefined;
+
+    registerCleanup(async () => {
+      if (!created) return;
+
+      const headers = await staffHeaders(page, fallbackCookies);
+      const references = reference
+        ? [reference]
+        : await findWalkInFixtureReferences(page, headers, guestPhone);
+      if (references.length === 0) return;
+      if (references.length !== 1) {
+        throw new Error('Walk-in fixture cleanup requires exactly one reference.');
+      }
+      cleanupWalkInFixture(references[0], guestPhone);
+    });
+
+    return scenario((foundReference) => {
+      created = true;
+      if (foundReference !== undefined) {
+        if (!/^[A-Za-z0-9_-]{12,16}$/.test(foundReference.trim())) {
+          throw new Error('Walk-in fixture returned an invalid reference for cleanup.');
+        }
         reference = foundReference.trim();
       }
     });

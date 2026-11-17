@@ -2,7 +2,7 @@ import { randomInt } from 'node:crypto';
 import { expect, type Page } from '@playwright/test';
 import { isAvailabilityResult } from '../src/lib/availability';
 import { getHotelTodayIso } from '../src/lib/jalali-date';
-import { test, withStaffBookingCleanup } from './staff-fixtures';
+import { test, withStaffWalkInCleanup } from './staff-fixtures';
 
 const apiPort = process.env.HBE_E2E_API_PORT ?? '4015';
 const apiBaseUrl = `http://localhost:${apiPort}/api/v1`;
@@ -21,10 +21,10 @@ function nextIsoDate(dateOnly: string): string {
   return date.toISOString().slice(0, 10);
 }
 
-test('staff can move through arrival, in-house, and read-only departure queues', async (
-  { page, staffCookies },
-  testInfo,
-) => {
+test('staff can move through arrival, in-house, and read-only departure queues', async ({
+  page,
+  staffCookies,
+}, testInfo) => {
   await page.context().addCookies(staffCookies);
 
   await page.goto('/staff/front-desk/arrivals');
@@ -51,7 +51,8 @@ test('staff can move through arrival, in-house, and read-only departure queues',
     fullPage: true,
   });
 
-  await page.getByRole('navigation', { name: 'فهرست‌های پذیرش' })
+  await page
+    .getByRole('navigation', { name: 'فهرست‌های پذیرش' })
     .getByRole('link', { name: 'موعدهای خروج' })
     .click();
   await expect(page).toHaveURL(/\/staff\/front-desk\/departures$/);
@@ -79,7 +80,11 @@ test('staff can move through arrival, in-house, and read-only departure queues',
   }
 });
 
-test('staff records a walk-in from the arrivals workspace', async ({ page, request, staffCookies }) => {
+test('staff records a walk-in from the arrivals workspace', async ({
+  page,
+  request,
+  staffCookies,
+}) => {
   const guestPhone = `+98915${randomInt(0, 10_000_000).toString().padStart(7, '0')}`;
   await page.context().addCookies(staffCookies);
   const businessDate = getHotelTodayIso();
@@ -90,12 +95,15 @@ test('staff records a walk-in from the arrivals workspace', async ({ page, reque
   expect(availabilityResponse.ok()).toBe(true);
   const availability: unknown = await availabilityResponse.json();
   expect(isAvailabilityResult(availability)).toBe(true);
-  if (!isAvailabilityResult(availability)) throw new Error('Walk-in preflight returned invalid availability.');
-  const availableRoomType = availability.roomTypes.find((room) => room.isAvailable && room.availableRooms > 0);
+  if (!isAvailabilityResult(availability))
+    throw new Error('Walk-in preflight returned invalid availability.');
+  const availableRoomType = availability.roomTypes.find(
+    (room) => room.isAvailable && room.availableRooms > 0,
+  );
   expect(availableRoomType).toBeDefined();
   if (!availableRoomType) throw new Error('No room type has capacity for today’s walk-in fixture.');
 
-  await withStaffBookingCleanup(page, guestPhone, staffCookies, async (markBookingCreated) => {
+  await withStaffWalkInCleanup(page, guestPhone, staffCookies, async (markBookingCreated) => {
     await page.goto('/staff/front-desk/arrivals');
     await expect(page.getByRole('heading', { name: 'ورودهای مهمانان' })).toBeVisible();
     const walkInButton = page.getByRole('button', { name: 'ثبت ورود بدون رزرو قبلی' });
