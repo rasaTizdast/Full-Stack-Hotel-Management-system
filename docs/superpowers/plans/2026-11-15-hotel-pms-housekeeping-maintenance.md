@@ -27,17 +27,59 @@
 
 ## Ticket HPM-005 — Housekeeping statuses and task board
 
-**Worktree:** `../Hotel Booking system-worktrees/HPM-005`
+**Worktree:** ../Hotel Booking system-worktrees/HPM-005
 
 **Dependencies:** HPM-001, HPM-002, HPM-003, HPM-004
-**Files:** room housekeeping/task migration; `apps/api/src/housekeeping/**`; role guards and audit integration; `apps/web/src/components/staff/housekeeping/**`; `/staff/housekeeping` route/nav; unit/database/API/Playwright tests.
+**Owner:** Backend senior + Front-end design master
+**Files:** housekeeping Prisma migration; apps/api/src/housekeeping/**; role/capability and audit integration; apps/web/src/lib/staff-housekeeping-api.ts; apps/web/src/components/staff/housekeeping/**; staff route/navigation; unit, PostgreSQL, HTTP E2E, web unit, and Playwright tests.
 
-- [ ] Add failing tests for allowed/denied status transitions, task assignment/completion idempotency, actor history, check-in blocking until inspection, and discrepancy report/resolve/dismiss permissions.
-- [ ] Add housekeeping task records with room, task type, business date, priority, assignee, state, created/completed times, and short note; add `RoomDiscrepancy` records for SLEEP/SKIP observations. Add authenticated list/assign/complete/report/resolve endpoints with page/filter DTOs.
-- [ ] Add status actions `DIRTY → CLEAN → INSPECTED`; checkout in HPM-008 will mark rooms dirty. Require task assignment or permission for completion; never change occupancy through a housekeeping action.
-- [ ] Show due arrivals/departures, room/floor, priority, assignee, task status, and discrepancy queue. Exclude guest phone and billing details from housekeeping responses. Housekeeping may report a mismatch but only reception/manager may resolve it by stay action or reasoned dismissal.
-- [ ] Build tablet-width Persian RTL `/staff/housekeeping` with fast status actions, keyboard access, non-color labels, loading/empty/error/success states, and accessible confirmation for completion. Exclude folio amounts and guest contact details.
-- [ ] Run API unit/database/e2e and web unit tests; run frontend Playwright before manual tester review; test receptionist, housekeeping, manager, and admin boundaries.
+### Frozen implementation contract
+
+- Task types: DEPARTURE_CLEAN, STAYOVER_CLEAN, INSPECTION, GUEST_REQUEST, RE_CLEAN.
+- Task states: OPEN, IN_PROGRESS, COMPLETED, CANCELLED. Priorities: LOW, NORMAL, HIGH, URGENT; default NORMAL. Completion outcomes: DONE and NEEDS_REWORK; NEEDS_REWORK is valid only for INSPECTION and requires a short reason.
+- Receptionist, manager, and admin may create manual tasks. Managers/admins assign or reassign only to active HOUSEKEEPER staff and may cancel with a reason. Housekeepers may start and complete only tasks assigned to themselves; managers/admins may start or complete any task. No self-claim. Repeated completion returns the stored result and adds no duplicate audit event.
+- Completed DEPARTURE_CLEAN, STAYOVER_CLEAN, or RE_CLEAN changes room condition to CLEAN. A passed INSPECTION changes CLEAN to INSPECTED. A failed INSPECTION records NEEDS_REWORK, changes the room to DIRTY, and creates one OPEN RE_CLEAN task. GUEST_REQUEST completion does not change room condition. Only an INSPECTED room passes the existing default check-in gate.
+- HTTP routes: GET/POST /api/v1/staff/housekeeping/tasks; PATCH /api/v1/staff/housekeeping/tasks/:id/assignment; POST /api/v1/staff/housekeeping/tasks/:id/start; POST /api/v1/staff/housekeeping/tasks/:id/complete; GET /api/v1/staff/housekeeping/discrepancies; POST /api/v1/staff/housekeeping/rooms/:roomId/discrepancies; POST /api/v1/staff/housekeeping/tasks/:id/cancel; POST /api/v1/staff/housekeeping/discrepancies/:id/resolve; POST /api/v1/staff/housekeeping/discrepancies/:id/dismiss. Lists accept businessDate (defaulting to the current hotel business date), page, pageSize and supported room/floor/type/assignee/state/priority filters, and return a stable pagination envelope.
+- Housekeeping responses include room number, floor, occupancy, condition, task state/type/priority/due date, assignee display name, permitted actions, and minimal arrival/departure due context; omit guest names, booking references, guest contact details, prices, and folio data. Every private fetch is no-store; API responses are private, no-store.
+- A discrepancy report submits observedOccupied plus a short note; the server snapshots expected occupancy and derives SLEEP/SKIP. Reception, manager, and admin can resolve only after live occupancy matches the observation, or dismiss with a required reason. HPM-008 owns checkout-based SKIP correction. Room occupancy and housekeeping filters must remain separate. If an existing room-assignment board contract is reused, retain complete assignment intervals through filters; unassignedRoomQuantity means units unassigned on the selected board date.
+
+### Task 1 — Persistence and transition rules (Backend senior)
+
+**Files:** apps/api/prisma/schema.prisma; a new housekeeping migration; apps/api/src/housekeeping/housekeeping.rules.ts and unit tests; focused PostgreSQL tests.
+
+- [ ] Write failing unit tests for task transitions, assignment requirements, completion outcomes, failed-inspection re-clean creation rules, and forbidden occupancy changes.
+- [ ] Add task/discrepancy enums and tables with restrictive history-preserving relations, hotel scoping, created/updated and actor fields, and indexes for room/date, state/date, assignee/date, and discrepancy status/date.
+- [ ] Implement pure transition/validation rules for OPEN → IN_PROGRESS → COMPLETED and OPEN/IN_PROGRESS → CANCELLED; only inspection may return NEEDS_REWORK.
+- [ ] Run unit tests to observe the expected failures before production changes, then pass them and focused PostgreSQL migration/persistence tests.
+
+### Task 2 — Transactional API, roles, audit, and privacy (Backend senior)
+
+**Files:** apps/api/src/housekeeping/**; staff capability definitions; apps/api/src/audit/** only where needed; API HTTP E2E and database tests.
+
+- [ ] Add filtered, paginated task and discrepancy list DTOs; manual task creation; manager/admin assignment/cancellation; assigned-housekeeper start/completion; discrepancy report/resolve/dismiss endpoints.
+- [ ] Serialize condition changes, active-assignment reads, task completion, and audit writes in one transaction using the existing roomType → room lock order before re-reading occupancy/readiness.
+- [ ] Completion of cleaning/re-clean updates condition to CLEAN; passing inspection sets INSPECTED; failed inspection sets DIRTY and atomically records the inspection result plus one OPEN RE_CLEAN task. Keep occupancy and sellable capacity unchanged.
+- [ ] Derive SLEEP/SKIP server-side from the expected occupancy snapshot and observedOccupied. Reject reports without a mismatch. Require current occupancy to match observation before resolution; require reason for dismissal.
+- [ ] Add failing then passing API/unit/PostgreSQL tests for permissions, check-in readiness, no occupancy mutation, idempotent retries/concurrency, audit actor/time, report/resolution history, response privacy, pagination, CSRF, and private no-store headers. Housekeeping serialization must omit guest identity/contact, reservation reference, rate, and folio data.
+
+### Task 3 — Staff client, route, and operational board (Front-end design master)
+
+**Files:** apps/web/src/lib/staff-housekeeping-api.ts and tests; apps/web/src/components/staff/housekeeping/**; apps/web/src/app/staff/(dashboard)/housekeeping/page.tsx; staff navigation and role tests.
+
+- [ ] Read apps/web/AGENTS.md and the installed Next.js 16 documentation for the route/data-fetch pattern before editing.
+- [ ] Add typed no-store clients matching the frozen API contract. Add /staff/housekeeping and role navigation; HOUSEKEEPER home opens this route, RECEPTIONIST/MANAGER/ADMIN can reach readiness/discrepancy actions, and CASHIER is denied.
+- [ ] Build the RTL task-first board using tracked tokens and CSS modules: business date/refresh status, filters, urgency-ordered work list, separate occupancy/condition/task labels, arrival/departure context, and a discrepancy queue. Use task details and assignee identity only; never show guest contact or billing data.
+- [ ] Provide clear loading, empty-today, no-filter-match, stale, retry, permission, conflict/already-completed, success, and failure states. Use keyboard-accessible labeled filters, visible focus, accessible confirmation, and focus return.
+- [ ] Add component/client/navigation tests for role-specific actions, status text, validation, and all board states. Do not depend on uncommitted UI primitives from the root checkout.
+
+### Task 4 — Acceptance and review (Tester + Designer; orchestrated by root)
+
+**Files:** apps/web E2E tests and HPM-005 completion evidence in docs/implementation-tickets.md and this plan.
+
+- [ ] Run API unit, focused PostgreSQL, API HTTP E2E, web unit, typecheck/lint, then frontend Playwright. Use only the isolated test database target authorized for this run; identify server, port, and database before any migration/test command. Do not reset/drop a database.
+- [ ] Playwright covers manager assignment, housekeeper assigned-task start/completion, failed-inspection re-clean, SLEEP and SKIP reports, receptionist/manager resolution or reasoned dismissal, check-in readiness, cashier denial, no-store/privacy, and no occupancy mutation.
+- [ ] After frontend Playwright passes, tester manually checks real role sessions at desktop, tablet portrait/landscape, and 390px mobile. Designer reviews screenshots and source for hierarchy, responsive behavior, RTL, touch targets, keyboard/focus, error states, and fit with the existing design system. Record any fixes and repeat both automated and manual gates.
+- [ ] Complete HPM-005 only when migration, role/privacy, API and web checks pass, tester reports no outstanding issues, designer signs off, and the worktree is ready to merge.
 
 ## Ticket HPM-006 — Maintenance requests and out-of-order blocks
 

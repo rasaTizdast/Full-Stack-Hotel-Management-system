@@ -76,12 +76,12 @@ The following tickets extend the original booking engine into the single-propert
 
 - **Priority:** P0
 - **Depends on:** HPM-001, HPM-002, HPM-003, HPM-004
-- **Owner:** Backend senior + Front-end design master
-- **Status:** Not started
-- **Branch/worktree:** `codex/hpm-005-housekeeping` — `../Hotel Booking system-worktrees/HPM-005`
-- **Plan:** `docs/superpowers/plans/2026-11-15-hotel-pms-housekeeping-maintenance.md`
-- **Acceptance criteria:** Staff distinguish occupancy from DIRTY/CLEAN/INSPECTED condition; housekeeping tasks can be assigned/prioritized/completed idempotently; housekeeping can report SLEEP/SKIP discrepancies but only reception/manager can resolve them; housekeeping cannot change occupancy or access folios; reception can see readiness without unnecessary guest PII; default check-in readiness is enforced.
-- **Required tests:** State transition, task lifecycle/idempotency, discrepancy report/resolve/dismiss permissions, role/privacy, check-in gating, API e2e, web unit and Playwright before manual UI review. HPM-008 owns the checkout-to-DIRTY transition.
+- **Owner:** Backend senior + Front-end design master; Designer and Tester are required release gates
+- **Status:** In progress
+- **Branch/worktree:** codex/hpm-005-housekeeping — ../Hotel Booking system-worktrees/HPM-005
+- **Plan:** docs/superpowers/plans/2026-11-15-hotel-pms-housekeeping-maintenance.md
+- **Acceptance criteria:** Staff distinguish occupancy from DIRTY/CLEAN/INSPECTED; manual tasks use OPEN/IN_PROGRESS/COMPLETED/CANCELLED and are assigned to housekeepers; assigned work completes idempotently; failed inspection creates a re-clean task; only inspection can set INSPECTED; housekeeping can report SLEEP/SKIP but cannot alter occupancy or access folios; only reception/manager/admin can resolve after the stay state matches the observation or dismiss with a reason; default check-in readiness is enforced; responses omit unnecessary guest PII.
+- **Required tests:** Task transition/lifecycle/idempotency and failed-inspection rework; PostgreSQL actor/audit history; discrepancy report/resolve/dismiss permissions; role/privacy/no-store; check-in gate; API HTTP E2E; web unit and frontend Playwright before tester manual review; designer desktop/tablet/mobile review. HPM-008 supplies checkout-based SKIP correction.
 
 ### HPM-006 — Maintenance requests and out-of-order blocks
 

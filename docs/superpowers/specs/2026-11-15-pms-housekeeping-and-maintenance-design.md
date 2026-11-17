@@ -31,3 +31,10 @@ TDD coverage includes housekeeping state transitions, role restrictions, task as
 ## Excluded
 
 Automated task scheduling, housekeeping labor/payroll, mobile native apps, guest messaging, room sensors, vendor maintenance integrations, and attachments are deferred.
+## HPM-005 implementation clarifications
+
+- Automated task scheduling remains excluded. Reception, managers, and admins can create operational tasks manually; managers and admins assign or reassign work to active housekeepers. A housekeeper cannot claim an unassigned task.
+- Task types are DEPARTURE_CLEAN, STAYOVER_CLEAN, INSPECTION, GUEST_REQUEST, and RE_CLEAN. Priorities are LOW, NORMAL, HIGH, and URGENT, defaulting to NORMAL. Task states are OPEN, IN_PROGRESS, COMPLETED, and CANCELLED. Starting work changes OPEN to IN_PROGRESS; completion is idempotent and retains actor/time history. Only managers/admins can cancel, with a reason.
+- A completed cleaning or re-clean task changes room condition to CLEAN. A passed inspection changes CLEAN to INSPECTED. A failed inspection requires a reason, changes the room to DIRTY, completes the inspection with NEEDS_REWORK outcome, and creates an OPEN RE_CLEAN task. A guest-request task does not change room condition. A housekeeping action never changes occupancy.
+- Housekeeping board responses show room occupancy separately from housekeeping condition and task state, without guest names, reservation references, phone/email, rates, or folio data. Reception/management may see only the minimal due-arrival/departure context needed for readiness.
+- A discrepancy report submits observed occupied/vacant state. The server snapshots current occupancy and derives SLEEP or SKIP; a report is rejected when observed and recorded occupancy agree. Reporting never changes occupancy. Reception, managers, and admins can resolve only after a stay action makes live occupancy agree with the observation, or dismiss with a reason. Checkout-dependent SKIP correction is enabled by HPM-008; until then the report remains open or is dismissed with a reason.
