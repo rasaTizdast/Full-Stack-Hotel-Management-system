@@ -11,7 +11,6 @@ import { TASK_TYPE_LABELS } from '../src/components/staff/housekeeping/housekeep
 import { formatGregorianAsJalali } from '../src/lib/jalali-date';
 import { test, withFailureSafeCleanup } from './staff-fixtures';
 import {
-  administratorHeaders,
   cleanupUnfinishedHousekeepingRecords,
   createHousekeepingStaffSession,
   housekeepingApiBaseUrl,
@@ -390,17 +389,89 @@ async function startHousekeeperTask(
     .filter({ hasText: housekeeper.username })
     .filter({ hasText: 'در انتظار شروع' });
   await expect(card).toBeVisible();
-  await card.getByRole('button', { name: 'شروع کار' }).click();
 
-  const response = await housekeeper.page.waitForResponse((item) =>
-    apiResponseIs(
-      item,
-      'POST',
-      `/api/v1/staff/housekeeping/tasks/${task.id}/start`,
-    ),
-  );
-  expect(response.status()).toBe(200);
-  await expect(card).toContainText('در حال انجام');
+  let startResponseSeen = false;
+  const followUpTaskListRequests = new Set<import('@playwright/test').Request>();
+  let resolveStartEvidence!: (value: { httpStatus: number; taskStatus: string }) => void;
+  let resolveReadbackEvidence!: (value: { httpStatus: number; taskStatus: string }) => void;
+  const startEvidencePromise = new Promise<{ httpStatus: number; taskStatus: string }>((resolve) => {
+    resolveStartEvidence = resolve;
+  });
+  const readbackEvidencePromise = new Promise<{ httpStatus: number; taskStatus: string }>((resolve) => {
+    resolveReadbackEvidence = resolve;
+  });
+  const startPath = `/api/v1/staff/housekeeping/tasks/${task.id}/start`;
+  const tasksPath = '/api/v1/staff/housekeeping/tasks';
+  const captureRequest = (request: import('@playwright/test').Request) => {
+    if (
+      startResponseSeen &&
+      request.method() === 'GET' &&
+      new URL(request.url()).pathname === tasksPath
+    ) {
+      followUpTaskListRequests.add(request);
+    }
+  };
+  const captureResponse = (response: import('@playwright/test').Response) => {
+    const request = response.request();
+    const path = new URL(response.url()).pathname;
+    if (request.method() === 'POST' && path === startPath) {
+      startResponseSeen = true;
+      void response.json().then((payload: unknown) => {
+        const taskStatus = isRecord(payload) && typeof payload.status === 'string'
+          ? payload.status
+          : 'missing';
+        resolveStartEvidence({ httpStatus: response.status(), taskStatus });
+      }, () => resolveStartEvidence({ httpStatus: response.status(), taskStatus: 'unreadable' }));
+      return;
+    }
+    if (request.method() !== 'GET' || !followUpTaskListRequests.has(request)) return;
+    followUpTaskListRequests.delete(request);
+    void response.json().then((payload: unknown) => {
+      const items = isRecord(payload) && Array.isArray(payload.items) ? payload.items : [];
+      const refreshedTask = items.find((item) => isRecord(item) && item.id === task.id);
+      const taskStatus = isRecord(refreshedTask) && typeof refreshedTask.status === 'string'
+        ? refreshedTask.status
+        : 'missing';
+      resolveReadbackEvidence({ httpStatus: response.status(), taskStatus });
+    }, () => resolveReadbackEvidence({ httpStatus: response.status(), taskStatus: 'unreadable' }));
+  };
+  housekeeper.page.on('request', captureRequest);
+  housekeeper.page.on('response', captureResponse);
+
+  let startEvidence: { httpStatus: number; taskStatus: string };
+  let readbackEvidence: { httpStatus: number; taskStatus: string };
+  try {
+    await card.getByRole('button', { name: 'شروع کار' }).click();
+    [startEvidence, readbackEvidence] = await Promise.all([
+      startEvidencePromise,
+      readbackEvidencePromise,
+    ]);
+  } finally {
+    housekeeper.page.off('request', captureRequest);
+    housekeeper.page.off('response', captureResponse);
+  }
+
+  const diagnostic =
+    `task=${task.id}; startHttp=${startEvidence.httpStatus}; startStatus=${startEvidence.taskStatus}; ` +
+    `followUpGetHttp=${readbackEvidence.httpStatus}; followUpTaskStatus=${readbackEvidence.taskStatus}`;
+  if (
+    startEvidence.httpStatus !== 200 ||
+    startEvidence.taskStatus !== 'IN_PROGRESS' ||
+    readbackEvidence.httpStatus !== 200 ||
+    readbackEvidence.taskStatus !== 'IN_PROGRESS'
+  ) {
+    throw new Error(`Housekeeping start API/readback mismatch (${diagnostic}).`);
+  }
+
+  const updatedCard = taskCard(housekeeper.page, task.room.roomNumber, task.taskType)
+    .filter({ hasText: housekeeper.username });
+  try {
+    await expect(updatedCard).toContainText('در حال انجام');
+  } catch {
+    const statusLines = await updatedCard.locator('span').allTextContents();
+    const renderedStatus = statusLines.map((line) => line.trim()).find((line) => line.startsWith('کار:')) ?? 'missing';
+    throw new Error(`Housekeeping start UI did not reflect the API readback (${diagnostic}; rendered=${renderedStatus}).`);
+  }
 }
 
 async function failInspection(
@@ -477,7 +548,10 @@ async function completeCleaningTask(
   await dialog.getByRole('button', { name: 'ثبت پایان کار' }).click();
   const response = await responsePromise;
   expect(response.status()).toBe(200);
-  await expect(housekeeper.page.getByRole('status')).toContainText('تکمیل');
+  const successMessage = `انجام کار اتاق ${task.room.roomNumber} ثبت شد.`;
+  await expect(
+    housekeeper.page.getByRole('status').filter({ hasText: successMessage }),
+  ).toContainText(successMessage);
 }
 
 async function passInspection(

@@ -166,7 +166,8 @@ export async function createHousekeepingStaffSession(
   await accountPage.getByLabel('گذرواژه').fill(initialPassword);
   await accountPage.getByRole('button', { name: 'ورود به پنل' }).click();
   try {
-    await expect(accountPage).toHaveURL(/\/staff\/change-password$/);
+    await expect(accountPage).toHaveURL(/\/staff\/change-password$/, { timeout: 30_000 });
+    await expect(accountPage.getByRole('heading', { name: 'تغییر گذرواژه' })).toBeVisible({ timeout: 30_000 });
   } catch {
     const currentPage = safeHostPath(accountPage.url());
     const diagnosticLines = authNetworkDiagnostics.length
