@@ -182,7 +182,21 @@ export async function createHousekeepingStaffSession(
   await accountPage.getByLabel('گذرواژه تازه', { exact: true }).fill(replacementPassword);
   await accountPage.getByLabel('تکرار گذرواژه تازه').fill(replacementPassword);
   await accountPage.getByRole('button', { name: 'تغییر گذرواژه' }).click();
-  await expect(accountPage).not.toHaveURL(/\/staff\/change-password$/);
+  try {
+    // The role home route proves the change-password route was left and that
+    // the refreshed HOUSEKEEPER session reached its expected workspace.
+    await expect(accountPage).toHaveURL(/\/staff\/housekeeping\/?$/, { timeout: 30_000 });
+  } catch {
+    const currentPage = safeHostPath(accountPage.url());
+    const responseDiagnostics = authNetworkDiagnostics.filter((line) => line.includes(' -> HTTP '));
+    const diagnosticLines = responseDiagnostics.length
+      ? responseDiagnostics.join('\n')
+      : '(no POST/OPTIONS response events observed)';
+    throw new Error(
+      `Forced-password change did not reach the HOUSEKEEPER workspace. Current page: ${currentPage}\n` +
+        `Safe auth response diagnostics:\n${diagnosticLines}`,
+    );
+  }
 
   const sessionResponse = await accountPage.request.get(
     `${housekeepingApiBaseUrl}/staff/auth/me`,
