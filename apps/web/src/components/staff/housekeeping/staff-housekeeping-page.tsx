@@ -64,6 +64,7 @@ const EMPTY_FILTERS: HousekeepingFilters = {
   roomId: '',
   floor: '',
   taskType: '',
+  assigneeStaffUserId: '',
   status: '',
   priority: '',
 };
@@ -236,19 +237,23 @@ export function StaffHousekeepingPage() {
   useEffect(() => {
     if (!canView) return;
     void loadBoard();
+    const assigneeLoadTimer = canManage
+      ? window.setTimeout(() => void loadAssignees(), 0)
+      : null;
     const roomLoadTimer = window.setTimeout(() => void loadRooms(), 0);
     const interval = window.setInterval(() => {
       void loadBoard();
       void loadRooms();
     }, REFRESH_INTERVAL_MS);
     return () => {
+      if (assigneeLoadTimer !== null) window.clearTimeout(assigneeLoadTimer);
       window.clearTimeout(roomLoadTimer);
       window.clearInterval(interval);
       requestSequence.current += 1;
       roomsSequence.current += 1;
       assigneesSequence.current += 1;
     };
-  }, [canView, loadBoard, loadRooms]);
+  }, [canManage, canView, loadAssignees, loadBoard, loadRooms]);
 
   useEffect(() => {
     if (successMessage) successRef.current?.focus();
@@ -268,6 +273,7 @@ export function StaffHousekeepingPage() {
       roomId: query.roomId ?? '',
       floor: query.floor ?? '',
       taskType: query.taskType ?? '',
+      assigneeStaffUserId: query.assigneeStaffUserId ?? '',
       status: query.status ?? '',
       priority: query.priority ?? '',
     }),
@@ -287,7 +293,7 @@ export function StaffHousekeepingPage() {
 
   function updateFilter(field: keyof HousekeepingFilters, value: string) {
     setDraftFilters((current) => ({ ...current, [field]: value }));
-    if (field === 'dueDate') setFilterError(null);
+    if (field === 'dueDate') setFilterError(dateFilterError(value));
   }
 
   function applyFilters(event: FormEvent<HTMLFormElement>) {
@@ -304,6 +310,7 @@ export function StaffHousekeepingPage() {
       roomId: draftFilters.roomId || undefined,
       floor: draftFilters.floor || undefined,
       taskType: draftFilters.taskType as HousekeepingTaskType || undefined,
+      assigneeStaffUserId: draftFilters.assigneeStaffUserId || undefined,
       status: draftFilters.status as HousekeepingTaskStatus || undefined,
       priority: draftFilters.priority as HousekeepingPriority || undefined,
       page: 1,
@@ -450,7 +457,12 @@ export function StaffHousekeepingPage() {
   }
 
   const businessDate = taskPage?.businessDate ?? discrepancyPage?.businessDate ?? null;
-  const pageHasStaleData = taskStale || (canViewReadiness && discrepancyStale);
+  const staleSources = [
+    taskStale ? 'کارها' : null,
+    canViewReadiness && discrepancyStale ? 'مغایرت‌ها' : null,
+    canViewReadiness && roomsError && rooms.length > 0 ? 'وضعیت اتاق‌ها' : null,
+  ].filter((source): source is string => Boolean(source));
+  const pageHasStaleData = staleSources.length > 0;
   return (
     <section className={styles.page} aria-labelledby="housekeeping-title">
       <HousekeepingHeader
@@ -458,13 +470,14 @@ export function StaffHousekeepingPage() {
         lastUpdatedAt={lastUpdatedAt}
         isLoading={isInitialLoading}
         isRefreshing={isRefreshing}
-        isStale={pageHasStaleData}
         onRefresh={() => { void loadBoard(); void loadRooms(); }}
       />
 
-      {taskStale && <p className={styles.alert} role="alert">به‌روزرسانی کارها انجام نشد؛ اطلاعات قبلی برای بررسی نگه داشته شده است.</p>}
-      {discrepancyStale && canViewReadiness && <p className={styles.alert} role="alert">به‌روزرسانی مغایرت‌ها انجام نشد؛ اطلاعات قبلی برای بررسی نگه داشته شده است.</p>}
-      {pageHasStaleData && <p className={styles.pageStatus} role="status">اطلاعات نمایش‌داده‌شده ممکن است تازه نباشد؛ پیش از اقدام آن را به‌روزرسانی کنید.</p>}
+      {pageHasStaleData && (
+        <p className={styles.alert} role="alert">
+          به‌روزرسانی {staleSources.join(' و ')} انجام نشد؛ اطلاعات قبلی نگه داشته شده است. پیش از اقدام حساس، فهرست را به‌روزرسانی کنید.
+        </p>
+      )}
       {successMessage && <p className={styles.success} role="status" tabIndex={-1} ref={successRef}>{successMessage}</p>}
       {actionError && !dialog && <p className={styles.alert} role="alert">{actionError}</p>}
 
@@ -487,10 +500,15 @@ export function StaffHousekeepingPage() {
       <HousekeepingFilterBar
         filters={draftFilters}
         rooms={rooms}
+        canFilterAssignee={canManage}
+        assignees={assignees}
+        assigneesLoading={isAssigneesLoading}
+        assigneesError={canManage ? assigneesError : null}
         error={filterError}
         onChange={updateFilter}
         onApply={applyFilters}
         onClear={clearFilters}
+        onRetryAssignees={() => void loadAssignees()}
       />
 
       <HousekeepingTaskList

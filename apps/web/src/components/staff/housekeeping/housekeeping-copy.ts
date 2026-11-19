@@ -79,6 +79,7 @@ export function hasHousekeepingFilters(filters: {
   roomId: string;
   floor: string;
   taskType: string;
+  assigneeStaffUserId: string;
   status: string;
   priority: string;
 }): boolean {

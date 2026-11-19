@@ -312,15 +312,19 @@ describe('StaffHousekeepingPage', () => {
     expect(screen.queryByRole('button', { name: /گزارش مغایرت/ })).not.toBeInTheDocument();
   });
 
-  it('keeps loaded tasks visible and clearly marks the board stale after a refresh error', async () => {
+  it('shows one combined warning when task and discrepancy refreshes fail', async () => {
+    setRole('RECEPTIONIST');
     render(<StaffHousekeepingPage />);
     expect(await screen.findByRole('article', { name: /کار خانه‌داری اتاق ۱۰۱/ })).toBeVisible();
+    expect(await screen.findByRole('article', { name: /اتاق خالی ثبت شده/ })).toBeVisible();
     housekeepingApi.getStaffHousekeepingTasks.mockRejectedValueOnce(new StaffApiError('Offline', 0));
+    housekeepingApi.getStaffHousekeepingDiscrepancies.mockRejectedValueOnce(new StaffApiError('Offline', 0));
     fireEvent.click(screen.getByRole('button', { name: 'به‌روزرسانی فهرست' }));
 
-    expect(await screen.findByRole('alert')).toHaveTextContent(/به‌روزرسانی کارها انجام نشد/);
+    await waitFor(() => expect(screen.getAllByRole('alert')).toHaveLength(1));
+    expect(screen.getByRole('alert')).toHaveTextContent(/کارها و مغایرت‌ها/);
     expect(screen.getByRole('article', { name: /کار خانه‌داری اتاق ۱۰۱/ })).toBeVisible();
-    expect(screen.getByRole('status')).toHaveTextContent(/اطلاعات نمایش‌داده‌شده ممکن است تازه نباشد/);
+    expect(screen.queryByRole('status')).toBeNull();
   });
 
   it('filters task due dates without changing the server business-date reference', async () => {
@@ -334,6 +338,77 @@ describe('StaffHousekeepingPage', () => {
       expect.objectContaining({ dueDate: '2026-11-18' }),
     ));
     expect(housekeepingApi.getStaffHousekeepingTasks.mock.lastCall?.[0]).not.toHaveProperty('businessDate');
+  });
+
+  it('keeps visible Jalali date-format guidance and associates invalid-date feedback with its field', async () => {
+    render(<StaffHousekeepingPage />);
+    const dueDate = screen.getByLabelText('موعد انجام کار');
+
+    expect(screen.getByText('قالب تاریخ شمسی: سال/ماه/روز، مانند ۱۴۰۵/۰۸/۲۷')).toBeVisible();
+    fireEvent.change(dueDate, { target: { value: '۱۴۰۵/۱۳/۰۱' } });
+
+    expect(dueDate).toHaveAttribute('aria-invalid', 'true');
+    const describedBy = dueDate.getAttribute('aria-describedby')?.split(' ') ?? [];
+    expect(describedBy).toContain('housekeeping-due-date-help');
+    expect(describedBy).toContain('housekeeping-due-date-error');
+    expect(document.getElementById('housekeeping-due-date-error')).toHaveTextContent('تاریخ کاری را به‌شکل سال/ماه/روز شمسی معتبر وارد کنید.');
+
+    fireEvent.change(dueDate, { target: { value: '۱۴۰۵/۰۸/۲۷' } });
+    expect(dueDate).not.toHaveAttribute('aria-invalid', 'true');
+    expect(document.getElementById('housekeeping-due-date-error')).not.toBeInTheDocument();
+  });
+
+  it('lets managers filter by active housekeeper and preserves that filter through pagination and clearing', async () => {
+    setRole('MANAGER');
+    housekeepingApi.getStaffHousekeepingTasks.mockImplementation((query: { page?: number; pageSize?: number }) => Promise.resolve({
+      ...taskPage(),
+      pagination: { page: query.page ?? 1, pageSize: query.pageSize ?? 20, totalItems: 21, totalPages: 2 },
+    }));
+    render(<StaffHousekeepingPage />);
+    const assigneeFilter = await screen.findByLabelText('مسئول کار');
+    expect(housekeepingApi.getStaffHousekeepingAssignees).toHaveBeenCalledOnce();
+    expect(await within(assigneeFilter).findByRole('option', { name: 'attendant-2' })).toBeInTheDocument();
+
+    fireEvent.change(assigneeFilter, { target: { value: 'staff-2' } });
+    fireEvent.click(screen.getByRole('button', { name: 'اعمال فیلترها' }));
+    await waitFor(() => expect(housekeepingApi.getStaffHousekeepingTasks).toHaveBeenLastCalledWith(
+      expect.objectContaining({ assigneeStaffUserId: 'staff-2', page: 1 }),
+    ));
+
+    fireEvent.click(screen.getByRole('button', { name: 'صفحهٔ بعد' }));
+    await waitFor(() => expect(housekeepingApi.getStaffHousekeepingTasks).toHaveBeenLastCalledWith(
+      expect.objectContaining({ assigneeStaffUserId: 'staff-2', page: 2 }),
+    ));
+
+    fireEvent.click(screen.getByRole('button', { name: 'پاک‌کردن فیلترها' }));
+    await waitFor(() => expect(housekeepingApi.getStaffHousekeepingTasks).toHaveBeenLastCalledWith(
+      expect.not.objectContaining({ assigneeStaffUserId: expect.anything() }),
+    ));
+    expect(screen.getByLabelText('مسئول کار')).toHaveValue('');
+  });
+
+  it('does not expose the assignee filter to reception staff', async () => {
+    setRole('RECEPTIONIST');
+    render(<StaffHousekeepingPage />);
+    await screen.findByRole('heading', { name: 'خانه‌داری' });
+
+    expect(screen.queryByLabelText('مسئول کار')).not.toBeInTheDocument();
+    expect(housekeepingApi.getStaffHousekeepingAssignees).not.toHaveBeenCalled();
+  });
+
+  it('keeps the assignee retry action outside its label and links the error to the select', async () => {
+    setRole('MANAGER');
+    housekeepingApi.getStaffHousekeepingAssignees.mockRejectedValueOnce(new StaffApiError('Offline', 0));
+    render(<StaffHousekeepingPage />);
+    await screen.findByText('فهرست مسئول‌ها دریافت نشد.');
+    const select = await screen.findByLabelText('مسئول کار');
+    const label = select.closest('label');
+
+    expect(label?.querySelector('button')).toBeNull();
+    expect(select).toHaveAttribute('aria-describedby', 'housekeeping-assignee-filter-error');
+    expect(screen.getByText('فهرست مسئول‌ها دریافت نشد.')).toBeVisible();
+    fireEvent.click(screen.getByRole('button', { name: 'تلاش دوباره' }));
+    expect(await within(select).findByRole('option', { name: 'attendant-2' })).toBeInTheDocument();
   });
 
   it('creates a task using the server business date', async () => {
@@ -361,7 +436,7 @@ describe('StaffHousekeepingPage', () => {
     fireEvent.click(within(card).getByRole('button', { name: 'تغییر مسئول' }));
 
     const dialog = await screen.findByRole('dialog', { name: 'تخصیص کار اتاق ۱۰۱' });
-    expect(housekeepingApi.getStaffHousekeepingAssignees).toHaveBeenCalledOnce();
+    expect(housekeepingApi.getStaffHousekeepingAssignees).toHaveBeenCalledTimes(2);
     fireEvent.change(within(dialog).getByLabelText('خانه‌دار مسئول'), { target: { value: 'staff-2' } });
     fireEvent.click(within(dialog).getByRole('button', { name: 'ثبت تخصیص' }));
 

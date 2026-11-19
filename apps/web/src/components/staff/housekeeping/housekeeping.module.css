@@ -140,6 +140,23 @@
   font-weight: 700;
 }
 
+.fieldHelp {
+  color: var(--muted-foreground);
+  font-size: var(--text-caption);
+  line-height: 1.5;
+}
+
+.assigneeField {
+  display: grid;
+  min-width: 0;
+  align-content: start;
+  gap: 0.35rem;
+}
+
+.assigneeField > .textButton {
+  justify-self: start;
+}
+
 .field input,
 .field select,
 .dialogField input,

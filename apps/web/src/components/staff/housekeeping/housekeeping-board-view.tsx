@@ -23,6 +23,7 @@ export interface HousekeepingFilters {
   roomId: string;
   floor: string;
   taskType: string;
+  assigneeStaffUserId: string;
   status: string;
   priority: string;
 }
@@ -32,7 +33,6 @@ interface HousekeepingHeaderProps {
   lastUpdatedAt: Date | null;
   isLoading: boolean;
   isRefreshing: boolean;
-  isStale: boolean;
   onRefresh: () => void;
 }
 
@@ -41,7 +41,6 @@ export function HousekeepingHeader({
   lastUpdatedAt,
   isLoading,
   isRefreshing,
-  isStale,
   onRefresh,
 }: HousekeepingHeaderProps) {
   const displayedDate = businessDate ? formatGregorianAsJalali(businessDate) ?? businessDate : 'در حال دریافت';
@@ -66,7 +65,6 @@ export function HousekeepingHeader({
         <button className={styles.secondaryButton} type="button" onClick={onRefresh} disabled={isLoading || isRefreshing}>
           {isRefreshing ? 'در حال به‌روزرسانی…' : 'به‌روزرسانی فهرست'}
         </button>
-        {isStale && <span className={styles.staleTag}>اطلاعات قدیمی است</span>}
       </div>
     </header>
   );
@@ -75,19 +73,29 @@ export function HousekeepingHeader({
 interface HousekeepingFilterBarProps {
   filters: HousekeepingFilters;
   rooms: HousekeepingRoomOption[];
+  canFilterAssignee: boolean;
+  assignees: { id: string; username: string }[];
+  assigneesLoading: boolean;
+  assigneesError: string | null;
   error: string | null;
   onChange: (field: keyof HousekeepingFilters, value: string) => void;
   onApply: (event: FormEvent<HTMLFormElement>) => void;
   onClear: () => void;
+  onRetryAssignees: () => void;
 }
 
 export function HousekeepingFilterBar({
   filters,
   rooms,
+  canFilterAssignee,
+  assignees,
+  assigneesLoading,
+  assigneesError,
   error,
   onChange,
   onApply,
   onClear,
+  onRetryAssignees,
 }: HousekeepingFilterBarProps) {
   const floors = [...new Set(rooms.map((room) => room.floor).filter((floor): floor is string => Boolean(floor)))].sort((a, b) => a.localeCompare(b, 'fa'));
 
@@ -107,9 +115,13 @@ export function HousekeepingFilterBar({
             aria-label="موعد انجام کار"
             inputMode="numeric"
             value={filters.dueDate}
+            aria-invalid={error ? true : undefined}
+            aria-describedby={`housekeeping-due-date-help${error ? ' housekeeping-due-date-error' : ''}`}
             onChange={(event) => onChange('dueDate', event.target.value)}
             placeholder="۱۴۰۵/۰۸/۲۷"
           />
+          <small id="housekeeping-due-date-help" className={styles.fieldHelp}>قالب تاریخ شمسی: سال/ماه/روز، مانند ۱۴۰۵/۰۸/۲۷</small>
+          {error && <small id="housekeeping-due-date-error" className={styles.inlineError} role="alert">{error}</small>}
         </label>
         <label className={styles.field}>
           <span>اتاق</span>
@@ -132,6 +144,28 @@ export function HousekeepingFilterBar({
             {Object.entries(TASK_TYPE_LABELS).map(([value, label]) => <option key={value} value={value}>{label}</option>)}
           </select>
         </label>
+        {canFilterAssignee && (
+          <div className={styles.assigneeField}>
+            <label className={styles.field}>
+              <span>مسئول کار</span>
+              <select
+                aria-label="مسئول کار"
+                value={filters.assigneeStaffUserId}
+                disabled={assigneesLoading && assignees.length === 0}
+                aria-describedby={assigneesError ? 'housekeeping-assignee-filter-error' : undefined}
+                onChange={(event) => onChange('assigneeStaffUserId', event.target.value)}
+              >
+                <option value="">همهٔ مسئول‌ها</option>
+                {assignees.map((assignee) => <option key={assignee.id} value={assignee.id}>{assignee.username}</option>)}
+              </select>
+              {assigneesLoading && <small className={styles.fieldHelp} role="status">در حال دریافت خانه‌دارهای فعال…</small>}
+              {assigneesError && <small id="housekeeping-assignee-filter-error" className={styles.inlineError} role="alert">فهرست مسئول‌ها دریافت نشد.</small>}
+            </label>
+            {assigneesError && (
+              <button className={styles.textButton} type="button" onClick={onRetryAssignees}>تلاش دوباره</button>
+            )}
+          </div>
+        )}
         <label className={styles.field}>
           <span>وضعیت کار</span>
           <select aria-label="وضعیت کار" value={filters.status} onChange={(event) => onChange('status', event.target.value)}>
@@ -149,7 +183,6 @@ export function HousekeepingFilterBar({
       </div>
       <div className={styles.filterActions}>
         <button className={styles.primaryButton} type="submit">اعمال فیلترها</button>
-        {error && <p className={styles.inlineError} role="alert">{error}</p>}
       </div>
     </form>
   );
