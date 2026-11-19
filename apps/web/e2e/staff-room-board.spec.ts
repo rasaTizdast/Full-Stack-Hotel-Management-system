@@ -28,6 +28,10 @@ function uniqueGuestPhone(): string {
   return `+98915${randomInt(0, 10_000_000).toString().padStart(7, '0')}`;
 }
 
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null && !Array.isArray(value);
+}
+
 async function createPendingBooking(
   request: APIRequestContext,
   testInfo: TestInfo,
@@ -82,6 +86,36 @@ async function createPendingBooking(
   throw new Error('No future garden room was available for the room-board browser test.');
 }
 
+async function getBookingBoardRoomTypeId(page: import('@playwright/test').Page, reference: string) {
+  const bookingResponse = await page.request.get(
+    `${apiBaseUrl}/staff/bookings/${encodeURIComponent(reference)}`,
+  );
+  expect(bookingResponse.status()).toBe(200);
+  const booking: unknown = await bookingResponse.json();
+  if (!isRecord(booking) || !isRecord(booking.roomType) || typeof booking.roomType.slug !== 'string') {
+    throw new Error('The room-board booking detail did not include its room-type slug.');
+  }
+  const roomTypeSlug = booking.roomType.slug;
+
+  const optionsResponse = await page.request.get(`${apiBaseUrl}/staff/inventory/room-types`);
+  expect(optionsResponse.status()).toBe(200);
+  const options: unknown = await optionsResponse.json();
+  if (!Array.isArray(options)) {
+    throw new Error('The staff inventory room-type list returned an invalid response.');
+  }
+  const matchingOptions = options.filter(
+    (item) =>
+      isRecord(item) &&
+      item.slug === roomTypeSlug &&
+      item.isActive === true &&
+      typeof item.id === 'string',
+  );
+  if (matchingOptions.length !== 1 || !isRecord(matchingOptions[0])) {
+    throw new Error('The booking room-type slug did not match one active inventory option.');
+  }
+  return matchingOptions[0].id as string;
+}
+
 test('staff assigns and unassigns a room from the responsive room board', async (
   { page, request, staffCookies },
   testInfo,
@@ -108,11 +142,43 @@ test('staff assigns and unassigns a room from the responsive room board', async 
     await page.getByRole('button', { name: 'بله، رزرو را تأیید می‌کنم' }).click();
     await expect(page.getByText('رزرو تأیید شد.')).toBeVisible();
 
+    const roomTypeId = await getBookingBoardRoomTypeId(page, reference);
+    // The isolated E2E database has an earlier HPM-005 fixture property. Scope
+    // this real board request to the confirmed booking's room type so the test
+    // exercises the filtered assignment flow without changing the app default.
+    await page.route(`${apiBaseUrl}/staff/rooms/board**`, async (route) => {
+      if (route.request().method() !== 'GET') return route.continue();
+      const url = new URL(route.request().url());
+      url.searchParams.set('roomTypeId', roomTypeId);
+      return route.continue({ url: url.toString() });
+    });
+
     await page.goto('/staff/rooms');
     await expect(page.getByRole('heading', { name: 'وضعیت اتاق‌ها' })).toBeVisible();
     const dateInput = page.getByLabel('تاریخ تابلو');
     await dateInput.fill(formatGregorianAsJalali(checkIn) ?? checkIn);
+    const boardResponsePromise = page.waitForResponse((response) => {
+      const url = new URL(response.url());
+      return (
+        url.pathname === '/api/v1/staff/rooms/board' &&
+        response.request().method() === 'GET' &&
+        url.searchParams.get('date') === checkIn &&
+        url.searchParams.get('roomTypeId') === roomTypeId
+      );
+    });
     await page.getByRole('button', { name: 'اعمال فیلترها' }).click();
+    const boardResponse = await boardResponsePromise;
+    expect(boardResponse.status()).toBe(200);
+    const board: unknown = await boardResponse.json();
+    if (
+      !isRecord(board) ||
+      !Array.isArray(board.assignableBookings) ||
+      !board.assignableBookings.some(
+        (booking) => isRecord(booking) && booking.reference === reference,
+      )
+    ) {
+      throw new Error('The filtered room board did not include the confirmed booking.');
+    }
 
     const bookingCard = page
       .getByRole('region', { name: 'تخصیص اتاق به رزروها' })
