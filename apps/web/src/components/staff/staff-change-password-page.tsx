@@ -49,7 +49,7 @@ export function StaffChangePasswordPage() {
         <p>برای ادامه کار، گذرواژه موقت حساب خود را با یک گذرواژه تازه جایگزین کنید.</p>
         {staff && <span>حساب {staff.username}</span>}
       </div>
-      <form className="staff-password__form" onSubmit={submit}>
+      <form className="staff-password__form" method="post" onSubmit={submit}>
         <label>
           گذرواژه فعلی
           <input type="password" autoComplete="current-password" required value={currentPassword} onChange={(event) => setCurrentPassword(event.target.value)} />

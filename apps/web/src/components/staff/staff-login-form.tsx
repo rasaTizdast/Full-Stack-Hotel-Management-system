@@ -40,7 +40,7 @@ export function StaffLoginForm() {
   }
 
   return (
-    <form className="staff-login-form" onSubmit={handleSubmit}>
+      <form className="staff-login-form" method="post" onSubmit={handleSubmit}>
       <div className="staff-login-form__field">
         <label htmlFor="staff-email">ایمیل کاری</label>
         <input

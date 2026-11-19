@@ -145,6 +145,7 @@ describe('StaffAccountsPage', () => {
 
     render(<StaffAccountsPage />);
     fireEvent.click(await screen.findByRole('button', { name: 'افزودن حساب' }));
+    expect(screen.getByLabelText('گذرواژه آغازین').closest('form')).toHaveAttribute('method', 'post');
     fireEvent.change(screen.getByLabelText('نام کاربری'), { target: { value: 'new-cashier' } });
     fireEvent.change(screen.getByLabelText('ایمیل کاری'), {
       target: { value: 'cashier@example.test' },

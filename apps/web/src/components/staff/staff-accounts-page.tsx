@@ -278,7 +278,7 @@ export function StaffAccountsPage() {
       {successMessage && <p className="staff-accounts__notice" role="status">{successMessage}</p>}
 
       {showCreate && (
-        <form id="staff-account-create" className="staff-accounts__form" onSubmit={handleCreate}>
+        <form id="staff-account-create" className="staff-accounts__form" method="post" onSubmit={handleCreate}>
           <div className="staff-accounts__form-heading">
             <h2>حساب تازه</h2>
             <p>گذرواژه آغازین را فقط به خود همکار تحویل دهید؛ پس از ثبت دوباره نمایش داده نمی‌شود.</p>
