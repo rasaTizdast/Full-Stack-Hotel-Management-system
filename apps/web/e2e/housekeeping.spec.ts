@@ -236,6 +236,21 @@ async function getTasks(
   };
 }
 
+async function getRenderedTaskBoardEvidence(
+  page: Page,
+  task: HousekeepingTask,
+): Promise<{ cardCount: number; statusLines: string[] }> {
+  const cards = taskCard(page, task.room.roomNumber, task.taskType);
+  const cardCount = await cards.count();
+  const statusLines: string[] = [];
+  for (let index = 0; index < cardCount; index += 1) {
+    const lines = await cards.nth(index).locator('span').allTextContents();
+    const statusLine = lines.map((line) => line.trim()).find((line) => line.startsWith('کار:'));
+    if (statusLine) statusLines.push(statusLine);
+  }
+  return { cardCount, statusLines };
+}
+
 async function getDiscrepancies(
   page: Page,
   businessDate: string,
@@ -325,10 +340,27 @@ async function assignTaskToHousekeeper(
   task: HousekeepingTask,
   housekeeper: HousekeepingStaffSession,
 ) {
+  const listAfterCreate = await getTasks(manager.page, {
+    businessDate: task.dueDate,
+    roomId: task.room.id,
+    taskType: task.taskType,
+  });
+  const exactTaskAfterCreate = listAfterCreate.items.find((item) => item.id === task.id);
+  const boardBeforeAssignment = await getRenderedTaskBoardEvidence(manager.page, task);
   const card = taskCard(manager.page, task.room.roomNumber, task.taskType)
     .filter({ hasText: 'در انتظار شروع' })
     .last();
-  await expect(card).toBeVisible();
+  try {
+    await expect(card).toBeVisible();
+  } catch {
+    throw new Error(
+      `Assignment card missing for task ${task.id} ` +
+        `(createHttp=201; createStatus=${task.status}; managerGetHttp=200; ` +
+        `managerGetStatus=${exactTaskAfterCreate?.status ?? 'missing'}; ` +
+        `boardCards=${boardBeforeAssignment.cardCount}; ` +
+        `boardStatusLines=${boardBeforeAssignment.statusLines.join('|') || 'none'}).`,
+    );
+  }
   await card.getByRole('button', { name: /تخصیص کار|تغییر مسئول/ }).click();
   const dialog = manager.page.getByRole('dialog', {
     name: `تخصیص کار اتاق ${task.room.roomNumber}`,
@@ -344,8 +376,49 @@ async function assignTaskToHousekeeper(
   );
   await dialog.getByRole('button', { name: 'ثبت تخصیص' }).click();
   const response = await responsePromise;
-  expect(response.status()).toBe(200);
-  await expect(card).toContainText(housekeeper.username);
+  const assignmentResponse: unknown = await response.json();
+  const assignmentKeys = isRecord(assignmentResponse)
+    ? Object.keys(assignmentResponse).sort().join(',')
+    : 'invalid';
+  const assignmentStatus = isRecord(assignmentResponse) && typeof assignmentResponse.status === 'string'
+    ? assignmentResponse.status
+    : 'missing';
+  const assignmentMatches = isRecord(assignmentResponse) && isRecord(assignmentResponse.assignee)
+    ? assignmentResponse.assignee.id === housekeeper.accountId
+    : false;
+  const listAfterAssignment = await getTasks(manager.page, {
+    businessDate: task.dueDate,
+    roomId: task.room.id,
+    taskType: task.taskType,
+  });
+  const exactTaskAfterAssignment = listAfterAssignment.items.find((item) => item.id === task.id);
+  const boardAfterAssignment = await getRenderedTaskBoardEvidence(manager.page, task);
+  const listAssigneeMatches = exactTaskAfterAssignment?.assignee?.id === housekeeper.accountId;
+  const diagnostic =
+    `task=${task.id}; createStatus=${task.status}; managerGetAfterCreateStatus=${exactTaskAfterCreate?.status ?? 'missing'}; ` +
+    `patchHttp=${response.status()}; patchStatus=${assignmentStatus}; patchKeys=${assignmentKeys}; ` +
+    `patchAssigneeMatches=${assignmentMatches}; managerGetAfterPatchStatus=${exactTaskAfterAssignment?.status ?? 'missing'}; ` +
+    `managerGetAssigneeMatches=${listAssigneeMatches}; boardCards=${boardAfterAssignment.cardCount}; ` +
+    `boardStatusLines=${boardAfterAssignment.statusLines.join('|') || 'none'}`;
+  if (
+    response.status() !== 200 ||
+    assignmentStatus !== 'OPEN' ||
+    !assignmentMatches ||
+    exactTaskAfterAssignment?.status !== 'OPEN' ||
+    !listAssigneeMatches
+  ) {
+    throw new Error(`Housekeeping assignment API/readback mismatch (${diagnostic}).`);
+  }
+  try {
+    await expect(card).toContainText(housekeeper.username);
+  } catch {
+    const assignedCard = taskCard(manager.page, task.room.roomNumber, task.taskType)
+      .filter({ hasText: housekeeper.username });
+    throw new Error(
+      `Housekeeping assignment board did not show the exact assignee ` +
+        `(assignedCardCount=${await assignedCard.count()}; ${diagnostic}).`,
+    );
+  }
 }
 
 async function cancelTaskAsManager(
