@@ -42,6 +42,19 @@ function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null && !Array.isArray(value);
 }
 
+function safeHostPath(rawUrl: string): string {
+  try {
+    const url = new URL(rawUrl);
+    return `${url.host}${url.pathname}`;
+  } catch {
+    return '(invalid-url)';
+  }
+}
+
+function safeNetworkFailure(errorText: string): string {
+  return errorText.replace(/https?:\/\/[^\s]+/g, (rawUrl) => safeHostPath(rawUrl));
+}
+
 export async function administratorHeaders(page: Page): Promise<Record<string, string>> {
   const cookies = await page.context().cookies(`${housekeepingApiBaseUrl}/staff`);
   const session = cookies.find((cookie) => cookie.name === 'hotel_staff_session')?.value;
@@ -75,21 +88,6 @@ export async function createHousekeepingStaffSession(
   const email = `${username}@example.test`;
   const initialPassword = `Hpm005!${randomUUID()}aA1`;
   const replacementPassword = `Hpm005!${randomUUID()}zZ2`;
-  let accountId: string | undefined;
-
-  registerCleanup(async () => {
-    if (!accountId) return;
-    const response = await administratorPage.request.post(
-      `${housekeepingApiBaseUrl}/staff/admin/accounts/${encodeURIComponent(accountId)}/deactivate`,
-      {
-        headers: await administratorHeaders(administratorPage),
-        data: { reason: 'HPM-005 E2E generated role-account cleanup.' },
-      },
-    );
-    if (response.status() !== 200) {
-      throw new Error(`Housekeeping role-account cleanup failed with HTTP ${response.status()}.`);
-    }
-  });
 
   const createResponse = await administratorPage.request.post(
     `${housekeepingApiBaseUrl}/staff/admin/accounts`,
@@ -111,7 +109,19 @@ export async function createHousekeepingStaffSession(
   ) {
     throw new Error('The housekeeping role-account fixture returned an invalid account.');
   }
-  accountId = created.id;
+  const accountId = created.id;
+  registerCleanup(async () => {
+    const response = await administratorPage.request.post(
+      `${housekeepingApiBaseUrl}/staff/admin/accounts/${encodeURIComponent(accountId)}/deactivate`,
+      {
+        headers: await administratorHeaders(administratorPage),
+        data: { reason: 'HPM-005 E2E generated role-account cleanup.' },
+      },
+    );
+    if (response.status() !== 200) {
+      throw new Error(`Housekeeping role-account cleanup failed with HTTP ${response.status()}.`);
+    }
+  });
 
   const viewport = administratorPage.viewportSize();
   const mobile = Boolean(viewport && viewport.width <= 600);
@@ -124,12 +134,49 @@ export async function createHousekeepingStaffSession(
   });
   registerCleanup(async () => accountContext.close());
   const accountPage = await accountContext.newPage();
+  const authNetworkDiagnostics: string[] = [];
+  accountPage.on('response', (response) => {
+    const request = response.request();
+    const method = request.method().toUpperCase();
+    if (method !== 'POST' && method !== 'OPTIONS') return;
+    const rawAllowOrigin = response.headers()['access-control-allow-origin'] ?? '(missing)';
+    let allowOrigin = rawAllowOrigin.replace(/[\r\n]/g, '');
+    if (allowOrigin.startsWith('http')) {
+      try {
+        allowOrigin = new URL(allowOrigin).origin;
+      } catch {
+        allowOrigin = '(invalid origin)';
+      }
+    }
+    authNetworkDiagnostics.push(
+      `${method} ${safeHostPath(request.url())} -> HTTP ${response.status()} ACAO=${allowOrigin}`,
+    );
+  });
+  accountPage.on('requestfailed', (request) => {
+    const method = request.method().toUpperCase();
+    if (method !== 'POST' && method !== 'OPTIONS') return;
+    const errorText = request.failure()?.errorText ?? '(unknown failure)';
+    authNetworkDiagnostics.push(
+      `${method} ${safeHostPath(request.url())} failed: ${safeNetworkFailure(errorText)}`,
+    );
+  });
 
   await accountPage.goto('/staff/login');
   await accountPage.getByLabel('ایمیل کاری').fill(email);
   await accountPage.getByLabel('گذرواژه').fill(initialPassword);
   await accountPage.getByRole('button', { name: 'ورود به پنل' }).click();
-  await expect(accountPage).toHaveURL(/\/staff\/change-password$/);
+  try {
+    await expect(accountPage).toHaveURL(/\/staff\/change-password$/);
+  } catch {
+    const currentPage = safeHostPath(accountPage.url());
+    const diagnosticLines = authNetworkDiagnostics.length
+      ? authNetworkDiagnostics.join('\n')
+      : '(no POST/OPTIONS response or request-failure events observed)';
+    throw new Error(
+      `Forced-password login did not reach the change-password page. Current page: ${currentPage}\n` +
+        `Safe auth network diagnostics:\n${diagnosticLines}`,
+    );
+  }
   await accountPage.getByLabel('گذرواژه فعلی').fill(initialPassword);
   await accountPage.getByLabel('گذرواژه تازه', { exact: true }).fill(replacementPassword);
   await accountPage.getByLabel('تکرار گذرواژه تازه').fill(replacementPassword);

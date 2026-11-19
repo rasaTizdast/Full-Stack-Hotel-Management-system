@@ -317,6 +317,9 @@ test('admin sees physical capacity and saves rates only, and the page meets axe 
       endDate,
       staffCookies,
     );
+    await rateDisclosure.click();
+    const nightlyRate = page.getByLabel('نرخ یک شب (تومان)');
+    await expect(nightlyRate).toBeVisible();
     let saveAttempted = false;
     registerCleanup(async () => {
       if (saveAttempted) await restoreInventorySnapshot(page, snapshot, staffCookies);
@@ -370,8 +373,8 @@ test('admin sees physical capacity and saves rates only, and the page meets axe 
       fullPage: true,
     });
 
-    const nightlyRate = page.getByLabel('نرخ یک شب (تومان)');
     const nextPrice = (BigInt(firstNight.nightlyPriceToman) + BigInt('1000')).toString();
+    await expect(nightlyRate).toBeVisible();
     await nightlyRate.fill(nextPrice);
     const updateRequestPromise = page.waitForRequest((request) => {
       const url = new URL(request.url());
