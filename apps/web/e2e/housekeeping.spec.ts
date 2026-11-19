@@ -375,7 +375,10 @@ async function cancelTaskAsManager(
   if (!isRecord(cancelled) || cancelled.status !== 'CANCELLED') {
     throw new Error('Manager cancellation did not return a cancelled housekeeping task.');
   }
-  await expect(manager.page.getByRole('status')).toContainText(`کار اتاق ${task.room.roomNumber} لغو شد.`);
+  const successMessage = `کار اتاق ${task.room.roomNumber} لغو شد.`;
+  await expect(
+    manager.page.getByRole('status').filter({ hasText: successMessage }),
+  ).toContainText(successMessage);
 }
 
 async function startHousekeeperTask(
