@@ -155,14 +155,14 @@ async function findPricedProjectedNight(
   roomTypeId: string,
   startDate: string,
   staffCookies: StaffBrowserCookie[],
-): Promise<string> {
+): Promise<string | undefined> {
   const endDate = addUtcDays(startDate, 90);
   const snapshot = await readInventorySnapshot(page, roomTypeId, startDate, endDate, staffCookies);
-  const night = snapshot.nights.find(isPricedProjectedNight);
-  if (!night) {
-    throw new Error('No priced projected inventory night was available in the next 90 nights.');
-  }
-  return night.stayDate;
+  return snapshot.nights.find(
+    (night) =>
+      isPricedProjectedNight(night) &&
+      night.totalRooms + night.blockedRooms > 0,
+  )?.stayDate;
 }
 
 async function restoreInventorySnapshot(
@@ -248,24 +248,47 @@ test('admin sees physical capacity and saves rates only, and the page meets axe 
     } else {
       await expect(table).toBeVisible();
     }
-    await page.screenshot({
-      path: testInfo.outputPath('staff-inventory.png'),
-      fullPage: true,
-    });
     const roomType = page.getByRole('combobox', { name: 'نوع اتاق' });
     await expect(roomType).toHaveValue(/.+/);
-    const roomTypeId = await roomType.inputValue();
+    const roomTypesPayload: unknown = await roomTypesResponse.json();
+    if (!Array.isArray(roomTypesPayload)) {
+      throw new Error('The inventory room-type options returned an invalid response.');
+    }
+    const activeRoomTypes = roomTypesPayload.filter(
+      (option): option is Record<string, unknown> =>
+        isRecord(option) &&
+        option.isActive === true &&
+        typeof option.id === 'string' &&
+        typeof option.name === 'string' &&
+        typeof option.slug === 'string',
+    );
+    if (activeRoomTypes.length === 0) {
+      throw new Error('The inventory page had no active room type options.');
+    }
     const defaultStartDate = toGregorianIso(await page.getByLabel('شروع بازه').inputValue());
     const defaultEndDate = toGregorianIso(await page.getByLabel('پایان بازه').inputValue());
     if (!defaultStartDate || !defaultEndDate) {
       throw new Error('The default inventory date range was invalid.');
     }
-    const startDate = await findPricedProjectedNight(
-      page,
-      roomTypeId,
-      defaultStartDate,
-      staffCookies,
-    );
+    let roomTypeId: string | undefined;
+    let startDate: string | undefined;
+    for (const option of activeRoomTypes) {
+      const candidateNight = await findPricedProjectedNight(
+        page,
+        option.id as string,
+        defaultStartDate,
+        staffCookies,
+      );
+      if (!candidateNight) continue;
+      roomTypeId = option.id as string;
+      startDate = candidateNight;
+      break;
+    }
+    if (!roomTypeId || !startDate) {
+      throw new Error('No active room type had priced projected inventory in the next 90 nights.');
+    }
+    await roomType.selectOption(roomTypeId);
+    await expect(roomType).toHaveValue(roomTypeId);
     const endDate = addUtcDays(startDate, 1);
     const jalaliStartDate = formatGregorianAsJalali(startDate);
     const jalaliEndDate = formatGregorianAsJalali(endDate);
@@ -342,6 +365,10 @@ test('admin sees physical capacity and saves rates only, and the page meets axe 
       await expect(cells.nth(4)).toHaveText(format(firstNight.availableRooms));
       await expect(cells.nth(5)).toContainText(format(BigInt(firstNight.nightlyPriceToman)));
     }
+    await page.screenshot({
+      path: testInfo.outputPath('staff-inventory.png'),
+      fullPage: true,
+    });
 
     const nightlyRate = page.getByLabel('نرخ یک شب (تومان)');
     const nextPrice = (BigInt(firstNight.nightlyPriceToman) + BigInt('1000')).toString();
