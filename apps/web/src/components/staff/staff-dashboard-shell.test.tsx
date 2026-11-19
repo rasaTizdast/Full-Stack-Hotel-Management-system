@@ -36,6 +36,45 @@ describe('StaffDashboardShell', () => {
     expect(screen.queryByRole('link', { name: /^میز پذیرش/ })).not.toBeInTheDocument();
   });
 
+  it('shows housekeeping operations to the housekeeper and operational roles, but not cashier', () => {
+    const { rerender } = render(
+      <StaffDashboardShell
+        staff={{ ...receptionist, role: 'HOUSEKEEPER' }}
+        onLogout={vi.fn()}
+        currentPath="/staff/housekeeping"
+      >
+        <p>صفحه خانه‌داری</p>
+      </StaffDashboardShell>,
+    );
+
+    const housekeepingLink = screen.getByRole('link', { name: /^خانه‌داری/ });
+    expect(housekeepingLink).toHaveAttribute('href', '/staff/housekeeping');
+    expect(housekeepingLink).toHaveAttribute('aria-current', 'page');
+    expect(screen.queryByRole('link', { name: /^میز پذیرش/ })).not.toBeInTheDocument();
+
+    rerender(
+      <StaffDashboardShell
+        staff={{ ...receptionist, role: 'RECEPTIONIST' }}
+        onLogout={vi.fn()}
+        currentPath="/staff/housekeeping"
+      >
+        <p>صفحه پذیرش</p>
+      </StaffDashboardShell>,
+    );
+    expect(screen.getByRole('link', { name: /^خانه‌داری/ })).toHaveAttribute('aria-current', 'page');
+
+    rerender(
+      <StaffDashboardShell
+        staff={{ ...receptionist, role: 'CASHIER' }}
+        onLogout={vi.fn()}
+        currentPath="/staff/housekeeping"
+      >
+        <p>صفحه صندوق</p>
+      </StaffDashboardShell>,
+    );
+    expect(screen.queryByRole('link', { name: /^خانه‌داری/ })).not.toBeInTheDocument();
+  });
+
   it('keeps inventory navigation away from receptionists', () => {
     render(
       <StaffDashboardShell staff={receptionist} onLogout={vi.fn()}>
@@ -191,7 +230,7 @@ describe('StaffDashboardShell', () => {
         <p>صفحه خانه‌داری</p>
       </StaffDashboardShell>,
     );
-    expect(screen.getByText('خانه‌داری')).toBeInTheDocument();
+    expect(screen.getByText('خانه‌داری', { exact: true, selector: 'small' })).toBeInTheDocument();
 
     rerender(
       <StaffDashboardShell staff={{ ...receptionist, role: 'CASHIER' }} onLogout={vi.fn()}>

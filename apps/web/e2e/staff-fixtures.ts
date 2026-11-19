@@ -5,8 +5,8 @@ import { getE2eDatabaseUrl, getE2eEnvironmentValue } from './test-database';
 
 const apiPort = process.env.HBE_E2E_API_PORT ?? '4015';
 const webPort = process.env.HBE_E2E_WEB_PORT ?? '3015';
-const apiBaseUrl = `http://localhost:${apiPort}/api/v1`;
-const webOrigin = `http://localhost:${webPort}`;
+const apiBaseUrl = `http://127.0.0.1:${apiPort}/api/v1`;
+const webOrigin = `http://127.0.0.1:${webPort}`;
 
 export interface StaffBrowserCookie {
   name: string;
@@ -53,7 +53,7 @@ function parseStaffCookies(setCookieHeaders: string[]): StaffBrowserCookie[] {
       {
         name: pair.slice(0, separator),
         value: pair.slice(separator + 1),
-        domain: 'localhost',
+        domain: '127.0.0.1',
         path: attributeValue('path') ?? '/api/v1/staff',
         httpOnly: attributes.some((attribute) => attribute.toLowerCase() === 'httponly'),
         secure: attributes.some((attribute) => attribute.toLowerCase() === 'secure'),

@@ -5,7 +5,7 @@ import { isAvailabilityResult } from '../src/lib/availability';
 import { test, withStaffBookingCleanup } from './staff-fixtures';
 
 const apiPort = process.env.HBE_E2E_API_PORT ?? '4015';
-const apiBaseUrl = `http://localhost:${apiPort}/api/v1`;
+const apiBaseUrl = `http://127.0.0.1:${apiPort}/api/v1`;
 
 test.beforeEach(async ({ page, staffCookies }) => {
   await page.context().addCookies(staffCookies);

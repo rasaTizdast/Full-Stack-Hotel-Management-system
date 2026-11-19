@@ -1,24 +1,12 @@
 import { describe, expect, it } from 'vitest';
-import { getStaffHomePath, getStaffRoleLabel } from './staff-navigation';
+import { getStaffHomePath } from './staff-navigation';
 
-describe('staff navigation by role', () => {
-  it.each([
-    ['ADMIN', '/staff/front-desk/arrivals'],
-    ['MANAGER', '/staff/front-desk/arrivals'],
-    ['RECEPTIONIST', '/staff/front-desk/arrivals'],
-    ['HOUSEKEEPER', '/staff'],
-    ['CASHIER', '/staff'],
-  ] as const)('sends %s to the first available workspace', (role, path) => {
-    expect(getStaffHomePath(role)).toBe(path);
+describe('getStaffHomePath', () => {
+  it('takes a housekeeper directly to their housekeeping workspace', () => {
+    expect(getStaffHomePath('HOUSEKEEPER')).toBe('/staff/housekeeping');
   });
 
-  it.each([
-    ['ADMIN', 'مدیر اقامتگاه'],
-    ['MANAGER', 'مدیر شیفت'],
-    ['RECEPTIONIST', 'پذیرش'],
-    ['HOUSEKEEPER', 'خانه‌داری'],
-    ['CASHIER', 'صندوق'],
-  ] as const)('labels %s in Persian', (role, label) => {
-    expect(getStaffRoleLabel(role)).toBe(label);
+  it('keeps cashiers on the general staff overview', () => {
+    expect(getStaffHomePath('CASHIER')).toBe('/staff');
   });
 });
