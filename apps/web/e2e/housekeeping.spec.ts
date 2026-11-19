@@ -28,8 +28,8 @@ function taskCard(page: Page, task: Pick<HousekeepingTask, 'id'>) {
 }
 
 async function filterTaskBoard(page: Page, task: HousekeepingTask) {
-  await page.getByLabel('اتاق').selectOption(task.room.id);
-  await page.getByLabel('نوع کار').selectOption(task.taskType);
+  await page.getByLabel('اتاق', { exact: true }).selectOption(task.room.id);
+  await page.getByLabel('نوع کار', { exact: true }).selectOption(task.taskType);
   await page.getByRole('button', { name: 'اعمال فیلترها' }).click();
 }
 
