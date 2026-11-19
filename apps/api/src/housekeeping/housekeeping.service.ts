@@ -736,11 +736,18 @@ export class HousekeepingService {
   }
 
   async reportDiscrepancy(actor: StaffPrincipal, roomId: string, dto: ReportRoomDiscrepancyDto) {
-    const businessDate = parseDateOnly(dto.businessDate);
+    const requestedBusinessDate = parseDateOnly(dto.businessDate);
     try {
       const record = await this.prisma.$transaction(async (transaction) => {
         const room = await this.lockRoom(transaction, roomId);
         if (!room.isActive) throw domainConflict('ROOM_INACTIVE');
+        const businessDate = await this.capacity.getHotelBusinessDate(transaction, room.roomTypeId);
+        if (!businessDate || businessDate.getTime() !== requestedBusinessDate.getTime()) {
+          throw new BadRequestException({
+            code: 'BUSINESS_DATE_MISMATCH',
+            message: 'Occupancy reports must use the current hotel business date.',
+          });
+        }
         if (actor.role === 'HOUSEKEEPER') {
           const assignedWork = await transaction.housekeepingTask.findFirst({
             where: {
