@@ -327,6 +327,17 @@ describe('StaffHousekeepingPage', () => {
     expect(screen.queryByRole('status')).toBeNull();
   });
 
+  it('clears the initial loading state and reports an API that throws synchronously', async () => {
+    housekeepingApi.getStaffHousekeepingTasks.mockImplementationOnce(() => {
+      throw new Error('Synchronous request failure');
+    });
+    render(<StaffHousekeepingPage />);
+
+    expect(await screen.findByRole('alert')).toHaveTextContent('Synchronous request failure');
+    expect(screen.queryByText('در حال دریافت کارهای خانه‌داری…')).not.toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'تلاش دوباره' })).toBeEnabled();
+  });
+
   it('filters task due dates without changing the server business-date reference', async () => {
     setRole('RECEPTIONIST');
     render(<StaffHousekeepingPage />);

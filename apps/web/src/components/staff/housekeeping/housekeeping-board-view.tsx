@@ -18,6 +18,13 @@ import {
 } from './housekeeping-copy';
 import styles from './housekeeping.module.css';
 
+const HEADER_TIME_FORMATTER = new Intl.DateTimeFormat('fa-IR', { hour: '2-digit', minute: '2-digit' });
+const HOUSEKEEPING_TIMESTAMP_FORMATTER = new Intl.DateTimeFormat('fa-IR-u-ca-persian', {
+  dateStyle: 'short',
+  timeStyle: 'short',
+  timeZone: 'Asia/Tehran',
+});
+
 export interface HousekeepingFilters {
   dueDate: string;
   roomId: string;
@@ -45,7 +52,7 @@ export function HousekeepingHeader({
 }: HousekeepingHeaderProps) {
   const displayedDate = businessDate ? formatGregorianAsJalali(businessDate) ?? businessDate : 'در حال دریافت';
   const displayedTime = lastUpdatedAt
-    ? new Intl.DateTimeFormat('fa-IR', { hour: '2-digit', minute: '2-digit' }).format(lastUpdatedAt)
+    ? HEADER_TIME_FORMATTER.format(lastUpdatedAt)
     : null;
 
   return (
@@ -506,11 +513,7 @@ export function HousekeepingDiscrepancyQueue({
 function formatHousekeepingTimestamp(value: string): string {
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) return value;
-  return new Intl.DateTimeFormat('fa-IR-u-ca-persian', {
-    dateStyle: 'short',
-    timeStyle: 'short',
-    timeZone: 'Asia/Tehran',
-  }).format(date);
+  return HOUSEKEEPING_TIMESTAMP_FORMATTER.format(date);
 }
 
 interface HousekeepingPaginationProps {

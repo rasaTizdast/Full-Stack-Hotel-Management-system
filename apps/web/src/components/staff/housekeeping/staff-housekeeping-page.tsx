@@ -152,42 +152,54 @@ export function StaffHousekeepingPage() {
     setTaskError(null);
     if (canViewReadiness) setDiscrepancyError(null);
 
-    const [tasksResult, discrepanciesResult] = await Promise.allSettled([
-      getStaffHousekeepingTasks(query),
-      canViewReadiness
-        ? getStaffHousekeepingDiscrepancies({
+    try {
+      const taskRequest = Promise.resolve().then(() => getStaffHousekeepingTasks(query));
+      const discrepancyRequest = canViewReadiness
+        ? Promise.resolve().then(() => getStaffHousekeepingDiscrepancies({
             businessDate: query.businessDate,
             page: discrepancyPageNumber,
             pageSize: PAGE_SIZE,
             status: discrepancyStatus,
-          })
-        : Promise.resolve(null),
-    ] as const);
-    if (requestId !== requestSequence.current) return;
+          }))
+        : Promise.resolve(null);
+      const [tasksResult, discrepanciesResult] = await Promise.allSettled([taskRequest, discrepancyRequest] as const);
+      if (requestId !== requestSequence.current) return;
 
-    if (tasksResult.status === 'fulfilled') {
-      hasTaskData.current = true;
-      setTaskPage(tasksResult.value);
-      setTaskStale(false);
-      setTaskError(null);
-      setLastUpdatedAt(new Date());
-    } else {
-      setTaskError(errorMessage(tasksResult.reason, 'کارهای خانه‌داری دریافت نشد. دوباره تلاش کنید.'));
+      if (tasksResult.status === 'fulfilled') {
+        hasTaskData.current = true;
+        setTaskPage(tasksResult.value);
+        setTaskStale(false);
+        setTaskError(null);
+        setLastUpdatedAt(new Date());
+      } else {
+        setTaskError(errorMessage(tasksResult.reason, 'کارهای خانه‌داری دریافت نشد. دوباره تلاش کنید.'));
+        if (hasTaskData.current) setTaskStale(true);
+      }
+
+      if (canViewReadiness && discrepanciesResult.status === 'fulfilled' && discrepanciesResult.value) {
+        hasDiscrepancyData.current = true;
+        setDiscrepancyPage(discrepanciesResult.value);
+        setDiscrepancyStale(false);
+        setDiscrepancyError(null);
+      } else if (canViewReadiness && discrepanciesResult.status === 'rejected') {
+        setDiscrepancyError(errorMessage(discrepanciesResult.reason, 'مغایرت‌های حضور دریافت نشد. دوباره تلاش کنید.'));
+        if (hasDiscrepancyData.current) setDiscrepancyStale(true);
+      }
+    } catch (cause) {
+      if (requestId !== requestSequence.current) return;
+      setTaskError(errorMessage(cause, 'کارهای خانه‌داری دریافت نشد. دوباره تلاش کنید.'));
       if (hasTaskData.current) setTaskStale(true);
+      if (canViewReadiness) {
+        setDiscrepancyError(errorMessage(cause, 'مغایرت‌های حضور دریافت نشد. دوباره تلاش کنید.'));
+        if (hasDiscrepancyData.current) setDiscrepancyStale(true);
+      }
+    } finally {
+      if (requestId === requestSequence.current) {
+        setIsDiscrepancyLoading(false);
+        setIsInitialLoading(false);
+        setIsRefreshing(false);
+      }
     }
-
-    if (canViewReadiness && discrepanciesResult.status === 'fulfilled' && discrepanciesResult.value) {
-      hasDiscrepancyData.current = true;
-      setDiscrepancyPage(discrepanciesResult.value);
-      setDiscrepancyStale(false);
-      setDiscrepancyError(null);
-    } else if (canViewReadiness && discrepanciesResult.status === 'rejected') {
-      setDiscrepancyError(errorMessage(discrepanciesResult.reason, 'مغایرت‌های حضور دریافت نشد. دوباره تلاش کنید.'));
-      if (hasDiscrepancyData.current) setDiscrepancyStale(true);
-    }
-    setIsDiscrepancyLoading(false);
-    setIsInitialLoading(false);
-    setIsRefreshing(false);
   }, [canView, canViewReadiness, discrepancyPageNumber, discrepancyStatus, query]);
 
   const loadRooms = useCallback(async () => {
