@@ -1,7 +1,7 @@
 import { randomInt, randomUUID } from 'node:crypto';
 import { expect } from '@playwright/test';
 import AxeBuilder from '@axe-core/playwright';
-import { toGregorianIso } from '../src/lib/jalali-date';
+import { formatGregorianAsJalali, toGregorianIso } from '../src/lib/jalali-date';
 import { findAvailableGardenStay } from './available-stay';
 import {
   test,
@@ -20,14 +20,25 @@ test.beforeEach(async ({ page, staffCookies }) => {
 
 type InventoryNightSnapshot = {
   stayDate: string;
+  capacitySource: 'PROJECTED' | 'HISTORICAL' | 'UNAVAILABLE';
+  totalRooms: number | null;
+  blockedRooms: number | null;
+  heldRooms: number | null;
+  bookedRooms: number | null;
+  availableRooms: number | null;
+  nightlyPriceToman: string | null;
+};
+
+type ProjectedCapacityNight = InventoryNightSnapshot & {
   capacitySource: 'PROJECTED';
   totalRooms: number;
   blockedRooms: number;
   heldRooms: number;
   bookedRooms: number;
   availableRooms: number;
-  nightlyPriceToman: string;
 };
+
+type PricedProjectedNight = ProjectedCapacityNight & { nightlyPriceToman: string };
 
 type InventorySnapshot = {
   roomTypeId: string;
@@ -74,34 +85,84 @@ async function readInventorySnapshot(
     if (
       !isRecord(night) ||
       typeof night.stayDate !== 'string' ||
-      night.capacitySource !== 'PROJECTED' ||
-      !Number.isSafeInteger(night.totalRooms) ||
-      !Number.isSafeInteger(night.blockedRooms) ||
-      !Number.isSafeInteger(night.heldRooms) ||
-      !Number.isSafeInteger(night.bookedRooms) ||
-      !Number.isSafeInteger(night.availableRooms) ||
-      typeof night.nightlyPriceToman !== 'string' ||
-      !/^\d+$/.test(night.nightlyPriceToman)
+      !['PROJECTED', 'HISTORICAL', 'UNAVAILABLE'].includes(String(night.capacitySource)) ||
+      !isNullableSafeInteger(night.totalRooms) ||
+      !isNullableSafeInteger(night.blockedRooms) ||
+      !isNullableSafeInteger(night.heldRooms) ||
+      !isNullableSafeInteger(night.bookedRooms) ||
+      !isNullableSafeInteger(night.availableRooms) ||
+      !isNullablePrice(night.nightlyPriceToman)
     ) {
       return [];
     }
     return [
       {
         stayDate: night.stayDate,
-        capacitySource: 'PROJECTED',
-        totalRooms: night.totalRooms as number,
-        blockedRooms: night.blockedRooms as number,
-        heldRooms: night.heldRooms as number,
-        bookedRooms: night.bookedRooms as number,
-        availableRooms: night.availableRooms as number,
-        nightlyPriceToman: night.nightlyPriceToman,
+        capacitySource: night.capacitySource as InventoryNightSnapshot['capacitySource'],
+        totalRooms: night.totalRooms as number | null,
+        blockedRooms: night.blockedRooms as number | null,
+        heldRooms: night.heldRooms as number | null,
+        bookedRooms: night.bookedRooms as number | null,
+        availableRooms: night.availableRooms as number | null,
+        nightlyPriceToman: night.nightlyPriceToman as string | null,
       },
     ];
   });
   if (nights.length !== payload.nights.length || nights.length === 0) {
-    throw new Error('Inventory fixture snapshot did not include complete configured nights.');
+    throw new Error('Inventory fixture snapshot did not match the documented night DTO.');
   }
   return { roomTypeId, nights };
+}
+
+function isNullableSafeInteger(value: unknown): value is number | null {
+  return value === null || Number.isSafeInteger(value);
+}
+
+function isNullablePrice(value: unknown): value is string | null {
+  return value === null || (typeof value === 'string' && /^\d+$/.test(value));
+}
+
+function isProjectedCapacityNight(night: InventoryNightSnapshot): night is ProjectedCapacityNight {
+  return (
+    night.capacitySource === 'PROJECTED' &&
+    night.totalRooms !== null &&
+    night.blockedRooms !== null &&
+    night.heldRooms !== null &&
+    night.bookedRooms !== null &&
+    night.availableRooms !== null
+  );
+}
+
+function isPricedProjectedNight(night: InventoryNightSnapshot): night is PricedProjectedNight {
+  return isProjectedCapacityNight(night) && night.nightlyPriceToman !== null;
+}
+
+function requireProjectedCapacityNight(night: InventoryNightSnapshot): ProjectedCapacityNight {
+  if (!isProjectedCapacityNight(night)) {
+    throw new Error(`Inventory fixture night ${night.stayDate} did not have projected capacity.`);
+  }
+  return night;
+}
+
+function addUtcDays(dateOnly: string, days: number): string {
+  const date = new Date(`${dateOnly}T00:00:00.000Z`);
+  date.setUTCDate(date.getUTCDate() + days);
+  return date.toISOString().slice(0, 10);
+}
+
+async function findPricedProjectedNight(
+  page: Page,
+  roomTypeId: string,
+  startDate: string,
+  staffCookies: StaffBrowserCookie[],
+): Promise<string> {
+  const endDate = addUtcDays(startDate, 90);
+  const snapshot = await readInventorySnapshot(page, roomTypeId, startDate, endDate, staffCookies);
+  const night = snapshot.nights.find(isPricedProjectedNight);
+  if (!night) {
+    throw new Error('No priced projected inventory night was available in the next 90 nights.');
+  }
+  return night.stayDate;
 }
 
 async function restoreInventorySnapshot(
@@ -110,6 +171,9 @@ async function restoreInventorySnapshot(
   staffCookies: StaffBrowserCookie[],
 ) {
   for (const night of snapshot.nights) {
+    if (!isPricedProjectedNight(night)) {
+      throw new Error(`Inventory cleanup cannot restore an unpriced night: ${night.stayDate}.`);
+    }
     const nextNight = new Date(`${night.stayDate}T00:00:00.000Z`);
     nextNight.setUTCDate(nextNight.getUTCDate() + 1);
     const response = await page.request.put(`${apiBaseUrl}/staff/inventory`, {
@@ -191,9 +255,38 @@ test('admin sees physical capacity and saves rates only, and the page meets axe 
     const roomType = page.getByRole('combobox', { name: 'نوع اتاق' });
     await expect(roomType).toHaveValue(/.+/);
     const roomTypeId = await roomType.inputValue();
-    const startDate = toGregorianIso(await page.getByLabel('شروع بازه').inputValue());
-    const endDate = toGregorianIso(await page.getByLabel('پایان بازه').inputValue());
-    if (!startDate || !endDate) throw new Error('The default inventory date range was invalid.');
+    const defaultStartDate = toGregorianIso(await page.getByLabel('شروع بازه').inputValue());
+    const defaultEndDate = toGregorianIso(await page.getByLabel('پایان بازه').inputValue());
+    if (!defaultStartDate || !defaultEndDate) {
+      throw new Error('The default inventory date range was invalid.');
+    }
+    const startDate = await findPricedProjectedNight(
+      page,
+      roomTypeId,
+      defaultStartDate,
+      staffCookies,
+    );
+    const endDate = addUtcDays(startDate, 1);
+    const jalaliStartDate = formatGregorianAsJalali(startDate);
+    const jalaliEndDate = formatGregorianAsJalali(endDate);
+    if (!jalaliStartDate || !jalaliEndDate) {
+      throw new Error('The selected priced inventory night could not be formatted for the editor.');
+    }
+    await page.getByLabel('شروع بازه').fill(jalaliStartDate);
+    await page.getByLabel('پایان بازه').fill(jalaliEndDate);
+    const selectedRangeResponsePromise = page.waitForResponse((response) => {
+      const url = new URL(response.url());
+      return (
+        url.pathname === '/api/v1/staff/inventory' &&
+        response.request().method() === 'GET' &&
+        url.searchParams.get('roomTypeId') === roomTypeId &&
+        url.searchParams.get('startDate') === startDate &&
+        url.searchParams.get('endDate') === endDate
+      );
+    });
+    await page.getByRole('button', { name: 'نمایش بازه' }).click();
+    const selectedRangeResponse = await selectedRangeResponsePromise;
+    expect(selectedRangeResponse.status()).toBe(200);
     const snapshot = await readInventorySnapshot(
       page,
       roomTypeId,
@@ -208,7 +301,9 @@ test('admin sees physical capacity and saves rates only, and the page meets axe 
 
     await expect(page.getByLabel('ظرفیت کل اتاق‌ها')).toHaveCount(0);
     const firstNight = snapshot.nights[0];
-    if (!firstNight) throw new Error('The inventory range did not contain a first night.');
+    if (!firstNight || !isPricedProjectedNight(firstNight)) {
+      throw new Error('The selected inventory night did not have priced projected capacity.');
+    }
     const roomResponse = await page.request.get(
       `${apiBaseUrl}/staff/rooms?roomTypeId=${encodeURIComponent(roomTypeId)}`,
       { headers: await currentStaffHeaders(page, staffCookies) },
@@ -367,10 +462,11 @@ test('pending holds remain visible while inventory capacity stays derived and re
         await expect(rows).toHaveCount(3);
       }
       await expect(page.getByLabel('ظرفیت کل اتاق‌ها')).toHaveCount(0);
-      expect(inventorySnapshot.nights).toHaveLength(2);
-      expect(inventorySnapshot.nights.every((night) => night.heldRooms >= 1)).toBe(true);
+      const capacityNights = inventorySnapshot.nights.map(requireProjectedCapacityNight);
+      expect(capacityNights).toHaveLength(2);
+      expect(capacityNights.every((night) => night.heldRooms >= 1)).toBe(true);
       if (isNarrowViewport) {
-        for (const night of inventorySnapshot.nights) {
+        for (const night of capacityNights) {
           const card = page
             .locator('.staff-inventory__night-card')
             .filter({ has: page.locator(`time[datetime="${night.stayDate}"]`) });
@@ -387,7 +483,7 @@ test('pending holds remain visible while inventory capacity stays derived and re
         }
         await expect(rows.nth(1).getByRole('cell').nth(0)).toHaveText(
           new Intl.NumberFormat('fa-IR').format(
-            inventorySnapshot.nights[0]!.totalRooms + inventorySnapshot.nights[0]!.blockedRooms,
+            capacityNights[0]!.totalRooms + capacityNights[0]!.blockedRooms,
           ),
         );
       }
