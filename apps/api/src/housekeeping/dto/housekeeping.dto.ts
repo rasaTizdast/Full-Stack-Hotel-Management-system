@@ -55,7 +55,7 @@ export class StaffHousekeepingTaskQueryDto {
   @Matches(/^\d{4}-\d{2}-\d{2}$/)
   dueDate?: string;
 
-  @ApiPropertyOptional({ type: Number, minimum: 1, maximum: 100, default: 1 })
+  @ApiPropertyOptional({ type: Number, minimum: 1, maximum: 100_000, default: 1 })
   @Transform(({ value }: { value: unknown }) => toOptionalInteger(value))
   @IsOptional()
   @IsInt()
