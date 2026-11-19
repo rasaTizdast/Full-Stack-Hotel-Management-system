@@ -226,7 +226,7 @@ export function HousekeepingTaskCard({
   ].filter(Boolean).join(' · ');
 
   return (
-    <article className={`${styles.taskCard} ${task.priority === 'URGENT' ? styles.taskCardUrgent : ''}`} aria-label={`کار خانه‌داری اتاق ${task.room.roomNumber}: ${TASK_TYPE_LABELS[task.taskType]}`}>
+    <article data-housekeeping-task-id={task.id} className={`${styles.taskCard} ${task.priority === 'URGENT' ? styles.taskCardUrgent : ''}`} aria-label={`کار خانه‌داری اتاق ${task.room.roomNumber}: ${TASK_TYPE_LABELS[task.taskType]}`}>
       <div className={styles.cardTopline}>
         <div>
           <p className={styles.eyebrow}>{TASK_TYPE_LABELS[task.taskType]}</p>

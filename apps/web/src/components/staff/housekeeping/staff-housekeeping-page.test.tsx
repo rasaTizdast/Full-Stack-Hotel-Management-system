@@ -157,6 +157,29 @@ describe('StaffHousekeepingPage', () => {
     expect(screen.getByRole('article', { name: /کار خانه‌داری اتاق ۱۰۱/ })).toBeVisible();
   });
 
+  it('exposes each task ID when cards share the same visible room and task details', async () => {
+    const completedTask = {
+      ...taskFixture,
+      id: 'task-2',
+      status: 'COMPLETED',
+      allowedActions: { canAssign: false, canStart: false, canComplete: false, canCancel: false },
+    };
+    housekeepingApi.getStaffHousekeepingTasks.mockResolvedValue(
+      taskPage([taskFixture, completedTask]),
+    );
+    render(<StaffHousekeepingPage />);
+
+    const cards = await screen.findAllByRole('article', {
+      name: /کار خانه‌داری اتاق ۱۰۱/,
+    });
+    expect(cards).toHaveLength(2);
+
+    const inProgressCard = cards.find((card) => within(card).queryByText('در حال انجام'));
+    const completedCard = cards.find((card) => within(card).queryByText('تکمیل‌شده'));
+    expect(inProgressCard).toHaveAttribute('data-housekeeping-task-id', 'task-1');
+    expect(completedCard).toHaveAttribute('data-housekeeping-task-id', 'task-2');
+  });
+
   it('shows paged physical-room readiness with occupancy and housekeeping filters separate from task filters', async () => {
     setRole('RECEPTIONIST');
     render(<StaffHousekeepingPage />);
