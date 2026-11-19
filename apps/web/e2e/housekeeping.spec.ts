@@ -7,7 +7,6 @@ import type {
   HousekeepingTask,
   HousekeepingTaskType,
 } from '../src/lib/staff-housekeeping-api';
-import { TASK_TYPE_LABELS } from '../src/components/staff/housekeeping/housekeeping-copy';
 import { formatGregorianAsJalali } from '../src/lib/jalali-date';
 import { test, withFailureSafeCleanup } from './staff-fixtures';
 import {
@@ -24,10 +23,8 @@ function apiResponseIs(response: { url(): string; request(): { method(): string 
   return new URL(response.url()).pathname === path && response.request().method() === method;
 }
 
-function taskCard(page: Page, roomNumber: string, taskType: HousekeepingTaskType) {
-  return page.getByRole('article', {
-    name: `کار خانه‌داری اتاق ${roomNumber}: ${TASK_TYPE_LABELS[taskType]}`,
-  });
+function taskCard(page: Page, task: Pick<HousekeepingTask, 'id'>) {
+  return page.locator(`article[data-housekeeping-task-id="${task.id}"]`);
 }
 
 function staffHeadersFromPage(page: Page, refererPath = '/staff/housekeeping') {
@@ -240,7 +237,7 @@ async function getRenderedTaskBoardEvidence(
   page: Page,
   task: HousekeepingTask,
 ): Promise<{ cardCount: number; statusLines: string[] }> {
-  const cards = taskCard(page, task.room.roomNumber, task.taskType);
+  const cards = taskCard(page, task);
   const cardCount = await cards.count();
   const statusLines: string[] = [];
   for (let index = 0; index < cardCount; index += 1) {
@@ -347,11 +344,10 @@ async function assignTaskToHousekeeper(
   });
   const exactTaskAfterCreate = listAfterCreate.items.find((item) => item.id === task.id);
   const boardBeforeAssignment = await getRenderedTaskBoardEvidence(manager.page, task);
-  const card = taskCard(manager.page, task.room.roomNumber, task.taskType)
-    .filter({ hasText: 'در انتظار شروع' })
-    .last();
+  const card = taskCard(manager.page, task);
   try {
     await expect(card).toBeVisible();
+    await expect(card).toContainText('در انتظار شروع');
   } catch {
     throw new Error(
       `Assignment card missing for task ${task.id} ` +
@@ -410,10 +406,10 @@ async function assignTaskToHousekeeper(
     throw new Error(`Housekeeping assignment API/readback mismatch (${diagnostic}).`);
   }
   try {
+    await expect(card).toContainText('در انتظار شروع');
     await expect(card).toContainText(housekeeper.username);
   } catch {
-    const assignedCard = taskCard(manager.page, task.room.roomNumber, task.taskType)
-      .filter({ hasText: housekeeper.username });
+    const assignedCard = taskCard(manager.page, task).filter({ hasText: housekeeper.username });
     throw new Error(
       `Housekeeping assignment board did not show the exact assignee ` +
         `(assignedCardCount=${await assignedCard.count()}; ${diagnostic}).`,
@@ -426,10 +422,9 @@ async function cancelTaskAsManager(
   task: HousekeepingTask,
   runMarker: string,
 ): Promise<void> {
-  const card = taskCard(manager.page, task.room.roomNumber, task.taskType)
-    .filter({ hasText: 'در انتظار شروع' })
-    .last();
+  const card = taskCard(manager.page, task);
   await expect(card).toBeVisible();
+  await expect(card).toContainText('در انتظار شروع');
   await card.getByRole('button', { name: 'لغو کار' }).click();
   const dialog = manager.page.getByRole('dialog', { name: `لغو کار اتاق ${task.room.roomNumber}` });
   await dialog.getByLabel('دلیل لغو').fill(`${runMarker}: لغو کار آزمایشی پذیرش.`);
@@ -458,10 +453,10 @@ async function startHousekeeperTask(
   task: HousekeepingTask,
 ) {
   await housekeeper.page.goto('/staff/housekeeping');
-  const card = taskCard(housekeeper.page, task.room.roomNumber, task.taskType)
-    .filter({ hasText: housekeeper.username })
-    .filter({ hasText: 'در انتظار شروع' });
+  const card = taskCard(housekeeper.page, task);
   await expect(card).toBeVisible();
+  await expect(card).toContainText(housekeeper.username);
+  await expect(card).toContainText('در انتظار شروع');
 
   let startResponseSeen = false;
   const followUpTaskListRequests = new Set<import('@playwright/test').Request>();
@@ -536,9 +531,9 @@ async function startHousekeeperTask(
     throw new Error(`Housekeeping start API/readback mismatch (${diagnostic}).`);
   }
 
-  const updatedCard = taskCard(housekeeper.page, task.room.roomNumber, task.taskType)
-    .filter({ hasText: housekeeper.username });
+  const updatedCard = taskCard(housekeeper.page, task);
   try {
+    await expect(updatedCard).toContainText(housekeeper.username);
     await expect(updatedCard).toContainText('در حال انجام');
   } catch {
     const statusLines = await updatedCard.locator('span').allTextContents();
@@ -556,9 +551,10 @@ async function failInspection(
   priorRecleanIds: ReadonlySet<string>,
   taskRefs: HousekeepingTaskRef[],
 ) {
-  const card = taskCard(housekeeper.page, task.room.roomNumber, 'INSPECTION')
-    .filter({ hasText: housekeeper.username })
-    .filter({ hasText: 'در حال انجام' });
+  const card = taskCard(housekeeper.page, task);
+  await expect(card).toBeVisible();
+  await expect(card).toContainText(housekeeper.username);
+  await expect(card).toContainText('در حال انجام');
   await card.getByRole('button', { name: 'تکمیل بازرسی' }).click();
   const dialog = housekeeper.page.getByRole('dialog', {
     name: `ثبت نتیجهٔ بازرسی اتاق ${task.room.roomNumber}`,
@@ -603,10 +599,10 @@ async function completeCleaningTask(
   housekeeper: HousekeepingStaffSession,
   task: HousekeepingTask,
 ) {
-  const card = taskCard(housekeeper.page, task.room.roomNumber, task.taskType)
-    .filter({ hasText: housekeeper.username })
-    .filter({ hasText: 'در حال انجام' });
+  const card = taskCard(housekeeper.page, task);
   await expect(card).toBeVisible();
+  await expect(card).toContainText(housekeeper.username);
+  await expect(card).toContainText('در حال انجام');
   await card.getByRole('button', { name: 'ثبت پایان کار' }).click();
   const dialog = housekeeper.page.getByRole('dialog', {
     name: `ثبت پایان کار اتاق ${task.room.roomNumber}`,
@@ -631,10 +627,10 @@ async function passInspection(
   housekeeper: HousekeepingStaffSession,
   task: HousekeepingTask,
 ) {
-  const card = taskCard(housekeeper.page, task.room.roomNumber, 'INSPECTION')
-    .filter({ hasText: housekeeper.username })
-    .filter({ hasText: 'در حال انجام' });
+  const card = taskCard(housekeeper.page, task);
   await expect(card).toBeVisible();
+  await expect(card).toContainText(housekeeper.username);
+  await expect(card).toContainText('در حال انجام');
   await card.getByRole('button', { name: 'تکمیل بازرسی' }).click();
   const dialog = housekeeper.page.getByRole('dialog', {
     name: `ثبت نتیجهٔ بازرسی اتاق ${task.room.roomNumber}`,
@@ -828,12 +824,9 @@ test('real staff roles run housekeeping task, SLEEP, and access-boundary flows',
       `${runMarker}: fictional guest request task; contains no guest identity or folio data.`,
       taskRefs,
     );
-    const receptionistTaskCard = taskCard(
-      receptionist.page,
-      room.roomNumber,
-      'GUEST_REQUEST',
-    ).filter({ hasText: 'در انتظار شروع' }).last();
+    const receptionistTaskCard = taskCard(receptionist.page, receptionistTask);
     await expect(receptionistTaskCard).toBeVisible();
+    await expect(receptionistTaskCard).toContainText('در انتظار شروع');
     await expect(receptionistTaskCard.getByRole('button', { name: /تخصیص کار|تغییر مسئول/ })).toHaveCount(0);
     await expect(receptionistTaskCard.getByRole('button', { name: 'لغو کار' })).toHaveCount(0);
     await manager.page.reload();
@@ -882,10 +875,9 @@ test('real staff roles run housekeeping task, SLEEP, and access-boundary flows',
       taskRefs.push({ id: reclean.id, roomId: room.id, businessDate });
     }
     await manager.page.goto('/staff/housekeeping');
-    const recleanCard = taskCard(manager.page, room.roomNumber, 'RE_CLEAN')
-      .filter({ hasText: 'در انتظار شروع' })
-      .last();
+    const recleanCard = taskCard(manager.page, reclean);
     await expect(recleanCard).toBeVisible();
+    await expect(recleanCard).toContainText('در انتظار شروع');
     await recleanCard.getByRole('button', { name: /تخصیص کار|تغییر مسئول/ }).click();
     const assignmentDialog = manager.page.getByRole('dialog', {
       name: `تخصیص کار اتاق ${room.roomNumber}`,
