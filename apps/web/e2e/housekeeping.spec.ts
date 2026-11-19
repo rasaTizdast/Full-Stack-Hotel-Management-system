@@ -756,8 +756,8 @@ test('real staff roles run housekeeping task, SLEEP, and access-boundary flows',
   { page, browser, staffCookies },
   testInfo,
 ) => {
-  // Four real role accounts each complete forced-password setup plus filtered task flows.
-  test.setTimeout(240_000);
+  // Four real role accounts complete forced-password setup, task flows, and discrepancy readback.
+  test.setTimeout(300_000);
   await page.context().addCookies(staffCookies);
 
   const runMarker = `E2E-HPM005-${randomUUID().slice(0, 8).toUpperCase()}`;
