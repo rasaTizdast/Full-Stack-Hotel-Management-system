@@ -4,6 +4,7 @@ import { resolve } from 'node:path';
 import type { Browser, Page } from '@playwright/test';
 import { expect } from '@playwright/test';
 import { PrismaClient } from '../../api/src/generated/prisma/client';
+import { getStaffHomePath } from '../src/lib/staff-navigation';
 import type { CleanupRegistrar } from './staff-fixtures';
 import { getE2eDatabaseUrl } from './test-database';
 
@@ -182,10 +183,14 @@ export async function createHousekeepingStaffSession(
   await accountPage.getByLabel('گذرواژه تازه', { exact: true }).fill(replacementPassword);
   await accountPage.getByLabel('تکرار گذرواژه تازه').fill(replacementPassword);
   await accountPage.getByRole('button', { name: 'تغییر گذرواژه' }).click();
+  const expectedHomePath = getStaffHomePath(role);
   try {
-    // The role home route proves the change-password route was left and that
-    // the refreshed HOUSEKEEPER session reached its expected workspace.
-    await expect(accountPage).toHaveURL(/\/staff\/housekeeping\/?$/, { timeout: 30_000 });
+    // The role home route proves the change-password route was left and the
+    // refreshed session reached its expected workspace.
+    await expect(accountPage).toHaveURL(
+      (url) => url.pathname === expectedHomePath || url.pathname === `${expectedHomePath}/`,
+      { timeout: 30_000 },
+    );
   } catch {
     const currentPage = safeHostPath(accountPage.url());
     const responseDiagnostics = authNetworkDiagnostics.filter((line) => line.includes(' -> HTTP '));
@@ -193,7 +198,7 @@ export async function createHousekeepingStaffSession(
       ? responseDiagnostics.join('\n')
       : '(no POST/OPTIONS response events observed)';
     throw new Error(
-      `Forced-password change did not reach the HOUSEKEEPER workspace. Current page: ${currentPage}\n` +
+      `Forced-password change did not reach the expected ${role} workspace (${expectedHomePath}). Current page: ${currentPage}\n` +
         `Safe auth response diagnostics:\n${diagnosticLines}`,
     );
   }
