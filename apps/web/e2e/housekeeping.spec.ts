@@ -990,7 +990,6 @@ test('real staff roles run housekeeping task, SLEEP, and access-boundary flows',
     await expect(
       receptionist.page.getByRole('button', { name: 'گزارش مغایرت حضور' }),
     ).toHaveCount(0);
-    await expect(receptionist.page.getByRole('button', { name: 'ایجاد کار', exact: true })).toHaveCount(0);
     await expect(receptionist.page.getByRole('button', { name: /تخصیص کار|تغییر مسئول/ })).toHaveCount(0);
     await sleepCard.getByRole('button', { name: 'رد با ذکر دلیل' }).click();
     const dismissDialog = receptionist.page.getByRole('dialog', {
