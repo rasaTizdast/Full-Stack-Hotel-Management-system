@@ -13,10 +13,12 @@ import { StaffInventoryModule } from './staff-inventory/staff-inventory.module';
 import { BookingsModule } from './bookings/bookings.module';
 import { RoomsModule } from './rooms/rooms.module';
 import { StaffAdminModule } from './staff-admin/staff-admin.module';
+import { HousekeepingModule } from './housekeeping/housekeeping.module';
 
 const environmentSchema = Joi.object({
   NODE_ENV: Joi.string().valid('development', 'test', 'production').default('development'),
   PORT: Joi.number().port().default(4000),
+  HOST: Joi.string().default('0.0.0.0'),
   DATABASE_URL: Joi.string()
     .uri({ scheme: ['postgres', 'postgresql'] })
     .required(),
@@ -48,6 +50,7 @@ const environmentSchema = Joi.object({
     StaffInventoryModule,
     RoomsModule,
     BookingsModule,
+    HousekeepingModule,
   ],
   controllers: [AppController],
   providers: [AppService],

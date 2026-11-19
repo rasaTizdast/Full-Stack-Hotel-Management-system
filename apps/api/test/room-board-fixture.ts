@@ -91,8 +91,7 @@ export class RoomBoardFixture {
     return revision;
   }
 
-  async createProperty(timezone = 'Asia/Tehran', createdAt?: Date) {
-    const slug = randomUUID();
+  async createProperty(timezone = 'Asia/Tehran', createdAt?: Date, slug: string = randomUUID()) {
     const hotel = await this.prisma.hotel.create({
       data: {
         slug,
@@ -119,6 +118,26 @@ export class RoomBoardFixture {
       ),
     );
     return { hotel, type, rooms };
+  }
+
+  async housekeepingProperty() {
+    const slug = 'hpm005-housekeeping-fixture';
+    const existingHotel = await this.prisma.hotel.findUnique({ where: { slug } });
+    if (!existingHotel) {
+      return this.createProperty('Asia/Tehran', new Date('2000-01-01T00:00:00.000Z'), slug);
+    }
+
+    const type = await this.prisma.roomType.findFirst({
+      where: { hotelId: existingHotel.id },
+      orderBy: [{ createdAt: 'asc' }, { id: 'asc' }],
+    });
+    if (!type) throw new Error('The preserved HPM-005 test hotel has no room type.');
+    const rooms = await this.prisma.room.findMany({
+      where: { hotelId: existingHotel.id, roomTypeId: type.id },
+      orderBy: [{ roomNumber: 'asc' }, { id: 'asc' }],
+    });
+    if (rooms.length < 3) throw new Error('The preserved HPM-005 test hotel has incomplete rooms.');
+    return { hotel: existingHotel, type, rooms };
   }
 
   roomType(hotelId: string) {
@@ -174,8 +193,19 @@ export class RoomBoardFixture {
     });
   }
 
-  async close() {
+  async close(options?: { preserveData?: boolean }) {
     try {
+      if (options?.preserveData) {
+        await this.prisma.staffSession.deleteMany({
+          where: { staffUserId: { in: this.staffIds } },
+        });
+        await this.prisma.staffUser.updateMany({
+          where: { id: { in: this.staffIds } },
+          data: { isActive: false },
+        });
+        return;
+      }
+
       const roomType = { hotelId: { in: this.hotelIds } };
       await this.prisma.roomAssignment.deleteMany({ where: { booking: { roomType } } });
       await this.prisma.roomBlock.deleteMany({ where: { room: { roomType } } });
