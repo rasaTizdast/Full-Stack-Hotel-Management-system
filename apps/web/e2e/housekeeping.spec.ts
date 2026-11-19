@@ -315,7 +315,9 @@ async function createTaskFromStaff(
   if (task.room.id !== room.id || task.taskType !== taskType || task.dueDate !== businessDate) {
     throw new Error('Housekeeping task creation returned an invalid task.');
   }
-  await expect(creator.page.getByRole('status')).toContainText('کار خانه‌داری ثبت شد');
+  await expect(
+    creator.page.getByRole('status').filter({ hasText: 'کار خانه‌داری ثبت شد' }),
+  ).toContainText('کار خانه‌داری ثبت شد');
   return task as unknown as HousekeepingTask;
 }
 
