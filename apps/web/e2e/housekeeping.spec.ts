@@ -27,6 +27,79 @@ function taskCard(page: Page, task: Pick<HousekeepingTask, 'id'>) {
   return page.locator(`article[data-housekeeping-task-id="${task.id}"]`);
 }
 
+function watchBoardTaskListAfterCreate(page: Page) {
+  let createResponseSeen = false;
+  let settled = false;
+  const followUpRequests = new Set<import('@playwright/test').Request>();
+  let resolveSnapshot!: (value: {
+    httpStatus: number;
+    items: Array<{ id: string; status: string }>;
+  } | null) => void;
+  const snapshot = new Promise<{
+    httpStatus: number;
+    items: Array<{ id: string; status: string }>;
+  } | null>((resolve) => {
+    resolveSnapshot = resolve;
+  });
+  const timer = setTimeout(() => {
+    if (!settled) {
+      settled = true;
+      resolveSnapshot(null);
+    }
+  }, 10_000);
+  const onRequest = (request: import('@playwright/test').Request) => {
+    if (
+      createResponseSeen &&
+      request.method() === 'GET' &&
+      new URL(request.url()).pathname === '/api/v1/staff/housekeeping/tasks'
+    ) {
+      followUpRequests.add(request);
+    }
+  };
+  const onResponse = (response: import('@playwright/test').Response) => {
+    const request = response.request();
+    const path = new URL(response.url()).pathname;
+    if (request.method() === 'POST' && path === '/api/v1/staff/housekeeping/tasks') {
+      createResponseSeen = true;
+      return;
+    }
+    if (
+      settled ||
+      request.method() !== 'GET' ||
+      path !== '/api/v1/staff/housekeeping/tasks' ||
+      !followUpRequests.has(request)
+    ) {
+      return;
+    }
+    followUpRequests.delete(request);
+    void response.json().then((payload: unknown) => {
+      const items = isRecord(payload) && Array.isArray(payload.items)
+        ? payload.items.flatMap((item) =>
+            isRecord(item) && typeof item.id === 'string' && typeof item.status === 'string'
+              ? [{ id: item.id, status: item.status }]
+              : [],
+          )
+        : [];
+      settled = true;
+      resolveSnapshot({ httpStatus: response.status(), items });
+    }, () => {
+      settled = true;
+      resolveSnapshot({ httpStatus: response.status(), items: [] });
+    });
+  };
+  page.on('request', onRequest);
+  page.on('response', onResponse);
+
+  return {
+    snapshot,
+    dispose() {
+      clearTimeout(timer);
+      page.off('request', onRequest);
+      page.off('response', onResponse);
+    },
+  };
+}
+
 function staffHeadersFromPage(page: Page, refererPath = '/staff/housekeeping') {
   return page.context().cookies(`${housekeepingApiBaseUrl}/staff`).then((cookies) => {
     const session = cookies.find((cookie) => cookie.name === 'hotel_staff_session')?.value;
@@ -311,25 +384,59 @@ async function createTaskFromStaff(
   await dialog.getByLabel('اولویت').selectOption('HIGH');
   await dialog.getByLabel(/یادداشت عملیاتی/).fill(note);
 
-  const responsePromise = creator.page.waitForResponse((response) =>
-    apiResponseIs(response, 'POST', '/api/v1/staff/housekeeping/tasks'),
-  );
-  await dialog.getByRole('button', { name: 'ایجاد کار', exact: true }).click();
-  const response = await responsePromise;
-  const rawTask: unknown = await response.json();
-  expectNoGuestOrFolioData(rawTask);
-  const task = normalizeTask(rawTask);
-  // Register the exact ID before any later assertion can fail. Cleanup only
-  // cancels this generated unfinished row and keeps its audit trail.
-  taskRefs.push({ id: task.id, roomId: room.id, businessDate });
-  expect(response.status()).toBe(201);
-  if (task.room.id !== room.id || task.taskType !== taskType || task.dueDate !== businessDate) {
-    throw new Error('Housekeeping task creation returned an invalid task.');
+  const boardRefreshWatch = watchBoardTaskListAfterCreate(creator.page);
+  try {
+    const responsePromise = creator.page.waitForResponse((response) =>
+      apiResponseIs(response, 'POST', '/api/v1/staff/housekeeping/tasks'),
+    );
+    await dialog.getByRole('button', { name: 'ایجاد کار', exact: true }).click();
+    const response = await responsePromise;
+    const rawTask: unknown = await response.json();
+    expectNoGuestOrFolioData(rawTask);
+    const task = normalizeTask(rawTask);
+    // Register the exact ID before any later assertion can fail. Cleanup only
+    // cancels this generated unfinished row and keeps its audit trail.
+    taskRefs.push({ id: task.id, roomId: room.id, businessDate });
+    expect(response.status()).toBe(201);
+    if (task.room.id !== room.id || task.taskType !== taskType || task.dueDate !== businessDate) {
+      throw new Error('Housekeeping task creation returned an invalid task.');
+    }
+    await expect(
+      creator.page.getByRole('status').filter({ hasText: 'کار خانه‌داری ثبت شد' }),
+    ).toContainText('کار خانه‌داری ثبت شد');
+
+    const createdCard = taskCard(creator.page, task);
+    try {
+      await expect(createdCard).toBeVisible();
+      await expect(createdCard).toContainText('در انتظار شروع');
+    } catch {
+      const [filteredList, boardSnapshot] = await Promise.all([
+        getTasks(creator.page, { businessDate, roomId: room.id, taskType }),
+        boardRefreshWatch.snapshot,
+      ]);
+      const filteredTask = filteredList.items.find((item) => item.id === task.id);
+      const boardTask = boardSnapshot?.items.find((item) => item.id === task.id);
+      const routePath = new URL(creator.page.url()).pathname;
+      const cardCount = await createdCard.count();
+      const loading = (await creator.page.getByText('در حال دریافت کارهای خانه‌داری…', { exact: true }).count()) > 0;
+      const error = (await creator.page.getByRole('alert').count()) > 0;
+      const empty =
+        (await creator.page.getByText('برای این تاریخ کاری، کاری ثبت نشده است.', { exact: true }).count()) > 0 ||
+        (await creator.page.getByText('کاری با این فیلترها پیدا نشد.', { exact: true }).count()) > 0;
+      throw new Error(
+        `Created task card was not rendered with OPEN status ` +
+          `(task=${task.id}; createHttp=${response.status()}; createStatus=${task.status}; ` +
+          `filteredGetHttp=200; filteredGetHasTask=${Boolean(filteredTask)}; ` +
+          `filteredGetStatus=${filteredTask?.status ?? 'missing'}; ` +
+          `boardGetHttp=${boardSnapshot?.httpStatus ?? 'no-response'}; ` +
+          `boardGetHasTask=${Boolean(boardTask)}; boardGetStatus=${boardTask?.status ?? 'missing'}; ` +
+          `path=${routePath}; exactCardCount=${cardCount}; loading=${loading}; error=${error}; empty=${empty}).`,
+      );
+    }
+    return task as unknown as HousekeepingTask;
+  } finally {
+    boardRefreshWatch.dispose();
   }
-  await expect(
-    creator.page.getByRole('status').filter({ hasText: 'کار خانه‌داری ثبت شد' }),
-  ).toContainText('کار خانه‌داری ثبت شد');
-  return task as unknown as HousekeepingTask;
 }
 
 async function assignTaskToHousekeeper(
@@ -649,7 +756,10 @@ async function passInspection(
   if (!isRecord(result) || (result.outcome ?? result.completionOutcome) !== 'DONE') {
     throw new Error('Passing inspection did not return the expected completion outcome.');
   }
-  await expect(housekeeper.page.getByRole('status')).toContainText('بازرسی');
+  const successMessage = `انجام کار اتاق ${task.room.roomNumber} ثبت شد.`;
+  await expect(
+    housekeeper.page.getByRole('status').filter({ hasText: successMessage }),
+  ).toContainText(successMessage);
 }
 
 async function reportSleepWhileAssignedWorkIsActive(
