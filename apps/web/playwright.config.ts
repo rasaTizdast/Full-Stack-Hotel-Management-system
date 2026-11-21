@@ -6,8 +6,9 @@ const workspaceRoot = resolve(process.cwd(), '../..');
 const isolatedTestDatabaseUrl = getE2eDatabaseUrl(workspaceRoot);
 const webPort = process.env.HBE_E2E_WEB_PORT ?? '3015';
 const apiPort = process.env.HBE_E2E_API_PORT ?? '4015';
-const webOrigin = `http://localhost:${webPort}`;
-const apiBaseUrl = `http://localhost:${apiPort}/api/v1`;
+const webOrigin = `http://127.0.0.1:${webPort}`;
+const apiOrigin = `http://127.0.0.1:${apiPort}`;
+const apiBaseUrl = `${apiOrigin}/api/v1`;
 const reuseExistingServer = process.env.HBE_E2E_REUSE_SERVER === 'true';
 const chromiumExecutablePath = process.env.HBE_E2E_CHROMIUM_EXECUTABLE_PATH;
 const chromiumLaunchOptions = chromiumExecutablePath
@@ -46,13 +47,14 @@ export default defineConfig({
     {
       command: 'pnpm --filter @hotel/api dev',
       cwd: workspaceRoot,
-      url: `http://localhost:${apiPort}/health/ready`,
+      url: `${apiOrigin}/health/ready`,
       reuseExistingServer,
       timeout: 120_000,
       env: {
         DATABASE_URL: isolatedTestDatabaseUrl,
         NODE_ENV: 'test',
         PORT: apiPort,
+        HOST: '127.0.0.1',
         WEB_ORIGIN: webOrigin,
       },
     },

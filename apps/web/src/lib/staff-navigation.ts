@@ -4,7 +4,7 @@ const staffHomePaths: Record<StaffRole, string> = {
   ADMIN: '/staff/front-desk/arrivals',
   MANAGER: '/staff/front-desk/arrivals',
   RECEPTIONIST: '/staff/front-desk/arrivals',
-  HOUSEKEEPER: '/staff',
+  HOUSEKEEPER: '/staff/housekeeping',
   CASHIER: '/staff',
 };
 

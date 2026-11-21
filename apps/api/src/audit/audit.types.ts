@@ -5,6 +5,13 @@ export type AuditSafeField =
   | 'roomNumber'
   | 'floor'
   | 'housekeepingStatus'
+  | 'taskType'
+  | 'priority'
+  | 'assignedToStaffUserId'
+  | 'completionOutcome'
+  | 'discrepancyType'
+  | 'expectedOccupied'
+  | 'observedOccupied'
   | 'isGenerated'
   | 'status'
   | 'nightlyPriceToman'
@@ -12,7 +19,8 @@ export type AuditSafeField =
   | 'checkOut'
   | 'roomQuantity'
   | 'roomId'
-  | 'effectiveDate';
+  | 'effectiveDate'
+  | 'businessDate';
 
 export type AuditSnapshot = Partial<Record<AuditSafeField, string | number | boolean | null>>;
 

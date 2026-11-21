@@ -6,8 +6,8 @@ import { getE2eEnvironmentValue } from './test-database';
 
 const apiPort = process.env.HBE_E2E_API_PORT ?? '4015';
 const webPort = process.env.HBE_E2E_WEB_PORT ?? '3015';
-const webOrigin = `http://localhost:${webPort}`;
-const apiBaseUrl = `http://localhost:${apiPort}/api/v1`;
+const webOrigin = `http://127.0.0.1:${webPort}`;
+const apiBaseUrl = `http://127.0.0.1:${apiPort}/api/v1`;
 
 function demoCredentials() {
   const workspaceRoot = resolve(process.cwd(), '../..');

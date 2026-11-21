@@ -52,4 +52,37 @@ describe('AuditService', () => {
       },
     });
   });
+
+  it('accepts only the operational task and occupancy fields needed by housekeeping history', async () => {
+    const event: AuditEventInput = {
+      actorStaffUserId: 'staff-id',
+      eventName: 'HOUSEKEEPING_TASK_ASSIGNED',
+      targetType: 'HOUSEKEEPING_TASK',
+      targetId: 'task-id',
+      after: {
+        taskType: 'INSPECTION',
+        priority: 'HIGH',
+        assignedToStaffUserId: 'housekeeper-id',
+        completionOutcome: 'NEEDS_REWORK',
+        businessDate: '2026-11-17',
+        discrepancyType: 'SLEEP',
+        expectedOccupied: false,
+        observedOccupied: true,
+      },
+    };
+
+    await service.record(transaction, event);
+
+    expect(auditEvent.create).toHaveBeenCalledWith({
+      data: {
+        actorStaffUserId: 'staff-id',
+        eventName: 'HOUSEKEEPING_TASK_ASSIGNED',
+        targetType: 'HOUSEKEEPING_TASK',
+        targetId: 'task-id',
+        reason: undefined,
+        before: undefined,
+        after: event.after,
+      },
+    });
+  });
 });

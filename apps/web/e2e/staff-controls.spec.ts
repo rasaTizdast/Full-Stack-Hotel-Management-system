@@ -4,8 +4,8 @@ import AxeBuilder from '@axe-core/playwright';
 import { test, withFailureSafeCleanup } from './staff-fixtures';
 
 const apiPort = process.env.HBE_E2E_API_PORT ?? '4015';
-const apiBaseUrl = `http://localhost:${apiPort}/api/v1`;
-const webOrigin = `http://localhost:${process.env.HBE_E2E_WEB_PORT ?? '3015'}`;
+const apiBaseUrl = `http://127.0.0.1:${apiPort}/api/v1`;
+const webOrigin = `http://127.0.0.1:${process.env.HBE_E2E_WEB_PORT ?? '3015'}`;
 const axeTags = ['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa', 'wcag22aa'];
 
 async function expectNoA11yViolations(page: Page) {

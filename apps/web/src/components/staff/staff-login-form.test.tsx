@@ -48,6 +48,7 @@ describe('StaffLoginForm', () => {
     );
 
     render(<StaffLoginForm />);
+    expect(screen.getByLabelText('گذرواژه').closest('form')).toHaveAttribute('method', 'post');
     fireEvent.change(screen.getByLabelText('ایمیل کاری'), {
       target: { value: 'admin@example.test' },
     });

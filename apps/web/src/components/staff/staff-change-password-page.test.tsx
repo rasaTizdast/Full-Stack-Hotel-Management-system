@@ -59,6 +59,7 @@ describe('StaffChangePasswordPage', () => {
 
   it('changes the password, refreshes the authoritative session, and routes by role', async () => {
     render(<StaffChangePasswordPage />);
+    expect(screen.getByLabelText('گذرواژه فعلی').closest('form')).toHaveAttribute('method', 'post');
     fireEvent.change(screen.getByLabelText('گذرواژه فعلی'), {
       target: { value: 'initial-password' },
     });

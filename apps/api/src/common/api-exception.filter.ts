@@ -49,6 +49,10 @@ const SAFE_DOMAIN_ERRORS: Record<string, { statusCode: number; message: string }
     statusCode: 400,
     message: 'Use valid Gregorian YYYY-MM-DD dates and checkout after check-in.',
   },
+  BUSINESS_DATE_MISMATCH: {
+    statusCode: 400,
+    message: 'Occupancy reports must use the current hotel business date.',
+  },
   CHECK_IN_IN_PAST: { statusCode: 400, message: 'Check-in date must be today or later.' },
   STAY_TOO_LONG: { statusCode: 400, message: 'Stay cannot exceed 30 nights.' },
   INVALID_GUEST_COUNT: {

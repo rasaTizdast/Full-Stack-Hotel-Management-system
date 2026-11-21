@@ -20,6 +20,7 @@ describe('ApiExceptionFilter safe availability errors', () => {
   }
 
   it.each([
+    ['BUSINESS_DATE_MISMATCH', 'Occupancy reports must use the current hotel business date.'],
     ['INVALID_DATE_RANGE', 'Use valid Gregorian YYYY-MM-DD dates and checkout after check-in.'],
     ['CHECK_IN_IN_PAST', 'Check-in date must be today or later.'],
     ['STAY_TOO_LONG', 'Stay cannot exceed 30 nights.'],
