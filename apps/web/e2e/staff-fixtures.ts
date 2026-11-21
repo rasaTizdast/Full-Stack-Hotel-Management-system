@@ -73,7 +73,22 @@ export const test = base.extend<object, StaffWorkerFixtures>({
           headers: { Origin: webOrigin, Referer: `${webOrigin}/staff/login` },
           data: adminCredentials(),
         });
-        expect(response.status()).toBe(200);
+        expect(
+          response.status(),
+          `The worker demo login returned HTTP ${response.status()}; expected an ADMIN session.`,
+        ).toBe(200);
+        const loginPayload: unknown = await response.json();
+        const loginStaff =
+          isRecord(loginPayload) && isRecord(loginPayload.staff) ? loginPayload.staff : null;
+        const loginRole = typeof loginStaff?.role === 'string' ? loginStaff.role : 'unknown';
+        expect(
+          loginRole,
+          `The worker demo login returned role ${loginRole}; expected ADMIN.`,
+        ).toBe('ADMIN');
+        expect(
+          loginStaff?.mustChangePassword,
+          'The worker demo ADMIN session must not require a forced password change.',
+        ).toBe(false);
         const headers = await response.headersArray();
         cookies = parseStaffCookies(
           headers

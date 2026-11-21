@@ -1,4 +1,6 @@
 import { randomUUID } from 'node:crypto';
+import { mkdirSync } from 'node:fs';
+import { resolve } from 'node:path';
 import { expect, type Page, type TestInfo } from '@playwright/test';
 import type {
   HousekeepingDiscrepancy,
@@ -28,10 +30,62 @@ function taskCard(page: Page, task: Pick<HousekeepingTask, 'id'>) {
 }
 
 async function filterTaskBoard(page: Page, task: HousekeepingTask) {
-  await page.getByLabel('اتاق', { exact: true }).selectOption(task.room.id);
+  const filterControls = page.locator('#housekeeping-filter-controls');
+  const filterToggle = page.locator('button[aria-controls="housekeeping-filter-controls"]');
+  const roomFilter = filterControls.getByLabel('اتاق', { exact: true });
+  const isMobile = await page.evaluate(() => window.matchMedia('(max-width: 760px)').matches);
+  if (isMobile) {
+    await expect(filterToggle).toBeVisible();
+    const expanded = await filterToggle.getAttribute('aria-expanded');
+    expect(['true', 'false']).toContain(expanded);
+    if (expanded === 'false') {
+      await expect(filterToggle).toHaveAccessibleName('نمایش فیلترها');
+      await expect(roomFilter).toBeHidden();
+      await filterToggle.click();
+    }
+    await expect(filterToggle).toHaveAttribute('aria-expanded', 'true');
+    await expect(roomFilter).toBeVisible();
+  } else {
+    await expect(roomFilter).toBeVisible();
+  }
+  await roomFilter.selectOption(task.room.id);
   await page.getByLabel('نوع کار', { exact: true }).selectOption(task.taskType);
   await page.getByRole('button', { name: 'اعمال فیلترها' }).click();
 }
+
+test('mobile housekeeping filters start collapsed and can be opened', async ({ page, staffCookies }) => {
+  const viewport = page.viewportSize();
+  test.skip(!viewport || viewport.width > 600, 'This responsive assertion runs on mobile only.');
+  await page.context().addCookies(staffCookies);
+  await page.goto('/staff/housekeeping');
+  await expect(page.getByRole('heading', { name: 'خانه‌داری' })).toBeVisible();
+
+  const filterControls = page.locator('#housekeeping-filter-controls');
+  const filterToggle = page.locator('button[aria-controls="housekeeping-filter-controls"]');
+  const roomFilter = filterControls.getByLabel('اتاق', { exact: true });
+  expect(await page.evaluate(() => window.matchMedia('(max-width: 760px)').matches)).toBe(true);
+  await expect(filterToggle).toBeVisible();
+  await expect(filterToggle).toHaveAttribute('aria-expanded', 'false');
+  await expect(roomFilter).toBeHidden();
+  const screenshotDirectory = resolve(process.cwd(), '../../output/playwright');
+  mkdirSync(screenshotDirectory, { recursive: true });
+  await page.screenshot({
+    path: resolve(screenshotDirectory, 'hpm005-housekeeping-mobile-filters-collapsed.png'),
+  });
+
+  await filterToggle.click();
+  const after = await page.evaluate(() => {
+    const controls = document.querySelector<HTMLElement>('#housekeeping-filter-controls');
+    return controls ? getComputedStyle(controls).display : 'missing';
+  });
+  const expandedToggle = page.getByRole('button', { name: 'بستن فیلترها', exact: true });
+  expect(after).not.toBe('none');
+  await expect(expandedToggle).toHaveAttribute('aria-expanded', 'true');
+  await expect(roomFilter).toBeVisible();
+  await filterControls.screenshot({
+    path: resolve(screenshotDirectory, 'hpm005-housekeeping-mobile-filters-expanded.png'),
+  });
+});
 
 function staffHeadersFromPage(page: Page, refererPath = '/staff/housekeeping') {
   return page.context().cookies(`${housekeepingApiBaseUrl}/staff`).then((cookies) => {

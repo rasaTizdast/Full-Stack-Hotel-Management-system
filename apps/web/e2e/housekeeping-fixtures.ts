@@ -94,6 +94,37 @@ export async function createHousekeepingStaffSession(
   role: HousekeepingStaffRole,
   registerCleanup: CleanupRegistrar,
 ): Promise<HousekeepingStaffSession> {
+  const initialAdministratorHeaders = await administratorHeaders(administratorPage);
+  const administratorSessionResponse = await administratorPage.request.get(
+    `${housekeepingApiBaseUrl}/staff/auth/me`,
+    { headers: initialAdministratorHeaders },
+  );
+  const administratorSession: unknown =
+    administratorSessionResponse.status() === 200
+      ? await administratorSessionResponse.json()
+      : null;
+  const administratorStaff =
+    isRecord(administratorSession) && isRecord(administratorSession.staff)
+      ? administratorSession.staff
+      : null;
+  const administratorRole =
+    typeof administratorStaff?.role === 'string' ? administratorStaff.role : 'unknown';
+  const administratorCsrf =
+    isRecord(administratorSession) && typeof administratorSession.csrfToken === 'string'
+      ? administratorSession.csrfToken
+      : '';
+  const administratorSessionContext =
+    `Before creating the ${role} fixture, /auth/me returned HTTP ${administratorSessionResponse.status()}, ` +
+    `role ${administratorRole}, mustChangePassword ${String(administratorStaff?.mustChangePassword)}.`;
+  expect(administratorSessionResponse.status(), administratorSessionContext).toBe(200);
+  expect(administratorRole, administratorSessionContext).toBe('ADMIN');
+  expect(administratorStaff?.mustChangePassword, administratorSessionContext).toBe(false);
+  const administratorHeadersForRequest = await administratorHeaders(administratorPage);
+  expect(
+    administratorHeadersForRequest['X-CSRF-Token'],
+    `${administratorSessionContext} The page-context CSRF header did not match /auth/me.`,
+  ).toBe(administratorCsrf);
+
   const runPart = randomUUID().slice(0, 8);
   const username = `hpm005-${role.toLowerCase()}-${runPart}`;
   const email = `${username}@example.test`;
@@ -103,7 +134,7 @@ export async function createHousekeepingStaffSession(
   const createResponse = await administratorPage.request.post(
     `${housekeepingApiBaseUrl}/staff/admin/accounts`,
     {
-      headers: await administratorHeaders(administratorPage),
+      headers: administratorHeadersForRequest,
       data: { username, email, initialPassword, role },
     },
   );
