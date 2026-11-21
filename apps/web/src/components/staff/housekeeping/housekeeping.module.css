@@ -598,6 +598,35 @@
 }
 
 @media (max-width: 1050px) {
+  .mobileFilterToggle {
+    display: inline-flex;
+    min-height: 2.75rem;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-control);
+    background: var(--surface);
+    padding: 0.55rem 0.65rem;
+    color: var(--primary-strong);
+    font: inherit;
+    font-size: var(--text-ui);
+    font-weight: 700;
+    cursor: pointer;
+  }
+
+  .mobileFilterToggle:focus-visible {
+    outline: 3px solid var(--focus);
+    outline-offset: 3px;
+  }
+
+  .filterControls:not(.filterControlsExpanded) {
+    display: none;
+  }
+
+  .filterHeaderActions .textButton {
+    min-height: 2.75rem;
+  }
+
   .header {
     align-items: stretch;
     flex-direction: column;
@@ -627,35 +656,6 @@
     display: grid;
     width: 100%;
     grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-
-  .filterHeaderActions .textButton {
-    min-height: 2.75rem;
-  }
-
-  .mobileFilterToggle {
-    display: inline-flex;
-    min-height: 2.75rem;
-    align-items: center;
-    justify-content: center;
-    border: 1px solid var(--border);
-    border-radius: var(--radius-control);
-    background: var(--surface);
-    padding: 0.55rem 0.65rem;
-    color: var(--primary-strong);
-    font: inherit;
-    font-size: var(--text-ui);
-    font-weight: 700;
-    cursor: pointer;
-  }
-
-  .mobileFilterToggle:focus-visible {
-    outline: 3px solid var(--focus);
-    outline-offset: 3px;
-  }
-
-  .filterControls:not(.filterControlsExpanded) {
-    display: none;
   }
 
   .sectionHeading,

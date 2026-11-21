@@ -33,8 +33,7 @@ async function filterTaskBoard(page: Page, task: HousekeepingTask) {
   const filterControls = page.locator('#housekeeping-filter-controls');
   const filterToggle = page.locator('button[aria-controls="housekeeping-filter-controls"]');
   const roomFilter = filterControls.getByLabel('اتاق', { exact: true });
-  const isMobile = await page.evaluate(() => window.matchMedia('(max-width: 760px)').matches);
-  if (isMobile) {
+  if (await filterToggle.isVisible()) {
     await expect(filterToggle).toBeVisible();
     const expanded = await filterToggle.getAttribute('aria-expanded');
     expect(['true', 'false']).toContain(expanded);
@@ -53,7 +52,7 @@ async function filterTaskBoard(page: Page, task: HousekeepingTask) {
   await page.getByRole('button', { name: 'اعمال فیلترها' }).click();
 }
 
-test('mobile housekeeping filters start collapsed and can be opened', async ({ page, staffCookies }) => {
+test('mobile housekeeping filters start collapsed and can be opened', async ({ page, staffCookies }, testInfo) => {
   const viewport = page.viewportSize();
   test.skip(!viewport || viewport.width > 600, 'This responsive assertion runs on mobile only.');
   await page.context().addCookies(staffCookies);
@@ -67,7 +66,7 @@ test('mobile housekeeping filters start collapsed and can be opened', async ({ p
   await expect(filterToggle).toBeVisible();
   await expect(filterToggle).toHaveAttribute('aria-expanded', 'false');
   await expect(roomFilter).toBeHidden();
-  const screenshotDirectory = resolve(process.cwd(), '../../output/playwright');
+  const screenshotDirectory = testInfo.outputPath();
   mkdirSync(screenshotDirectory, { recursive: true });
   await page.screenshot({
     path: resolve(screenshotDirectory, 'hpm005-housekeeping-mobile-filters-collapsed.png'),
@@ -85,6 +84,53 @@ test('mobile housekeeping filters start collapsed and can be opened', async ({ p
   await filterControls.screenshot({
     path: resolve(screenshotDirectory, 'hpm005-housekeeping-mobile-filters-expanded.png'),
   });
+});
+
+test('tablet housekeeping filters stay collapsed until staff opens them while desktop stays expanded', async ({ page, staffCookies }, testInfo) => {
+  const viewport = page.viewportSize();
+  test.skip(!viewport || viewport.width < 700, 'This responsive assertion runs on desktop and tablet widths.');
+  await page.context().addCookies(staffCookies);
+
+  const filterControls = page.locator('#housekeeping-filter-controls');
+  const filterToggle = page.locator('button[aria-controls="housekeeping-filter-controls"]');
+  const appliedSummary = page.getByRole('group', { name: 'خلاصه فیلترهای اعمال‌شده' });
+  const clearButton = page.getByRole('button', { name: 'پاک‌کردن فیلترها', exact: true });
+  const screenshotDirectory = testInfo.outputPath();
+  mkdirSync(screenshotDirectory, { recursive: true });
+
+  for (const { width, height } of [{ width: 768, height: 1024 }, { width: 1024, height: 768 }]) {
+    await page.setViewportSize({ width, height });
+    await page.goto('/staff/housekeeping');
+    await expect(page.getByRole('heading', { name: 'خانه‌داری' })).toBeVisible();
+    await expect(filterToggle, `filters should collapse at ${width}px`).toBeVisible();
+    await expect(filterToggle).toHaveAccessibleName('نمایش فیلترها');
+    await expect(filterToggle).toHaveAttribute('aria-expanded', 'false');
+    await expect(filterControls).toBeHidden();
+    await expect(appliedSummary).toBeVisible();
+    await expect(clearButton).toBeVisible();
+    const toggleBox = await filterToggle.boundingBox();
+    const clearBox = await clearButton.boundingBox();
+    expect(toggleBox?.height, `filter toggle should remain touch-sized at ${width}px`).toBeGreaterThanOrEqual(44);
+    expect(clearBox?.height, `clear-filter action should remain touch-sized at ${width}px`).toBeGreaterThanOrEqual(44);
+    await page.screenshot({
+      path: resolve(screenshotDirectory, `housekeeping-filters-${width}-collapsed.png`),
+      fullPage: true,
+    });
+
+    await filterToggle.click();
+    await expect(filterToggle).toHaveAttribute('aria-expanded', 'true');
+    await expect(filterControls).toBeVisible();
+    await page.screenshot({
+      path: resolve(screenshotDirectory, `housekeeping-filters-${width}-expanded.png`),
+      fullPage: true,
+    });
+  }
+
+  await page.setViewportSize({ width: 1440, height: 960 });
+  await page.goto('/staff/housekeeping');
+  await expect(page.getByRole('heading', { name: 'خانه‌داری' })).toBeVisible();
+  await expect(filterToggle).toBeHidden();
+  await expect(filterControls).toBeVisible();
 });
 
 function staffHeadersFromPage(page: Page, refererPath = '/staff/housekeeping') {
