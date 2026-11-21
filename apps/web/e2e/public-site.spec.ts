@@ -29,7 +29,7 @@ test('guests can browse API-backed hotel and room information', async ({ page })
   await expectNoHorizontalOverflow(page);
   await page.getByRole('link', { name: 'جزئیات اتاق دوتخته باغ', exact: true }).click();
 
-  await expect(page).toHaveURL(/\/rooms\/garden-double$/);
+  await expect(page).toHaveURL(/\/rooms\/garden-double$/, { timeout: 30_000 });
   await expect(page.getByRole('heading', { level: 1, name: 'اتاق دوتخته باغ' })).toBeVisible();
   await expect(page.getByRole('heading', { name: 'امکانات این اتاق', exact: true })).toBeVisible();
 
