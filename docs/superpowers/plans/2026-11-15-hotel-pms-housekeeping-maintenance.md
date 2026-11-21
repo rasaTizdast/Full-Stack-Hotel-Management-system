@@ -49,40 +49,40 @@
 
 **Files:** apps/api/prisma/schema.prisma; a new housekeeping migration; apps/api/src/housekeeping/housekeeping.rules.ts and unit tests; focused PostgreSQL tests.
 
-- [ ] Write failing unit tests for task transitions, assignment requirements, completion outcomes, failed-inspection re-clean creation rules, and forbidden occupancy changes.
-- [ ] Add task/discrepancy enums and tables with restrictive history-preserving relations, hotel scoping, created/updated and actor fields, and indexes for room/date, state/date, assignee/date, and discrepancy status/date.
-- [ ] Implement pure transition/validation rules for OPEN → IN_PROGRESS → COMPLETED and OPEN/IN_PROGRESS → CANCELLED; only inspection may return NEEDS_REWORK.
-- [ ] Run unit tests to observe the expected failures before production changes, then pass them and focused PostgreSQL migration/persistence tests.
+- [x] Write failing unit tests for task transitions, assignment requirements, completion outcomes, failed-inspection re-clean creation rules, and forbidden occupancy changes.
+- [x] Add task/discrepancy enums and tables with restrictive history-preserving relations, hotel scoping, created/updated and actor fields, and indexes for room/date, state/date, assignee/date, and discrepancy status/date.
+- [x] Implement pure transition/validation rules for OPEN → IN_PROGRESS → COMPLETED and OPEN/IN_PROGRESS → CANCELLED; only inspection may return NEEDS_REWORK.
+- [x] Run unit tests to observe the expected failures before production changes, then pass them and focused PostgreSQL migration/persistence tests.
 
 ### Task 2 — Transactional API, roles, audit, and privacy (Backend senior)
 
 **Files:** apps/api/src/housekeeping/**; staff capability definitions; apps/api/src/audit/** only where needed; API HTTP E2E and database tests.
 
-- [ ] Add filtered, paginated task and discrepancy list DTOs; manual task creation; manager/admin assignment/cancellation; assigned-housekeeper start/completion; discrepancy report/resolve/dismiss endpoints.
-- [ ] Serialize condition changes, active-assignment reads, task completion, and audit writes in one transaction using the existing roomType → room lock order before re-reading occupancy/readiness.
-- [ ] Completion of cleaning/re-clean updates condition to CLEAN; passing inspection sets INSPECTED; failed inspection sets DIRTY and atomically records the inspection result plus one OPEN RE_CLEAN task. Keep occupancy and sellable capacity unchanged.
-- [ ] Derive SLEEP/SKIP server-side from the expected occupancy snapshot and observedOccupied. Reject reports without a mismatch. Require current occupancy to match observation before resolution; require reason for dismissal.
-- [ ] Add failing then passing API/unit/PostgreSQL tests for permissions, check-in readiness, no occupancy mutation, idempotent retries/concurrency, audit actor/time, both SLEEP and SKIP derivation/resolution history, response privacy, pagination, CSRF, and private no-store headers. Housekeeping serialization must omit guest identity/contact, reservation reference, rate, and folio data.
+- [x] Add filtered, paginated task and discrepancy list DTOs; manual task creation; manager/admin assignment/cancellation; assigned-housekeeper start/completion; discrepancy report/resolve/dismiss endpoints.
+- [x] Serialize condition changes, active-assignment reads, task completion, and audit writes in one transaction using the existing roomType → room lock order before re-reading occupancy/readiness.
+- [x] Completion of cleaning/re-clean updates condition to CLEAN; passing inspection sets INSPECTED; failed inspection sets DIRTY and atomically records the inspection result plus one OPEN RE_CLEAN task. Keep occupancy and sellable capacity unchanged.
+- [x] Derive SLEEP/SKIP server-side from the expected occupancy snapshot and observedOccupied. Reject reports without a mismatch. Require current occupancy to match observation before resolution; require reason for dismissal.
+- [x] Add failing then passing API/unit/PostgreSQL tests for permissions, check-in readiness, no occupancy mutation, idempotent retries/concurrency, audit actor/time, both SLEEP and SKIP derivation/resolution history, response privacy, pagination, CSRF, and private no-store headers. Housekeeping serialization must omit guest identity/contact, reservation reference, rate, and folio data.
 
 ### Task 3 — Staff client, route, and operational board (Front-end design master)
 
 **Files:** apps/web/src/lib/staff-housekeeping-api.ts and tests; apps/web/src/components/staff/housekeeping/**; apps/web/src/app/staff/(dashboard)/housekeeping/page.tsx; staff navigation and role tests.
 
-- [ ] Read apps/web/AGENTS.md and the installed Next.js 16 documentation for the route/data-fetch pattern before editing.
-- [ ] Add typed no-store clients matching the frozen API contract. Add /staff/housekeeping and role navigation; HOUSEKEEPER home opens this route, RECEPTIONIST/MANAGER/ADMIN can reach readiness/discrepancy actions, and CASHIER is denied.
-- [ ] Build the RTL task-first board using tracked tokens and CSS modules: business date/refresh status, due-date and room/work filters, urgency-ordered work list, separate occupancy/condition/task labels, arrival/departure context, and a discrepancy queue. Use task details and assignee identity only; never show guest contact or billing data.
-- [ ] Provide clear loading, empty-today, no-filter-match, stale, retry, permission, conflict/already-completed, success, and failure states. Use keyboard-accessible labeled filters, visible focus, accessible confirmation, and focus return.
-- [ ] Add component/client/navigation tests for role-specific actions, status text, validation, and all board states. Do not depend on uncommitted UI primitives from the root checkout.
+- [x] Read apps/web/AGENTS.md and the installed Next.js 16 documentation for the route/data-fetch pattern before editing.
+- [x] Add typed no-store clients matching the frozen API contract. Add /staff/housekeeping and role navigation; HOUSEKEEPER home opens this route, RECEPTIONIST/MANAGER/ADMIN can reach readiness/discrepancy actions, and CASHIER is denied.
+- [x] Build the RTL task-first board using tracked tokens and CSS modules: business date/refresh status, due-date and room/work filters, urgency-ordered work list, separate occupancy/condition/task labels, arrival/departure context, and a discrepancy queue. Use task details and assignee identity only; never show guest contact or billing data.
+- [x] Provide clear loading, empty-today, no-filter-match, stale, retry, permission, conflict/already-completed, success, and failure states. Use keyboard-accessible labeled filters, visible focus, accessible confirmation, and focus return.
+- [x] Add component/client/navigation tests for role-specific actions, status text, validation, and all board states. Do not depend on uncommitted UI primitives from the root checkout.
 
 ### Task 4 — Acceptance and review (Tester + Designer; orchestrated by root)
 
 **Files:** apps/web E2E tests and HPM-005 completion evidence in docs/implementation-tickets.md and this plan.
 
-- [ ] Run API unit, focused PostgreSQL, API HTTP E2E, web unit, typecheck/lint, then frontend Playwright. Use only the isolated test database target authorized for this run; identify server, port, and database before any migration/test command. Do not reset/drop a database.
-- [ ] E2E-generated task/discrepancy notes use a unique E2E-HPM005-<runId> marker. Preserve completed/resolved/dismissed history and all audit rows; cancel only exact unfinished tasks and dismiss only exact open reports created by that run.
-- [ ] Playwright covers manager assignment, housekeeper assigned-task start/completion, failed-inspection re-clean, real SLEEP reporting, receptionist/manager resolution or reasoned dismissal, check-in readiness, cashier denial, no-store/privacy, and no occupancy mutation. API/PostgreSQL E2E covers real SLEEP and SKIP derivation and resolution eligibility. A UI-only historical SKIP presentation test may stub the discrepancy response; do not create a checked-in stay solely for a browser test while checkout remains in HPM-008.
-- [ ] After frontend Playwright passes, tester manually checks real role sessions at desktop, tablet portrait/landscape, and 390px mobile. Designer reviews screenshots and source for hierarchy, responsive behavior, RTL, touch targets, keyboard/focus, error states, and fit with the existing design system. Record any fixes and repeat both automated and manual gates.
-- [ ] Complete HPM-005 only when migration, role/privacy, API and web checks pass, tester reports no outstanding issues, designer signs off, and the worktree is ready to merge.
+- [x] Run API unit, focused PostgreSQL, API HTTP E2E, web unit, typecheck/lint, then frontend Playwright. Use only the isolated test database target authorized for this run; identify server, port, and database before any migration/test command. Do not reset/drop a database.
+- [x] E2E-generated task/discrepancy notes use a unique E2E-HPM005-<runId> marker. Preserve completed/resolved/dismissed history and all audit rows; cancel only exact unfinished tasks and dismiss only exact open reports created by that run.
+- [x] Playwright covers manager assignment, housekeeper assigned-task start/completion, failed-inspection re-clean, real SLEEP reporting, receptionist/manager resolution or reasoned dismissal, check-in readiness, cashier denial, no-store/privacy, and no occupancy mutation. API/PostgreSQL E2E covers real SLEEP and SKIP derivation and resolution eligibility. A UI-only historical SKIP presentation test may stub the discrepancy response; do not create a checked-in stay solely for a browser test while checkout remains in HPM-008.
+- [x] After frontend Playwright passes, tester manually checks real role sessions at desktop, tablet portrait/landscape, and 390px mobile. Designer reviews screenshots and source for hierarchy, responsive behavior, RTL, touch targets, keyboard/focus, error states, and fit with the existing design system. Record any fixes and repeat both automated and manual gates.
+- [x] Complete HPM-005 only when migration, role/privacy, API and web checks pass, tester reports no outstanding issues, designer signs off, and the worktree is ready to merge.
 
 ## Ticket HPM-006 — Maintenance requests and out-of-order blocks
 
