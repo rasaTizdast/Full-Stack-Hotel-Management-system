@@ -1,8 +1,7 @@
 import { randomUUID } from 'node:crypto';
 import { createRequire } from 'node:module';
 import { resolve } from 'node:path';
-import type { Browser, Page } from '@playwright/test';
-import { expect } from '@playwright/test';
+import { expect, request as playwrightRequest, type Browser, type Page } from '@playwright/test';
 import { PrismaClient } from '../../api/src/generated/prisma/client';
 import { getStaffHomePath } from '../src/lib/staff-navigation';
 import type { CleanupRegistrar } from './staff-fixtures';
@@ -43,17 +42,27 @@ function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null && !Array.isArray(value);
 }
 
-function safeHostPath(rawUrl: string): string {
-  try {
-    const url = new URL(rawUrl);
-    return `${url.host}${url.pathname}`;
-  } catch {
-    return '(invalid-url)';
-  }
+interface StaffAuthPayload {
+  staff: {
+    username: string;
+    role: HousekeepingStaffRole;
+    mustChangePassword: boolean;
+  };
+  csrfToken: string;
 }
 
-function safeNetworkFailure(errorText: string): string {
-  return errorText.replace(/https?:\/\/[^\s]+/g, (rawUrl) => safeHostPath(rawUrl));
+function isStaffAuthPayload(value: unknown): value is StaffAuthPayload {
+  if (!isRecord(value) || !isRecord(value.staff)) return false;
+  return (
+    typeof value.staff.username === 'string' &&
+    (value.staff.role === 'MANAGER' ||
+      value.staff.role === 'RECEPTIONIST' ||
+      value.staff.role === 'HOUSEKEEPER' ||
+      value.staff.role === 'CASHIER') &&
+    typeof value.staff.mustChangePassword === 'boolean' &&
+    typeof value.csrfToken === 'string' &&
+    value.csrfToken.length > 0
+  );
 }
 
 export async function administratorHeaders(page: Page): Promise<Record<string, string>> {
@@ -73,10 +82,11 @@ export async function administratorHeaders(page: Page): Promise<Record<string, s
 }
 
 /**
- * Creates a real role account using the authenticated administrator, changes
- * its forced initial password through the staff UI, then registers exact
- * deactivation cleanup. Staff rows are deactivated rather than deleted so
- * their audit history and actor references remain intact.
+ * Creates a real role account using the authenticated administrator, completes
+ * the forced-password transition through the API, and transfers only its auth
+ * cookies to a fresh browser context. The dedicated staff-controls E2E covers
+ * password enrollment through the UI. Staff rows are deactivated rather than
+ * deleted so their audit history and actor references remain intact.
  */
 export async function createHousekeepingStaffSession(
   administratorPage: Page,
@@ -126,6 +136,92 @@ export async function createHousekeepingStaffSession(
 
   const viewport = administratorPage.viewportSize();
   const mobile = Boolean(viewport && viewport.width <= 600);
+  const accountApi = await playwrightRequest.newContext({
+    extraHTTPHeaders: {
+      Origin: housekeepingWebOrigin,
+      Referer: `${housekeepingWebOrigin}/staff/login`,
+    },
+  });
+  let authCookies: Awaited<ReturnType<typeof accountApi.storageState>>['cookies'] = [];
+  try {
+    const loginResponse = await accountApi.post(`${housekeepingApiBaseUrl}/staff/auth/login`, {
+      data: { email, password: initialPassword },
+    });
+    expect(loginResponse.status(), `The ${role} fixture login failed.`).toBe(200);
+    const loginPayload: unknown = await loginResponse.json();
+    if (
+      !isStaffAuthPayload(loginPayload) ||
+      loginPayload.staff.username !== username ||
+      loginPayload.staff.role !== role ||
+      loginPayload.staff.mustChangePassword !== true
+    ) {
+      throw new Error(`The ${role} fixture login did not require the initial password change.`);
+    }
+
+    const forcedSessionResponse = await accountApi.get(
+      `${housekeepingApiBaseUrl}/staff/auth/me`,
+      { headers: { Referer: `${housekeepingWebOrigin}/staff/change-password` } },
+    );
+    expect(
+      forcedSessionResponse.status(),
+      `The ${role} forced-password session check failed.`,
+    ).toBe(200);
+    const forcedSession: unknown = await forcedSessionResponse.json();
+    if (
+      !isStaffAuthPayload(forcedSession) ||
+      forcedSession.staff.username !== username ||
+      forcedSession.staff.role !== role ||
+      forcedSession.staff.mustChangePassword !== true
+    ) {
+      throw new Error(`The ${role} fixture did not retain its forced-password state.`);
+    }
+
+    const passwordChangeResponse = await accountApi.post(
+      `${housekeepingApiBaseUrl}/staff/auth/change-password`,
+      {
+        headers: { 'X-CSRF-Token': forcedSession.csrfToken },
+        data: { currentPassword: initialPassword, newPassword: replacementPassword },
+      },
+    );
+    expect(
+      passwordChangeResponse.status(),
+      `The ${role} fixture password transition failed.`,
+    ).toBe(204);
+
+    const activeSessionResponse = await accountApi.get(
+      `${housekeepingApiBaseUrl}/staff/auth/me`,
+      { headers: { Referer: `${housekeepingWebOrigin}/staff` } },
+    );
+    expect(
+      activeSessionResponse.status(),
+      `The ${role} post-change session check failed.`,
+    ).toBe(200);
+    const activeSession: unknown = await activeSessionResponse.json();
+    if (
+      !isStaffAuthPayload(activeSession) ||
+      activeSession.staff.username !== username ||
+      activeSession.staff.role !== role ||
+      activeSession.staff.mustChangePassword !== false
+    ) {
+      throw new Error(`The ${role} fixture session was not active after password change.`);
+    }
+
+    authCookies = (await accountApi.storageState()).cookies.filter(
+      (cookie) => cookie.name === 'hotel_staff_session' || cookie.name === 'hotel_staff_csrf',
+    );
+    const csrfCookie = authCookies.find((cookie) => cookie.name === 'hotel_staff_csrf');
+    if (
+      authCookies.length !== 2 ||
+      !authCookies.some((cookie) => cookie.name === 'hotel_staff_session') ||
+      !csrfCookie ||
+      csrfCookie.value !== activeSession.csrfToken
+    ) {
+      throw new Error(`The ${role} fixture did not retain its exact authenticated staff cookies.`);
+    }
+  } finally {
+    await accountApi.dispose();
+  }
+
   const accountContext = await browser.newContext({
     baseURL: housekeepingWebOrigin,
     ...(viewport ? { viewport } : {}),
@@ -134,86 +230,23 @@ export async function createHousekeepingStaffSession(
     ...(mobile ? { deviceScaleFactor: 2 } : {}),
   });
   registerCleanup(async () => accountContext.close());
+  await accountContext.addCookies(authCookies);
   const accountPage = await accountContext.newPage();
-  const authNetworkDiagnostics: string[] = [];
-  accountPage.on('response', (response) => {
-    const request = response.request();
-    const method = request.method().toUpperCase();
-    if (method !== 'POST' && method !== 'OPTIONS') return;
-    const rawAllowOrigin = response.headers()['access-control-allow-origin'] ?? '(missing)';
-    let allowOrigin = rawAllowOrigin.replace(/[\r\n]/g, '');
-    if (allowOrigin.startsWith('http')) {
-      try {
-        allowOrigin = new URL(allowOrigin).origin;
-      } catch {
-        allowOrigin = '(invalid origin)';
-      }
-    }
-    authNetworkDiagnostics.push(
-      `${method} ${safeHostPath(request.url())} -> HTTP ${response.status()} ACAO=${allowOrigin}`,
-    );
-  });
-  accountPage.on('requestfailed', (request) => {
-    const method = request.method().toUpperCase();
-    if (method !== 'POST' && method !== 'OPTIONS') return;
-    const errorText = request.failure()?.errorText ?? '(unknown failure)';
-    authNetworkDiagnostics.push(
-      `${method} ${safeHostPath(request.url())} failed: ${safeNetworkFailure(errorText)}`,
-    );
-  });
-
-  await accountPage.goto('/staff/login');
-  await accountPage.getByLabel('ایمیل کاری').fill(email);
-  await accountPage.getByLabel('گذرواژه').fill(initialPassword);
-  await accountPage.getByRole('button', { name: 'ورود به پنل' }).click();
-  try {
-    await expect(accountPage).toHaveURL(/\/staff\/change-password$/, { timeout: 30_000 });
-    await expect(accountPage.getByRole('heading', { name: 'تغییر گذرواژه' })).toBeVisible({ timeout: 30_000 });
-  } catch {
-    const currentPage = safeHostPath(accountPage.url());
-    const diagnosticLines = authNetworkDiagnostics.length
-      ? authNetworkDiagnostics.join('\n')
-      : '(no POST/OPTIONS response or request-failure events observed)';
-    throw new Error(
-      `Forced-password login did not reach the change-password page. Current page: ${currentPage}\n` +
-        `Safe auth network diagnostics:\n${diagnosticLines}`,
-    );
-  }
-  await accountPage.getByLabel('گذرواژه فعلی').fill(initialPassword);
-  await accountPage.getByLabel('گذرواژه تازه', { exact: true }).fill(replacementPassword);
-  await accountPage.getByLabel('تکرار گذرواژه تازه').fill(replacementPassword);
-  await accountPage.getByRole('button', { name: 'تغییر گذرواژه' }).click();
   const expectedHomePath = getStaffHomePath(role);
-  try {
-    // The role home route proves the change-password route was left and the
-    // refreshed session reached its expected workspace.
-    await expect(accountPage).toHaveURL(
-      (url) => url.pathname === expectedHomePath || url.pathname === `${expectedHomePath}/`,
-      { timeout: 30_000 },
-    );
-  } catch {
-    const currentPage = safeHostPath(accountPage.url());
-    const responseDiagnostics = authNetworkDiagnostics.filter((line) => line.includes(' -> HTTP '));
-    const diagnosticLines = responseDiagnostics.length
-      ? responseDiagnostics.join('\n')
-      : '(no POST/OPTIONS response events observed)';
-    throw new Error(
-      `Forced-password change did not reach the expected ${role} workspace (${expectedHomePath}). Current page: ${currentPage}\n` +
-        `Safe auth response diagnostics:\n${diagnosticLines}`,
-    );
-  }
-
-  const sessionResponse = await accountPage.request.get(
-    `${housekeepingApiBaseUrl}/staff/auth/me`,
-    { headers: { Origin: housekeepingWebOrigin, Referer: `${housekeepingWebOrigin}/staff` } },
+  await accountPage.goto(expectedHomePath);
+  await expect(accountPage).toHaveURL(
+    (url) => url.pathname === expectedHomePath || url.pathname === `${expectedHomePath}/`,
+    { timeout: 30_000 },
   );
-  expect(sessionResponse.status()).toBe(200);
-  const session: unknown = await sessionResponse.json();
-  if (!isRecord(session) || !isRecord(session.staff)) {
-    throw new Error('The housekeeping role-account session response was invalid.');
-  }
-  expect(session.staff.role).toBe(role);
-  expect(session.staff.mustChangePassword).toBe(false);
+  const expectedHeading =
+    role === 'HOUSEKEEPER'
+      ? 'خانه‌داری'
+      : role === 'CASHIER'
+        ? 'فضای صندوق شما آماده است'
+        : /^ورودهای/;
+  await expect(accountPage.getByRole('heading', { name: expectedHeading })).toBeVisible({
+    timeout: 30_000,
+  });
 
   return { accountId, email, username, role, page: accountPage };
 }
