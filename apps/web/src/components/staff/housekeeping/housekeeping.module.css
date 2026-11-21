@@ -102,6 +102,58 @@
   margin-block-end: 0.9rem;
 }
 
+.filterHeader {
+  align-items: flex-start;
+}
+
+.filterHeader > div:first-child {
+  min-width: 0;
+  flex: 1 1 auto;
+}
+
+.filterHeaderActions {
+  display: flex;
+  min-width: 0;
+  flex: 0 0 auto;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.5rem;
+}
+
+.mobileFilterToggle {
+  display: none;
+}
+
+.appliedSummary {
+  display: flex;
+  min-width: 0;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.35rem 0.5rem;
+  margin-block-start: 0.55rem;
+  color: var(--muted-foreground);
+  font-size: var(--text-caption);
+}
+
+.appliedFilter {
+  border: 1px solid var(--border);
+  border-radius: var(--radius-pill);
+  background: var(--surface-soft);
+  padding: 0.2rem 0.55rem;
+  color: var(--foreground);
+}
+
+.filterControls {
+  display: grid;
+  min-width: 0;
+  gap: 0.75rem;
+}
+
+.filterControlsExpanded {
+  display: grid;
+}
+
 .sectionHeading h2 {
   margin: 0;
   color: var(--primary-strong);
@@ -565,6 +617,45 @@
   .filterFields,
   .taskGrid {
     grid-template-columns: minmax(0, 1fr);
+  }
+
+  .filterHeader {
+    flex-direction: column;
+  }
+
+  .filterHeaderActions {
+    display: grid;
+    width: 100%;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .filterHeaderActions .textButton {
+    min-height: 2.75rem;
+  }
+
+  .mobileFilterToggle {
+    display: inline-flex;
+    min-height: 2.75rem;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-control);
+    background: var(--surface);
+    padding: 0.55rem 0.65rem;
+    color: var(--primary-strong);
+    font: inherit;
+    font-size: var(--text-ui);
+    font-weight: 700;
+    cursor: pointer;
+  }
+
+  .mobileFilterToggle:focus-visible {
+    outline: 3px solid var(--focus);
+    outline-offset: 3px;
+  }
+
+  .filterControls:not(.filterControlsExpanded) {
+    display: none;
   }
 
   .sectionHeading,

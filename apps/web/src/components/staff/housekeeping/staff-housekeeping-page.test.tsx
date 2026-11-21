@@ -374,6 +374,39 @@ describe('StaffHousekeepingPage', () => {
     expect(housekeepingApi.getStaffHousekeepingTasks.mock.lastCall?.[0]).not.toHaveProperty('businessDate');
   });
 
+  it('keeps the applied-filter summary and clear action available while mobile filters are collapsed', async () => {
+    setRole('RECEPTIONIST');
+    render(<StaffHousekeepingPage />);
+    await screen.findByRole('article', { name: /کار خانه‌داری اتاق ۱۰۱/ });
+
+    const summary = screen.getByRole('group', { name: 'خلاصه فیلترهای اعمال‌شده' });
+    expect(within(summary).getByText('بدون فیلتر اعمال‌شده')).toBeVisible();
+    const toggle = screen.getByRole('button', { name: 'نمایش فیلترها' });
+    expect(toggle).toHaveAttribute('aria-expanded', 'false');
+    expect(toggle).toHaveAttribute('aria-controls', 'housekeeping-filter-controls');
+    const controls = document.getElementById('housekeeping-filter-controls');
+    expect(controls).not.toBeNull();
+    expect(controls).toContainElement(screen.getByLabelText('موعد انجام کار'));
+
+    const roomFilter = screen.getByLabelText('اتاق');
+    fireEvent.change(roomFilter, { target: { value: 'room-101' } });
+    expect(within(summary).getByText('بدون فیلتر اعمال‌شده')).toBeVisible();
+    fireEvent.click(screen.getByRole('button', { name: 'اعمال فیلترها' }));
+    expect(await within(summary).findByText('اتاق ۱۰۱')).toBeVisible();
+    expect(toggle).toHaveAttribute('aria-expanded', 'false');
+
+    const clearButton = screen.getByRole('button', { name: 'پاک‌کردن فیلترها' });
+    expect(clearButton).toBeVisible();
+    expect(controls).not.toContainElement(clearButton);
+    fireEvent.click(clearButton);
+    expect(within(summary).getByText('بدون فیلتر اعمال‌شده')).toBeVisible();
+    expect(toggle).toHaveAttribute('aria-expanded', 'false');
+
+    fireEvent.click(toggle);
+    expect(toggle).toHaveAttribute('aria-expanded', 'true');
+    expect(toggle).toHaveAccessibleName('بستن فیلترها');
+  });
+
   it('keeps visible Jalali date-format guidance and associates invalid-date feedback with its field', async () => {
     render(<StaffHousekeepingPage />);
     const dueDate = screen.getByLabelText('موعد انجام کار');

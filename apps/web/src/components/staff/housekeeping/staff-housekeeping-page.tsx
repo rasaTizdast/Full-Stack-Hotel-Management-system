@@ -511,6 +511,15 @@ export function StaffHousekeepingPage() {
 
       <HousekeepingFilterBar
         filters={draftFilters}
+        appliedFilters={{
+          dueDate: appliedQuery.dueDate ?? '',
+          roomId: appliedQuery.roomId ?? '',
+          floor: appliedQuery.floor ?? '',
+          taskType: appliedQuery.taskType ?? '',
+          assigneeStaffUserId: appliedQuery.assigneeStaffUserId ?? '',
+          status: appliedQuery.status ?? '',
+          priority: appliedQuery.priority ?? '',
+        }}
         rooms={rooms}
         canFilterAssignee={canManage}
         assignees={assignees}

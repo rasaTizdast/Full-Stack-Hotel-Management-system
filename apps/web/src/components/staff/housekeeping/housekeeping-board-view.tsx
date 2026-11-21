@@ -12,6 +12,7 @@ import {
   CONDITION_LABELS,
   DISCREPANCY_KIND_LABELS,
   DISCREPANCY_STATUS_LABELS,
+  hasHousekeepingFilters,
   PRIORITY_LABELS,
   TASK_STATUS_LABELS,
   TASK_TYPE_LABELS,
@@ -79,6 +80,7 @@ export function HousekeepingHeader({
 
 interface HousekeepingFilterBarProps {
   filters: HousekeepingFilters;
+  appliedFilters: HousekeepingFilters;
   rooms: HousekeepingRoomOption[];
   canFilterAssignee: boolean;
   assignees: { id: string; username: string }[];
@@ -93,6 +95,7 @@ interface HousekeepingFilterBarProps {
 
 export function HousekeepingFilterBar({
   filters,
+  appliedFilters,
   rooms,
   canFilterAssignee,
   assignees,
@@ -104,17 +107,61 @@ export function HousekeepingFilterBar({
   onClear,
   onRetryAssignees,
 }: HousekeepingFilterBarProps) {
+  const [mobileExpanded, setMobileExpanded] = useState(false);
   const floors = [...new Set(rooms.map((room) => room.floor).filter((floor): floor is string => Boolean(floor)))].sort((a, b) => a.localeCompare(b, 'fa'));
+  const appliedFilterLabels = [
+    appliedFilters.dueDate
+      ? `موعد: ${formatGregorianAsJalali(appliedFilters.dueDate) ?? appliedFilters.dueDate}`
+      : null,
+    appliedFilters.roomId
+      ? `اتاق ${rooms.find((room) => room.id === appliedFilters.roomId)?.roomNumber ?? 'انتخاب‌شده'}`
+      : null,
+    appliedFilters.floor ? `طبقه ${appliedFilters.floor}` : null,
+    appliedFilters.taskType
+      ? TASK_TYPE_LABELS[appliedFilters.taskType as keyof typeof TASK_TYPE_LABELS] ?? appliedFilters.taskType
+      : null,
+    appliedFilters.assigneeStaffUserId
+      ? `مسئول: ${assignees.find((assignee) => assignee.id === appliedFilters.assigneeStaffUserId)?.username ?? 'انتخاب‌شده'}`
+      : null,
+    appliedFilters.status
+      ? TASK_STATUS_LABELS[appliedFilters.status as keyof typeof TASK_STATUS_LABELS] ?? appliedFilters.status
+      : null,
+    appliedFilters.priority
+      ? `اولویت: ${PRIORITY_LABELS[appliedFilters.priority as keyof typeof PRIORITY_LABELS] ?? appliedFilters.priority}`
+      : null,
+  ].filter((label): label is string => Boolean(label));
+  const hasFiltersToClear = hasHousekeepingFilters(filters) || hasHousekeepingFilters(appliedFilters);
 
   return (
-    <form className={styles.filters} onSubmit={onApply}>
-      <div className={styles.sectionHeading}>
+    <form className={styles.filters} aria-labelledby="housekeeping-filter-title" onSubmit={onApply}>
+      <div className={`${styles.sectionHeading} ${styles.filterHeader}`}>
         <div>
-          <h2>پیدا کردن کار</h2>
+          <h2 id="housekeeping-filter-title">پیدا کردن کار</h2>
           <p>فیلترهای اتاق از وضعیت حضور و وضعیت نظافت جدا هستند.</p>
+          <div className={styles.appliedSummary} role="group" aria-label="خلاصه فیلترهای اعمال‌شده" aria-live="polite">
+            <span>فیلترهای اعمال‌شده:</span>
+            {appliedFilterLabels.length > 0
+              ? appliedFilterLabels.map((label) => <span className={styles.appliedFilter} key={label}>{label}</span>)
+              : <span>بدون فیلتر اعمال‌شده</span>}
+          </div>
         </div>
-        <button className={styles.textButton} type="button" onClick={onClear}>پاک‌کردن فیلترها</button>
+        <div className={styles.filterHeaderActions}>
+          <button className={styles.textButton} type="button" onClick={onClear} disabled={!hasFiltersToClear}>پاک‌کردن فیلترها</button>
+          <button
+            className={styles.mobileFilterToggle}
+            type="button"
+            aria-controls="housekeeping-filter-controls"
+            aria-expanded={mobileExpanded}
+            onClick={() => setMobileExpanded((expanded) => !expanded)}
+          >
+            {mobileExpanded ? 'بستن فیلترها' : 'نمایش فیلترها'}
+          </button>
+        </div>
       </div>
+      <div
+        id="housekeeping-filter-controls"
+        className={`${styles.filterControls} ${mobileExpanded ? styles.filterControlsExpanded : ''}`}
+      >
       <div className={styles.filterFields}>
         <label className={styles.field}>
           <span>موعد انجام کار</span>
@@ -190,6 +237,7 @@ export function HousekeepingFilterBar({
       </div>
       <div className={styles.filterActions}>
         <button className={styles.primaryButton} type="submit">اعمال فیلترها</button>
+      </div>
       </div>
     </form>
   );
