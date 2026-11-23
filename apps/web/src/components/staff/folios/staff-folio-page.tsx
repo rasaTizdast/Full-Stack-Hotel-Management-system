@@ -1,21 +1,53 @@
 'use client';
 
 import { useCallback, useEffect, useMemo, useState, type FormEvent } from 'react';
+import Link from 'next/link';
 import { StaffApiError } from '@/lib/staff-api';
 import { formatGregorianAsJalali, getHotelTodayIso, toGregorianIso } from '@/lib/jalali-date';
 import {
   adjustStaffFolio,
+  checkoutStaffFolio,
   getStaffFolio,
   getStaffServiceItems,
   postStaffServiceCharge,
+  recordStaffFolioPayment,
+  refundStaffFolioPayment,
   type StaffFolio,
   type StaffFolioEntry,
+  type StaffFolioPaymentInput,
   type StaffServiceItem,
 } from '@/lib/staff-folios-api';
+import { extendStaffStay } from '@/lib/staff-front-desk-api';
 import { useStaffSession } from '../staff-session-provider';
 import styles from './folios.module.css';
 
 function messageFor(error: unknown): string {
+  if (error instanceof StaffApiError) {
+    if (error.code === 'FOLIO_PAYMENT_EXCEEDS_BALANCE') {
+      return 'مبلغ پرداخت نمی‌تواند از مانده صورتحساب بیشتر باشد.';
+    }
+    if (error.code === 'FOLIO_BALANCE_NOT_SETTLED') {
+      return 'برای خروج، مانده صورتحساب باید تسویه شود.';
+    }
+    if (error.code === 'STAY_EXTENSION_REQUIRED') {
+      return 'تاریخ خروج رزرو گذشته است؛ پیش از ثبت خروج، تمدید اقامت را ثبت کنید.';
+    }
+    if (error.code === 'STAY_EXTENSION_NOT_LATER') {
+      return 'تاریخ خروج جدید باید بعد از تاریخ خروج فعلی باشد.';
+    }
+    if (error.code === 'STAY_EXTENSION_WINDOW_CLOSED') {
+      return 'تاریخ خروج جدید باید دست‌کم تا امروز کاری هتل ادامه داشته باشد.';
+    }
+    if (error.code === 'STAY_EXTENSION_INVENTORY_MISSING') {
+      return 'موجودی شب‌های تمدید کامل نیست؛ پیش از ادامه با پذیرش هماهنگ کنید.';
+    }
+    if (error.code === 'ON_ACCOUNT_REASON_REQUIRED') {
+      return 'برای ثبت مانده قابل دریافت، دلیل لازم است.';
+    }
+    if (error.code === 'REFUND_EXCEEDS_SOURCE_PAYMENT') {
+      return 'مبلغ استرداد از مبلغ پرداخت‌نشده بیشتر است.';
+    }
+  }
   if (error instanceof StaffApiError && error.status === 403) {
     return 'این اقدام برای نقش شما مجاز نیست.';
   }
@@ -61,6 +93,28 @@ function canAdjustEntry(entry: StaffFolioEntry): boolean {
   return !entry.correctsEntryId && entry.kind !== 'PAYMENT' && entry.kind !== 'REFUND';
 }
 
+function paymentMethodLabel(method: StaffFolioEntry['paymentMethod']): string {
+  switch (method) {
+    case 'CASH':
+      return 'نقدی';
+    case 'BANK_TERMINAL':
+      return 'کارت‌خوان';
+    case 'BANK_TRANSFER':
+      return 'حواله بانکی';
+    case 'OTHER':
+      return 'سایر';
+    default:
+      return '';
+  }
+}
+
+function refundableAmount(payment: StaffFolioEntry, entries: StaffFolioEntry[]): bigint {
+  const refunded = entries
+    .filter((entry) => entry.kind === 'REFUND' && entry.correctsEntryId === payment.id)
+    .reduce((total, entry) => total + BigInt(entry.amountToman), BigInt(0));
+  return BigInt(payment.amountToman) - refunded;
+}
+
 function serviceDateInput(isoDate: string, value: string, onChange: (value: string) => void) {
   return (
     <label className={styles.field}>
@@ -79,6 +133,22 @@ function serviceDateInput(isoDate: string, value: string, onChange: (value: stri
   );
 }
 
+function stayExtensionDateInput(value: string, onChange: (value: string) => void) {
+  return (
+    <label className={styles.field}>
+      <span>تاریخ خروج جدید · شمسی</span>
+      <input
+        inputMode="numeric"
+        placeholder="۱۴۰۵/۰۹/۰۲"
+        value={value}
+        onChange={(event) => onChange(event.target.value)}
+        aria-label="تاریخ خروج جدید · شمسی"
+      />
+      <small>تاریخ خروج باید پس از تاریخ برنامه‌ریزی‌شده و دست‌کم برابر امروز باشد.</small>
+    </label>
+  );
+}
+
 export function StaffFolioPage({ bookingId }: { bookingId: string }) {
   const { status, staff, csrfToken } = useStaffSession();
   const role = staff?.role;
@@ -88,6 +158,9 @@ export function StaffFolioPage({ bookingId }: { bookingId: string }) {
   const canPost =
     status === 'authenticated' && ['ADMIN', 'MANAGER', 'CASHIER'].includes(role ?? '');
   const canAdjust = status === 'authenticated' && ['ADMIN', 'MANAGER'].includes(role ?? '');
+  const canCheckout =
+    status === 'authenticated' &&
+    ['ADMIN', 'MANAGER', 'RECEPTIONIST', 'CASHIER'].includes(role ?? '');
   const [folio, setFolio] = useState<StaffFolio | null>(null);
   const [serviceItems, setServiceItems] = useState<StaffServiceItem[]>([]);
   const [serviceItemId, setServiceItemId] = useState('');
@@ -101,6 +174,19 @@ export function StaffFolioPage({ bookingId }: { bookingId: string }) {
     amountToman: string;
     reason: string;
   } | null>(null);
+  const [refund, setRefund] = useState<{
+    entry: StaffFolioEntry;
+    amountToman: string;
+    reason: string;
+  } | null>(null);
+  const [paymentAmount, setPaymentAmount] = useState('');
+  const [paymentMethod, setPaymentMethod] = useState<StaffFolioPaymentInput['method']>('CASH');
+  const [paymentReference, setPaymentReference] = useState('');
+  const [onAccountReason, setOnAccountReason] = useState('');
+  const [extensionDate, setExtensionDate] = useState(
+    () => formatGregorianAsJalali(getHotelTodayIso()) ?? '',
+  );
+  const [extensionReason, setExtensionReason] = useState('');
   const [isLoading, setIsLoading] = useState(true);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -212,6 +298,146 @@ export function StaffFolioPage({ bookingId }: { bookingId: string }) {
     }
   }
 
+  async function submitPayment(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    if (!folio || !csrfToken) return;
+    if (!/^[1-9]\d*$/.test(paymentAmount)) {
+      setError('مبلغ پرداخت باید عدد صحیح و مثبت به تومان باشد.');
+      return;
+    }
+    const amount = BigInt(paymentAmount);
+    const balance = BigInt(folio.balanceToman);
+    if (balance <= BigInt(0) || amount > balance) {
+      setError('مبلغ پرداخت از مانده مثبت صورتحساب بیشتر است.');
+      return;
+    }
+    setBusy(true);
+    setError(null);
+    setSuccess(null);
+    try {
+      const updated = await recordStaffFolioPayment(
+        folio.booking.id,
+        {
+          amountToman: paymentAmount,
+          method: paymentMethod,
+          ...(paymentReference.trim() ? { reference: paymentReference.trim() } : {}),
+        },
+        makeIdempotencyKey('payment'),
+        csrfToken,
+      );
+      setFolio(updated);
+      setPaymentAmount('');
+      setPaymentReference('');
+      setSuccess('پرداخت آفلاین در صورتحساب ثبت شد.');
+    } catch (cause) {
+      setError(messageFor(cause));
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function submitRefund(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    if (!folio || !refund || !csrfToken) return;
+    const remaining = refundableAmount(refund.entry, folio.entries);
+    if (
+      !/^[1-9]\d*$/.test(refund.amountToman) ||
+      BigInt(refund.amountToman) > remaining ||
+      refund.reason.trim().length < 3
+    ) {
+      setError('مبلغ استرداد باید مثبت و از مانده قابل استرداد بیشتر نباشد؛ دلیل را هم وارد کنید.');
+      return;
+    }
+    setBusy(true);
+    setError(null);
+    setSuccess(null);
+    try {
+      const updated = await refundStaffFolioPayment(
+        folio.booking.id,
+        {
+          paymentEntryId: refund.entry.id,
+          amountToman: refund.amountToman,
+          reason: refund.reason.trim(),
+        },
+        makeIdempotencyKey('refund'),
+        csrfToken,
+      );
+      setFolio(updated);
+      setRefund(null);
+      setSuccess('استرداد به‌صورت ردیف جبرانی ثبت شد.');
+    } catch (cause) {
+      setError(messageFor(cause));
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function submitCheckout(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    if (!folio || !csrfToken) return;
+    const balance = BigInt(folio.balanceToman);
+    if (balance < BigInt(0)) {
+      setError('ابتدا اعتبار مهمان را با استرداد مجاز تسویه کنید.');
+      return;
+    }
+    if (balance > BigInt(0) && (!canAdjust || onAccountReason.trim().length < 3)) {
+      setError(
+        canAdjust
+          ? 'برای ثبت خروج با مانده قابل دریافت، دلیل حداقل سه‌حرفی لازم است.'
+          : 'برای خروج، ابتدا مانده صورتحساب را تسویه کنید.',
+      );
+      return;
+    }
+    setBusy(true);
+    setError(null);
+    setSuccess(null);
+    try {
+      const updated = await checkoutStaffFolio(
+        folio.booking.id,
+        balance > BigInt(0) ? { onAccountReason: onAccountReason.trim() } : {},
+        makeIdempotencyKey('checkout'),
+        csrfToken,
+      );
+      setFolio(updated);
+      setSuccess('خروج نهایی ثبت شد و اتاق برای نظافت علامت‌گذاری شد.');
+    } catch (cause) {
+      setError(messageFor(cause));
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function submitStayExtension(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    if (!folio || !csrfToken) return;
+    const checkOut = toGregorianIso(extensionDate);
+    if (
+      !checkOut ||
+      checkOut <= folio.booking.checkOut ||
+      checkOut < getHotelTodayIso() ||
+      extensionReason.trim().length < 3
+    ) {
+      setError('تاریخ خروج جدید و دلیل حداقل سه‌حرفی تمدید را وارد کنید.');
+      return;
+    }
+    setBusy(true);
+    setError(null);
+    setSuccess(null);
+    try {
+      await extendStaffStay(folio.booking.reference, csrfToken, {
+        checkOut,
+        reason: extensionReason.trim(),
+      });
+      setFolio(await getStaffFolio(folio.booking.id));
+      setExtensionReason('');
+      setSuccess('تمدید اقامت و شب‌های افزوده‌شده ثبت شد.');
+    } catch (cause) {
+      setError(messageFor(cause));
+    } finally {
+      setBusy(false);
+    }
+  }
+
   if (status === 'loading' || isLoading) {
     return (
       <p className={styles.status} role="status">
@@ -254,28 +480,50 @@ export function StaffFolioPage({ bookingId }: { bookingId: string }) {
     balance === BigInt(0) ? 'تسویه' : balance > BigInt(0) ? 'مانده بدهی' : 'اعتبار مهمان';
   const canPostForStay =
     canPost && folio.booking.status === 'CHECKED_IN' && folio.status === 'OPEN';
+  const canRecordPayment =
+    canPost &&
+    balance > BigInt(0) &&
+    ((folio.status === 'OPEN' && folio.booking.status === 'CHECKED_IN') ||
+      (folio.status === 'CLOSED_DUE' && folio.booking.status === 'CHECKED_OUT'));
+  const canSubmitCheckout =
+    balance === BigInt(0) ||
+    (balance > BigInt(0) && canAdjust && onAccountReason.trim().length >= 3);
+  const isCheckedIn = folio.booking.status === 'CHECKED_IN' && folio.status === 'OPEN';
+  const canExtendStay = canAdjust && isCheckedIn;
 
   return (
     <main className={styles.page}>
       <header className={styles.header}>
         <div>
-          <p className={styles.eyebrow}>صورتحساب عملیاتی · موقت</p>
+          <p className={styles.eyebrow}>
+            {folio.booking.status === 'CHECKED_OUT'
+              ? 'صورتحساب عملیاتی · نهایی'
+              : 'صورتحساب عملیاتی · موقت'}
+          </p>
           <h1>صورتحساب اقامت</h1>
           <p className={styles.lead}>
             مبالغ با تومان ثبت شده‌اند. این سند، صورتحساب عملیاتی است و فاکتور مالیاتی محسوب
             نمی‌شود.
           </p>
         </div>
-        <button
-          className={styles.secondaryButton}
-          type="button"
-          onClick={() => {
-            setIsLoading(true);
-            void load();
-          }}
-        >
-          دریافت دوباره
-        </button>
+        <div className={styles.headerActions}>
+          <Link
+            className={styles.secondaryButton}
+            href={`/staff/folios/${encodeURIComponent(folio.booking.id)}/print`}
+          >
+            چاپ صورتحساب
+          </Link>
+          <button
+            className={styles.secondaryButton}
+            type="button"
+            onClick={() => {
+              setIsLoading(true);
+              void load();
+            }}
+          >
+            دریافت دوباره
+          </button>
+        </div>
       </header>
 
       {error && (
@@ -297,7 +545,8 @@ export function StaffFolioPage({ bookingId }: { bookingId: string }) {
             شناسه رزرو <bdi dir="ltr">{folio.booking.reference}</bdi>
           </p>
           <p>
-            {jalaliDate(folio.booking.checkIn)} تا {jalaliDate(folio.booking.checkOut)}
+            {jalaliDate(folio.booking.checkIn)} تا{' '}
+            {jalaliDate(folio.booking.actualDepartureDate ?? folio.booking.checkOut)}
           </p>
         </div>
         <div className={styles.balanceCard}>
@@ -312,6 +561,140 @@ export function StaffFolioPage({ bookingId }: { bookingId: string }) {
           </small>
         </div>
       </section>
+
+      {canExtendStay && (
+        <section className={styles.panel} aria-labelledby="folio-extension-heading">
+          <div className={styles.sectionHeading}>
+            <div>
+              <p className={styles.eyebrow}>تغییر برنامه اقامت</p>
+              <h2 id="folio-extension-heading">تمدید اقامت جاری</h2>
+            </div>
+            <span className={styles.roleHint}>
+              تمدید با ظرفیت اتاق و نرخ هر شب بررسی و ثبت می‌شود.
+            </span>
+          </div>
+          <form className={styles.formGrid} onSubmit={(event) => void submitStayExtension(event)}>
+            {stayExtensionDateInput(extensionDate, setExtensionDate)}
+            <label className={styles.field}>
+              <span>دلیل تمدید</span>
+              <input
+                value={extensionReason}
+                maxLength={500}
+                onChange={(event) => setExtensionReason(event.target.value)}
+                required
+              />
+            </label>
+            <div className={styles.formActions}>
+              <button className={styles.primaryButton} type="submit" disabled={busy || !csrfToken}>
+                {busy ? 'در حال ثبت…' : 'ثبت تمدید اقامت'}
+              </button>
+            </div>
+          </form>
+        </section>
+      )}
+
+      {canCheckout && isCheckedIn && (
+        <section className={styles.panel} aria-labelledby="folio-checkout-heading">
+          <div className={styles.sectionHeading}>
+            <div>
+              <p className={styles.eyebrow}>پایان اقامت</p>
+              <h2 id="folio-checkout-heading">تسویه نهایی و خروج</h2>
+            </div>
+            <span className={styles.roleHint}>
+              خروج، هزینه شب‌های اقامت و وضعیت اتاق را یک‌جا ثبت می‌کند.
+            </span>
+          </div>
+          {balance > BigInt(0) && canAdjust && (
+            <label className={styles.field}>
+              <span>دلیل تسویه با مانده</span>
+              <input
+                value={onAccountReason}
+                maxLength={500}
+                onChange={(event) => setOnAccountReason(event.target.value)}
+                aria-describedby="folio-on-account-help"
+                aria-label="دلیل تسویه با مانده"
+              />
+              <small id="folio-on-account-help">
+                فقط مدیر یا مدیر سامانه می‌تواند خروج با مانده قابل دریافت را تأیید کند.
+              </small>
+            </label>
+          )}
+          {balance > BigInt(0) && !canAdjust && (
+            <p className={styles.status}>
+              برای خروج عادی، مانده {amountText(folio.balanceToman)} را ثبت و تسویه کنید.
+            </p>
+          )}
+          {balance < BigInt(0) && (
+            <p className={styles.status}>
+              اعتبار مهمان باید پیش از خروج نهایی با استرداد مجاز تسویه شود.
+            </p>
+          )}
+          <form className={styles.formActions} onSubmit={(event) => void submitCheckout(event)}>
+            <button
+              className={styles.primaryButton}
+              type="submit"
+              disabled={busy || !csrfToken || !canSubmitCheckout || balance < BigInt(0)}
+            >
+              {busy ? 'در حال ثبت خروج…' : 'ثبت خروج'}
+            </button>
+          </form>
+        </section>
+      )}
+
+      {canRecordPayment && (
+        <section className={styles.panel} aria-labelledby="folio-payment-heading">
+          <div className={styles.sectionHeading}>
+            <div>
+              <p className={styles.eyebrow}>دریافت آفلاین</p>
+              <h2 id="folio-payment-heading">ثبت پرداخت</h2>
+            </div>
+            <span className={styles.roleHint}>مبلغ باید مثبت و حداکثر برابر با مانده باشد.</span>
+          </div>
+          <form className={styles.formGrid} onSubmit={(event) => void submitPayment(event)}>
+            <label className={styles.field}>
+              <span>مبلغ پرداخت · تومان</span>
+              <input
+                dir="ltr"
+                inputMode="numeric"
+                value={paymentAmount}
+                onChange={(event) => setPaymentAmount(event.target.value)}
+                required
+              />
+            </label>
+            <label className={styles.field}>
+              <span>روش پرداخت</span>
+              <select
+                value={paymentMethod}
+                onChange={(event) =>
+                  setPaymentMethod(event.target.value as StaffFolioPaymentInput['method'])
+                }
+              >
+                <option value="CASH">نقدی</option>
+                <option value="BANK_TERMINAL">کارت‌خوان</option>
+                <option value="BANK_TRANSFER">حواله بانکی</option>
+                <option value="OTHER">سایر روش‌های آفلاین</option>
+              </select>
+            </label>
+            <label className={styles.field}>
+              <span>شماره رسید بانکی · اختیاری</span>
+              <input
+                dir="ltr"
+                maxLength={120}
+                value={paymentReference}
+                onChange={(event) => setPaymentReference(event.target.value)}
+              />
+            </label>
+            <div className={styles.formActions}>
+              <button className={styles.primaryButton} type="submit" disabled={busy || !csrfToken}>
+                {busy ? 'در حال ثبت…' : 'ثبت پرداخت'}
+              </button>
+            </div>
+          </form>
+          <p className={styles.panelHint}>
+            شماره کارت، رمز، CVV و اطلاعات احراز پرداخت را وارد نکنید.
+          </p>
+        </section>
+      )}
 
       {canPostForStay && (
         <section className={styles.panel} aria-labelledby="folio-service-heading">
@@ -436,6 +819,14 @@ export function StaffFolioPage({ bookingId }: { bookingId: string }) {
                       {entry.correctionReason && (
                         <small>دلیل اصلاح: {entry.correctionReason}</small>
                       )}
+                      {entry.paymentMethod && (
+                        <small>روش پرداخت: {paymentMethodLabel(entry.paymentMethod)}</small>
+                      )}
+                      {entry.paymentReference && (
+                        <small>
+                          شناسه رسید: <bdi dir="ltr">{entry.paymentReference}</bdi>
+                        </small>
+                      )}
                     </td>
                     <td>{entry.roomNumber ? `اتاق ${entry.roomNumber}` : '—'}</td>
                     <td>
@@ -470,6 +861,23 @@ export function StaffFolioPage({ bookingId }: { bookingId: string }) {
                             اصلاح
                           </button>
                         )}
+                        {canAdjust &&
+                          entry.kind === 'PAYMENT' &&
+                          refundableAmount(entry, folio.entries) > BigInt(0) && (
+                            <button
+                              className={styles.textButton}
+                              type="button"
+                              onClick={() =>
+                                setRefund({
+                                  entry,
+                                  amountToman: refundableAmount(entry, folio.entries).toString(),
+                                  reason: '',
+                                })
+                              }
+                            >
+                              ثبت استرداد
+                            </button>
+                          )}
                       </td>
                     )}
                   </tr>
@@ -529,6 +937,62 @@ export function StaffFolioPage({ bookingId }: { bookingId: string }) {
             <div className={styles.formActions}>
               <button className={styles.primaryButton} type="submit" disabled={busy || !csrfToken}>
                 {busy ? 'در حال ثبت…' : 'ثبت اصلاح'}
+              </button>
+            </div>
+          </form>
+        </section>
+      )}
+
+      {refund && (
+        <section className={styles.panel} aria-labelledby="folio-refund-heading">
+          <div className={styles.sectionHeading}>
+            <div>
+              <p className={styles.eyebrow}>ردیف پرداخت اصلی باقی می‌ماند</p>
+              <h2 id="folio-refund-heading">ثبت استرداد پرداخت</h2>
+            </div>
+            <button
+              className={styles.secondaryButton}
+              type="button"
+              onClick={() => setRefund(null)}
+            >
+              بستن
+            </button>
+          </div>
+          <p className={styles.panelHint}>
+            حداکثر مبلغ قابل استرداد:{' '}
+            {amountText(refundableAmount(refund.entry, folio.entries).toString())}
+          </p>
+          <form className={styles.formGrid} onSubmit={(event) => void submitRefund(event)}>
+            <label className={styles.field}>
+              <span>مبلغ استرداد · تومان</span>
+              <input
+                dir="ltr"
+                inputMode="numeric"
+                value={refund.amountToman}
+                onChange={(event) =>
+                  setRefund((current) =>
+                    current ? { ...current, amountToman: event.target.value } : null,
+                  )
+                }
+                required
+              />
+            </label>
+            <label className={styles.field}>
+              <span>دلیل استرداد</span>
+              <input
+                value={refund.reason}
+                maxLength={500}
+                onChange={(event) =>
+                  setRefund((current) =>
+                    current ? { ...current, reason: event.target.value } : null,
+                  )
+                }
+                required
+              />
+            </label>
+            <div className={styles.formActions}>
+              <button className={styles.primaryButton} type="submit" disabled={busy || !csrfToken}>
+                {busy ? 'در حال ثبت…' : 'تأیید استرداد'}
               </button>
             </div>
           </form>

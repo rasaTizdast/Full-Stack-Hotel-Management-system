@@ -3,8 +3,12 @@ import {
   adjustStaffFolio,
   createStaffServiceItem,
   getStaffFolio,
+  getStaffFolioPrint,
   getStaffServiceItems,
   postStaffServiceCharge,
+  recordStaffFolioPayment,
+  refundStaffFolioPayment,
+  checkoutStaffFolio,
   updateStaffServiceItem,
 } from './staff-folios-api';
 
@@ -89,6 +93,73 @@ describe('staff folio API client', () => {
         headers: expect.objectContaining({
           'X-CSRF-Token': csrf,
           'Idempotency-Key': 'adjust-retry-01',
+        }),
+      }),
+    );
+  });
+
+  it('sends no-store print, payment, refund and checkout requests with CSRF/idempotency controls', async () => {
+    const fetchMock = vi.fn(() => Promise.resolve(new Response('{}')));
+    vi.stubGlobal('fetch', fetchMock);
+
+    await getStaffFolioPrint('booking/1');
+    await recordStaffFolioPayment(
+      'booking/1',
+      { amountToman: '12000', method: 'CASH', reference: 'RCPT-1' },
+      'payment-retry-01',
+      'csrf-settlement',
+    );
+    await refundStaffFolioPayment(
+      'booking/1',
+      { paymentEntryId: 'payment-1', amountToman: '1000', reason: 'اصلاح پرداخت' },
+      'refund-retry-01',
+      'csrf-settlement',
+    );
+    await checkoutStaffFolio(
+      'booking/1',
+      { onAccountReason: 'توافق مهمان آزمایشی' },
+      'checkout-retry-01',
+      'csrf-settlement',
+    );
+
+    expect(fetchMock).toHaveBeenNthCalledWith(
+      1,
+      'http://localhost:4000/api/v1/staff/folios/booking%2F1/print',
+      expect.objectContaining({ cache: 'no-store', credentials: 'include' }),
+    );
+    expect(fetchMock).toHaveBeenNthCalledWith(
+      2,
+      'http://localhost:4000/api/v1/staff/folios/booking%2F1/payments',
+      expect.objectContaining({
+        method: 'POST',
+        cache: 'no-store',
+        headers: expect.objectContaining({
+          'X-CSRF-Token': 'csrf-settlement',
+          'Idempotency-Key': 'payment-retry-01',
+        }),
+      }),
+    );
+    expect(fetchMock).toHaveBeenNthCalledWith(
+      3,
+      'http://localhost:4000/api/v1/staff/folios/booking%2F1/refunds',
+      expect.objectContaining({
+        method: 'POST',
+        cache: 'no-store',
+        headers: expect.objectContaining({
+          'X-CSRF-Token': 'csrf-settlement',
+          'Idempotency-Key': 'refund-retry-01',
+        }),
+      }),
+    );
+    expect(fetchMock).toHaveBeenNthCalledWith(
+      4,
+      'http://localhost:4000/api/v1/staff/folios/booking%2F1/checkout',
+      expect.objectContaining({
+        method: 'POST',
+        cache: 'no-store',
+        headers: expect.objectContaining({
+          'X-CSRF-Token': 'csrf-settlement',
+          'Idempotency-Key': 'checkout-retry-01',
         }),
       }),
     );

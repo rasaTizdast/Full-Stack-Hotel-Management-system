@@ -21,6 +21,7 @@ const ALLOWED_AUDIT_FIELDS = new Set<AuditSafeField>([
   'nightlyPriceToman',
   'checkIn',
   'checkOut',
+  'actualDepartureDate',
   'roomQuantity',
   'roomId',
   'effectiveDate',
@@ -40,6 +41,7 @@ const ALLOWED_AUDIT_FIELDS = new Set<AuditSafeField>([
   'serviceName',
   'serviceCategory',
   'currentPriceToman',
+  'paymentMethod',
 ]);
 
 function assertSafeSnapshot(snapshot: AuditSnapshot | undefined): void {

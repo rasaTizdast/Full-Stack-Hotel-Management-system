@@ -1276,7 +1276,12 @@
     display: grid;
     width: 1.6rem;
     place-items: center;
-    background: linear-gradient(90deg, var(--surface) 0%, color-mix(in srgb, var(--surface) 78%, transparent) 45%, transparent 100%);
+    background: linear-gradient(
+      90deg,
+      var(--surface) 0%,
+      color-mix(in srgb, var(--surface) 78%, transparent) 45%,
+      transparent 100%
+    );
     color: var(--muted-foreground);
     pointer-events: none;
   }
@@ -1339,6 +1344,29 @@
     inset-block-start: 1rem;
     inset-inline-end: 0;
     margin: 0;
+  }
+}
+
+@media print {
+  .staffScope:has(:global(.staff-shell[data-folio-print='true'])) {
+    background: #fff !important;
+  }
+  .staffScope :global(.staff-shell[data-folio-print='true']) {
+    min-height: 0;
+    background: #fff !important;
+  }
+  .staffScope :global(.staff-shell[data-folio-print='true'] .skip-link),
+  .staffScope :global(.staff-shell[data-folio-print='true'] .staff-topbar),
+  .staffScope :global(.staff-shell[data-folio-print='true'] .staff-sidebar) {
+    display: none !important;
+  }
+  .staffScope :global(.staff-shell[data-folio-print='true'] .staff-layout) {
+    display: block !important;
+  }
+  .staffScope :global(.staff-shell[data-folio-print='true'] .staff-main) {
+    min-width: 0;
+    background: #fff !important;
+    padding: 0 !important;
   }
 }
 @media (width <= 760px) {
@@ -1613,7 +1641,10 @@
   text-align: center;
   text-decoration: none;
   cursor: pointer;
-  transition: background-color 180ms var(--motion-out), border-color 180ms var(--motion-out), transform 180ms var(--motion-out);
+  transition:
+    background-color 180ms var(--motion-out),
+    border-color 180ms var(--motion-out),
+    transform 180ms var(--motion-out);
 }
 .staffScope :global(.staff-accounts__primary) {
   background: var(--primary-strong);

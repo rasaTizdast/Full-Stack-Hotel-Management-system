@@ -35,6 +35,7 @@ import { StaffBookingDetailDto, StaffBookingListDto } from './dto/staff-booking-
 import {
   AmendStaffStayDto,
   CheckInStaffStayDto,
+  ExtendCheckedInStayDto,
   MoveStaffRoomDto,
   NoShowStaffStayDto,
   StaffStayMutationDto,
@@ -177,6 +178,31 @@ export class StaffBookingsController {
     @Body() dto: AmendStaffStayDto,
   ): Promise<StaffStayMutationDto> {
     return this.staffBookings.amend(params.reference, request.staff!, dto);
+  }
+
+  @Post(':reference/extend')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({
+    summary: 'Extend a checked-in stay against available rooms and nightly inventory.',
+    description:
+      'Only an administrator or manager may extend an in-house stay. The required reason is audited. Checkout is exclusive and dates are Gregorian.',
+  })
+  @ApiHeader({ name: 'X-CSRF-Token', required: true })
+  @ApiOkResponse({ type: StaffStayMutationDto })
+  @ApiBadRequestResponse({ type: ApiErrorResponseDto })
+  @ApiUnauthorizedResponse({ type: ApiErrorResponseDto })
+  @ApiForbiddenResponse({ type: ApiErrorResponseDto })
+  @ApiNotFoundResponse({ type: ApiErrorResponseDto })
+  @ApiConflictResponse({
+    type: ApiErrorResponseDto,
+    description: 'Stay status, room assignment, inventory, or stay length conflict.',
+  })
+  extendInHouseStay(
+    @Req() request: StaffRequest,
+    @Param() params: StaffBookingParamsDto,
+    @Body() dto: ExtendCheckedInStayDto,
+  ): Promise<StaffStayMutationDto> {
+    return this.staffBookings.extendInHouseStay(params.reference, request.staff!, dto);
   }
 
   @Post(':reference/room-move')

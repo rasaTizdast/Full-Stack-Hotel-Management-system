@@ -3,6 +3,7 @@ import {
   amendStaffStay,
   checkInStaffStay,
   createStaffWalkIn,
+  extendStaffStay,
   getStaffStayWorklist,
   moveStaffStayRoom,
   markStaffStayNoShow,
@@ -39,9 +40,13 @@ describe('staff front-desk API', () => {
   });
 
   it('reuses the supplied idempotency key and CSRF token for walk-in retries', async () => {
-    const fetchMock = vi.fn().mockImplementation(() =>
-      Promise.resolve(new Response(JSON.stringify({ reference: 'WALKIN123456', status: 'CONFIRMED' }))),
-    );
+    const fetchMock = vi
+      .fn()
+      .mockImplementation(() =>
+        Promise.resolve(
+          new Response(JSON.stringify({ reference: 'WALKIN123456', status: 'CONFIRMED' })),
+        ),
+      );
     vi.stubGlobal('fetch', fetchMock);
     const input = {
       roomTypeSlug: 'garden-double',
@@ -74,9 +79,13 @@ describe('staff front-desk API', () => {
   });
 
   it('sends lifecycle actions with CSRF and the exact reviewed payloads', async () => {
-    const fetchMock = vi.fn().mockImplementation(() =>
-      Promise.resolve(new Response(JSON.stringify({ reference: 'ABC123456789', status: 'CHECKED_IN' }))),
-    );
+    const fetchMock = vi
+      .fn()
+      .mockImplementation(() =>
+        Promise.resolve(
+          new Response(JSON.stringify({ reference: 'ABC123456789', status: 'CHECKED_IN' })),
+        ),
+      );
     vi.stubGlobal('fetch', fetchMock);
 
     await checkInStaffStay('ABC123456789', 'csrf', { earlyCheckInReason: 'دلیل ثبت‌شده' });
@@ -87,18 +96,58 @@ describe('staff front-desk API', () => {
       targetRoomId: 'target-id',
       reason: 'خرابی شیر آب',
     });
+    await extendStaffStay('ABC123456789', 'csrf', {
+      checkOut: '2026-11-26',
+      reason: 'درخواست مهمان',
+    });
 
     expect(fetchMock.mock.calls.map(([url]) => url)).toEqual([
       'http://localhost:4000/api/v1/staff/bookings/ABC123456789/check-in',
       'http://localhost:4000/api/v1/staff/bookings/ABC123456789/no-show',
       'http://localhost:4000/api/v1/staff/bookings/ABC123456789',
       'http://localhost:4000/api/v1/staff/bookings/ABC123456789/room-move',
+      'http://localhost:4000/api/v1/staff/bookings/ABC123456789/extend',
     ]);
     expect(fetchMock.mock.calls.map(([, options]) => options)).toEqual([
-      expect.objectContaining({ method: 'POST', cache: 'no-store', credentials: 'include', headers: expect.objectContaining({ 'X-CSRF-Token': 'csrf' }), body: JSON.stringify({ earlyCheckInReason: 'دلیل ثبت‌شده' }) }),
-      expect.objectContaining({ method: 'POST', cache: 'no-store', credentials: 'include', headers: expect.objectContaining({ 'X-CSRF-Token': 'csrf' }), body: JSON.stringify({ reason: 'تماس بی‌پاسخ' }) }),
-      expect.objectContaining({ method: 'PATCH', cache: 'no-store', credentials: 'include', headers: expect.objectContaining({ 'X-CSRF-Token': 'csrf' }), body: JSON.stringify({ checkOut: '2026-11-22', roomQuantity: 2 }) }),
-      expect.objectContaining({ method: 'POST', cache: 'no-store', credentials: 'include', headers: expect.objectContaining({ 'X-CSRF-Token': 'csrf' }), body: JSON.stringify({ sourceAssignmentId: 'source-id', targetRoomId: 'target-id', reason: 'خرابی شیر آب' }) }),
+      expect.objectContaining({
+        method: 'POST',
+        cache: 'no-store',
+        credentials: 'include',
+        headers: expect.objectContaining({ 'X-CSRF-Token': 'csrf' }),
+        body: JSON.stringify({ earlyCheckInReason: 'دلیل ثبت‌شده' }),
+      }),
+      expect.objectContaining({
+        method: 'POST',
+        cache: 'no-store',
+        credentials: 'include',
+        headers: expect.objectContaining({ 'X-CSRF-Token': 'csrf' }),
+        body: JSON.stringify({ reason: 'تماس بی‌پاسخ' }),
+      }),
+      expect.objectContaining({
+        method: 'PATCH',
+        cache: 'no-store',
+        credentials: 'include',
+        headers: expect.objectContaining({ 'X-CSRF-Token': 'csrf' }),
+        body: JSON.stringify({ checkOut: '2026-11-22', roomQuantity: 2 }),
+      }),
+      expect.objectContaining({
+        method: 'POST',
+        cache: 'no-store',
+        credentials: 'include',
+        headers: expect.objectContaining({ 'X-CSRF-Token': 'csrf' }),
+        body: JSON.stringify({
+          sourceAssignmentId: 'source-id',
+          targetRoomId: 'target-id',
+          reason: 'خرابی شیر آب',
+        }),
+      }),
+      expect.objectContaining({
+        method: 'POST',
+        cache: 'no-store',
+        credentials: 'include',
+        headers: expect.objectContaining({ 'X-CSRF-Token': 'csrf' }),
+        body: JSON.stringify({ checkOut: '2026-11-26', reason: 'درخواست مهمان' }),
+      }),
     ]);
   });
 });

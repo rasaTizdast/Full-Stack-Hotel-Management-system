@@ -80,6 +80,11 @@ export interface StaffStayRoomMove {
   reason: string;
 }
 
+export interface StaffStayExtension {
+  checkOut: string;
+  reason: string;
+}
+
 export function getStaffStayWorklist(
   queue: StaffStayQueue,
   filters: StaffStayWorklistQuery = {},
@@ -150,5 +155,17 @@ export function moveStaffStayRoom(
     method: 'POST',
     headers: { 'X-CSRF-Token': csrfToken },
     body: JSON.stringify(move),
+  });
+}
+
+export function extendStaffStay(
+  reference: string,
+  csrfToken: string,
+  extension: StaffStayExtension,
+): Promise<StaffStayMutation> {
+  return requestStaffApi<StaffStayMutation>(`bookings/${encodeURIComponent(reference)}/extend`, {
+    method: 'POST',
+    headers: { 'X-CSRF-Token': csrfToken },
+    body: JSON.stringify(extension),
   });
 }

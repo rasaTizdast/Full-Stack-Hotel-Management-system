@@ -12,6 +12,8 @@ import { PrismaService } from '../database/prisma.service';
 import { AuditService } from '../audit/audit.service';
 import {
   getHotelBusinessDate,
+  MAX_STAY_NIGHTS,
+  parseDateOnly,
   parseAvailabilityCriteria,
   type AvailabilityCriteria,
 } from '../availability/date-range';
@@ -32,6 +34,7 @@ import { CreateBookingDto } from './dto/create-booking.dto';
 import { BookingResponseDto } from './dto/booking-response.dto';
 import type {
   AmendStaffStayDto,
+  ExtendCheckedInStayDto,
   MoveStaffRoomDto,
   StaffStayMutationDto,
 } from './dto/staff-stay-action.dto';
@@ -83,6 +86,15 @@ export interface BookingTransitionResult {
 type LockedInventoryCounter = {
   id: string;
   stayDate: string;
+};
+
+type LockedExtensionInventoryNight = {
+  id: string;
+  stayDate: string;
+  totalRooms: number;
+  heldRooms: number;
+  bookedRooms: number;
+  nightlyPriceToman: bigint;
 };
 
 type DatabaseClock = { now: Date };
@@ -402,6 +414,154 @@ export class BookingsService {
           roomQuantity: booking.roomQuantity,
         },
         after: { checkIn: criteria.checkIn, checkOut: criteria.checkOut, roomQuantity },
+      });
+      return toStayMutationResponse(updated);
+    });
+  }
+
+  async extendInHouseStay(
+    reference: string,
+    actor: StayActor,
+    dto: ExtendCheckedInStayDto,
+  ): Promise<StaffStayMutationDto> {
+    if (actor.role !== 'ADMIN' && actor.role !== 'MANAGER') {
+      throw new ForbiddenException({ code: 'STAY_EXTENSION_NOT_ALLOWED' });
+    }
+    const reason = this.normalizeOptionalText(dto.reason, 500, 'STAY_EXTENSION_REASON_INVALID');
+    if (!reason) {
+      throw new BadRequestException({
+        code: 'STAY_EXTENSION_REASON_REQUIRED',
+        message: 'A reason is required to extend an in-house stay.',
+      });
+    }
+    const newCheckOut = parseDateOnly(dto.checkOut);
+
+    return this.prisma.$transaction(async (transaction) => {
+      const lockedBooking = await lockBookingByReference(transaction, reference);
+      if (lockedBooking.status !== 'CHECKED_IN') throw this.statusConflict();
+      await this.assignments.lockAssignedRooms(transaction, lockedBooking);
+
+      const booking = await transaction.booking.findUniqueOrThrow({
+        where: { id: lockedBooking.id },
+        select: {
+          ...stayMutationSelect,
+          checkIn: true,
+          checkOut: true,
+          roomQuantity: true,
+          totalPriceToman: true,
+          roomType: { select: { hotel: { select: { timezone: true } } } },
+        },
+      });
+      const businessDate = hotelBusinessDate(
+        booking.roomType.hotel.timezone,
+        await this.databaseNow(transaction),
+      );
+      if (newCheckOut <= booking.checkOut) {
+        throw new ConflictException({ code: 'STAY_EXTENSION_NOT_LATER' });
+      }
+      if (newCheckOut < businessDate) {
+        throw new ConflictException({ code: 'STAY_EXTENSION_WINDOW_CLOSED' });
+      }
+      if ((newCheckOut.getTime() - booking.checkIn.getTime()) / 86_400_000 > MAX_STAY_NIGHTS) {
+        throw new BadRequestException({ code: 'STAY_TOO_LONG' });
+      }
+
+      await this.assignments.assertInHouseExtensionFits(
+        transaction,
+        {
+          id: lockedBooking.id,
+          roomTypeId: lockedBooking.roomTypeId,
+          roomQuantity: booking.roomQuantity,
+        },
+        booking.checkOut,
+        newCheckOut,
+      );
+
+      const existingNights = await transaction.bookingNight.findMany({
+        where: { bookingId: lockedBooking.id },
+        select: { stayDate: true, nightlyPriceToman: true, roomQuantity: true, amountToman: true },
+        orderBy: { stayDate: 'asc' },
+      });
+      const expectedExistingNightCount =
+        (booking.checkOut.getTime() - booking.checkIn.getTime()) / 86_400_000;
+      const existingTotal = existingNights.reduce((total, night) => total + night.amountToman, 0n);
+      if (
+        existingNights.length !== expectedExistingNightCount ||
+        existingNights.some(
+          (night) =>
+            night.stayDate < booking.checkIn ||
+            night.stayDate >= booking.checkOut ||
+            night.roomQuantity !== booking.roomQuantity ||
+            night.amountToman !== night.nightlyPriceToman * BigInt(booking.roomQuantity),
+        ) ||
+        existingTotal !== booking.totalPriceToman
+      ) {
+        throw new InternalServerErrorException('Booking night snapshots are inconsistent.');
+      }
+
+      const extensionNightCount = (newCheckOut.getTime() - booking.checkOut.getTime()) / 86_400_000;
+      const lockedInventory = await transaction.$queryRaw<LockedExtensionInventoryNight[]>`
+        SELECT id::text AS id,
+               to_char(stay_date, 'YYYY-MM-DD') AS "stayDate",
+               total_rooms AS "totalRooms",
+               held_rooms AS "heldRooms",
+               booked_rooms AS "bookedRooms",
+               nightly_price_toman AS "nightlyPriceToman"
+        FROM room_night_inventory
+        WHERE room_type_id = ${lockedBooking.roomTypeId}::uuid
+          AND stay_date >= ${booking.checkOut}::date
+          AND stay_date < ${newCheckOut}::date
+        ORDER BY stay_date ASC
+        FOR UPDATE
+      `;
+      if (lockedInventory.length !== extensionNightCount) {
+        throw new ConflictException({ code: 'STAY_EXTENSION_INVENTORY_MISSING' });
+      }
+      for (const night of lockedInventory) {
+        if (night.heldRooms + night.bookedRooms + booking.roomQuantity > night.totalRooms) {
+          throw this.availabilityChanged();
+        }
+      }
+
+      let extendedTotal = booking.totalPriceToman;
+      for (const night of lockedInventory) {
+        const amountToman = night.nightlyPriceToman * BigInt(booking.roomQuantity);
+        await transaction.roomNightInventory.update({
+          where: { id: night.id },
+          data: { bookedRooms: { increment: booking.roomQuantity } },
+        });
+        await transaction.bookingNight.create({
+          data: {
+            bookingId: lockedBooking.id,
+            stayDate: parseDateOnly(night.stayDate),
+            nightlyPriceToman: night.nightlyPriceToman,
+            roomQuantity: booking.roomQuantity,
+            amountToman,
+          },
+        });
+        extendedTotal += amountToman;
+      }
+
+      const assignmentsUpdated = await transaction.roomAssignment.updateMany({
+        where: { bookingId: lockedBooking.id, isActive: true, endDate: booking.checkOut },
+        data: { endDate: newCheckOut },
+      });
+      if (assignmentsUpdated.count !== booking.roomQuantity) {
+        throw new ConflictException({ code: 'ROOM_ASSIGNMENT_INCOMPLETE' });
+      }
+      const updated = await transaction.booking.update({
+        where: { id: lockedBooking.id },
+        data: { checkOut: newCheckOut, totalPriceToman: extendedTotal },
+        select: stayMutationSelect,
+      });
+      await this.audit.record(transaction, {
+        actorStaffUserId: actor.id,
+        eventName: 'BOOKING_STAY_EXTENDED',
+        targetType: 'BOOKING',
+        targetId: lockedBooking.id,
+        reason,
+        before: { checkOut: booking.checkOut.toISOString().slice(0, 10) },
+        after: { checkOut: newCheckOut.toISOString().slice(0, 10) },
       });
       return toStayMutationResponse(updated);
     });

@@ -7,6 +7,7 @@ import { BookingsService } from './bookings.service';
 import type { CreateBookingDto } from './dto/create-booking.dto';
 import type {
   AmendStaffStayDto,
+  ExtendCheckedInStayDto,
   MoveStaffRoomDto,
   StaffStayMutationDto,
 } from './dto/staff-stay-action.dto';
@@ -161,6 +162,14 @@ export class StaffBookingsService {
     dto: AmendStaffStayDto,
   ): Promise<StaffStayMutationDto> {
     return this.bookings.amend(reference, actor.id, dto);
+  }
+
+  extendInHouseStay(
+    reference: string,
+    actor: StaffPrincipal,
+    dto: ExtendCheckedInStayDto,
+  ): Promise<StaffStayMutationDto> {
+    return this.bookings.extendInHouseStay(reference, actor, dto);
   }
 
   moveRoom(

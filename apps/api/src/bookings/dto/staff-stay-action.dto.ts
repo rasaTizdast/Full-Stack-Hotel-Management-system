@@ -8,6 +8,7 @@ import {
   IsUUID,
   Max,
   MaxLength,
+  Matches,
   Min,
   ValidateIf,
 } from 'class-validator';
@@ -80,6 +81,23 @@ export class MoveStaffRoomDto {
   targetRoomId!: string;
 
   @ApiProperty({ minLength: 1, maxLength: 500, description: 'Operational reason for the move.' })
+  @ValidateIf((_, value: unknown) => value !== undefined)
+  @IsString()
+  @MaxLength(500)
+  reason!: string;
+}
+
+export class ExtendCheckedInStayDto {
+  @ApiProperty({
+    format: 'date',
+    description: 'New exclusive checkout date in Gregorian YYYY-MM-DD format.',
+  })
+  @IsString()
+  @Matches(/^\d{4}-\d{2}-\d{2}$/)
+  checkOut!: string;
+
+  @ApiProperty({ minLength: 1, maxLength: 500, description: 'Reason for extending the stay.' })
+  @Transform(({ value }: { value: unknown }) => (typeof value === 'string' ? value.trim() : value))
   @ValidateIf((_, value: unknown) => value !== undefined)
   @IsString()
   @MaxLength(500)

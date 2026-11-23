@@ -2,6 +2,7 @@ import { Transform } from 'class-transformer';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import {
   IsBoolean,
+  IsIn,
   IsInt,
   IsOptional,
   IsString,
@@ -15,6 +16,7 @@ import {
 
 const DATE_ONLY = /^\d{4}-\d{2}-\d{2}$/;
 const POSITIVE_INTEGER_STRING = /^[1-9]\d{0,18}$/;
+export const PAYMENT_METHODS = ['CASH', 'BANK_TERMINAL', 'BANK_TRANSFER', 'OTHER'] as const;
 
 function trimText(value: unknown): unknown {
   return typeof value === 'string' ? value.trim() : value;
@@ -118,6 +120,56 @@ export class AdjustFolioDto {
   reason!: string;
 }
 
+export class RecordFolioPaymentDto {
+  @ApiProperty({ type: String, pattern: POSITIVE_INTEGER_STRING.source, example: '250000' })
+  @IsString()
+  @Matches(POSITIVE_INTEGER_STRING)
+  amountToman!: string;
+
+  @ApiProperty({ enum: PAYMENT_METHODS })
+  @IsString()
+  @IsIn(PAYMENT_METHODS)
+  method!: (typeof PAYMENT_METHODS)[number];
+
+  @ApiPropertyOptional({ maxLength: 120, description: 'Offline receipt or bank reference only.' })
+  @Transform(({ value }: { value: unknown }) => trimText(value))
+  @IsOptional()
+  @IsString()
+  @MaxLength(120)
+  @Matches(/\S/)
+  reference?: string;
+}
+
+export class RefundFolioPaymentDto {
+  @ApiProperty({ format: 'uuid' })
+  @IsUUID()
+  paymentEntryId!: string;
+
+  @ApiProperty({ type: String, pattern: POSITIVE_INTEGER_STRING.source, example: '250000' })
+  @IsString()
+  @Matches(POSITIVE_INTEGER_STRING)
+  amountToman!: string;
+
+  @ApiProperty({ minLength: 3, maxLength: 500 })
+  @Transform(({ value }: { value: unknown }) => trimText(value))
+  @IsString()
+  @MinLength(3)
+  @MaxLength(500)
+  @Matches(/\S/)
+  reason!: string;
+}
+
+export class CheckoutFolioDto {
+  @ApiPropertyOptional({ minLength: 3, maxLength: 500 })
+  @Transform(({ value }: { value: unknown }) => trimText(value))
+  @IsOptional()
+  @IsString()
+  @MinLength(3)
+  @MaxLength(500)
+  @Matches(/\S/)
+  onAccountReason?: string;
+}
+
 export class ServiceItemDto {
   @ApiProperty({ format: 'uuid' })
   id!: string;
@@ -182,6 +234,12 @@ export class FolioEntryDto {
   @ApiPropertyOptional({ nullable: true })
   correctionReason!: string | null;
 
+  @ApiPropertyOptional({ enum: PAYMENT_METHODS, nullable: true })
+  paymentMethod!: (typeof PAYMENT_METHODS)[number] | null;
+
+  @ApiPropertyOptional({ type: String, nullable: true })
+  paymentReference!: string | null;
+
   @ApiPropertyOptional({ type: String, nullable: true })
   actorUsername!: string | null;
 
@@ -222,6 +280,9 @@ export class FolioBookingDto {
   @ApiProperty({ format: 'date' })
   checkOut!: string;
 
+  @ApiPropertyOptional({ format: 'date', nullable: true })
+  actualDepartureDate!: string | null;
+
   @ApiProperty({ type: () => [FolioRoomAssignmentDto] })
   assignments!: FolioRoomAssignmentDto[];
 }
@@ -255,4 +316,18 @@ export class StaffFolioDto {
 
   @ApiProperty({ type: [FolioEntryDto] })
   entries!: FolioEntryDto[];
+}
+
+export class StaffFolioPrintDto {
+  @ApiProperty({ enum: ['Interim folio', 'Final folio'] })
+  label!: 'Interim folio' | 'Final folio';
+
+  @ApiProperty({ format: 'date-time' })
+  printedAt!: string;
+
+  @ApiProperty()
+  hotelTimezone!: string;
+
+  @ApiProperty({ type: StaffFolioDto })
+  folio!: StaffFolioDto;
 }

@@ -1,6 +1,7 @@
 import {
   BadRequestException,
   ConflictException,
+  ForbiddenException,
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
@@ -10,11 +11,15 @@ import type { StaffPrincipal, StaffRole } from '../staff-auth/staff-auth.types';
 import { staffHasCapability } from '../staff-auth/staff-capabilities';
 import { AuditService } from '../audit/audit.service';
 import { PrismaService } from '../database/prisma.service';
-import { parseDateOnly } from '../availability/date-range';
+import { addDays, parseDateOnly } from '../availability/date-range';
 import { hotelBusinessDate } from '../rooms/room-capacity.service';
 import type {
   AdjustFolioDto,
+  CheckoutFolioDto,
   CreateServiceItemDto,
+  RecordFolioPaymentDto,
+  RefundFolioPaymentDto,
+  StaffFolioPrintDto,
   PostServiceChargeDto,
   StaffFolioDto,
   UpdateServiceItemDto,
@@ -43,6 +48,7 @@ const folioSelect = {
       status: true,
       checkIn: true,
       checkOut: true,
+      actualDepartureDate: true,
       assignments: {
         orderBy: [{ startDate: 'asc' as const }, { roomId: 'asc' as const }],
         select: {
@@ -68,6 +74,8 @@ const folioSelect = {
       roomNumberSnapshot: true,
       correctsEntryId: true,
       correctionReason: true,
+      paymentMethod: true,
+      paymentReference: true,
       createdAt: true,
       actor: { select: { username: true } },
     },
@@ -106,6 +114,39 @@ function positiveBigInt(value: string): bigint {
 
 function stableHash(value: unknown): string {
   return createHash('sha256').update(JSON.stringify(value)).digest('hex');
+}
+
+function containsPaymentCardNumber(value: string): boolean {
+  const digits = value
+    .normalize('NFKC')
+    .replace(/[٠-٩۰-۹]/g, (digit) => String(digit.charCodeAt(0) & 0xf))
+    .replace(/\D/g, '');
+  if (digits.length < 13 || digits.length > 19) return false;
+  let sum = 0;
+  let doubleDigit = false;
+  for (let index = digits.length - 1; index >= 0; index -= 1) {
+    let digit = Number(digits[index]);
+    if (doubleDigit) {
+      digit *= 2;
+      if (digit > 9) digit -= 9;
+    }
+    sum += digit;
+    doubleDigit = !doubleDigit;
+  }
+  return sum % 10 === 0;
+}
+
+function paymentDescription(method: RecordFolioPaymentDto['method']): string {
+  switch (method) {
+    case 'CASH':
+      return 'دریافت نقدی';
+    case 'BANK_TERMINAL':
+      return 'دریافت از کارت‌خوان';
+    case 'BANK_TRANSFER':
+      return 'دریافت حواله بانکی';
+    case 'OTHER':
+      return 'دریافت از روش دیگر';
+  }
 }
 
 function nameKey(value: string): string {
@@ -289,6 +330,9 @@ export class FoliosService {
         status: record.booking.status,
         checkIn: dateString(record.booking.checkIn),
         checkOut: dateString(record.booking.checkOut),
+        actualDepartureDate: record.booking.actualDepartureDate
+          ? dateString(record.booking.actualDepartureDate)
+          : null,
         assignments: record.booking.assignments.map((assignment) => ({
           id: assignment.id,
           roomNumber: canViewRoom ? assignment.room.roomNumber : null,
@@ -310,10 +354,27 @@ export class FoliosService {
         unitAmountToman: entry.unitAmountToman?.toString() ?? null,
         correctsEntryId: entry.correctsEntryId,
         correctionReason: entry.correctionReason,
+        paymentMethod: entry.paymentMethod,
+        paymentReference: entry.paymentReference,
         actorUsername: entry.actor?.username ?? null,
         balanceAfterToman: running[index].balanceAfterToman.toString(),
         createdAt: entry.createdAt.toISOString(),
       })),
+    };
+  }
+
+  async getFolioPrint(bookingId: string, role: StaffRole): Promise<StaffFolioPrintDto> {
+    const folio = await this.getFolio(bookingId, role);
+    const booking = await this.prisma.booking.findUnique({
+      where: { id: bookingId },
+      select: { status: true, roomType: { select: { hotel: { select: { timezone: true } } } } },
+    });
+    if (!booking) throw new NotFoundException({ code: 'BOOKING_NOT_FOUND' });
+    return {
+      label: booking.status === 'CHECKED_OUT' ? 'Final folio' : 'Interim folio',
+      printedAt: new Date().toISOString(),
+      hotelTimezone: booking.roomType.hotel.timezone,
+      folio,
     };
   }
 
@@ -537,6 +598,471 @@ export class FoliosService {
       });
     });
     return this.getFolio(bookingId, actor.role);
+  }
+
+  async recordPayment(
+    actor: StaffPrincipal,
+    bookingId: string,
+    dto: RecordFolioPaymentDto,
+    requestIdempotencyKey: string,
+  ): Promise<StaffFolioDto> {
+    const clientKey = this.validateIdempotencyKey(requestIdempotencyKey);
+    const scopedKey = `payment:${bookingId}:${clientKey}`;
+    const amountToman = positiveBigInt(dto.amountToman);
+    const reference = dto.reference?.trim() || undefined;
+    if (reference && containsPaymentCardNumber(reference)) {
+      throw new BadRequestException({
+        code: 'CARD_DATA_NOT_ALLOWED',
+        message: 'Cardholder data cannot be stored in a payment reference.',
+      });
+    }
+    const requestHash = stableHash({
+      amountToman: amountToman.toString(),
+      method: dto.method,
+      reference: reference ?? null,
+    });
+
+    await this.prisma.$transaction(async (transaction) => {
+      const locked = await lockBookingAndFolio(transaction, bookingId);
+      const existing = await transaction.folioEntry.findUnique({
+        where: { idempotencyKey: scopedKey },
+        select: { folioId: true, requestHash: true },
+      });
+      if (existing) {
+        if (existing.folioId !== locked.folioId || existing.requestHash !== requestHash) {
+          throw conflict('IDEMPOTENCY_KEY_REUSED', 'This key was used for another payment.');
+        }
+        return;
+      }
+
+      const folio = await transaction.folio.findUniqueOrThrow({
+        where: { id: locked.folioId },
+        select: { status: true },
+      });
+      const booking = await transaction.booking.findUniqueOrThrow({
+        where: { id: bookingId },
+        select: { status: true },
+      });
+      if (!(
+        (folio.status === 'OPEN' && booking.status === 'CHECKED_IN') ||
+        (folio.status === 'CLOSED_DUE' && booking.status === 'CHECKED_OUT')
+      )) {
+        throw conflict('FOLIO_NOT_COLLECTIBLE', 'This folio cannot accept a payment.');
+      }
+
+      const balance = await this.folioBalance(transaction, locked.folioId);
+      if (balance <= 0n) {
+        throw conflict('FOLIO_HAS_NO_POSITIVE_BALANCE', 'There is no positive balance to collect.');
+      }
+      if (amountToman > balance) {
+        throw conflict(
+          'FOLIO_PAYMENT_EXCEEDS_BALANCE',
+          'A payment cannot exceed the folio balance.',
+        );
+      }
+      const serviceDate = await this.currentBusinessDate(transaction);
+      const entry = await transaction.folioEntry.create({
+        data: {
+          folioId: locked.folioId,
+          direction: 'CREDIT',
+          kind: 'PAYMENT',
+          amountToman,
+          serviceDate,
+          descriptionSnapshot: paymentDescription(dto.method),
+          paymentMethod: dto.method,
+          paymentReference: reference,
+          source: 'PAYMENT',
+          idempotencyKey: scopedKey,
+          requestHash,
+          actorStaffUserId: actor.id,
+        },
+        select: { id: true },
+      });
+      await this.audit.record(transaction, {
+        actorStaffUserId: actor.id,
+        eventName: 'FOLIO_PAYMENT_RECORDED',
+        targetType: 'FOLIO_ENTRY',
+        targetId: entry.id,
+        after: {
+          folioId: locked.folioId,
+          amountToman: amountToman.toString(),
+          direction: 'CREDIT',
+          entryKind: 'PAYMENT',
+          paymentMethod: dto.method,
+          serviceDate: dateString(serviceDate),
+        },
+      });
+
+      if (folio.status === 'CLOSED_DUE' && balance - amountToman === 0n) {
+        await transaction.folio.update({
+          where: { id: locked.folioId },
+          data: { status: 'CLOSED' },
+        });
+      }
+    });
+
+    return this.getFolio(bookingId, actor.role);
+  }
+
+  async refundPayment(
+    actor: StaffPrincipal,
+    bookingId: string,
+    dto: RefundFolioPaymentDto,
+    requestIdempotencyKey: string,
+  ): Promise<StaffFolioDto> {
+    if (!staffHasCapability(actor.role, 'ADJUST_FOLIOS')) {
+      throw new ForbiddenException({ code: 'FOLIO_REFUND_FORBIDDEN' });
+    }
+    const clientKey = this.validateIdempotencyKey(requestIdempotencyKey);
+    const scopedKey = `refund:${bookingId}:${clientKey}`;
+    const amountToman = positiveBigInt(dto.amountToman);
+    const reason = dto.reason.trim();
+    const requestHash = stableHash({
+      paymentEntryId: dto.paymentEntryId,
+      amountToman: amountToman.toString(),
+      reason,
+    });
+
+    await this.prisma.$transaction(async (transaction) => {
+      const locked = await lockBookingAndFolio(transaction, bookingId);
+      const existing = await transaction.folioEntry.findUnique({
+        where: { idempotencyKey: scopedKey },
+        select: { folioId: true, requestHash: true },
+      });
+      if (existing) {
+        if (existing.folioId !== locked.folioId || existing.requestHash !== requestHash) {
+          throw conflict('IDEMPOTENCY_KEY_REUSED', 'This key was used for another refund.');
+        }
+        return;
+      }
+
+      const folio = await transaction.folio.findUniqueOrThrow({
+        where: { id: locked.folioId },
+        select: { status: true },
+      });
+      const original = await transaction.folioEntry.findFirst({
+        where: {
+          id: dto.paymentEntryId,
+          folioId: locked.folioId,
+          kind: 'PAYMENT',
+          direction: 'CREDIT',
+          correctsEntryId: null,
+        },
+        select: { id: true, amountToman: true, serviceDate: true },
+      });
+      if (!original) {
+        throw new NotFoundException({ code: 'SOURCE_PAYMENT_NOT_FOUND' });
+      }
+      const refunded = await transaction.folioEntry.aggregate({
+        where: { folioId: locked.folioId, kind: 'REFUND', correctsEntryId: original.id },
+        _sum: { amountToman: true },
+      });
+      const remaining = original.amountToman - (refunded._sum.amountToman ?? 0n);
+      if (amountToman > remaining) {
+        throw conflict(
+          'REFUND_EXCEEDS_SOURCE_PAYMENT',
+          'The refund exceeds the unrefunded payment.',
+        );
+      }
+
+      const serviceDate = await this.currentBusinessDate(transaction);
+      const refund = await transaction.folioEntry.create({
+        data: {
+          folioId: locked.folioId,
+          direction: 'DEBIT',
+          kind: 'REFUND',
+          amountToman,
+          serviceDate,
+          descriptionSnapshot: 'استرداد پرداخت',
+          source: 'REFUND',
+          idempotencyKey: scopedKey,
+          requestHash,
+          actorStaffUserId: actor.id,
+          correctsEntryId: original.id,
+          correctionReason: reason,
+        },
+        select: { id: true },
+      });
+      await this.audit.record(transaction, {
+        actorStaffUserId: actor.id,
+        eventName: 'FOLIO_PAYMENT_REFUNDED',
+        targetType: 'FOLIO_ENTRY',
+        targetId: refund.id,
+        reason,
+        after: {
+          folioId: locked.folioId,
+          correctsEntryId: original.id,
+          amountToman: amountToman.toString(),
+          direction: 'DEBIT',
+          entryKind: 'REFUND',
+          serviceDate: dateString(serviceDate),
+        },
+      });
+
+      if (folio.status !== 'OPEN') {
+        const balance = await this.folioBalance(transaction, locked.folioId);
+        await transaction.folio.update({
+          where: { id: locked.folioId },
+          data: { status: balance > 0n ? 'CLOSED_DUE' : 'CLOSED' },
+        });
+      }
+    });
+
+    return this.getFolio(bookingId, actor.role);
+  }
+
+  async checkout(
+    actor: StaffPrincipal,
+    bookingId: string,
+    dto: CheckoutFolioDto,
+    requestIdempotencyKey: string,
+  ): Promise<StaffFolioDto> {
+    const clientKey = this.validateIdempotencyKey(requestIdempotencyKey);
+    const scopedKey = `checkout:${bookingId}:${clientKey}`;
+    const onAccountReason = dto.onAccountReason?.trim() || undefined;
+    const requestHash = stableHash({ onAccountReason: onAccountReason ?? null });
+
+    await this.prisma.$transaction(async (transaction) => {
+      const locked = await lockBookingAndFolio(transaction, bookingId);
+      const folio = await transaction.folio.findUniqueOrThrow({
+        where: { id: locked.folioId },
+        select: {
+          status: true,
+          checkoutIdempotencyKey: true,
+          checkoutRequestHash: true,
+        },
+      });
+      if (folio.checkoutIdempotencyKey) {
+        if (
+          folio.checkoutIdempotencyKey === scopedKey &&
+          folio.checkoutRequestHash === requestHash
+        ) {
+          return;
+        }
+        throw conflict('STAY_ALREADY_CHECKED_OUT', 'This stay has already been checked out.');
+      }
+      if (folio.status !== 'OPEN') {
+        throw conflict('FOLIO_NOT_OPEN', 'This folio has already been closed.');
+      }
+      if (onAccountReason && actor.role !== 'ADMIN' && actor.role !== 'MANAGER') {
+        throw new ForbiddenException({ code: 'ON_ACCOUNT_CHECKOUT_FORBIDDEN' });
+      }
+
+      const booking = await transaction.booking.findUniqueOrThrow({
+        where: { id: bookingId },
+        select: {
+          status: true,
+          checkIn: true,
+          checkOut: true,
+          roomQuantity: true,
+          roomTypeId: true,
+          roomType: { select: { hotel: { select: { timezone: true } } } },
+        },
+      });
+      if (booking.status !== 'CHECKED_IN') {
+        throw conflict('STAY_NOT_IN_HOUSE', 'Only an in-house stay can be checked out.');
+      }
+
+      const now = await this.databaseNow(transaction);
+      const departureDate = parseDateOnly(
+        dateString(hotelBusinessDate(booking.roomType.hotel.timezone, now)),
+      );
+      if (departureDate < booking.checkIn) {
+        throw conflict(
+          'CHECKOUT_BEFORE_CHECK_IN',
+          'The stay cannot be checked out before arrival.',
+        );
+      }
+      if (departureDate > booking.checkOut) {
+        throw conflict(
+          'STAY_EXTENSION_REQUIRED',
+          'The scheduled stay must be extended before checkout.',
+        );
+      }
+      const chargeEndDate = departureDate < booking.checkOut ? departureDate : booking.checkOut;
+      const assignments = await transaction.roomAssignment.findMany({
+        where: { bookingId },
+        orderBy: [{ startDate: 'asc' }, { roomId: 'asc' }, { id: 'asc' }],
+        select: { id: true, roomId: true, startDate: true, endDate: true, isActive: true },
+      });
+      const activeAssignments = assignments.filter((assignment) => assignment.isActive);
+      if (
+        activeAssignments.length !== booking.roomQuantity ||
+        new Set(activeAssignments.map((assignment) => assignment.roomId)).size !==
+          booking.roomQuantity
+      ) {
+        throw conflict(
+          'ROOM_ASSIGNMENT_REQUIRED',
+          'The in-house stay must have one active room per booked unit.',
+        );
+      }
+
+      await transaction.$queryRaw`SELECT id FROM room_types WHERE id = ${booking.roomTypeId}::uuid FOR UPDATE`;
+      for (const roomId of [
+        ...new Set(assignments.map((assignment) => assignment.roomId)),
+      ].sort()) {
+        await transaction.$queryRaw`SELECT id FROM rooms WHERE id = ${roomId}::uuid FOR UPDATE`;
+      }
+
+      for (
+        let stayDate = booking.checkIn;
+        stayDate < chargeEndDate;
+        stayDate = parseDateOnly(addDays(dateString(stayDate), 1))
+      ) {
+        const covering = assignments.filter(
+          (assignment) => assignment.startDate <= stayDate && assignment.endDate > stayDate,
+        );
+        const distinctRooms = new Map(
+          covering.map((assignment) => [assignment.roomId, assignment]),
+        );
+        if (distinctRooms.size !== booking.roomQuantity) {
+          throw conflict(
+            'ROOM_ASSIGNMENT_INCOMPLETE',
+            'Assigned rooms must cover every charged night of the stay.',
+          );
+        }
+        for (const assignment of distinctRooms.values()) {
+          await this.postAccommodationNight(transaction, {
+            bookingId,
+            roomAssignmentId: assignment.id,
+            stayDate,
+            actorStaffUserId: actor.id,
+          });
+        }
+      }
+
+      if (departureDate < booking.checkOut) {
+        const releaseDates: Date[] = [];
+        for (
+          let stayDate = departureDate;
+          stayDate < booking.checkOut;
+          stayDate = parseDateOnly(addDays(dateString(stayDate), 1))
+        ) {
+          releaseDates.push(stayDate);
+        }
+        const lockedInventory = await transaction.$queryRaw<Array<{ stayDate: Date }>>`
+          SELECT stay_date AS "stayDate"
+          FROM room_night_inventory
+          WHERE room_type_id = ${booking.roomTypeId}::uuid
+            AND stay_date >= ${departureDate}::date
+            AND stay_date < ${booking.checkOut}::date
+          ORDER BY stay_date
+          FOR UPDATE
+        `;
+        if (lockedInventory.length !== releaseDates.length) {
+          throw conflict('INVENTORY_NIGHT_NOT_FOUND', 'Future inventory is missing for this stay.');
+        }
+        for (const stayDate of releaseDates) {
+          const updated = await transaction.roomNightInventory.updateMany({
+            where: {
+              roomTypeId: booking.roomTypeId,
+              stayDate,
+              bookedRooms: { gte: booking.roomQuantity },
+            },
+            data: { bookedRooms: { decrement: booking.roomQuantity } },
+          });
+          if (updated.count !== 1) {
+            throw conflict(
+              'BOOKED_INVENTORY_MISMATCH',
+              'Future booked inventory could not be released.',
+            );
+          }
+        }
+      }
+
+      const balance = await this.folioBalance(transaction, locked.folioId);
+      if (balance < 0n) {
+        throw conflict(
+          'FOLIO_CREDIT_REQUIRES_REFUND',
+          'A credit balance must be resolved with a reasoned refund before checkout.',
+        );
+      }
+      if (balance > 0n) {
+        if (actor.role !== 'ADMIN' && actor.role !== 'MANAGER') {
+          throw conflict(
+            'FOLIO_BALANCE_NOT_SETTLED',
+            'Ordinary checkout requires the folio balance to be zero.',
+          );
+        }
+        if (!onAccountReason) {
+          throw new BadRequestException({
+            code: 'ON_ACCOUNT_REASON_REQUIRED',
+            message: 'A reason is required to check out with a receivable balance.',
+          });
+        }
+      }
+
+      const roomIds = [...new Set(activeAssignments.map((assignment) => assignment.roomId))];
+      await transaction.room.updateMany({
+        where: { id: { in: roomIds } },
+        data: { housekeepingStatus: 'DIRTY' },
+      });
+      await transaction.roomAssignment.updateMany({
+        where: { bookingId, isActive: true },
+        data: { isActive: false },
+      });
+      const folioStatus = balance === 0n ? 'CLOSED' : 'CLOSED_DUE';
+      await transaction.folio.update({
+        where: { id: locked.folioId },
+        data: {
+          status: folioStatus,
+          closedAt: now,
+          closedByStaffUserId: actor.id,
+          checkoutIdempotencyKey: scopedKey,
+          checkoutRequestHash: requestHash,
+        },
+      });
+      await transaction.booking.update({
+        where: { id: bookingId },
+        data: {
+          status: 'CHECKED_OUT',
+          checkedOutAt: now,
+          checkedOutByStaffUserId: actor.id,
+          ...(departureDate < booking.checkOut && departureDate > booking.checkIn
+            ? { checkOut: departureDate }
+            : {}),
+          actualDepartureDate: departureDate,
+        },
+      });
+      await this.audit.record(transaction, {
+        actorStaffUserId: actor.id,
+        eventName: 'BOOKING_CHECKED_OUT',
+        targetType: 'BOOKING',
+        targetId: bookingId,
+        ...(onAccountReason ? { reason: onAccountReason } : {}),
+        before: { status: 'CHECKED_IN', checkOut: dateString(booking.checkOut) },
+        after: {
+          status: 'CHECKED_OUT',
+          checkOut: dateString(
+            departureDate < booking.checkOut && departureDate > booking.checkIn
+              ? departureDate
+              : booking.checkOut,
+          ),
+          actualDepartureDate: dateString(departureDate),
+          folioId: locked.folioId,
+          amountToman: balance.toString(),
+          roomQuantity: booking.roomQuantity,
+        },
+      });
+    });
+
+    return this.getFolio(bookingId, actor.role);
+  }
+
+  private async folioBalance(
+    transaction: Prisma.TransactionClient,
+    folioId: string,
+  ): Promise<bigint> {
+    const entries = await transaction.folioEntry.findMany({
+      where: { folioId },
+      select: { direction: true, amountToman: true },
+    });
+    return calculateFolioBalance(entries);
+  }
+
+  private async databaseNow(transaction: Prisma.TransactionClient): Promise<Date> {
+    const rows = await transaction.$queryRaw<Array<{ now: Date }>>`SELECT CURRENT_TIMESTAMP AS now`;
+    return rows[0].now;
   }
 
   async postAccommodationNight(

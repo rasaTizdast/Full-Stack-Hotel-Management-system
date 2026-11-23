@@ -121,11 +121,12 @@ The following tickets extend the original booking engine into the single-propert
 - **Priority:** P0
 - **Depends on:** HPM-003, HPM-004, HPM-005, HPM-006, HPM-007
 - **Owner:** Backend senior + Front-end design master
-- **Status:** Not started
-- **Branch/worktree:** `codex/hpm-008-checkout-print-folio` — `../Hotel Booking system-worktrees/HPM-008`
+- **Status:** Done
+- **Branch/worktree:** `codex/hpm-008-checkout-print-folio` — `../Hotel Booking system-hpm-008`
 - **Plan:** `docs/superpowers/plans/2026-11-15-hotel-pms-folio-and-checkout.md`
-- **Acceptance criteria:** Positive cash/bank-terminal/bank-transfer/other settlements are recorded without cardholder data; payments cannot exceed balance; refunds are limited to unrefunded source payment; closed-due folios accept collection but no new charges; ordinary checkout requires zero balance; manager on-account override requires reason; checkout, final charges, folio state, future-night release, assignment close, dirty-room transition, and audit are atomic; staff can print an authenticated no-store RTL operational folio with room attribution and interim/final timestamp.
-- **Required tests:** Nonzero-balance denial, manager override, payment/refund limits, post-checkout collection, duplicate retries, concurrent post/checkout, early departure release, transaction rollback, unauthorized print, print layout and end-to-end flow.
+- **Acceptance criteria:** Positive cash/bank-terminal/bank-transfer/other settlements are recorded without cardholder data; payments cannot exceed balance; refunds are limited to unrefunded source payment; closed-due folios accept collection but no new charges; ordinary checkout requires zero balance; manager on-account override requires reason; checkout, final charges, folio state, future-night release, assignment close, dirty-room transition, and audit are atomic; overdue in-house stays require a reasoned manager/admin extension with capacity and rate snapshots; historical room moves retain correct room-night attribution; staff can print an authenticated no-store RTL operational folio with room attribution and interim/final timestamp.
+- **Required tests:** Nonzero-balance denial, manager override, payment/refund limits, post-checkout collection, duplicate retries, concurrent post/checkout, early departure release, overdue extension through final checkout, historical room attribution, transaction rollback, unauthorized print, print layout and end-to-end flow.
+- **Evidence:** API unit **27 suites / 145 tests**; isolated PostgreSQL DB suite **14 suites / 114 tests**; folio API E2E **1 suite / 2 tests**; web unit **42 files / 254 tests**; focused browser E2E **2/2 desktop Chromium**; API and web lint/typecheck/build passed. Production print-route smoke returned HTTP 200 with `Cache-Control: private, no-store`. All 16 migrations applied to isolated `_test` databases. Regenerated PDF inspection confirmed 2 A4 pages, repeated table headers, readable long Persian guest names and LTR amounts/references, complete totals/footer, and safe page margins. Backend, tester, and designer reviews passed.
 
 ### HPM-009 — Business date, night close, and reports
 

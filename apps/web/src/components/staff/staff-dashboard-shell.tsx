@@ -58,7 +58,14 @@ export function StaffDashboardShell({
   }, [currentPath, staff.role]);
 
   return (
-    <div className="staff-shell">
+    <div
+      className="staff-shell"
+      data-folio-print={
+        currentPath.startsWith('/staff/folios/') && currentPath.endsWith('/print')
+          ? 'true'
+          : undefined
+      }
+    >
       <a className="skip-link" href="#staff-main">
         رفتن به محتوای اصلی
       </a>

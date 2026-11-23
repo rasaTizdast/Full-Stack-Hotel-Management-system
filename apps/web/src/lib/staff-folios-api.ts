@@ -23,6 +23,8 @@ export interface StaffFolioEntry {
   unitAmountToman: string | null;
   correctsEntryId: string | null;
   correctionReason: string | null;
+  paymentMethod: 'CASH' | 'BANK_TERMINAL' | 'BANK_TRANSFER' | 'OTHER' | null;
+  paymentReference: string | null;
   actorUsername: string | null;
   balanceAfterToman: string;
   createdAt: string;
@@ -37,6 +39,7 @@ export interface StaffFolio {
     status: string;
     checkIn: string;
     checkOut: string;
+    actualDepartureDate: string | null;
     assignments: Array<{
       id: string;
       roomNumber: string | null;
@@ -47,6 +50,25 @@ export interface StaffFolio {
   status: 'OPEN' | 'CLOSED' | 'CLOSED_DUE';
   balanceToman: string;
   entries: StaffFolioEntry[];
+}
+
+export interface StaffFolioPrint {
+  label: 'Interim folio' | 'Final folio';
+  printedAt: string;
+  hotelTimezone: string;
+  folio: StaffFolio;
+}
+
+export interface StaffFolioPaymentInput {
+  amountToman: string;
+  method: 'CASH' | 'BANK_TERMINAL' | 'BANK_TRANSFER' | 'OTHER';
+  reference?: string;
+}
+
+export interface StaffFolioRefundInput {
+  paymentEntryId: string;
+  amountToman: string;
+  reason: string;
 }
 
 export interface StaffServiceItemInput {
@@ -86,6 +108,10 @@ export function getStaffFolio(bookingId: string): Promise<StaffFolio> {
   return requestStaffApi(`folios/${encodeURIComponent(bookingId)}`);
 }
 
+export function getStaffFolioPrint(bookingId: string): Promise<StaffFolioPrint> {
+  return requestStaffApi(`folios/${encodeURIComponent(bookingId)}/print`);
+}
+
 export function postStaffServiceCharge(
   bookingId: string,
   input: {
@@ -111,6 +137,45 @@ export function adjustStaffFolio(
   csrfToken: string,
 ): Promise<StaffFolio> {
   return requestStaffApi(`folios/${encodeURIComponent(bookingId)}/adjustments`, {
+    method: 'POST',
+    headers: { 'X-CSRF-Token': csrfToken, 'Idempotency-Key': idempotencyKey },
+    body: JSON.stringify(input),
+  });
+}
+
+export function recordStaffFolioPayment(
+  bookingId: string,
+  input: StaffFolioPaymentInput,
+  idempotencyKey: string,
+  csrfToken: string,
+): Promise<StaffFolio> {
+  return requestStaffApi(`folios/${encodeURIComponent(bookingId)}/payments`, {
+    method: 'POST',
+    headers: { 'X-CSRF-Token': csrfToken, 'Idempotency-Key': idempotencyKey },
+    body: JSON.stringify(input),
+  });
+}
+
+export function refundStaffFolioPayment(
+  bookingId: string,
+  input: StaffFolioRefundInput,
+  idempotencyKey: string,
+  csrfToken: string,
+): Promise<StaffFolio> {
+  return requestStaffApi(`folios/${encodeURIComponent(bookingId)}/refunds`, {
+    method: 'POST',
+    headers: { 'X-CSRF-Token': csrfToken, 'Idempotency-Key': idempotencyKey },
+    body: JSON.stringify(input),
+  });
+}
+
+export function checkoutStaffFolio(
+  bookingId: string,
+  input: { onAccountReason?: string },
+  idempotencyKey: string,
+  csrfToken: string,
+): Promise<StaffFolio> {
+  return requestStaffApi(`folios/${encodeURIComponent(bookingId)}/checkout`, {
     method: 'POST',
     headers: { 'X-CSRF-Token': csrfToken, 'Idempotency-Key': idempotencyKey },
     body: JSON.stringify(input),

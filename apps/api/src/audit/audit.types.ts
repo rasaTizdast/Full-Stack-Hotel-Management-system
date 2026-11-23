@@ -17,6 +17,7 @@ export type AuditSafeField =
   | 'nightlyPriceToman'
   | 'checkIn'
   | 'checkOut'
+  | 'actualDepartureDate'
   | 'roomQuantity'
   | 'roomId'
   | 'effectiveDate'
@@ -35,7 +36,8 @@ export type AuditSafeField =
   | 'correctsEntryId'
   | 'serviceName'
   | 'serviceCategory'
-  | 'currentPriceToman';
+  | 'currentPriceToman'
+  | 'paymentMethod';
 
 export type AuditSnapshot = Partial<Record<AuditSafeField, string | number | boolean | null>>;
 

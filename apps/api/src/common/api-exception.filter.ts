@@ -100,6 +100,30 @@ const SAFE_DOMAIN_ERRORS: Record<string, { statusCode: number; message: string }
     statusCode: 409,
     message: 'Only confirmed stays arriving today or later can be amended.',
   },
+  STAY_EXTENSION_NOT_ALLOWED: {
+    statusCode: 403,
+    message: 'Only an administrator or manager can extend an in-house stay.',
+  },
+  STAY_EXTENSION_REASON_REQUIRED: {
+    statusCode: 400,
+    message: 'A reason is required to extend an in-house stay.',
+  },
+  STAY_EXTENSION_REASON_INVALID: {
+    statusCode: 400,
+    message: 'The stay extension reason exceeds its maximum length.',
+  },
+  STAY_EXTENSION_WINDOW_CLOSED: {
+    statusCode: 409,
+    message: 'The extension checkout date must include the current hotel business date.',
+  },
+  STAY_EXTENSION_NOT_LATER: {
+    statusCode: 409,
+    message: 'The new checkout date must be later than the scheduled checkout date.',
+  },
+  STAY_EXTENSION_INVENTORY_MISSING: {
+    statusCode: 409,
+    message: 'Nightly inventory is missing for part of the extension.',
+  },
   STAY_OUTSIDE_ROOM_MOVE_WINDOW: {
     statusCode: 409,
     message: 'A room move must take place on a business date inside the stay.',
@@ -198,6 +222,65 @@ const SAFE_DOMAIN_ERRORS: Record<string, { statusCode: number; message: string }
   ROOM_TYPE_INACTIVE: {
     statusCode: 409,
     message: 'Rooms cannot be added to an inactive room type.',
+  },
+  CARD_DATA_NOT_ALLOWED: {
+    statusCode: 400,
+    message: 'Cardholder data cannot be stored in a payment reference.',
+  },
+  FOLIO_PAYMENT_EXCEEDS_BALANCE: {
+    statusCode: 409,
+    message: 'A payment cannot exceed the folio balance.',
+  },
+  FOLIO_HAS_NO_POSITIVE_BALANCE: {
+    statusCode: 409,
+    message: 'There is no positive balance to collect.',
+  },
+  FOLIO_NOT_COLLECTIBLE: {
+    statusCode: 409,
+    message: 'This folio cannot accept a payment.',
+  },
+  FOLIO_NOT_OPEN: { statusCode: 409, message: 'This folio has already been closed.' },
+  SOURCE_PAYMENT_NOT_FOUND: { statusCode: 404, message: 'The source payment was not found.' },
+  REFUND_EXCEEDS_SOURCE_PAYMENT: {
+    statusCode: 409,
+    message: 'The refund exceeds the unrefunded payment.',
+  },
+  FOLIO_BALANCE_NOT_SETTLED: {
+    statusCode: 409,
+    message: 'Ordinary checkout requires the folio balance to be zero.',
+  },
+  FOLIO_CREDIT_REQUIRES_REFUND: {
+    statusCode: 409,
+    message: 'A credit balance must be resolved with a reasoned refund before checkout.',
+  },
+  STAY_ALREADY_CHECKED_OUT: { statusCode: 409, message: 'This stay has already been checked out.' },
+  ON_ACCOUNT_CHECKOUT_FORBIDDEN: {
+    statusCode: 403,
+    message: 'Only a manager or administrator can approve checkout with a receivable.',
+  },
+  ON_ACCOUNT_REASON_REQUIRED: {
+    statusCode: 400,
+    message: 'A reason is required to check out with a receivable balance.',
+  },
+  CHECKOUT_BEFORE_CHECK_IN: {
+    statusCode: 409,
+    message: 'The stay cannot be checked out before arrival.',
+  },
+  STAY_EXTENSION_REQUIRED: {
+    statusCode: 409,
+    message: 'The scheduled stay must be extended before checkout.',
+  },
+  ROOM_ASSIGNMENT_REQUIRED: {
+    statusCode: 409,
+    message: 'The in-house stay has no active room assignment.',
+  },
+  INVENTORY_NIGHT_NOT_FOUND: {
+    statusCode: 409,
+    message: 'Future inventory is missing for this stay.',
+  },
+  BOOKED_INVENTORY_MISMATCH: {
+    statusCode: 409,
+    message: 'Future booked inventory could not be released.',
   },
 };
 

@@ -257,6 +257,34 @@ export class RoomAssignmentService {
     await this.assertRoomsAssignable(transaction, booking.id, booking.roomTypeId, active);
   }
 
+  // The caller holds the booking, room type, and active room locks.
+  async assertInHouseExtensionFits(
+    transaction: TransactionClient,
+    booking: { id: string; roomTypeId: string; roomQuantity: number },
+    oldCheckOut: Date,
+    newCheckOut: Date,
+  ): Promise<void> {
+    const active = await transaction.roomAssignment.findMany({
+      where: { bookingId: booking.id, isActive: true },
+      select: { roomId: true, startDate: true, endDate: true },
+    });
+    if (
+      active.length !== booking.roomQuantity ||
+      active.some(
+        ({ startDate, endDate }) =>
+          startDate >= oldCheckOut || endDate.getTime() !== oldCheckOut.getTime(),
+      )
+    ) {
+      throw new ConflictException({ code: 'ROOM_ASSIGNMENT_INCOMPLETE' });
+    }
+    await this.assertRoomsAssignable(
+      transaction,
+      booking.id,
+      booking.roomTypeId,
+      active.map(({ roomId }) => ({ roomId, startDate: oldCheckOut, endDate: newCheckOut })),
+    );
+  }
+
   // The caller holds the booking lock, which also protects the assignment identity.
   async lockRoomsForMove(
     transaction: TransactionClient,

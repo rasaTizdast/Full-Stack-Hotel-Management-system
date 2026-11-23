@@ -31,11 +31,15 @@ import { RequireStaffCapabilities } from '../staff-auth/require-staff-capabiliti
 import type { StaffRequest } from '../staff-auth/staff-auth.types';
 import {
   AdjustFolioDto,
+  CheckoutFolioDto,
   CreateServiceItemDto,
   ServiceItemDto,
   ServiceItemListDto,
   PostServiceChargeDto,
+  RecordFolioPaymentDto,
+  RefundFolioPaymentDto,
   StaffFolioDto,
+  StaffFolioPrintDto,
   UpdateServiceItemDto,
 } from './dto/folio.dto';
 import { FoliosService } from './folios.service';
@@ -117,6 +121,21 @@ export class FoliosController {
     return this.folios.getFolio(bookingId, request.staff!.role);
   }
 
+  @Get('folios/:bookingId/print')
+  @RequireStaffCapabilities('VIEW_FOLIOS')
+  @Header('Cache-Control', 'private, no-store')
+  @ApiOperation({ summary: 'Read a private interim or final folio for browser printing.' })
+  @ApiParam({ name: 'bookingId', format: 'uuid' })
+  @ApiOkResponse({ type: StaffFolioPrintDto })
+  @ApiUnauthorizedResponse({ type: ApiErrorResponseDto })
+  @ApiForbiddenResponse({ type: ApiErrorResponseDto })
+  getFolioPrint(
+    @Req() request: StaffRequest,
+    @Param('bookingId', new ParseUUIDPipe()) bookingId: string,
+  ): Promise<StaffFolioPrintDto> {
+    return this.folios.getFolioPrint(bookingId, request.staff!.role);
+  }
+
   @Post('folios/:bookingId/services')
   @HttpCode(HttpStatus.OK)
   @RequireStaffCapabilities('POST_FOLIO')
@@ -140,6 +159,75 @@ export class FoliosController {
     @Headers('idempotency-key') idempotencyKey: string | undefined,
   ): Promise<StaffFolioDto> {
     return this.folios.postServiceCharge(request.staff!, bookingId, dto, idempotencyKey ?? '');
+  }
+
+  @Post('folios/:bookingId/payments')
+  @HttpCode(HttpStatus.OK)
+  @RequireStaffCapabilities('POST_FOLIO')
+  @Header('Cache-Control', 'private, no-store')
+  @ApiOperation({ summary: 'Record a cash, terminal, transfer, or other offline payment.' })
+  @ApiParam({ name: 'bookingId', format: 'uuid' })
+  @ApiOkResponse({ type: StaffFolioDto })
+  @ApiBadRequestResponse({ type: ApiErrorResponseDto })
+  @ApiConflictResponse({ type: ApiErrorResponseDto })
+  @ApiNotFoundResponse({ type: ApiErrorResponseDto })
+  @ApiUnauthorizedResponse({ type: ApiErrorResponseDto })
+  @ApiForbiddenResponse({ type: ApiErrorResponseDto })
+  @ApiHeader({ name: 'X-CSRF-Token', required: true })
+  @ApiHeader({ name: 'Idempotency-Key', required: true })
+  recordPayment(
+    @Req() request: StaffRequest,
+    @Param('bookingId', new ParseUUIDPipe()) bookingId: string,
+    @Body() dto: RecordFolioPaymentDto,
+    @Headers('idempotency-key') idempotencyKey: string | undefined,
+  ): Promise<StaffFolioDto> {
+    return this.folios.recordPayment(request.staff!, bookingId, dto, idempotencyKey ?? '');
+  }
+
+  @Post('folios/:bookingId/refunds')
+  @HttpCode(HttpStatus.OK)
+  @RequireStaffCapabilities('ADJUST_FOLIOS')
+  @Header('Cache-Control', 'private, no-store')
+  @ApiOperation({ summary: 'Append a reasoned partial refund linked to a source payment.' })
+  @ApiParam({ name: 'bookingId', format: 'uuid' })
+  @ApiOkResponse({ type: StaffFolioDto })
+  @ApiBadRequestResponse({ type: ApiErrorResponseDto })
+  @ApiConflictResponse({ type: ApiErrorResponseDto })
+  @ApiNotFoundResponse({ type: ApiErrorResponseDto })
+  @ApiUnauthorizedResponse({ type: ApiErrorResponseDto })
+  @ApiForbiddenResponse({ type: ApiErrorResponseDto })
+  @ApiHeader({ name: 'X-CSRF-Token', required: true })
+  @ApiHeader({ name: 'Idempotency-Key', required: true })
+  refundPayment(
+    @Req() request: StaffRequest,
+    @Param('bookingId', new ParseUUIDPipe()) bookingId: string,
+    @Body() dto: RefundFolioPaymentDto,
+    @Headers('idempotency-key') idempotencyKey: string | undefined,
+  ): Promise<StaffFolioDto> {
+    return this.folios.refundPayment(request.staff!, bookingId, dto, idempotencyKey ?? '');
+  }
+
+  @Post('folios/:bookingId/checkout')
+  @HttpCode(HttpStatus.OK)
+  @RequireStaffCapabilities('CHECKOUT')
+  @Header('Cache-Control', 'private, no-store')
+  @ApiOperation({ summary: 'Post final room nights, settle the folio, and check out atomically.' })
+  @ApiParam({ name: 'bookingId', format: 'uuid' })
+  @ApiOkResponse({ type: StaffFolioDto })
+  @ApiBadRequestResponse({ type: ApiErrorResponseDto })
+  @ApiConflictResponse({ type: ApiErrorResponseDto })
+  @ApiNotFoundResponse({ type: ApiErrorResponseDto })
+  @ApiUnauthorizedResponse({ type: ApiErrorResponseDto })
+  @ApiForbiddenResponse({ type: ApiErrorResponseDto })
+  @ApiHeader({ name: 'X-CSRF-Token', required: true })
+  @ApiHeader({ name: 'Idempotency-Key', required: true })
+  checkout(
+    @Req() request: StaffRequest,
+    @Param('bookingId', new ParseUUIDPipe()) bookingId: string,
+    @Body() dto: CheckoutFolioDto,
+    @Headers('idempotency-key') idempotencyKey: string | undefined,
+  ): Promise<StaffFolioDto> {
+    return this.folios.checkout(request.staff!, bookingId, dto, idempotencyKey ?? '');
   }
 
   @Post('folios/:bookingId/adjustments')
