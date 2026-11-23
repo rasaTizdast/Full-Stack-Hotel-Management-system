@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState, type FormEvent } from 'react';
 import Link from 'next/link';
+import { toast } from 'sonner';
 import {
   StaffApiError,
   getStaffInventoryRange,
@@ -51,7 +52,6 @@ export function StaffInventoryPage() {
   const [nightlyPriceToman, setNightlyPriceToman] = useState('');
   const [fieldErrors, setFieldErrors] = useState<InventoryFormErrors>({});
   const [formError, setFormError] = useState<string | null>(null);
-  const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [isLoadingRoomTypes, setIsLoadingRoomTypes] = useState(true);
   const [isLoadingRange, setIsLoadingRange] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
@@ -90,10 +90,7 @@ export function StaffInventoryPage() {
         setNightlyPriceToman(values.nightlyPriceToman);
       } catch (cause) {
         if (!active) return;
-        if (
-          rangeRequestIdForLoad !== null &&
-          rangeRequestId.current !== rangeRequestIdForLoad
-        ) {
+        if (rangeRequestIdForLoad !== null && rangeRequestId.current !== rangeRequestIdForLoad) {
           return;
         }
         setFormError(
@@ -102,10 +99,7 @@ export function StaffInventoryPage() {
       } finally {
         if (active) {
           setIsLoadingRoomTypes(false);
-          if (
-            rangeRequestIdForLoad === null ||
-            rangeRequestId.current === rangeRequestIdForLoad
-          ) {
+          if (rangeRequestIdForLoad === null || rangeRequestId.current === rangeRequestIdForLoad) {
             setIsLoadingRange(false);
           }
         }
@@ -135,7 +129,6 @@ export function StaffInventoryPage() {
     setFieldErrors((current) => ({ ...current, [field]: undefined }));
     setInventory(null);
     setNightlyPriceToman('');
-    setSuccessMessage(null);
     setIsLoadingRange(false);
   }
 
@@ -146,20 +139,17 @@ export function StaffInventoryPage() {
     setNightlyPriceToman('');
     setFieldErrors({});
     setFormError(null);
-    setSuccessMessage(null);
     setIsLoadingRange(false);
   }
 
   function updateNightlyPrice(value: string) {
     setNightlyPriceToman(value);
     setFieldErrors((current) => ({ ...current, nightlyPriceToman: undefined }));
-    setSuccessMessage(null);
   }
 
   async function loadRange(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setFormError(null);
-    setSuccessMessage(null);
     setInventory(null);
     const validation = validateInventoryRangeInput(rangeInput);
     setFieldErrors(validation.errors);
@@ -180,9 +170,9 @@ export function StaffInventoryPage() {
       setNightlyPriceToman(values.nightlyPriceToman);
     } catch (cause) {
       if (rangeRequestId.current !== requestId) return;
-      setFormError(
-        cause instanceof Error ? cause.message : 'اطلاعات ظرفیت بارگذاری نشد. دوباره تلاش کنید.',
-      );
+      const message =
+        cause instanceof Error ? cause.message : 'اطلاعات ظرفیت بارگذاری نشد. دوباره تلاش کنید.';
+      setFormError(message);
     } finally {
       if (rangeRequestId.current === requestId) setIsLoadingRange(false);
     }
@@ -191,7 +181,6 @@ export function StaffInventoryPage() {
   async function saveRange(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setFormError(null);
-    setSuccessMessage(null);
     const validation = validateInventoryRangeInput(rangeInput);
     const errors: InventoryFormErrors = validation.errors;
     const price = parseInventoryPriceInput(nightlyPriceToman);
@@ -202,9 +191,12 @@ export function StaffInventoryPage() {
       price === null ||
       Object.keys(errors).length > 0 ||
       !validation.range ||
-      !selectedRoomTypeId ||
-      !csrfToken
+      !selectedRoomTypeId
     ) {
+      return;
+    }
+    if (!csrfToken) {
+      setFormError('نشست کارکنان معتبر نیست. دوباره وارد شوید.');
       return;
     }
 
@@ -220,10 +212,11 @@ export function StaffInventoryPage() {
         csrfToken,
       );
       setInventory(result);
-      setNightlyPriceToman(price);
-      setSuccessMessage(
-        `نرخ ${formatPersianInteger(validation.range.numberOfNights)} شب ذخیره شد.`,
-      );
+      const values = rangeFieldsFromResponse(result);
+      setNightlyPriceToman(values.nightlyPriceToman);
+      toast.success('نرخ شبانه به‌روز شد', {
+        description: `${formatPersianInteger(validation.range.numberOfNights)} شب ذخیره شد.`,
+      });
     } catch (cause) {
       if (cause instanceof StaffApiError && cause.code === 'CAPACITY_BELOW_RESERVED') {
         setFormError(
@@ -244,7 +237,9 @@ export function StaffInventoryPage() {
         setFieldErrors(apiErrors);
         if (Object.keys(apiErrors).length > 0) return;
       }
-      setFormError(cause instanceof Error ? cause.message : 'تغییرات ذخیره نشد. دوباره تلاش کنید.');
+      const message =
+        cause instanceof Error ? cause.message : 'تغییرات ذخیره نشد. دوباره تلاش کنید.';
+      setFormError(message);
     } finally {
       setIsSaving(false);
     }
@@ -278,7 +273,6 @@ export function StaffInventoryPage() {
         nightlyPriceToman={nightlyPriceToman}
         fieldErrors={fieldErrors}
         formError={formError}
-        successMessage={successMessage}
         isLoadingRoomTypes={isLoadingRoomTypes}
         isLoadingRange={isLoadingRange}
         isSaving={isSaving}

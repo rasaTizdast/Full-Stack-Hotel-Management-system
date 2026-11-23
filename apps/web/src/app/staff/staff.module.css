@@ -145,33 +145,17 @@
   gap: 1.15rem;
 }
 .staffScope :global(.staff-login-form__field) {
-  display: grid;
+  display: flex;
+  flex-direction: column;
   gap: 0.45rem;
 }
 .staffScope :global(.staff-login-form__field) label {
   color: var(--foreground);
-  font-size: var(--text-body);
+  font-size: var(--text-small);
   font-weight: 700;
 }
-.staffScope :global(.staff-login-form__field) input {
+.staffScope :global(.staff-login-form__input) {
   width: 100%;
-  min-height: 3rem;
-  border: 1px solid var(--field-border);
-  border-radius: var(--radius-control);
-  background: var(--surface-soft);
-  padding: 0.75rem 0.95rem;
-  color: var(--foreground);
-  font: inherit;
-  line-height: 1.5;
-  transition:
-    border-color 180ms var(--motion-out),
-    background-color 180ms var(--motion-out);
-}
-.staffScope :global(.staff-login-form__field) input:focus-visible {
-  border-color: var(--focus);
-  outline: 3px solid var(--focus);
-  outline-offset: 3px;
-  background: var(--surface);
 }
 .staffScope :global(.staff-login-form__error) {
   margin: 0;
@@ -183,42 +167,16 @@
   font-size: var(--text-ui);
 }
 .staffScope :global(.staff-login-form__submit) {
-  display: flex;
-  min-height: 3rem;
-  align-items: center;
-  justify-content: center;
-  gap: 1rem;
-  border: 0;
-  border-radius: var(--radius-pill);
-  background: var(--primary);
-  padding: 0.65rem 1.2rem;
-  color: var(--primary-foreground);
-  font: inherit;
-  font-weight: 700;
-  cursor: pointer;
-  transition:
-    transform 180ms var(--motion-out),
-    background-color 180ms var(--motion-out);
-}
-.staffScope :global(.staff-login-form__submit):hover:not(:disabled) {
-  transform: translateY(-2px);
-  background: var(--primary-strong);
+  margin-block-start: 0.2rem;
 }
 .staffScope :global(.staff-login-form__submit):active:not(:disabled),
 .staffScope :global(.staff-logout):active:not(:disabled) {
   transform: scale(0.985);
 }
-.staffScope :global(.staff-login-form__submit):focus-visible,
 .staffScope :global(.staff-logout):focus-visible,
 .staffScope :global(.staff-nav) a:focus-visible {
   outline: 3px solid var(--focus);
   outline-offset: 3px;
-}
-.staffScope :global(.staff-login-form__submit):disabled {
-  border: 1px solid var(--border);
-  background: var(--surface-soft);
-  color: var(--muted-foreground);
-  cursor: not-allowed;
 }
 .staffScope :global(.staff-login-form__privacy),
 .staffScope :global(.staff-login-card__footnote) {
@@ -850,7 +808,8 @@
 }
 
 .staffScope :global(.staff-inventory__field) {
-  display: grid;
+  display: flex;
+  flex-direction: column;
   min-width: 0;
   gap: 0.35rem;
 }
@@ -861,28 +820,10 @@
   font-weight: 700;
 }
 
-.staffScope :global(.staff-inventory__field) input,
-.staffScope :global(.staff-inventory__field) select {
+.staffScope :global(.staff-inventory__input) {
   width: 100%;
-  min-height: 3rem;
-  border: 1px solid var(--field-border);
-  border-radius: var(--radius-control);
-  background: var(--surface-raised);
-  padding: 0.55rem 0.7rem;
-  color: var(--ink);
-  font: inherit;
-  font-size: var(--text-compact);
-  line-height: 1.5;
 }
 
-.staffScope :global(.staff-inventory__field) input[aria-invalid='true'],
-.staffScope :global(.staff-inventory__field) select[aria-invalid='true'] {
-  border-color: var(--destructive);
-  background: var(--destructive-soft);
-}
-
-.staffScope :global(.staff-inventory__field) input:focus-visible,
-.staffScope :global(.staff-inventory__field) select:focus-visible,
 .staffScope :global(.staff-inventory__table-scroll):focus-visible {
   outline: 3px solid var(--focus);
   outline-offset: 3px;
@@ -903,21 +844,8 @@
 
 .staffScope :global(.staff-inventory__load),
 .staffScope :global(.staff-inventory__save) {
-  min-height: 3rem;
-  border: 0;
-  padding: 0.65rem 1rem;
-  font: inherit;
-  font-size: var(--text-ui);
-  font-weight: 700;
-  cursor: pointer;
-}
-
-.staffScope :global(.staff-inventory__load:disabled),
-.staffScope :global(.staff-inventory__save:disabled) {
-  border: 1px solid var(--border);
-  background: var(--surface-soft);
-  color: var(--muted-foreground);
-  cursor: not-allowed;
+  min-width: 10rem;
+  white-space: normal;
 }
 
 .staffScope :global(.staff-inventory__overview) {
@@ -1010,11 +938,6 @@
 .staffScope :global(.staff-inventory__message--error) {
   border-color: color-mix(in srgb, var(--destructive) 35%, var(--border));
   color: var(--destructive);
-}
-
-.staffScope :global(.staff-inventory__message--success) {
-  border-color: color-mix(in srgb, var(--success) 35%, var(--border));
-  color: var(--jade-dark);
 }
 
 .staffScope :global(.staff-inventory-denied) > p[role='alert'] {
@@ -1168,14 +1091,6 @@
   font-family: var(--type-display);
   text-wrap: balance;
 }
-.staffScope :global(.staff-inventory__field) input,
-.staffScope :global(.staff-inventory__field) select {
-  border-color: var(--field-border);
-  border-radius: var(--radius-control);
-  background: var(--surface-soft);
-}
-.staffScope :global(.staff-inventory__field) input:focus-visible,
-.staffScope :global(.staff-inventory__field) select:focus-visible,
 .staffScope :global(.staff-inventory__table-scroll):focus-visible {
   outline-color: var(--focus);
 }
@@ -1202,10 +1117,6 @@
 .staffScope :global(.staff-inventory__message--error) {
   border-color: color-mix(in srgb, var(--destructive) 35%, var(--border));
   color: var(--destructive);
-}
-.staffScope :global(.staff-inventory__message--success) {
-  border-color: color-mix(in srgb, var(--success) 35%, var(--border));
-  color: var(--success);
 }
 .staffScope :global(.staff-inventory-denied) > p[role='alert'] {
   border: 1px solid var(--border);
@@ -1276,7 +1187,12 @@
     display: grid;
     width: 1.6rem;
     place-items: center;
-    background: linear-gradient(90deg, var(--surface) 0%, color-mix(in srgb, var(--surface) 78%, transparent) 45%, transparent 100%);
+    background: linear-gradient(
+      90deg,
+      var(--surface) 0%,
+      color-mix(in srgb, var(--surface) 78%, transparent) 45%,
+      transparent 100%
+    );
     color: var(--muted-foreground);
     pointer-events: none;
   }

@@ -3,6 +3,7 @@
  * structural: 6 printed (44c,44d,58,77,78,79)
  * built: the project · redesign: polish · v2.0.0 */
 @import 'tailwindcss';
+@import 'tw-animate-css';
 
 :root {
   color-scheme: light;
@@ -47,6 +48,7 @@
   --destructive: var(--red-800);
   --destructive-soft: var(--red-50);
   --focus: var(--copper-700);
+  --interaction-soft: color-mix(in srgb, var(--primary) 9%, var(--surface));
 
   /* Typography, spacing, and shape */
   --type-body: 'Vazirmatn Variable', Tahoma, sans-serif;
@@ -98,19 +100,30 @@
   --color-surface: var(--surface);
   --color-surface-soft: var(--surface-soft);
   --color-foreground: var(--foreground);
+  --color-card: var(--surface);
+  --color-card-foreground: var(--foreground);
+  --color-popover: var(--surface);
+  --color-popover-foreground: var(--foreground);
   --color-muted-foreground: var(--muted-foreground);
   --color-primary: var(--primary);
   --color-primary-strong: var(--primary-strong);
   --color-primary-foreground: var(--primary-foreground);
-  --color-accent: var(--accent);
+  --color-secondary: var(--surface-soft);
+  --color-secondary-foreground: var(--foreground);
+  --color-muted: var(--surface-soft);
+  --color-accent: var(--interaction-soft);
+  --color-accent-foreground: var(--primary-strong);
+  --color-input: var(--field-border);
+  --color-ring: var(--focus);
+  --color-destructive: var(--destructive);
+  --color-destructive-soft: var(--destructive-soft);
+  --color-accent-brand: var(--accent);
   --color-highlight: var(--highlight);
   --color-border: var(--border);
   --color-success: var(--success);
   --color-success-soft: var(--success-soft);
   --color-warning: var(--warning);
   --color-warning-soft: var(--warning-soft);
-  --color-destructive: var(--destructive);
-  --color-destructive-soft: var(--destructive-soft);
   --font-sans: var(--type-body);
   --font-display: var(--type-display);
   --radius-lg: var(--radius-control);
@@ -159,8 +172,14 @@ button,
 input,
 select,
 textarea {
-  color: inherit;
   font-size: inherit;
+}
+
+button:not([data-slot]),
+input:not([data-slot]),
+select,
+textarea:not([data-slot]) {
+  color: inherit;
 }
 
 button:not(:disabled),
@@ -175,10 +194,10 @@ a {
 }
 
 a:focus-visible,
-button:focus-visible,
-input:focus-visible,
+button:not([data-slot]):focus-visible,
+input:not([data-slot]):focus-visible,
 select:focus-visible,
-textarea:focus-visible,
+textarea:not([data-slot]):focus-visible,
 [tabindex='-1']:focus-visible {
   outline: 3px solid var(--focus);
   outline-offset: 4px;

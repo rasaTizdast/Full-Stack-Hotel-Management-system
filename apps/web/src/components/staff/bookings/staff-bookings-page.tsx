@@ -1,6 +1,18 @@
 'use client';
 
 import { useEffect, useRef, useState, type FormEvent } from 'react';
+import { toast } from 'sonner';
+import { Button } from '@/components/ui/button';
+import { Field, FieldError, FieldLabel } from '@/components/ui/field';
+import { Input } from '@/components/ui/input';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import { Textarea } from '@/components/ui/textarea';
 import { useStaffSession } from '@/components/staff/staff-session-provider';
 import {
   formatGregorianAsJalali,
@@ -173,14 +185,28 @@ export function StaffBookingsPage() {
     const arrivalTo = draft.arrivalTo.trim() ? toGregorianIso(draft.arrivalTo) : undefined;
 
     if (draft.arrivalFrom.trim() && !arrivalFrom)
-      errors.arrivalFrom = 'تاریخ ورود را معتبر وارد کنید.';
-    if (draft.arrivalTo.trim() && !arrivalTo) errors.arrivalTo = 'تاریخ ورود را معتبر وارد کنید.';
+      errors.arrivalFrom = 'تاریخ آغاز بازه را معتبر وارد کنید.';
+    if (draft.arrivalTo.trim() && !arrivalTo)
+      errors.arrivalTo = 'تاریخ پایان بازه را معتبر وارد کنید.';
     if (arrivalFrom && arrivalTo && arrivalFrom > arrivalTo) {
       errors.arrivalTo = 'تاریخ پایان بازه باید پس از تاریخ آغاز باشد.';
     }
 
     setFilterErrors(errors);
-    if (Object.keys(errors).length > 0) return;
+    if (Object.keys(errors).length > 0) {
+      const firstInvalid = errors.arrivalFrom ? 'arrival-from' : 'arrival-to';
+      window.setTimeout(() => {
+        const control = document.getElementById(firstInvalid);
+        control?.focus();
+        control?.scrollIntoView({
+          block: 'center',
+          behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches
+            ? 'instant'
+            : 'smooth',
+        });
+      }, 0);
+      return;
+    }
 
     setListState('loading');
     setListError(null);
@@ -266,7 +292,8 @@ export function StaffBookingsPage() {
       return;
     }
     if (!csrfToken) {
-      setActionError('نشست کارکنان معتبر نیست. دوباره وارد شوید.');
+      const message = 'نشست کارکنان معتبر نیست. دوباره وارد شوید.';
+      setActionError(message);
       return;
     }
 
@@ -292,7 +319,8 @@ export function StaffBookingsPage() {
       setActionTargetReference(null);
       setInternalNote('');
       setCancellationReason('');
-      setActionMessage(SUCCESS_MESSAGES[actionDraft]);
+      setActionMessage(null);
+      toast.success(SUCCESS_MESSAGES[actionDraft]);
       refreshList();
       window.requestAnimationFrame(() => detailHeadingRef.current?.focus());
     } catch (cause) {
@@ -317,7 +345,8 @@ export function StaffBookingsPage() {
           setActionError(errorMessage(refreshCause));
         }
       } else {
-        setActionError(errorMessage(cause));
+        const message = errorMessage(cause);
+        setActionError(message);
       }
     } finally {
       setActing(false);
@@ -350,24 +379,38 @@ export function StaffBookingsPage() {
       </header>
 
       <form className={styles.filters} onSubmit={applyFilters} aria-label="فیلتر درخواست‌ها">
-        <div className={`${styles.filterField} ${styles.statusField}`}>
-          <label htmlFor="booking-status">وضعیت درخواست</label>
-          <select
-            id="booking-status"
-            value={draft.status}
-            onChange={(event) => updateDraft('status', event.target.value)}
+        <Field className={`${styles.filterField} ${styles.statusField}`}>
+          <FieldLabel htmlFor="booking-status">وضعیت درخواست</FieldLabel>
+          <Select
+            items={[
+              { value: 'ALL', label: 'همه وضعیت‌ها' },
+              ...Object.entries(STATUS_LABELS).map(([status, label]) => ({
+                value: status,
+                label,
+              })),
+            ]}
+            value={draft.status || 'ALL'}
+            onValueChange={(value) =>
+              updateDraft('status', value === 'ALL' ? '' : String(value ?? ''))
+            }
           >
-            <option value="">همه وضعیت‌ها</option>
-            {Object.entries(STATUS_LABELS).map(([status, label]) => (
-              <option key={status} value={status}>
-                {label}
-              </option>
-            ))}
-          </select>
-        </div>
-        <div className={styles.filterField}>
-          <label htmlFor="arrival-from">ورود از</label>
-          <input
+            <SelectTrigger id="booking-status">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="ALL">همه وضعیت‌ها</SelectItem>
+              {Object.entries(STATUS_LABELS).map(([status, label]) => (
+                <SelectItem key={status} value={status}>
+                  {label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </Field>
+        <Field className={styles.filterField} data-invalid={Boolean(filterErrors.arrivalFrom)}>
+          <FieldLabel htmlFor="arrival-from">ورود از</FieldLabel>
+          <Input
+            className={styles.control}
             id="arrival-from"
             type="text"
             inputMode="numeric"
@@ -378,15 +421,14 @@ export function StaffBookingsPage() {
             aria-describedby={filterErrors.arrivalFrom ? 'arrival-from-error' : undefined}
             onChange={(event) => updateDraft('arrivalFrom', event.target.value)}
           />
-          {filterErrors.arrivalFrom && (
-            <span className={styles.fieldError} id="arrival-from-error">
-              {filterErrors.arrivalFrom}
-            </span>
-          )}
-        </div>
-        <div className={styles.filterField}>
-          <label htmlFor="arrival-to">ورود تا</label>
-          <input
+          <FieldError id="arrival-from-error" className={styles.fieldError}>
+            {filterErrors.arrivalFrom}
+          </FieldError>
+        </Field>
+        <Field className={styles.filterField} data-invalid={Boolean(filterErrors.arrivalTo)}>
+          <FieldLabel htmlFor="arrival-to">ورود تا</FieldLabel>
+          <Input
+            className={styles.control}
             id="arrival-to"
             type="text"
             inputMode="numeric"
@@ -397,15 +439,14 @@ export function StaffBookingsPage() {
             aria-describedby={filterErrors.arrivalTo ? 'arrival-to-error' : undefined}
             onChange={(event) => updateDraft('arrivalTo', event.target.value)}
           />
-          {filterErrors.arrivalTo && (
-            <span className={styles.fieldError} id="arrival-to-error">
-              {filterErrors.arrivalTo}
-            </span>
-          )}
-        </div>
-        <div className={`${styles.filterField} ${styles.searchField}`}>
-          <label htmlFor="booking-search">کد رزرو یا موبایل</label>
-          <input
+          <FieldError id="arrival-to-error" className={styles.fieldError}>
+            {filterErrors.arrivalTo}
+          </FieldError>
+        </Field>
+        <Field className={`${styles.filterField} ${styles.searchField}`}>
+          <FieldLabel htmlFor="booking-search">کد رزرو یا موبایل</FieldLabel>
+          <Input
+            className={styles.control}
             id="booking-search"
             type="search"
             dir="auto"
@@ -413,20 +454,15 @@ export function StaffBookingsPage() {
             value={draft.search}
             onChange={(event) => updateDraft('search', event.target.value)}
           />
-        </div>
+        </Field>
         <div className={styles.filterActions}>
-          <button className={styles.primaryButton} type="submit">
+          <Button type="submit" size="sm">
             اعمال فیلترها
-          </button>
-          <button className={styles.clearButton} type="button" onClick={clearFilters}>
+          </Button>
+          <Button variant="outline" type="button" size="sm" onClick={clearFilters}>
             پاک‌کردن
-          </button>
+          </Button>
         </div>
-        {Object.keys(filterErrors).length > 0 && (
-          <p className={styles.filterErrorSummary} role="alert">
-            بازهٔ تاریخ را بررسی کنید.
-          </p>
-        )}
       </form>
 
       <div
@@ -719,9 +755,10 @@ export function StaffBookingsPage() {
                     </p>
                     <form className={styles.actionForm} onSubmit={submitAction}>
                       {actionDraft === 'cancel' ? (
-                        <div className={styles.actionField}>
-                          <label htmlFor="cancellation-reason">دلیل لغو</label>
-                          <textarea
+                        <Field className={styles.actionField}>
+                          <FieldLabel htmlFor="cancellation-reason">دلیل لغو</FieldLabel>
+                          <Textarea
+                            className={styles.actionControl}
                             id="cancellation-reason"
                             value={cancellationReason}
                             onChange={(event) => setCancellationReason(event.target.value)}
@@ -729,18 +766,19 @@ export function StaffBookingsPage() {
                             maxLength={500}
                             rows={3}
                           />
-                        </div>
+                        </Field>
                       ) : (
-                        <div className={styles.actionField}>
-                          <label htmlFor="internal-note">یادداشت داخلی (اختیاری)</label>
-                          <textarea
+                        <Field className={styles.actionField}>
+                          <FieldLabel htmlFor="internal-note">یادداشت داخلی (اختیاری)</FieldLabel>
+                          <Textarea
+                            className={styles.actionControl}
                             id="internal-note"
                             value={internalNote}
                             onChange={(event) => setInternalNote(event.target.value)}
                             maxLength={1000}
                             rows={3}
                           />
-                        </div>
+                        </Field>
                       )}
                       {actionError && (
                         <p className={styles.errorText} role="alert">
@@ -748,7 +786,7 @@ export function StaffBookingsPage() {
                         </p>
                       )}
                       <div className={styles.actionControls}>
-                        <button className={styles.primaryButton} type="submit" disabled={acting}>
+                        <Button type="submit" size="lg" disabled={acting}>
                           {acting
                             ? 'در حال ثبت…'
                             : actionDraft === 'confirm'
@@ -756,15 +794,16 @@ export function StaffBookingsPage() {
                               : actionDraft === 'reject'
                                 ? 'بله، درخواست را رد می‌کنم'
                                 : 'بله، رزرو را لغو می‌کنم'}
-                        </button>
-                        <button
-                          className={styles.clearButton}
+                        </Button>
+                        <Button
+                          variant="outline"
                           type="button"
+                          size="lg"
                           disabled={acting}
                           onClick={closeAction}
                         >
                           بازگشت
-                        </button>
+                        </Button>
                       </div>
                     </form>
                   </section>

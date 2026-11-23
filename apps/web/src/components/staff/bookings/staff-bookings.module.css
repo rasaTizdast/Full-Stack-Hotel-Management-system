@@ -143,10 +143,7 @@
 .rejectButton:focus-visible,
 .clearButton:focus-visible,
 .pagination button:focus-visible,
-.bookingCard:focus-visible,
-.filterField input:focus-visible,
-.filterField select:focus-visible,
-.actionField textarea:focus-visible {
+.bookingCard:focus-visible {
   outline: 3px solid var(--focus);
   outline-offset: 3px;
 }
@@ -188,9 +185,10 @@
 
 .filterField,
 .actionField {
-  display: grid;
+  display: flex;
+  flex-direction: column;
   min-width: 0;
-  gap: 0.35rem;
+  gap: 0.4rem;
 }
 
 .filterField label,
@@ -200,19 +198,10 @@
   font-weight: 700;
 }
 
-.filterField input,
-.filterField select,
-.actionField textarea {
+.control,
+.actionControl {
   width: 100%;
-  min-height: 2.6rem;
-  border: 1px solid var(--field-border);
-  border-radius: var(--radius-control);
-  background: var(--surface-soft);
-  padding: 0.55rem 0.7rem;
-  color: var(--foreground);
-  font: inherit;
-  line-height: 1.5;
-  font-size: var(--text-caption);
+  min-width: 0;
 }
 
 .filterField input::placeholder {
@@ -223,6 +212,7 @@
   border-color: var(--destructive);
 }
 .fieldError {
+  margin: 0;
   color: var(--destructive);
   font-size: var(--text-caption);
 }
@@ -230,13 +220,6 @@
   display: flex;
   gap: 0.4rem;
 }
-.filterErrorSummary {
-  grid-column: 1 / -1;
-  margin: 0;
-  color: var(--destructive);
-  font-size: var(--text-caption);
-}
-
 .workspace {
   display: grid;
   grid-template-columns: minmax(20rem, 0.9fr) minmax(0, 1.1fr);
@@ -605,13 +588,13 @@
   gap: 0.65rem;
 }
 .actionField textarea {
-  min-height: 82px;
+  min-height: 6rem;
   resize: vertical;
 }
-.actionField textarea:required:invalid {
-  border-color: var(--border);
-}
 .actionControls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
   padding-block-start: 0.15rem;
 }
 .errorText {
@@ -677,8 +660,7 @@
     padding: 0.8rem;
   }
   .searchField,
-  .filterActions,
-  .filterErrorSummary {
+  .filterActions {
     grid-column: 1 / -1;
   }
   .filterActions > button {
