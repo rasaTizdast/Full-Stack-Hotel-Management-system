@@ -22,7 +22,8 @@ type Capability =
   | 'ADJUST_FOLIOS'
   | 'CHECKOUT'
   | 'NIGHT_CLOSE_REPORTS'
-  | 'VIEW_FOLIO_ROOM_NUMBER';
+  | 'VIEW_FOLIO_ROOM_NUMBER'
+  | 'MANAGE_SERVICE_CATALOG';
 
 const expected: Record<StaffRole, Capability[]> = {
   ADMIN: [
@@ -46,6 +47,7 @@ const expected: Record<StaffRole, Capability[]> = {
     'CHECKOUT',
     'NIGHT_CLOSE_REPORTS',
     'VIEW_FOLIO_ROOM_NUMBER',
+    'MANAGE_SERVICE_CATALOG',
   ],
   MANAGER: [
     'MANAGE_INVENTORY',
@@ -66,6 +68,7 @@ const expected: Record<StaffRole, Capability[]> = {
     'ADJUST_FOLIOS',
     'CHECKOUT',
     'NIGHT_CLOSE_REPORTS',
+    'MANAGE_SERVICE_CATALOG',
   ],
   RECEPTIONIST: [
     'MANAGE_BOOKINGS',

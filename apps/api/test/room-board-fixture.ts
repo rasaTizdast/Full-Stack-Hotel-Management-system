@@ -7,6 +7,7 @@ import { AppModule } from '../src/app.module';
 import { addDays, getHotelBusinessDate } from '../src/availability/date-range';
 import { configureApiApplication } from '../src/common/configure-api-application';
 import { PrismaService } from '../src/database/prisma.service';
+import { FoliosService } from '../src/folios/folios.service';
 import type { StaffRole } from '../src/generated/prisma/enums';
 
 export const boardRoute = '/api/v1/staff/rooms/board';
@@ -70,6 +71,10 @@ export class RoomBoardFixture {
 
   client() {
     return request(this.app.getHttpServer());
+  }
+
+  get folios(): FoliosService {
+    return this.app.get(FoliosService);
   }
 
   async assignmentRevision(
@@ -211,6 +216,9 @@ export class RoomBoardFixture {
       await this.prisma.roomBlock.deleteMany({ where: { room: { roomType } } });
       await this.prisma.room.deleteMany({ where: { roomType } });
       await this.prisma.roomNightInventory.deleteMany({ where: { roomType } });
+      await this.prisma.folio.deleteMany({
+        where: { booking: { roomType }, entries: { none: {} } },
+      });
       await this.prisma.booking.deleteMany({ where: { roomType } });
       await this.prisma.roomType.deleteMany({ where: roomType });
       await this.prisma.hotel.deleteMany({ where: { id: { in: this.hotelIds } } });

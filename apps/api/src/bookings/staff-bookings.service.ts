@@ -33,6 +33,7 @@ const bookingListSelect = {
 
 const bookingDetailSelect = {
   ...bookingListSelect,
+  id: true,
   guestEmail: true,
   totalPriceToman: true,
   internalNote: true,
@@ -107,6 +108,7 @@ function toListItem(record: BookingListRecord): StaffBookingListItemDto {
 function toDetail(record: BookingDetailRecord): StaffBookingDetailDto {
   return {
     ...toListItem(record),
+    id: record.id,
     guestEmail: record.guestEmail,
     totalPriceToman: record.totalPriceToman.toString(),
     internalNote: record.internalNote,

@@ -31,6 +31,34 @@ enum StaffRole {
   @@map("staff_role")
 }
 
+enum FolioStatus {
+  OPEN
+  CLOSED
+  CLOSED_DUE
+
+  @@map("folio_status")
+}
+
+enum FolioDirection {
+  DEBIT
+  CREDIT
+
+  @@map("folio_direction")
+}
+
+enum FolioEntryKind {
+  ACCOMMODATION
+  SERVICE
+  FEE
+  TAX
+  DISCOUNT
+  ADJUSTMENT
+  PAYMENT
+  REFUND
+
+  @@map("folio_entry_kind")
+}
+
 enum HousekeepingStatus {
   DIRTY
   CLEAN
@@ -158,23 +186,23 @@ model RoomType {
 }
 
 model Room {
-  id                 String             @id @default(uuid()) @db.Uuid
-  hotelId            String             @map("hotel_id") @db.Uuid
-  roomTypeId         String             @map("room_type_id") @db.Uuid
-  roomNumber         String             @map("room_number") @db.VarChar(32)
-  floor              String?            @db.VarChar(32)
-  features           String[]           @default([])
-  housekeepingStatus HousekeepingStatus @default(DIRTY) @map("housekeeping_status")
-  isActive           Boolean            @default(true) @map("is_active")
-  isGenerated        Boolean            @default(false) @map("is_generated")
-  createdAt          DateTime           @default(now()) @map("created_at") @db.Timestamptz(3)
-  updatedAt          DateTime           @updatedAt @map("updated_at") @db.Timestamptz(3)
-  hotel              Hotel              @relation(fields: [hotelId], references: [id], onDelete: Restrict)
-  roomType           RoomType           @relation(fields: [roomTypeId, hotelId], references: [id, hotelId], onDelete: Restrict)
-  blocks             RoomBlock[]
-  assignments        RoomAssignment[]
-  housekeepingTasks  HousekeepingTask[]
-  discrepancies      RoomDiscrepancy[]
+  id                  String               @id @default(uuid()) @db.Uuid
+  hotelId             String               @map("hotel_id") @db.Uuid
+  roomTypeId          String               @map("room_type_id") @db.Uuid
+  roomNumber          String               @map("room_number") @db.VarChar(32)
+  floor               String?              @db.VarChar(32)
+  features            String[]             @default([])
+  housekeepingStatus  HousekeepingStatus   @default(DIRTY) @map("housekeeping_status")
+  isActive            Boolean              @default(true) @map("is_active")
+  isGenerated         Boolean              @default(false) @map("is_generated")
+  createdAt           DateTime             @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt           DateTime             @updatedAt @map("updated_at") @db.Timestamptz(3)
+  hotel               Hotel                @relation(fields: [hotelId], references: [id], onDelete: Restrict)
+  roomType            RoomType             @relation(fields: [roomTypeId, hotelId], references: [id, hotelId], onDelete: Restrict)
+  blocks              RoomBlock[]
+  assignments         RoomAssignment[]
+  housekeepingTasks   HousekeepingTask[]
+  discrepancies       RoomDiscrepancy[]
   maintenanceRequests MaintenanceRequest[]
 
   @@unique([hotelId, roomNumber])
@@ -204,20 +232,21 @@ model RoomBlock {
 }
 
 model RoomAssignment {
-  id                    String     @id @default(uuid()) @db.Uuid
-  bookingId             String     @map("booking_id") @db.Uuid
-  roomId                String     @map("room_id") @db.Uuid
-  roomTypeId            String     @map("room_type_id") @db.Uuid
-  startDate             DateTime   @map("start_date") @db.Date
-  endDate               DateTime   @map("end_date") @db.Date
-  isActive              Boolean    @default(true) @map("is_active")
-  assignedByStaffUserId String?    @map("assigned_by_staff_user_id") @db.Uuid
-  changeReason          String?    @map("change_reason") @db.VarChar(500)
-  createdAt             DateTime   @default(now()) @map("created_at") @db.Timestamptz(3)
-  updatedAt             DateTime   @updatedAt @map("updated_at") @db.Timestamptz(3)
-  booking               Booking    @relation(fields: [bookingId, roomTypeId], references: [id, roomTypeId], onDelete: Restrict)
-  room                  Room       @relation(fields: [roomId, roomTypeId], references: [id, roomTypeId], onDelete: Restrict)
-  assignedBy            StaffUser? @relation("RoomAssignmentCreator", fields: [assignedByStaffUserId], references: [id], onDelete: SetNull)
+  id                    String       @id @default(uuid()) @db.Uuid
+  bookingId             String       @map("booking_id") @db.Uuid
+  roomId                String       @map("room_id") @db.Uuid
+  roomTypeId            String       @map("room_type_id") @db.Uuid
+  startDate             DateTime     @map("start_date") @db.Date
+  endDate               DateTime     @map("end_date") @db.Date
+  isActive              Boolean      @default(true) @map("is_active")
+  assignedByStaffUserId String?      @map("assigned_by_staff_user_id") @db.Uuid
+  changeReason          String?      @map("change_reason") @db.VarChar(500)
+  createdAt             DateTime     @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt             DateTime     @updatedAt @map("updated_at") @db.Timestamptz(3)
+  booking               Booking      @relation(fields: [bookingId, roomTypeId], references: [id, roomTypeId], onDelete: Restrict)
+  room                  Room         @relation(fields: [roomId, roomTypeId], references: [id, roomTypeId], onDelete: Restrict)
+  assignedBy            StaffUser?   @relation("RoomAssignmentCreator", fields: [assignedByStaffUserId], references: [id], onDelete: SetNull)
+  folioEntries          FolioEntry[]
 
   @@index([roomId, isActive, startDate, endDate])
   @@index([bookingId, isActive])
@@ -226,38 +255,38 @@ model RoomAssignment {
 }
 
 model HousekeepingTask {
-  id                       String                       @id @default(uuid()) @db.Uuid
-  roomId                   String                       @map("room_id") @db.Uuid
-  taskType                 HousekeepingTaskType         @map("task_type")
-  businessDate             DateTime                     @map("business_date") @db.Date
-  priority                 HousekeepingPriority         @default(NORMAL)
-  status                   HousekeepingTaskStatus       @default(OPEN)
-  assignedToStaffUserId    String?                      @map("assigned_to_staff_user_id") @db.Uuid
-  assignedAt               DateTime?                    @map("assigned_at") @db.Timestamptz(3)
-  assignedByStaffUserId    String?                      @map("assigned_by_staff_user_id") @db.Uuid
-  createdByStaffUserId     String                       @map("created_by_staff_user_id") @db.Uuid
-  createdAt                DateTime                     @default(now()) @map("created_at") @db.Timestamptz(3)
-  updatedAt                DateTime                     @updatedAt @map("updated_at") @db.Timestamptz(3)
-  startedAt                DateTime?                    @map("started_at") @db.Timestamptz(3)
-  startedByStaffUserId     String?                      @map("started_by_staff_user_id") @db.Uuid
-  completedAt              DateTime?                    @map("completed_at") @db.Timestamptz(3)
-  completedByStaffUserId   String?                      @map("completed_by_staff_user_id") @db.Uuid
-  completionOutcome        HousekeepingCompletionOutcome? @map("completion_outcome")
-  completionReason         String?                      @map("completion_reason") @db.VarChar(500)
-  reworkOfTaskId           String?                      @unique @map("rework_of_task_id") @db.Uuid
-  cancelledAt              DateTime?                    @map("cancelled_at") @db.Timestamptz(3)
-  cancelledByStaffUserId   String?                      @map("cancelled_by_staff_user_id") @db.Uuid
-  cancellationReason       String?                      @map("cancellation_reason") @db.VarChar(500)
-  note                     String?                      @db.VarChar(500)
-  room                     Room                         @relation(fields: [roomId], references: [id], onDelete: Restrict)
-  assignedTo               StaffUser?                   @relation("HousekeepingTaskAssignee", fields: [assignedToStaffUserId], references: [id], onDelete: Restrict)
-  assignedBy               StaffUser?                   @relation("HousekeepingTaskAssigner", fields: [assignedByStaffUserId], references: [id], onDelete: Restrict)
-  createdBy                StaffUser                     @relation("HousekeepingTaskCreator", fields: [createdByStaffUserId], references: [id], onDelete: Restrict)
-  startedBy                StaffUser?                   @relation("HousekeepingTaskStarter", fields: [startedByStaffUserId], references: [id], onDelete: Restrict)
-  completedBy              StaffUser?                   @relation("HousekeepingTaskCompleter", fields: [completedByStaffUserId], references: [id], onDelete: Restrict)
-  cancelledBy              StaffUser?                   @relation("HousekeepingTaskCanceller", fields: [cancelledByStaffUserId], references: [id], onDelete: Restrict)
-  reworkOfTask             HousekeepingTask?             @relation("HousekeepingTaskRework", fields: [reworkOfTaskId], references: [id], onDelete: Restrict)
-  reCleanTask              HousekeepingTask?             @relation("HousekeepingTaskRework")
+  id                     String                         @id @default(uuid()) @db.Uuid
+  roomId                 String                         @map("room_id") @db.Uuid
+  taskType               HousekeepingTaskType           @map("task_type")
+  businessDate           DateTime                       @map("business_date") @db.Date
+  priority               HousekeepingPriority           @default(NORMAL)
+  status                 HousekeepingTaskStatus         @default(OPEN)
+  assignedToStaffUserId  String?                        @map("assigned_to_staff_user_id") @db.Uuid
+  assignedAt             DateTime?                      @map("assigned_at") @db.Timestamptz(3)
+  assignedByStaffUserId  String?                        @map("assigned_by_staff_user_id") @db.Uuid
+  createdByStaffUserId   String                         @map("created_by_staff_user_id") @db.Uuid
+  createdAt              DateTime                       @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt              DateTime                       @updatedAt @map("updated_at") @db.Timestamptz(3)
+  startedAt              DateTime?                      @map("started_at") @db.Timestamptz(3)
+  startedByStaffUserId   String?                        @map("started_by_staff_user_id") @db.Uuid
+  completedAt            DateTime?                      @map("completed_at") @db.Timestamptz(3)
+  completedByStaffUserId String?                        @map("completed_by_staff_user_id") @db.Uuid
+  completionOutcome      HousekeepingCompletionOutcome? @map("completion_outcome")
+  completionReason       String?                        @map("completion_reason") @db.VarChar(500)
+  reworkOfTaskId         String?                        @unique @map("rework_of_task_id") @db.Uuid
+  cancelledAt            DateTime?                      @map("cancelled_at") @db.Timestamptz(3)
+  cancelledByStaffUserId String?                        @map("cancelled_by_staff_user_id") @db.Uuid
+  cancellationReason     String?                        @map("cancellation_reason") @db.VarChar(500)
+  note                   String?                        @db.VarChar(500)
+  room                   Room                           @relation(fields: [roomId], references: [id], onDelete: Restrict)
+  assignedTo             StaffUser?                     @relation("HousekeepingTaskAssignee", fields: [assignedToStaffUserId], references: [id], onDelete: Restrict)
+  assignedBy             StaffUser?                     @relation("HousekeepingTaskAssigner", fields: [assignedByStaffUserId], references: [id], onDelete: Restrict)
+  createdBy              StaffUser                      @relation("HousekeepingTaskCreator", fields: [createdByStaffUserId], references: [id], onDelete: Restrict)
+  startedBy              StaffUser?                     @relation("HousekeepingTaskStarter", fields: [startedByStaffUserId], references: [id], onDelete: Restrict)
+  completedBy            StaffUser?                     @relation("HousekeepingTaskCompleter", fields: [completedByStaffUserId], references: [id], onDelete: Restrict)
+  cancelledBy            StaffUser?                     @relation("HousekeepingTaskCanceller", fields: [cancelledByStaffUserId], references: [id], onDelete: Restrict)
+  reworkOfTask           HousekeepingTask?              @relation("HousekeepingTaskRework", fields: [reworkOfTaskId], references: [id], onDelete: Restrict)
+  reCleanTask            HousekeepingTask?              @relation("HousekeepingTaskRework")
 
   @@index([roomId, businessDate, status])
   @@index([status, businessDate, priority])
@@ -267,22 +296,22 @@ model HousekeepingTask {
 }
 
 model RoomDiscrepancy {
-  id                     String               @id @default(uuid()) @db.Uuid
-  roomId                 String               @map("room_id") @db.Uuid
-  businessDate           DateTime             @map("business_date") @db.Date
-  kind                   RoomDiscrepancyType
-  expectedOccupied       Boolean              @map("expected_occupied")
-  observedOccupied       Boolean              @map("observed_occupied")
-  status                 RoomDiscrepancyStatus @default(OPEN)
-  reportedByStaffUserId  String               @map("reported_by_staff_user_id") @db.Uuid
-  reportedAt             DateTime             @default(now()) @map("reported_at") @db.Timestamptz(3)
-  note                   String               @db.VarChar(500)
-  resolvedByStaffUserId  String?              @map("resolved_by_staff_user_id") @db.Uuid
-  resolvedAt             DateTime?            @map("resolved_at") @db.Timestamptz(3)
-  resolutionReason       String?              @map("resolution_reason") @db.VarChar(500)
-  room                   Room                 @relation(fields: [roomId], references: [id], onDelete: Restrict)
-  reportedBy             StaffUser            @relation("RoomDiscrepancyReporter", fields: [reportedByStaffUserId], references: [id], onDelete: Restrict)
-  resolvedBy             StaffUser?           @relation("RoomDiscrepancyResolver", fields: [resolvedByStaffUserId], references: [id], onDelete: Restrict)
+  id                    String                @id @default(uuid()) @db.Uuid
+  roomId                String                @map("room_id") @db.Uuid
+  businessDate          DateTime              @map("business_date") @db.Date
+  kind                  RoomDiscrepancyType
+  expectedOccupied      Boolean               @map("expected_occupied")
+  observedOccupied      Boolean               @map("observed_occupied")
+  status                RoomDiscrepancyStatus @default(OPEN)
+  reportedByStaffUserId String                @map("reported_by_staff_user_id") @db.Uuid
+  reportedAt            DateTime              @default(now()) @map("reported_at") @db.Timestamptz(3)
+  note                  String                @db.VarChar(500)
+  resolvedByStaffUserId String?               @map("resolved_by_staff_user_id") @db.Uuid
+  resolvedAt            DateTime?             @map("resolved_at") @db.Timestamptz(3)
+  resolutionReason      String?               @map("resolution_reason") @db.VarChar(500)
+  room                  Room                  @relation(fields: [roomId], references: [id], onDelete: Restrict)
+  reportedBy            StaffUser             @relation("RoomDiscrepancyReporter", fields: [reportedByStaffUserId], references: [id], onDelete: Restrict)
+  resolvedBy            StaffUser?            @relation("RoomDiscrepancyResolver", fields: [resolvedByStaffUserId], references: [id], onDelete: Restrict)
 
   @@index([roomId, businessDate, status])
   @@index([status, businessDate])
@@ -291,28 +320,28 @@ model RoomDiscrepancy {
 }
 
 model MaintenanceRequest {
-  id                       String                   @id @default(uuid()) @db.Uuid
-  roomId                   String                   @map("room_id") @db.Uuid
-  category                 MaintenanceCategory
-  description              String                   @db.VarChar(1000)
-  priority                 HousekeepingPriority     @default(NORMAL)
-  status                   MaintenanceRequestStatus @default(OPEN)
-  expectedDate             DateTime                 @map("expected_date") @db.Date
-  assignedToStaffUserId    String?                  @map("assigned_to_staff_user_id") @db.Uuid
-  assignedAt               DateTime?                @map("assigned_at") @db.Timestamptz(3)
-  assignedByStaffUserId    String?                  @map("assigned_by_staff_user_id") @db.Uuid
-  createdByStaffUserId     String                   @map("created_by_staff_user_id") @db.Uuid
-  openedAt                 DateTime                 @default(now()) @map("opened_at") @db.Timestamptz(3)
-  resolvedAt               DateTime?                @map("resolved_at") @db.Timestamptz(3)
-  resolvedByStaffUserId    String?                  @map("resolved_by_staff_user_id") @db.Uuid
-  resolutionNote           String?                  @map("resolution_note") @db.VarChar(500)
-  createdAt                DateTime                 @default(now()) @map("created_at") @db.Timestamptz(3)
-  updatedAt                DateTime                 @updatedAt @map("updated_at") @db.Timestamptz(3)
-  room                     Room                     @relation(fields: [roomId], references: [id], onDelete: Restrict)
-  assignedTo               StaffUser?               @relation("MaintenanceRequestAssignee", fields: [assignedToStaffUserId], references: [id], onDelete: Restrict)
-  assignedBy               StaffUser?               @relation("MaintenanceRequestAssigner", fields: [assignedByStaffUserId], references: [id], onDelete: Restrict)
-  createdBy                StaffUser                 @relation("MaintenanceRequestCreator", fields: [createdByStaffUserId], references: [id], onDelete: Restrict)
-  resolvedBy               StaffUser?               @relation("MaintenanceRequestResolver", fields: [resolvedByStaffUserId], references: [id], onDelete: Restrict)
+  id                    String                   @id @default(uuid()) @db.Uuid
+  roomId                String                   @map("room_id") @db.Uuid
+  category              MaintenanceCategory
+  description           String                   @db.VarChar(1000)
+  priority              HousekeepingPriority     @default(NORMAL)
+  status                MaintenanceRequestStatus @default(OPEN)
+  expectedDate          DateTime                 @map("expected_date") @db.Date
+  assignedToStaffUserId String?                  @map("assigned_to_staff_user_id") @db.Uuid
+  assignedAt            DateTime?                @map("assigned_at") @db.Timestamptz(3)
+  assignedByStaffUserId String?                  @map("assigned_by_staff_user_id") @db.Uuid
+  createdByStaffUserId  String                   @map("created_by_staff_user_id") @db.Uuid
+  openedAt              DateTime                 @default(now()) @map("opened_at") @db.Timestamptz(3)
+  resolvedAt            DateTime?                @map("resolved_at") @db.Timestamptz(3)
+  resolvedByStaffUserId String?                  @map("resolved_by_staff_user_id") @db.Uuid
+  resolutionNote        String?                  @map("resolution_note") @db.VarChar(500)
+  createdAt             DateTime                 @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt             DateTime                 @updatedAt @map("updated_at") @db.Timestamptz(3)
+  room                  Room                     @relation(fields: [roomId], references: [id], onDelete: Restrict)
+  assignedTo            StaffUser?               @relation("MaintenanceRequestAssignee", fields: [assignedToStaffUserId], references: [id], onDelete: Restrict)
+  assignedBy            StaffUser?               @relation("MaintenanceRequestAssigner", fields: [assignedByStaffUserId], references: [id], onDelete: Restrict)
+  createdBy             StaffUser                @relation("MaintenanceRequestCreator", fields: [createdByStaffUserId], references: [id], onDelete: Restrict)
+  resolvedBy            StaffUser?               @relation("MaintenanceRequestResolver", fields: [resolvedByStaffUserId], references: [id], onDelete: Restrict)
 
   @@index([roomId, status, openedAt])
   @@index([status, expectedDate, priority])
@@ -375,6 +404,7 @@ model Booking {
   noShowBy                StaffUser?       @relation("BookingNoShowActor", fields: [noShowByStaffUserId], references: [id], onDelete: Restrict)
   nights                  BookingNight[]
   assignments             RoomAssignment[]
+  folio                   Folio?
 
   @@unique([id, roomTypeId])
   @@index([status, createdAt])
@@ -399,35 +429,102 @@ model BookingNight {
   @@map("booking_nights")
 }
 
+model ServiceItem {
+  id                String       @id @default(uuid()) @db.Uuid
+  name              String       @db.VarChar(120)
+  nameKey           String       @unique @map("name_key") @db.VarChar(512)
+  category          String       @db.VarChar(80)
+  currentPriceToman BigInt       @map("current_price_toman")
+  isActive          Boolean      @default(true) @map("is_active")
+  createdAt         DateTime     @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt         DateTime     @updatedAt @map("updated_at") @db.Timestamptz(3)
+  folioEntries      FolioEntry[]
+
+  @@index([isActive, category, name])
+  @@map("service_items")
+}
+
+model Folio {
+  id                  String       @id @default(uuid()) @db.Uuid
+  bookingId           String       @unique @map("booking_id") @db.Uuid
+  status              FolioStatus  @default(OPEN)
+  closedAt            DateTime?    @map("closed_at") @db.Timestamptz(3)
+  closedByStaffUserId String?      @map("closed_by_staff_user_id") @db.Uuid
+  createdAt           DateTime     @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt           DateTime     @updatedAt @map("updated_at") @db.Timestamptz(3)
+  booking             Booking      @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  closedBy            StaffUser?   @relation("FolioCloser", fields: [closedByStaffUserId], references: [id], onDelete: Restrict)
+  entries             FolioEntry[]
+
+  @@map("folios")
+}
+
+model FolioEntry {
+  id                  String          @id @default(uuid()) @db.Uuid
+  entryNumber         BigInt          @unique @default(autoincrement()) @map("entry_number")
+  folioId             String          @map("folio_id") @db.Uuid
+  direction           FolioDirection
+  kind                FolioEntryKind
+  amountToman         BigInt          @map("amount_toman")
+  serviceDate         DateTime        @map("service_date") @db.Date
+  descriptionSnapshot String          @map("description_snapshot") @db.VarChar(500)
+  quantity            Int?
+  unitAmountToman     BigInt?         @map("unit_amount_toman")
+  roomAssignmentId    String?         @map("room_assignment_id") @db.Uuid
+  roomNumberSnapshot  String?         @map("room_number_snapshot") @db.VarChar(32)
+  serviceItemId       String?         @map("service_item_id") @db.Uuid
+  source              String          @db.VarChar(32)
+  idempotencyKey      String?         @unique @map("idempotency_key") @db.VarChar(200)
+  requestHash         String?         @map("request_hash") @db.Char(64)
+  actorStaffUserId    String?         @map("actor_staff_user_id") @db.Uuid
+  correctsEntryId     String?         @map("corrects_entry_id") @db.Uuid
+  correctionReason    String?         @map("correction_reason") @db.VarChar(500)
+  createdAt           DateTime        @default(now()) @map("created_at") @db.Timestamptz(3)
+  folio               Folio           @relation(fields: [folioId], references: [id], onDelete: Restrict)
+  roomAssignment      RoomAssignment? @relation(fields: [roomAssignmentId], references: [id], onDelete: Restrict)
+  serviceItem         ServiceItem?    @relation(fields: [serviceItemId], references: [id], onDelete: SetNull)
+  actor               StaffUser?      @relation("FolioEntryActor", fields: [actorStaffUserId], references: [id], onDelete: Restrict)
+  correctsEntry       FolioEntry?     @relation("FolioCorrection", fields: [correctsEntryId, folioId], references: [id, folioId], onDelete: Restrict)
+  corrections         FolioEntry[]    @relation("FolioCorrection")
+
+  @@unique([id, folioId])
+  @@index([folioId, serviceDate, entryNumber])
+  @@index([roomAssignmentId, serviceDate])
+  @@index([correctsEntryId])
+  @@map("folio_entries")
+}
+
 model StaffUser {
-  id                     String           @id @default(uuid()) @db.Uuid
-  username               String           @unique @db.VarChar(120)
-  email                  String           @unique @db.VarChar(254)
-  passwordHash           String           @map("password_hash") @db.VarChar(255)
-  role                   StaffRole        @default(RECEPTIONIST)
-  isActive               Boolean          @default(true) @map("is_active")
-  mustChangePassword     Boolean          @default(false) @map("must_change_password")
-  createdAt              DateTime         @default(now()) @map("created_at") @db.Timestamptz(3)
-  updatedAt              DateTime         @updatedAt @map("updated_at") @db.Timestamptz(3)
-  sessions               StaffSession[]
-  createdRoomBlocks      RoomBlock[]      @relation("RoomBlockCreator")
-  createdRoomAssignments RoomAssignment[] @relation("RoomAssignmentCreator")
-  checkedInBookings      Booking[]        @relation("BookingCheckInActor")
-  checkedOutBookings     Booking[]        @relation("BookingCheckOutActor")
-  noShowBookings         Booking[]        @relation("BookingNoShowActor")
-  createdHousekeepingTasks HousekeepingTask[] @relation("HousekeepingTaskCreator")
-  assignedHousekeepingTasks HousekeepingTask[] @relation("HousekeepingTaskAssignee")
-  assignedHousekeepingTaskHistory HousekeepingTask[] @relation("HousekeepingTaskAssigner")
-  startedHousekeepingTasks HousekeepingTask[] @relation("HousekeepingTaskStarter")
-  completedHousekeepingTasks HousekeepingTask[] @relation("HousekeepingTaskCompleter")
-  cancelledHousekeepingTasks HousekeepingTask[] @relation("HousekeepingTaskCanceller")
-  reportedRoomDiscrepancies RoomDiscrepancy[] @relation("RoomDiscrepancyReporter")
-  resolvedRoomDiscrepancies RoomDiscrepancy[] @relation("RoomDiscrepancyResolver")
-  createdMaintenanceRequests MaintenanceRequest[] @relation("MaintenanceRequestCreator")
-  assignedMaintenanceRequests MaintenanceRequest[] @relation("MaintenanceRequestAssignee")
+  id                                String               @id @default(uuid()) @db.Uuid
+  username                          String               @unique @db.VarChar(120)
+  email                             String               @unique @db.VarChar(254)
+  passwordHash                      String               @map("password_hash") @db.VarChar(255)
+  role                              StaffRole            @default(RECEPTIONIST)
+  isActive                          Boolean              @default(true) @map("is_active")
+  mustChangePassword                Boolean              @default(false) @map("must_change_password")
+  createdAt                         DateTime             @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt                         DateTime             @updatedAt @map("updated_at") @db.Timestamptz(3)
+  sessions                          StaffSession[]
+  createdRoomBlocks                 RoomBlock[]          @relation("RoomBlockCreator")
+  createdRoomAssignments            RoomAssignment[]     @relation("RoomAssignmentCreator")
+  checkedInBookings                 Booking[]            @relation("BookingCheckInActor")
+  checkedOutBookings                Booking[]            @relation("BookingCheckOutActor")
+  noShowBookings                    Booking[]            @relation("BookingNoShowActor")
+  createdHousekeepingTasks          HousekeepingTask[]   @relation("HousekeepingTaskCreator")
+  assignedHousekeepingTasks         HousekeepingTask[]   @relation("HousekeepingTaskAssignee")
+  assignedHousekeepingTaskHistory   HousekeepingTask[]   @relation("HousekeepingTaskAssigner")
+  startedHousekeepingTasks          HousekeepingTask[]   @relation("HousekeepingTaskStarter")
+  completedHousekeepingTasks        HousekeepingTask[]   @relation("HousekeepingTaskCompleter")
+  cancelledHousekeepingTasks        HousekeepingTask[]   @relation("HousekeepingTaskCanceller")
+  reportedRoomDiscrepancies         RoomDiscrepancy[]    @relation("RoomDiscrepancyReporter")
+  resolvedRoomDiscrepancies         RoomDiscrepancy[]    @relation("RoomDiscrepancyResolver")
+  createdMaintenanceRequests        MaintenanceRequest[] @relation("MaintenanceRequestCreator")
+  assignedMaintenanceRequests       MaintenanceRequest[] @relation("MaintenanceRequestAssignee")
   assignedMaintenanceRequestHistory MaintenanceRequest[] @relation("MaintenanceRequestAssigner")
-  resolvedMaintenanceRequests MaintenanceRequest[] @relation("MaintenanceRequestResolver")
-  auditEvents            AuditEvent[]
+  resolvedMaintenanceRequests       MaintenanceRequest[] @relation("MaintenanceRequestResolver")
+  auditEvents                       AuditEvent[]
+  closedFolios                      Folio[]              @relation("FolioCloser")
+  createdFolioEntries               FolioEntry[]         @relation("FolioEntryActor")
 
   @@index([isActive, role])
   @@map("staff_users")

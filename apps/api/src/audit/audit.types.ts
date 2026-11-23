@@ -25,7 +25,17 @@ export type AuditSafeField =
   | 'blockKind'
   | 'startDate'
   | 'endDate'
-  | 'expectedDate';
+  | 'expectedDate'
+  | 'folioId'
+  | 'serviceItemId'
+  | 'amountToman'
+  | 'direction'
+  | 'entryKind'
+  | 'serviceDate'
+  | 'correctsEntryId'
+  | 'serviceName'
+  | 'serviceCategory'
+  | 'currentPriceToman';
 
 export type AuditSnapshot = Partial<Record<AuditSafeField, string | number | boolean | null>>;
 

@@ -21,6 +21,7 @@ export const STAFF_CAPABILITIES = [
   'CHECKOUT',
   'NIGHT_CLOSE_REPORTS',
   'VIEW_FOLIO_ROOM_NUMBER',
+  'MANAGE_SERVICE_CATALOG',
 ] as const;
 
 export type StaffCapability = (typeof STAFF_CAPABILITIES)[number];
@@ -46,6 +47,7 @@ export const STAFF_CAPABILITIES_BY_ROLE: Record<StaffRole, readonly StaffCapabil
     'ADJUST_FOLIOS',
     'CHECKOUT',
     'NIGHT_CLOSE_REPORTS',
+    'MANAGE_SERVICE_CATALOG',
   ],
   RECEPTIONIST: [
     'MANAGE_BOOKINGS',

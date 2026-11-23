@@ -33,14 +33,14 @@
 **Dependencies:** HPM-002, HPM-004
 **Files:** folio/service schema migration; `apps/api/src/folios/**`; audit and OpenAPI modules; API unit/database/e2e specs; `apps/web/src/lib/staff-folios-api.ts`; `apps/web/src/components/staff/folios/**`, `apps/web/src/components/staff/services/**`; `/staff/folios/[bookingId]` and `/staff/services` routes; unit tests.
 
-- [ ] Write failing tests for debit-credit balance arithmetic, immutable price snapshots, forbidden edits/deletes, duplicate idempotency keys, booking-state restrictions, and cashier/reception/manager permissions.
-- [ ] Add `ServiceItem` with active/category/name/current price; add `FolioEntry` with direction, kind, integer amount, service date, optional assigned room, description snapshot, quantity/unit amount, actor, source, idempotency key, correction/refund link, and reason. Add one locked accommodation posting service with unique key `room-night:<roomAssignmentId>:<stayDate>` shared by close and checkout.
-- [ ] Implement create/edit-deactivate catalog endpoints (admin/manager) and folio query/post/adjust endpoints. Financial correction creates a new linked entry; the original record remains immutable.
-- [ ] Build manager/admin `/staff/services` catalog UI for item name/category/price/active state, with duplicate/invalid-price feedback and tests; catalog price changes never rewrite prior folio snapshots.
-- [ ] Test that service-catalog fetches send request `cache: 'no-store'` and that catalog/folio API responses include `Cache-Control: private, no-store`.
-- [ ] Post accommodation and service charges only for valid stays. Accommodation lines identify room number and cover `[checkIn, actualDeparture)`; checkout date is excluded. Lock booking/folio before balance reads, enforce database idempotency, and return server-computed balance.
-- [ ] Add an RTL folio view with a dated itemized ledger, room attribution, debit/credit indicators, service quantity and price, running balance, role-appropriate posting/adjustment actions, and interim-statement state.
-- [ ] Run API unit/database/e2e, web unit, Playwright, lint/typecheck, assert `Cache-Control: private, no-store` on folio/catalog APIs, and confirm public DTOs never include folio details.
+- [x] Write failing tests for debit-credit balance arithmetic, immutable price snapshots, forbidden edits/deletes, duplicate idempotency keys, booking-state restrictions, and cashier/reception/manager permissions.
+- [x] Add `ServiceItem` with active/category/name/current price; add `FolioEntry` with direction, kind, integer amount, service date, optional assigned room, description snapshot, quantity/unit amount, actor, source, idempotency key, correction/refund link, and reason. Add one locked accommodation posting service with unique key `room-night:<roomAssignmentId>:<stayDate>` shared by close and checkout.
+- [x] Implement create/edit-deactivate catalog endpoints (admin/manager) and folio query/post/adjust endpoints. Financial correction creates a new linked entry; the original record remains immutable.
+- [x] Build manager/admin `/staff/services` catalog UI for item name/category/price/active state, with duplicate/invalid-price feedback and tests; catalog price changes never rewrite prior folio snapshots.
+- [x] Test that service-catalog fetches send request `cache: 'no-store'` and that catalog/folio API responses include `Cache-Control: private, no-store`.
+- [x] Post accommodation and service charges only for valid stays. Accommodation lines identify room number and cover `[checkIn, actualDeparture)`; checkout date is excluded. Lock booking/folio before balance reads, enforce database idempotency, and return server-computed balance.
+- [x] Add an RTL folio view with a dated itemized ledger, room attribution, debit/credit indicators, service quantity and price, running balance, role-appropriate posting/adjustment actions, and interim-statement state.
+- [x] Run API unit/database/e2e, web unit, Playwright, lint/typecheck, assert `Cache-Control: private, no-store` on folio/catalog APIs, and confirm public DTOs never include folio details.
 
 ## Ticket HPM-008 — Manual settlement, final checkout, and printing
 

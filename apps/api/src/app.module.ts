@@ -15,6 +15,7 @@ import { RoomsModule } from './rooms/rooms.module';
 import { StaffAdminModule } from './staff-admin/staff-admin.module';
 import { HousekeepingModule } from './housekeeping/housekeeping.module';
 import { MaintenanceModule } from './maintenance/maintenance.module';
+import { FoliosModule } from './folios/folios.module';
 
 const environmentSchema = Joi.object({
   NODE_ENV: Joi.string().valid('development', 'test', 'production').default('development'),
@@ -53,6 +54,7 @@ const environmentSchema = Joi.object({
     BookingsModule,
     HousekeepingModule,
     MaintenanceModule,
+    FoliosModule,
   ],
   controllers: [AppController],
   providers: [AppService],

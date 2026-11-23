@@ -25,6 +25,7 @@ export interface StaffBookingNight {
 }
 
 export interface StaffBookingDetail extends StaffBookingListItem {
+  id?: string;
   guestEmail: string | null;
   totalPriceToman: string;
   internalNote: string | null;

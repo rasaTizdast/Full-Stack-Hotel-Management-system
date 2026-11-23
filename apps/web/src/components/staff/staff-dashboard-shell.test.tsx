@@ -10,6 +10,29 @@ const receptionist = {
 };
 
 describe('StaffDashboardShell', () => {
+  it('exposes the service catalog to managers and admins only', () => {
+    const { rerender } = render(
+      <StaffDashboardShell
+        staff={{ ...receptionist, role: 'MANAGER' }}
+        onLogout={vi.fn()}
+        currentPath="/staff/services"
+      >
+        <p>فهرست خدمات</p>
+      </StaffDashboardShell>,
+    );
+    expect(screen.getByRole('link', { name: /^فهرست خدمات/ })).toHaveAttribute(
+      'aria-current',
+      'page',
+    );
+
+    rerender(
+      <StaffDashboardShell staff={{ ...receptionist, role: 'CASHIER' }} onLogout={vi.fn()}>
+        <p>صفحه صندوق</p>
+      </StaffDashboardShell>,
+    );
+    expect(screen.queryByRole('link', { name: /^فهرست خدمات/ })).not.toBeInTheDocument();
+  });
+
   it('shows the maintenance workspace to operational staff but not cashiers', () => {
     const { rerender } = render(
       <StaffDashboardShell
@@ -36,10 +59,7 @@ describe('StaffDashboardShell', () => {
     );
 
     rerender(
-      <StaffDashboardShell
-        staff={{ ...receptionist, role: 'HOUSEKEEPER' }}
-        onLogout={vi.fn()}
-      >
+      <StaffDashboardShell staff={{ ...receptionist, role: 'HOUSEKEEPER' }} onLogout={vi.fn()}>
         <p>صفحه خانه‌داری</p>
       </StaffDashboardShell>,
     );
@@ -107,7 +127,10 @@ describe('StaffDashboardShell', () => {
         <p>صفحه پذیرش</p>
       </StaffDashboardShell>,
     );
-    expect(screen.getByRole('link', { name: /^خانه‌داری/ })).toHaveAttribute('aria-current', 'page');
+    expect(screen.getByRole('link', { name: /^خانه‌داری/ })).toHaveAttribute(
+      'aria-current',
+      'page',
+    );
 
     rerender(
       <StaffDashboardShell
@@ -139,11 +162,7 @@ describe('StaffDashboardShell', () => {
 
   it('exposes the operational room board to reception without exposing the catalog editor', () => {
     render(
-      <StaffDashboardShell
-        staff={receptionist}
-        onLogout={vi.fn()}
-        currentPath="/staff/rooms"
-      >
+      <StaffDashboardShell staff={receptionist} onLogout={vi.fn()} currentPath="/staff/rooms">
         <p>وضعیت اتاق‌ها</p>
       </StaffDashboardShell>,
     );
@@ -206,10 +225,7 @@ describe('StaffDashboardShell', () => {
 
     const inventoryLink = screen.getByRole('link', { name: /^ظرفیت و نرخ‌ها/ });
     expect(inventoryLink).toHaveAccessibleName('ظرفیت و نرخ‌ها تنظیم برنامه اتاق‌ها');
-    expect(inventoryLink).toHaveAttribute(
-      'href',
-      '/staff/inventory',
-    );
+    expect(inventoryLink).toHaveAttribute('href', '/staff/inventory');
   });
 
   it('shows current shipped destinations according to each staff role', () => {
@@ -299,14 +315,8 @@ describe('StaffDashboardShell', () => {
 
     const roomsLink = screen.getByRole('link', { name: /^اتاق‌های فیزیکی/ });
     expect(roomsLink).toHaveAccessibleName('اتاق‌های فیزیکی شماره و وضعیت اتاق‌ها');
-    expect(roomsLink).toHaveAttribute(
-      'href',
-      '/staff/rooms/manage',
-    );
-    expect(roomsLink).toHaveAttribute(
-      'aria-current',
-      'page',
-    );
+    expect(roomsLink).toHaveAttribute('href', '/staff/rooms/manage');
+    expect(roomsLink).toHaveAttribute('aria-current', 'page');
   });
 
   it('keeps the active route visible using only the nav scroll container', () => {

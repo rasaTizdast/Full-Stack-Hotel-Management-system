@@ -1,4 +1,12 @@
-import { act, createEvent, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
+import {
+  act,
+  createEvent,
+  fireEvent,
+  render,
+  screen,
+  waitFor,
+  within,
+} from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { StaffApiError, type StaffRoomBoardResponse } from '@/lib/staff-api';
 import type { StaffStayWorklist } from '@/lib/staff-front-desk-api';
@@ -56,12 +64,24 @@ const todayStay: StaffStayWorklist['items'][number] = {
   confirmedAt: '2026-11-16T10:30:00.000Z',
   checkedInAt: null,
   assignedRooms: [
-    { assignmentId: 'assign-1', roomNumber: '۱۰۱', housekeepingStatus: 'INSPECTED', startDate: '2026-11-18', endDate: '2026-11-20' },
+    {
+      assignmentId: 'assign-1',
+      roomNumber: '۱۰۱',
+      housekeepingStatus: 'INSPECTED',
+      startDate: '2026-11-18',
+      endDate: '2026-11-20',
+    },
   ],
 };
 
 const roomTypeOptions = [
-  { slug: 'garden-double', name: 'اتاق دوتخته', description: '', maxGuestsPerRoom: 2, amenities: [] },
+  {
+    slug: 'garden-double',
+    name: 'اتاق دوتخته',
+    description: '',
+    maxGuestsPerRoom: 2,
+    amenities: [],
+  },
 ];
 
 function renderPage(queue: 'arrivals' | 'in-house' | 'departures') {
@@ -83,7 +103,9 @@ function copyStay(stay: StaffStayWorklist['items'][number] = todayStay) {
 
 function deferred<T>() {
   let resolve!: (value: T) => void;
-  const promise = new Promise<T>((resolvePromise) => { resolve = resolvePromise; });
+  const promise = new Promise<T>((resolvePromise) => {
+    resolve = resolvePromise;
+  });
   return { promise, resolve };
 }
 
@@ -92,7 +114,21 @@ function roomBoardWithTarget(roomNumber: string): StaffRoomBoardResponse {
     date: '2026-11-18',
     businessDate: '2026-11-18',
     updatedAt: '2026-11-18T08:00:00Z',
-    items: [{ id: `target-${roomNumber}`, roomNumber, floor: null, features: [], housekeepingStatus: 'INSPECTED', isActive: true, isGenerated: false, roomType: { id: 'type-double', name: 'اتاق دوتخته', slug: 'garden-double' }, occupancy: 'VACANT', reservationContexts: [], blocks: [] }],
+    items: [
+      {
+        id: `target-${roomNumber}`,
+        roomNumber,
+        floor: null,
+        features: [],
+        housekeepingStatus: 'INSPECTED',
+        isActive: true,
+        isGenerated: false,
+        roomType: { id: 'type-double', name: 'اتاق دوتخته', slug: 'garden-double' },
+        occupancy: 'VACANT',
+        reservationContexts: [],
+        blocks: [],
+      },
+    ],
     assignableBookings: [],
   };
 }
@@ -105,13 +141,24 @@ describe('StaffFrontDeskPage', () => {
       csrfToken: 'csrf-reception',
     };
     frontDeskApi.getStaffStayWorklist.mockReset().mockResolvedValue(worklist([copyStay()]));
-    frontDeskApi.createStaffWalkIn.mockReset().mockResolvedValue({ reference: 'WALKIN123456', status: 'CONFIRMED' });
-    frontDeskApi.checkInStaffStay.mockReset().mockResolvedValue({ reference: todayStay.reference, status: 'CHECKED_IN' });
-    frontDeskApi.markStaffStayNoShow.mockReset().mockResolvedValue({ reference: todayStay.reference, status: 'NO_SHOW' });
-    frontDeskApi.amendStaffStay.mockReset().mockResolvedValue({ reference: todayStay.reference, status: 'CONFIRMED' });
-    frontDeskApi.moveStaffStayRoom.mockReset().mockResolvedValue({ reference: todayStay.reference, status: 'CHECKED_IN' });
+    frontDeskApi.createStaffWalkIn
+      .mockReset()
+      .mockResolvedValue({ reference: 'WALKIN123456', status: 'CONFIRMED' });
+    frontDeskApi.checkInStaffStay
+      .mockReset()
+      .mockResolvedValue({ reference: todayStay.reference, status: 'CHECKED_IN' });
+    frontDeskApi.markStaffStayNoShow
+      .mockReset()
+      .mockResolvedValue({ reference: todayStay.reference, status: 'NO_SHOW' });
+    frontDeskApi.amendStaffStay
+      .mockReset()
+      .mockResolvedValue({ reference: todayStay.reference, status: 'CONFIRMED' });
+    frontDeskApi.moveStaffStayRoom
+      .mockReset()
+      .mockResolvedValue({ reference: todayStay.reference, status: 'CHECKED_IN' });
     bookingApi.getStaffBooking.mockReset().mockResolvedValue({
       ...todayStay,
+      id: 'booking-uuid-1',
       guestPhone: '09120000000',
       guestEmail: null,
       guestCount: 2,
@@ -119,12 +166,34 @@ describe('StaffFrontDeskPage', () => {
       statusTimestamps: { confirmedAt: todayStay.confirmedAt, checkedInAt: null, noShowAt: null },
     });
     roomApi.getStaffRoomBoard.mockReset().mockResolvedValue({
-      date: '2026-11-18', businessDate: '2026-11-18', updatedAt: '2026-11-18T08:00:00Z',
-      items: [{ id: 'target-room', roomNumber: '۱۰۲', floor: null, features: [], housekeepingStatus: 'INSPECTED', isActive: true, isGenerated: false, roomType: { id: 'type-double', name: 'اتاق دوتخته', slug: 'garden-double' }, occupancy: 'VACANT', reservationContexts: [], blocks: [] }],
+      date: '2026-11-18',
+      businessDate: '2026-11-18',
+      updatedAt: '2026-11-18T08:00:00Z',
+      items: [
+        {
+          id: 'target-room',
+          roomNumber: '۱۰۲',
+          floor: null,
+          features: [],
+          housekeepingStatus: 'INSPECTED',
+          isActive: true,
+          isGenerated: false,
+          roomType: { id: 'type-double', name: 'اتاق دوتخته', slug: 'garden-double' },
+          occupancy: 'VACANT',
+          reservationContexts: [],
+          blocks: [],
+        },
+      ],
       assignableBookings: [],
     });
     publicApi.getPublicRoomTypes.mockReset().mockResolvedValue([
-      { slug: 'garden-double', name: 'اتاق دوتخته', description: '', maxGuestsPerRoom: 2, amenities: [] },
+      {
+        slug: 'garden-double',
+        name: 'اتاق دوتخته',
+        description: '',
+        maxGuestsPerRoom: 2,
+        amenities: [],
+      },
     ]);
     navigation.router.refresh.mockReset();
   });
@@ -148,7 +217,9 @@ describe('StaffFrontDeskPage', () => {
     incomplete.reference = 'MISSING123456';
     incomplete.guestName = 'نازنین محمدی';
 
-    frontDeskApi.getStaffStayWorklist.mockResolvedValueOnce(worklist([copyStay(), overdue, incomplete]));
+    frontDeskApi.getStaffStayWorklist.mockResolvedValueOnce(
+      worklist([copyStay(), overdue, incomplete]),
+    );
     renderPage('arrivals');
 
     expect(await screen.findByRole('heading', { name: 'ورودهای امروز' })).toBeVisible();
@@ -157,7 +228,9 @@ describe('StaffFrontDeskPage', () => {
     expect(screen.getByText('علی مرادی')).toBeVisible();
     expect(screen.getAllByText('۱ از ۲ اتاق تخصیص یافته')).toHaveLength(3);
     const incompleteCard = screen.getByRole('article', { name: /MISSING123456/ });
-    expect(within(incompleteCard).getByRole('link', { name: /^تکمیل تخصیص اتاق‌ها/ })).toHaveAttribute('href', '/staff/rooms');
+    expect(
+      within(incompleteCard).getByRole('link', { name: /^تکمیل تخصیص اتاق‌ها/ }),
+    ).toHaveAttribute('href', '/staff/rooms');
     expect(screen.queryByText('09120000000')).not.toBeInTheDocument();
     expect(screen.queryByText(/تومان/)).not.toBeInTheDocument();
   });
@@ -166,21 +239,33 @@ describe('StaffFrontDeskPage', () => {
     const futureAssignment = copyStay();
     futureAssignment.roomQuantity = 2;
     futureAssignment.assignedRooms = [
-      { assignmentId: 'assign-tomorrow', roomNumber: '۱۰۱', housekeepingStatus: 'INSPECTED', startDate: '2026-11-19', endDate: '2026-11-20' },
+      {
+        assignmentId: 'assign-tomorrow',
+        roomNumber: '۱۰۱',
+        housekeepingStatus: 'INSPECTED',
+        startDate: '2026-11-19',
+        endDate: '2026-11-20',
+      },
     ];
     frontDeskApi.getStaffStayWorklist.mockResolvedValueOnce(worklist([futureAssignment]));
     renderPage('arrivals');
 
     const card = await screen.findByRole('article', { name: /ABC123456789/ });
     expect(within(card).getByText('۰ از ۲ اتاق تخصیص یافته')).toBeVisible();
-    expect(within(card).getByRole('link', { name: 'تکمیل تخصیص اتاق‌ها (۲ اتاق)' })).toHaveAttribute('href', '/staff/rooms');
+    expect(
+      within(card).getByRole('link', { name: 'تکمیل تخصیص اتاق‌ها (۲ اتاق)' }),
+    ).toHaveAttribute('href', '/staff/rooms');
     expect(within(card).getByText('اتاق ۱۰۱')).toBeVisible();
     expect(within(card).getByText(/آمادگی کل بازه و محدودیت‌ها را سامانه/)).toBeVisible();
   });
 
   it('keeps loading, retry, and empty results distinct', async () => {
     let resolveList!: (value: StaffStayWorklist) => void;
-    frontDeskApi.getStaffStayWorklist.mockReturnValueOnce(new Promise((resolve) => { resolveList = resolve; }));
+    frontDeskApi.getStaffStayWorklist.mockReturnValueOnce(
+      new Promise((resolve) => {
+        resolveList = resolve;
+      }),
+    );
     const view = renderPage('arrivals');
     expect(screen.getByRole('status')).toHaveTextContent('در حال دریافت فهرست ورودها');
     resolveList(worklist([]));
@@ -227,14 +312,22 @@ describe('StaffFrontDeskPage', () => {
     futureStay.checkOut = '2026-11-22';
     futureStay.checkedInAt = '2026-11-20T09:00:00.000Z';
     futureStay.assignedRooms = [
-      { assignmentId: 'assign-future', roomNumber: '۱۰۱', housekeepingStatus: 'INSPECTED', startDate: '2026-11-20', endDate: '2026-11-22' },
+      {
+        assignmentId: 'assign-future',
+        roomNumber: '۱۰۱',
+        housekeepingStatus: 'INSPECTED',
+        startDate: '2026-11-20',
+        endDate: '2026-11-22',
+      },
     ];
     frontDeskApi.getStaffStayWorklist.mockResolvedValueOnce(worklist([futureStay]));
     renderPage('in-house');
 
     const card = await screen.findByRole('article', { name: /ABC123456789/ });
     expect(within(card).getByRole('button', { name: 'انتقال اتاق' })).toBeDisabled();
-    expect(within(card).getByRole('status')).toHaveTextContent('برای اقامت واردشده در بازه فعال تاریخ کاری جاری');
+    expect(within(card).getByRole('status')).toHaveTextContent(
+      'برای اقامت واردشده در بازه فعال تاریخ کاری جاری',
+    );
   });
 
   it('confirms a check-in, shows authoritative readiness errors, and refreshes the selected queue', async () => {
@@ -250,8 +343,13 @@ describe('StaffFrontDeskPage', () => {
     expect(document.activeElement).toBe(screen.getByRole('heading', { name: 'تأیید ورود مهمان' }));
     fireEvent.click(screen.getByRole('button', { name: 'تأیید و ثبت ورود' }));
     const error = await screen.findByRole('alert');
-    expect(error).toHaveTextContent('ورود ثبت نشد؛ وضعیت بازرسی اتاق‌ها باید از سوی سامانه تأیید شود.');
-    expect(within(error).getByRole('link', { name: 'بررسی وضعیت اتاق‌ها' })).toHaveAttribute('href', '/staff/rooms');
+    expect(error).toHaveTextContent(
+      'ورود ثبت نشد؛ وضعیت بازرسی اتاق‌ها باید از سوی سامانه تأیید شود.',
+    );
+    expect(within(error).getByRole('link', { name: 'بررسی وضعیت اتاق‌ها' })).toHaveAttribute(
+      'href',
+      '/staff/rooms',
+    );
     expect(frontDeskApi.getStaffStayWorklist).toHaveBeenCalledTimes(1);
     fireEvent.click(screen.getByRole('button', { name: 'بازگشت' }));
     await waitFor(() => expect(document.activeElement).toBe(trigger));
@@ -268,7 +366,10 @@ describe('StaffFrontDeskPage', () => {
 
     const error = await screen.findByRole('alert');
     expect(error).toHaveTextContent('یکی از اتاق‌ها با یک رزرو یا محدودیت هم‌پوشانی دارد');
-    expect(within(error).getByRole('link', { name: 'بررسی وضعیت اتاق‌ها' })).toHaveAttribute('href', '/staff/rooms');
+    expect(within(error).getByRole('link', { name: 'بررسی وضعیت اتاق‌ها' })).toHaveAttribute(
+      'href',
+      '/staff/rooms',
+    );
   });
 
   it('keeps non-blocker check-in errors without a room-recovery link', async () => {
@@ -282,7 +383,9 @@ describe('StaffFrontDeskPage', () => {
 
     const error = await screen.findByRole('alert');
     expect(error).toHaveTextContent('The stay was already updated.');
-    expect(within(error).queryByRole('link', { name: 'بررسی وضعیت اتاق‌ها' })).not.toBeInTheDocument();
+    expect(
+      within(error).queryByRole('link', { name: 'بررسی وضعیت اتاق‌ها' }),
+    ).not.toBeInTheDocument();
   });
 
   it('announces a successful check-in and preserves search while refreshing server data', async () => {
@@ -290,16 +393,22 @@ describe('StaffFrontDeskPage', () => {
     const search = await screen.findByLabelText('جست‌وجو در نام، کد یا اتاق');
     fireEvent.change(search, { target: { value: 'ABC123456789' } });
     fireEvent.click(screen.getByRole('button', { name: 'اعمال فیلترها' }));
-    await waitFor(() => expect(frontDeskApi.getStaffStayWorklist).toHaveBeenLastCalledWith(
-      'arrivals', expect.objectContaining({ search: 'ABC123456789' }),
-    ));
+    await waitFor(() =>
+      expect(frontDeskApi.getStaffStayWorklist).toHaveBeenLastCalledWith(
+        'arrivals',
+        expect.objectContaining({ search: 'ABC123456789' }),
+      ),
+    );
     const card = await screen.findByRole('article', { name: /ABC123456789/ });
     fireEvent.click(within(card).getByRole('button', { name: 'ثبت ورود' }));
     fireEvent.click(await screen.findByRole('button', { name: 'تأیید و ثبت ورود' }));
     expect(await screen.findByRole('status')).toHaveTextContent('ورود مهمان مریم رضایی ثبت شد.');
-    await waitFor(() => expect(frontDeskApi.getStaffStayWorklist).toHaveBeenLastCalledWith(
-      'arrivals', expect.objectContaining({ search: 'ABC123456789' }),
-    ));
+    await waitFor(() =>
+      expect(frontDeskApi.getStaffStayWorklist).toHaveBeenLastCalledWith(
+        'arrivals',
+        expect.objectContaining({ search: 'ABC123456789' }),
+      ),
+    );
     expect(document.activeElement).toBe(screen.getByRole('status'));
   });
 
@@ -354,13 +463,17 @@ describe('StaffFrontDeskPage', () => {
     const dialog = await screen.findByRole('dialog', { name: 'ثبت عدم مراجعه مهمان' });
     fireEvent.click(within(dialog).getByRole('button', { name: 'ثبت عدم مراجعه' }));
     expect(within(dialog).getByText('ثبت دلیل برای عدم مراجعه الزامی است.')).toBeVisible();
-    fireEvent.change(within(dialog).getByLabelText('دلیل عدم مراجعه'), { target: { value: 'تماس بی‌پاسخ' } });
+    fireEvent.change(within(dialog).getByLabelText('دلیل عدم مراجعه'), {
+      target: { value: 'تماس بی‌پاسخ' },
+    });
     fireEvent.click(within(dialog).getByRole('button', { name: 'ثبت عدم مراجعه' }));
-    await waitFor(() => expect(frontDeskApi.markStaffStayNoShow).toHaveBeenCalledWith(
-      todayStay.reference,
-      'csrf-reception',
-      { reason: 'تماس بی‌پاسخ' },
-    ));
+    await waitFor(() =>
+      expect(frontDeskApi.markStaffStayNoShow).toHaveBeenCalledWith(
+        todayStay.reference,
+        'csrf-reception',
+        { reason: 'تماس بی‌پاسخ' },
+      ),
+    );
   });
 
   it('shows walk-in success and reuses the same idempotency key for a retry', async () => {
@@ -382,8 +495,12 @@ describe('StaffFrontDeskPage', () => {
     expect(guestEmail).toHaveAttribute('name', 'guestEmail');
     expect(guestEmail).toHaveAttribute('autoComplete', 'email');
     expect(guestEmail).toHaveAttribute('type', 'email');
-    fireEvent.change(within(dialog).getByLabelText('نام مهمان'), { target: { value: 'مهمان حضوری' } });
-    fireEvent.change(within(dialog).getByLabelText('شماره تماس'), { target: { value: '09120000000' } });
+    fireEvent.change(within(dialog).getByLabelText('نام مهمان'), {
+      target: { value: 'مهمان حضوری' },
+    });
+    fireEvent.change(within(dialog).getByLabelText('شماره تماس'), {
+      target: { value: '09120000000' },
+    });
     fireEvent.change(within(dialog).getByLabelText('تعداد مهمانان'), { target: { value: '2' } });
     fireEvent.change(within(dialog).getByLabelText('تعداد اتاق'), { target: { value: '1' } });
     fireEvent.click(within(dialog).getByRole('button', { name: 'ثبت ورود قطعی' }));
@@ -393,27 +510,45 @@ describe('StaffFrontDeskPage', () => {
     expect(within(dialog).getByLabelText('نام مهمان')).toBeDisabled();
     expect(within(dialog).getByLabelText('شماره تماس')).toBeDisabled();
     fireEvent.click(within(dialog).getByRole('button', { name: 'بازگشت' }));
-    expect(screen.queryByRole('dialog', { name: 'ثبت ورود بدون رزرو قبلی' })).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole('dialog', { name: 'ثبت ورود بدون رزرو قبلی' }),
+    ).not.toBeInTheDocument();
     fireEvent.click(screen.getByRole('button', { name: 'ثبت ورود بدون رزرو قبلی' }));
     const reopenedDialog = await screen.findByRole('dialog', { name: 'ثبت ورود بدون رزرو قبلی' });
     expect(within(reopenedDialog).getByLabelText('نام مهمان')).toBeDisabled();
-    expect(within(reopenedDialog).getByRole('button', { name: 'تلاش دوباره با همان درخواست' })).toBeVisible();
+    expect(
+      within(reopenedDialog).getByRole('button', { name: 'تلاش دوباره با همان درخواست' }),
+    ).toBeVisible();
 
-    fireEvent.change(within(reopenedDialog).getByLabelText('نام مهمان'), { target: { value: 'مهمان متفاوت' } });
-    fireEvent.click(within(reopenedDialog).getByRole('button', { name: 'تلاش دوباره با همان درخواست' }));
+    fireEvent.change(within(reopenedDialog).getByLabelText('نام مهمان'), {
+      target: { value: 'مهمان متفاوت' },
+    });
+    fireEvent.click(
+      within(reopenedDialog).getByRole('button', { name: 'تلاش دوباره با همان درخواست' }),
+    );
     await waitFor(() => expect(frontDeskApi.createStaffWalkIn).toHaveBeenCalledTimes(2));
-    expect(frontDeskApi.createStaffWalkIn.mock.calls[1]).toEqual(frontDeskApi.createStaffWalkIn.mock.calls[0]);
+    expect(frontDeskApi.createStaffWalkIn.mock.calls[1]).toEqual(
+      frontDeskApi.createStaffWalkIn.mock.calls[0],
+    );
     expect(await within(reopenedDialog).findByText(/ارتباط با سامانه برقرار نشد/)).toBeVisible();
 
-    fireEvent.click(within(reopenedDialog).getByRole('button', { name: 'لغو تلاش و شروع درخواست جدید' }));
+    fireEvent.click(
+      within(reopenedDialog).getByRole('button', { name: 'لغو تلاش و شروع درخواست جدید' }),
+    );
     expect(within(reopenedDialog).getByLabelText('نام مهمان')).toBeEnabled();
-    fireEvent.change(within(reopenedDialog).getByLabelText('نام مهمان'), { target: { value: 'مهمان جدید' } });
+    fireEvent.change(within(reopenedDialog).getByLabelText('نام مهمان'), {
+      target: { value: 'مهمان جدید' },
+    });
     fireEvent.click(within(reopenedDialog).getByRole('button', { name: 'ثبت ورود قطعی' }));
     await waitFor(() => expect(frontDeskApi.createStaffWalkIn).toHaveBeenCalledTimes(3));
     expect(frontDeskApi.createStaffWalkIn.mock.calls[2][0].guestName).toBe('مهمان جدید');
-    expect(frontDeskApi.createStaffWalkIn.mock.calls[2][2]).not.toBe(frontDeskApi.createStaffWalkIn.mock.calls[0][2]);
+    expect(frontDeskApi.createStaffWalkIn.mock.calls[2][2]).not.toBe(
+      frontDeskApi.createStaffWalkIn.mock.calls[0][2],
+    );
     expect(await screen.findByText(/WALKIN123456/)).toBeVisible();
-    expect(screen.queryByRole('dialog', { name: 'ثبت ورود بدون رزرو قبلی' })).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole('dialog', { name: 'ثبت ورود بدون رزرو قبلی' }),
+    ).not.toBeInTheDocument();
   });
 
   it('shows localized guidance when the server rejects a reused walk-in key', async () => {
@@ -423,8 +558,12 @@ describe('StaffFrontDeskPage', () => {
     renderPage('arrivals');
     fireEvent.click(await screen.findByRole('button', { name: 'ثبت ورود بدون رزرو قبلی' }));
     const dialog = await screen.findByRole('dialog', { name: 'ثبت ورود بدون رزرو قبلی' });
-    fireEvent.change(within(dialog).getByLabelText('نام مهمان'), { target: { value: 'مهمان حضوری' } });
-    fireEvent.change(within(dialog).getByLabelText('شماره تماس'), { target: { value: '09120000000' } });
+    fireEvent.change(within(dialog).getByLabelText('نام مهمان'), {
+      target: { value: 'مهمان حضوری' },
+    });
+    fireEvent.change(within(dialog).getByLabelText('شماره تماس'), {
+      target: { value: '09120000000' },
+    });
     fireEvent.change(within(dialog).getByLabelText('تعداد مهمانان'), { target: { value: '2' } });
     fireEvent.click(within(dialog).getByRole('button', { name: 'ثبت ورود قطعی' }));
 
@@ -439,9 +578,13 @@ describe('StaffFrontDeskPage', () => {
     const dialog = await screen.findByRole('dialog', { name: 'ثبت ورود بدون رزرو قبلی' });
 
     expect(within(dialog).getByRole('alert')).toHaveTextContent('فهرست نوع اتاق دریافت نشد');
-    expect(within(dialog).getByRole('button', { name: 'تلاش دوباره برای دریافت فهرست نوع اتاق‌ها' })).toBeEnabled();
+    expect(
+      within(dialog).getByRole('button', { name: 'تلاش دوباره برای دریافت فهرست نوع اتاق‌ها' }),
+    ).toBeEnabled();
     expect(within(dialog).queryByRole('button', { name: 'ثبت ورود قطعی' })).not.toBeInTheDocument();
-    fireEvent.click(within(dialog).getByRole('button', { name: 'تلاش دوباره برای دریافت فهرست نوع اتاق‌ها' }));
+    fireEvent.click(
+      within(dialog).getByRole('button', { name: 'تلاش دوباره برای دریافت فهرست نوع اتاق‌ها' }),
+    );
 
     expect(navigation.router.refresh).toHaveBeenCalledOnce();
   });
@@ -451,9 +594,13 @@ describe('StaffFrontDeskPage', () => {
     fireEvent.click(await screen.findByRole('button', { name: 'ثبت ورود بدون رزرو قبلی' }));
     const dialog = await screen.findByRole('dialog', { name: 'ثبت ورود بدون رزرو قبلی' });
 
-    expect(within(dialog).getByRole('status')).toHaveTextContent('هیچ نوع اتاق فعالی برای ثبت ورود حضوری در دسترس نیست');
+    expect(within(dialog).getByRole('status')).toHaveTextContent(
+      'هیچ نوع اتاق فعالی برای ثبت ورود حضوری در دسترس نیست',
+    );
     expect(within(dialog).queryByRole('alert')).not.toBeInTheDocument();
-    expect(within(dialog).getByRole('button', { name: 'به‌روزرسانی فهرست نوع اتاق‌ها' })).toBeEnabled();
+    expect(
+      within(dialog).getByRole('button', { name: 'به‌روزرسانی فهرست نوع اتاق‌ها' }),
+    ).toBeEnabled();
   });
 
   it('shows in-house due-outs without offering a move on the exclusive checkout date', async () => {
@@ -475,8 +622,20 @@ describe('StaffFrontDeskPage', () => {
     checkedIn.checkOut = '2026-11-20';
     checkedIn.checkedInAt = '2026-11-18T09:00:00.000Z';
     checkedIn.assignedRooms = [
-      { assignmentId: 'assign-ended-today', roomNumber: '۱۰۱', housekeepingStatus: 'INSPECTED', startDate: '2026-11-17', endDate: '2026-11-18' },
-      { assignmentId: 'assign-current', roomNumber: '۱۰۳', housekeepingStatus: 'INSPECTED', startDate: '2026-11-18', endDate: '2026-11-20' },
+      {
+        assignmentId: 'assign-ended-today',
+        roomNumber: '۱۰۱',
+        housekeepingStatus: 'INSPECTED',
+        startDate: '2026-11-17',
+        endDate: '2026-11-18',
+      },
+      {
+        assignmentId: 'assign-current',
+        roomNumber: '۱۰۳',
+        housekeepingStatus: 'INSPECTED',
+        startDate: '2026-11-18',
+        endDate: '2026-11-20',
+      },
     ];
     frontDeskApi.getStaffStayWorklist.mockResolvedValueOnce(worklist([checkedIn]));
     renderPage('in-house');
@@ -490,15 +649,25 @@ describe('StaffFrontDeskPage', () => {
     expect(within(source).getByRole('option', { name: 'اتاق ۱۰۳' })).toBeInTheDocument();
     expect(within(source).queryByRole('option', { name: 'اتاق ۱۰۱' })).not.toBeInTheDocument();
 
-    fireEvent.change(within(dialog).getByLabelText('اتاق مقصد'), { target: { value: 'target-room' } });
-    fireEvent.change(within(dialog).getByLabelText('دلیل انتقال'), { target: { value: 'درخواست مهمان' } });
+    fireEvent.change(within(dialog).getByLabelText('اتاق مقصد'), {
+      target: { value: 'target-room' },
+    });
+    fireEvent.change(within(dialog).getByLabelText('دلیل انتقال'), {
+      target: { value: 'درخواست مهمان' },
+    });
     fireEvent.click(within(dialog).getByRole('button', { name: 'ثبت انتقال' }));
 
-    await waitFor(() => expect(frontDeskApi.moveStaffStayRoom).toHaveBeenCalledWith(
-      checkedIn.reference,
-      'csrf-reception',
-      { sourceAssignmentId: 'assign-current', targetRoomId: 'target-room', reason: 'درخواست مهمان' },
-    ));
+    await waitFor(() =>
+      expect(frontDeskApi.moveStaffStayRoom).toHaveBeenCalledWith(
+        checkedIn.reference,
+        'csrf-reception',
+        {
+          sourceAssignmentId: 'assign-current',
+          targetRoomId: 'target-room',
+          reason: 'درخواست مهمان',
+        },
+      ),
+    );
   });
 
   it.each([
@@ -513,20 +682,29 @@ describe('StaffFrontDeskPage', () => {
       checkedIn.checkOut = '2026-11-20';
       checkedIn.checkedInAt = '2026-11-18T09:00:00.000Z';
       frontDeskApi.getStaffStayWorklist.mockResolvedValueOnce(worklist([checkedIn]));
-      frontDeskApi.moveStaffStayRoom.mockRejectedValueOnce(new StaffApiError('Room move conflicted.', 409, code));
+      frontDeskApi.moveStaffStayRoom.mockRejectedValueOnce(
+        new StaffApiError('Room move conflicted.', 409, code),
+      );
       renderPage('in-house');
 
       const card = await screen.findByRole('article', { name: /ABC123456789/ });
       fireEvent.click(within(card).getByRole('button', { name: 'انتقال اتاق' }));
       const dialog = await screen.findByRole('dialog', { name: 'انتقال مهمان به اتاق دیگر' });
-      fireEvent.change(within(dialog).getByLabelText('اتاق مقصد'), { target: { value: 'target-room' } });
-      fireEvent.change(within(dialog).getByLabelText('دلیل انتقال'), { target: { value: 'درخواست مهمان' } });
+      fireEvent.change(within(dialog).getByLabelText('اتاق مقصد'), {
+        target: { value: 'target-room' },
+      });
+      fireEvent.change(within(dialog).getByLabelText('دلیل انتقال'), {
+        target: { value: 'درخواست مهمان' },
+      });
       fireEvent.click(within(dialog).getByRole('button', { name: 'ثبت انتقال' }));
 
       const error = await within(dialog).findByRole('alert');
       expect(error).toHaveTextContent(message);
       expect(error).not.toHaveTextContent('ورود ثبت نشد');
-      expect(within(error).getByRole('link', { name: 'بررسی وضعیت اتاق‌ها' })).toHaveAttribute('href', '/staff/rooms');
+      expect(within(error).getByRole('link', { name: 'بررسی وضعیت اتاق‌ها' })).toHaveAttribute(
+        'href',
+        '/staff/rooms',
+      );
     },
   );
 
@@ -539,7 +717,9 @@ describe('StaffFrontDeskPage', () => {
     secondStay.reference = 'SECOND123456';
     const currentStay = copyStay(firstStay);
     currentStay.reference = 'CURRENT12345';
-    frontDeskApi.getStaffStayWorklist.mockResolvedValueOnce(worklist([firstStay, secondStay, currentStay]));
+    frontDeskApi.getStaffStayWorklist.mockResolvedValueOnce(
+      worklist([firstStay, secondStay, currentStay]),
+    );
 
     const firstRequest = deferred<StaffRoomBoardResponse>();
     const secondRequest = deferred<StaffRoomBoardResponse>();
@@ -566,17 +746,32 @@ describe('StaffFrontDeskPage', () => {
     const currentDialog = await screen.findByRole('dialog', { name: 'انتقال مهمان به اتاق دیگر' });
     expect(within(currentDialog).getByText('در حال بررسی اتاق‌های پیشنهادی…')).toBeVisible();
 
-    await act(async () => { secondRequest.resolve(roomBoardWithTarget('۲۰۲')); await secondRequest.promise; });
+    await act(async () => {
+      secondRequest.resolve(roomBoardWithTarget('۲۰۲'));
+      await secondRequest.promise;
+    });
     expect(within(currentDialog).getByText('در حال بررسی اتاق‌های پیشنهادی…')).toBeVisible();
-    expect(within(currentDialog).queryByRole('option', { name: 'اتاق ۲۰۲' })).not.toBeInTheDocument();
+    expect(
+      within(currentDialog).queryByRole('option', { name: 'اتاق ۲۰۲' }),
+    ).not.toBeInTheDocument();
 
-    await act(async () => { firstRequest.resolve(roomBoardWithTarget('۲۰۱')); await firstRequest.promise; });
+    await act(async () => {
+      firstRequest.resolve(roomBoardWithTarget('۲۰۱'));
+      await firstRequest.promise;
+    });
     expect(within(currentDialog).getByText('در حال بررسی اتاق‌های پیشنهادی…')).toBeVisible();
-    expect(within(currentDialog).queryByRole('option', { name: 'اتاق ۲۰۱' })).not.toBeInTheDocument();
+    expect(
+      within(currentDialog).queryByRole('option', { name: 'اتاق ۲۰۱' }),
+    ).not.toBeInTheDocument();
 
-    await act(async () => { currentRequest.resolve(roomBoardWithTarget('۲۰۳')); await currentRequest.promise; });
+    await act(async () => {
+      currentRequest.resolve(roomBoardWithTarget('۲۰۳'));
+      await currentRequest.promise;
+    });
     expect(await within(currentDialog).findByRole('option', { name: 'اتاق ۲۰۳' })).toBeVisible();
-    expect(within(currentDialog).queryByText('در حال بررسی اتاق‌های پیشنهادی…')).not.toBeInTheDocument();
+    expect(
+      within(currentDialog).queryByText('در حال بررسی اتاق‌های پیشنهادی…'),
+    ).not.toBeInTheDocument();
   });
 
   it('explains and blocks a move when no assignment covers the business date', async () => {
@@ -585,7 +780,13 @@ describe('StaffFrontDeskPage', () => {
     checkedIn.checkOut = '2026-11-20';
     checkedIn.checkedInAt = '2026-11-18T09:00:00.000Z';
     checkedIn.assignedRooms = [
-      { assignmentId: 'assign-future', roomNumber: '۱۰۱', housekeepingStatus: 'INSPECTED', startDate: '2026-11-19', endDate: '2026-11-20' },
+      {
+        assignmentId: 'assign-future',
+        roomNumber: '۱۰۱',
+        housekeepingStatus: 'INSPECTED',
+        startDate: '2026-11-19',
+        endDate: '2026-11-20',
+      },
     ];
     frontDeskApi.getStaffStayWorklist.mockResolvedValueOnce(worklist([checkedIn]));
     renderPage('in-house');
@@ -594,7 +795,9 @@ describe('StaffFrontDeskPage', () => {
     fireEvent.click(within(card).getByRole('button', { name: 'انتقال اتاق' }));
     const dialog = await screen.findByRole('dialog', { name: 'انتقال مهمان به اتاق دیگر' });
 
-    expect(within(dialog).getByRole('status')).toHaveTextContent('برای تاریخ کاری جاری تخصیص اتاقی فعال نیست');
+    expect(within(dialog).getByRole('status')).toHaveTextContent(
+      'برای تاریخ کاری جاری تخصیص اتاقی فعال نیست',
+    );
     expect(within(dialog).getByRole('button', { name: 'ثبت انتقال' })).toBeDisabled();
   });
 
@@ -608,13 +811,19 @@ describe('StaffFrontDeskPage', () => {
     const detailId = detailTrigger.getAttribute('aria-controls');
     expect(detailId).toBeTruthy();
     const detail = await within(card).findByRole('region', { name: /جزئیات اقامت/ });
+    expect(within(detail).getByRole('link', { name: 'مشاهده صورتحساب اقامت' })).toHaveAttribute(
+      'href',
+      '/staff/folios/booking-uuid-1',
+    );
     expect(detail).toHaveAttribute('id', detailId);
     expect(document.activeElement).toBe(detailTrigger);
     expect(detailTrigger).toHaveAccessibleName('پنهان کردن جزئیات');
     expect(bookingApi.getStaffBooking).toHaveBeenCalledWith(todayStay.reference);
     fireEvent.click(within(detail).getByRole('button', { name: 'ویرایش جزئیات اقامت' }));
     fireEvent.change(within(detail).getByLabelText('تعداد مهمانان'), { target: { value: '3' } });
-    expect(within(detail).getByRole('region', { name: 'پیش‌نمایش تغییرات' })).toHaveTextContent('تعداد مهمانان: ۲ ← ۳');
+    expect(within(detail).getByRole('region', { name: 'پیش‌نمایش تغییرات' })).toHaveTextContent(
+      'تعداد مهمانان: ۲ ← ۳',
+    );
     expect(within(detail).queryByText(/تومان|قیمت|مبلغ/)).not.toBeInTheDocument();
     expect(within(detail).queryByLabelText('نوع اتاق')).not.toBeInTheDocument();
     const closeButton = within(detail).getByRole('button', { name: 'بستن جزئیات' });
@@ -628,7 +837,9 @@ describe('StaffFrontDeskPage', () => {
     fireEvent.click(detailTrigger);
     expect(await within(card).findByRole('region', { name: /جزئیات اقامت/ })).toBeVisible();
     fireEvent.click(detailTrigger);
-    await waitFor(() => expect(within(card).queryByRole('region', { name: /جزئیات اقامت/ })).not.toBeInTheDocument());
+    await waitFor(() =>
+      expect(within(card).queryByRole('region', { name: /جزئیات اقامت/ })).not.toBeInTheDocument(),
+    );
     expect(detailTrigger).toHaveAttribute('aria-expanded', 'false');
   });
 
@@ -640,12 +851,16 @@ describe('StaffFrontDeskPage', () => {
     frontDeskApi.getStaffStayWorklist.mockResolvedValueOnce(worklist([departed]));
     const view = renderPage('departures');
     const card = await screen.findByRole('article', { name: /ABC123456789/ });
-    expect(within(card).getByText('فهرست اطلاع‌رسانی؛ ثبت خروج در این بخش انجام نمی‌شود.')).toBeVisible();
+    expect(
+      within(card).getByText('فهرست اطلاع‌رسانی؛ ثبت خروج در این بخش انجام نمی‌شود.'),
+    ).toBeVisible();
     expect(within(card).queryByRole('button', { name: /ثبت خروج|تسویه/ })).not.toBeInTheDocument();
     view.unmount();
 
     frontDeskApi.getStaffStayWorklist.mockRejectedValueOnce(new StaffApiError('Forbidden', 403));
     renderPage('departures');
-    expect(await screen.findByRole('alert')).toHaveTextContent('دسترسی شما برای مشاهده این فهرست تأیید نشد');
+    expect(await screen.findByRole('alert')).toHaveTextContent(
+      'دسترسی شما برای مشاهده این فهرست تأیید نشد',
+    );
   });
 });

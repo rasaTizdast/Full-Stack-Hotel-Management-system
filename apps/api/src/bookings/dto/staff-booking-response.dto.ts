@@ -84,6 +84,9 @@ export class StaffBookingStatusTimestampsDto {
 }
 
 export class StaffBookingDetailDto extends StaffBookingListItemDto {
+  @ApiProperty({ format: 'uuid' })
+  id!: string;
+
   @ApiProperty({ format: 'email', nullable: true, example: 'guest@example.invalid' })
   guestEmail!: string | null;
 

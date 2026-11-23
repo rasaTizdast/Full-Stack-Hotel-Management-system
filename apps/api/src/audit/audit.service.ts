@@ -30,6 +30,16 @@ const ALLOWED_AUDIT_FIELDS = new Set<AuditSafeField>([
   'startDate',
   'endDate',
   'expectedDate',
+  'folioId',
+  'serviceItemId',
+  'amountToman',
+  'direction',
+  'entryKind',
+  'serviceDate',
+  'correctsEntryId',
+  'serviceName',
+  'serviceCategory',
+  'currentPriceToman',
 ]);
 
 function assertSafeSnapshot(snapshot: AuditSnapshot | undefined): void {

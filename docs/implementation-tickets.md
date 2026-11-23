@@ -107,11 +107,14 @@ The following tickets extend the original booking engine into the single-propert
 - **Priority:** P0
 - **Depends on:** HPM-002, HPM-004
 - **Owner:** Backend senior + Front-end design master
-- **Status:** Not started
-- **Branch/worktree:** `codex/hpm-007-folio-ledger` — `../Hotel Booking system-worktrees/HPM-007`
+- **Status:** Done
+- **Branch/worktree:** `codex/hpm-007` — `../Hotel Booking system-hpm-007`
 - **Plan:** `docs/superpowers/plans/2026-11-15-hotel-pms-folio-and-checkout.md`
 - **Acceptance criteria:** Each stay has an append-only itemized folio; room/service lines store room attribution, integer Toman, and immutable snapshots; one shared locked posting service and database key prevent duplicate room-night charges across checkout/night-close; authorized corrections add compensating entries with reasons; managers/admins can manage the `/staff/services` catalog without rewriting existing postings; public DTOs never reveal folios; private requests/responses enforce and test both no-store controls.
 - **Required tests:** BigInt balance math, room/night boundaries, immutable snapshots, cross-path duplicate protection, duplicate idempotency, role checks, PostgreSQL rollback, API e2e, web unit/E2E.
+- **Code changes:** Additive folio/service schema and integrity migrations; booking-triggered empty folios; database-enforced append-only ledger and sequence; locked service/accommodation posting, immutable catalog snapshots, compensating corrections, permissions, private API headers; manager/admin service catalog and staff folio routes with a front-desk link.
+- **Evidence:** API unit **27 suites / 145 tests**; HPM-007 PostgreSQL suite **8/8**; folio API E2E **2/2**; web unit **41 files / 248 tests**; folio/catalog component and API-client tests **9/9**; focused Playwright **2/2** (desktop and mobile); API/web lint and typecheck passed. All 15 migrations applied to isolated `hotel_hpm007_fresh_e2e_test`; rerun reported no pending migrations. API and web assertions cover `private, no-store`; public booking responses contain no folio fields. Desktop (1440 px) and mobile (390 px) folio/catalog screenshots were inspected.
+- **Broader suite note:** A full Playwright run on the existing `hotel_hpm007_test` database passed **46**, skipped **2**, and failed **8** cases outside the HPM-007 scenario: HPM-005 housekeeping fixture room availability, public-site room detail, same-day walk-in capacity, and mobile cases after an API process disconnect. The ticket-specific desktop/mobile folio flow passed; rerun and resolve full release-suite failures in HPM-010 before release.
 
 ### HPM-008 — Manual settlement, final checkout, and printing
 
