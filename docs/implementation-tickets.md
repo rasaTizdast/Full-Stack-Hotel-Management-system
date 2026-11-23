@@ -95,11 +95,12 @@ The following tickets extend the original booking engine into the single-propert
 - **Priority:** P0
 - **Depends on:** HPM-001, HPM-002, HPM-003, HPM-005
 - **Owner:** Backend senior + Front-end design master
-- **Status:** Not started
-- **Branch/worktree:** `codex/hpm-006-maintenance-blocks` — `../Hotel Booking system-worktrees/HPM-006`
+- **Status:** Done
+- **Branch/worktree:** `codex/hpm-006` — `../Hotel Booking system-hpm-006`
 - **Plan:** `docs/superpowers/plans/2026-11-15-hotel-pms-housekeeping-maintenance.md`
 - **Acceptance criteria:** Repairs have category/priority/assignee/due/resolved state; open repairs are separate from inventory blocks; managers create dated out-of-order or capacity-closed blocks with reasons; blocks update capacity transactionally and cannot invalidate holds/bookings/assignments; room restoration is safe and repeatable.
 - **Required tests:** Block/booking race, date boundaries, capacity rollback, same-room overlap rejection, active assignment conflict, occupied-room block denial, restoration/idempotency, permissions, API/web E2E.
+- **Evidence:** Isolated PostgreSQL HPM-006 suite passed (9/9); API unit suite passed (26 suites, 142 tests); web unit suite passed (38 files, 238 tests); maintenance Playwright passed desktop and mobile (2/2); API/web lint and typecheck passed; desktop (1440 px) and mobile (390 px) screenshots reviewed. The broader API database suite passed 94/95 tests; its remaining failure is the existing HPM-005 `staff-stays.database-spec.ts` expectation that a next-day walk-in returns 400 (received 201), outside this ticket's changed files.
 
 ### HPM-007 — Folio ledger and service catalog
 

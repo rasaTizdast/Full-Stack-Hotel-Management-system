@@ -91,12 +91,12 @@
 **Dependencies:** HPM-001, HPM-002, HPM-003, HPM-005
 **Files:** maintenance migration; `apps/api/src/maintenance/**`, capacity projection service, audit tests; `apps/web/src/components/staff/maintenance/**`; `/staff/maintenance` route/nav; PostgreSQL/API/web/E2E tests.
 
-- [ ] Add failing PostgreSQL cases for block date boundaries, block/booking race, rejection below reserved capacity, restoration, same-room overlapping block rejection, active assignment conflict, and safe repeated expiry/restoration.
-- [ ] Add maintenance requests with category, description, priority, assignee, expected date, open/resolved timestamps, and resolution note. Add manager/reception views and role-guarded mutations.
-- [ ] Add explicit `OUT_OF_ORDER` maintenance blocks and `CAPACITY_CLOSED` operating blocks using the table introduced in HPM-001. Lock the room and affected inventory rows and atomically recompute `totalRooms = activeRooms - distinctActiveBlocks`; reject blocks overlapping an assignment or reducing capacity below held/booked counts.
-- [ ] Keep a maintenance request open independently of a room block; require an explicit user action to block sale. Do not implement the product-specific OOS sellability behavior in this release.
-- [ ] Build `/staff/maintenance` repair queue and room block controls with date, floor, room, reason, assignee, status, and expected return filters.
-- [ ] Run focused PostgreSQL/API tests, web unit and Playwright, lint/typecheck; then have designer inspect mobile and desktop and tester repeat the flow after the web E2E suite passes.
+- [x] Add failing PostgreSQL cases for block date boundaries, block/booking race, rejection below reserved capacity, restoration, same-room overlapping block rejection, active assignment conflict, and safe repeated expiry/restoration.
+- [x] Add maintenance requests with category, description, priority, assignee, expected date, open/resolved timestamps, and resolution note. Add manager/reception views and role-guarded mutations.
+- [x] Add explicit `OUT_OF_ORDER` maintenance blocks and `CAPACITY_CLOSED` operating blocks using the table introduced in HPM-001. Lock the room and affected inventory rows and atomically recompute `totalRooms = activeRooms - distinctActiveBlocks`; reject blocks overlapping an assignment or reducing capacity below held/booked counts.
+- [x] Keep a maintenance request open independently of a room block; require an explicit user action to block sale. Do not implement the product-specific OOS sellability behavior in this release.
+- [x] Build `/staff/maintenance` repair queue and room block controls with date, floor, room, reason, assignee, status, and expected return filters.
+- [x] Run focused PostgreSQL/API tests, web unit and Playwright, lint/typecheck; then inspect mobile and desktop and repeat the flow after the web E2E suite passes. Playwright passed on desktop and mobile; both screenshots reviewed.
 
 ## Merge gate
 

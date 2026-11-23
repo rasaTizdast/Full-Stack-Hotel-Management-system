@@ -182,6 +182,23 @@ export function StaffDashboardShell({
                     </span>
                   </Link>
                 )}
+                {['ADMIN', 'MANAGER', 'RECEPTIONIST', 'HOUSEKEEPER'].includes(staff.role) && (
+                  <Link
+                    href="/staff/maintenance"
+                    aria-current={currentPath.startsWith('/staff/maintenance') ? 'page' : undefined}
+                  >
+                    <span className="staff-nav__glyph" aria-hidden="true">
+                      <svg viewBox="0 0 24 24" fill="none">
+                        <path d="M14.5 6.5a4 4 0 0 0-5.7 5.6l-5.3 5.4a2 2 0 0 0 2.8 2.8l5.4-5.3a4 4 0 0 0 5.6-5.7l-2.4 2.4-2.8-2.8 2.4-2.4Z" />
+                        <path d="m5.1 18.9 1.4-1.4" />
+                      </svg>
+                    </span>
+                    <span className="staff-nav__copy">
+                      <strong>تعمیرات</strong>
+                      <small>درخواست‌ها و انسداد اتاق</small>
+                    </span>
+                  </Link>
+                )}
                 {['ADMIN', 'MANAGER', 'RECEPTIONIST'].includes(staff.role) && (
                   <Link
                     href="/staff/bookings"

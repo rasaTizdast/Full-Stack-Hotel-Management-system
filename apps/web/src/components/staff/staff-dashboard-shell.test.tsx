@@ -10,6 +10,52 @@ const receptionist = {
 };
 
 describe('StaffDashboardShell', () => {
+  it('shows the maintenance workspace to operational staff but not cashiers', () => {
+    const { rerender } = render(
+      <StaffDashboardShell
+        staff={{ ...receptionist, role: 'MANAGER' }}
+        onLogout={vi.fn()}
+        currentPath="/staff/maintenance"
+      >
+        <p>فهرست تعمیرات</p>
+      </StaffDashboardShell>,
+    );
+
+    const maintenanceLink = screen.getByRole('link', { name: /^تعمیرات/ });
+    expect(maintenanceLink).toHaveAttribute('href', '/staff/maintenance');
+    expect(maintenanceLink).toHaveAttribute('aria-current', 'page');
+
+    rerender(
+      <StaffDashboardShell staff={receptionist} onLogout={vi.fn()}>
+        <p>صفحه پذیرش</p>
+      </StaffDashboardShell>,
+    );
+    expect(screen.getByRole('link', { name: /^تعمیرات/ })).toHaveAttribute(
+      'href',
+      '/staff/maintenance',
+    );
+
+    rerender(
+      <StaffDashboardShell
+        staff={{ ...receptionist, role: 'HOUSEKEEPER' }}
+        onLogout={vi.fn()}
+      >
+        <p>صفحه خانه‌داری</p>
+      </StaffDashboardShell>,
+    );
+    expect(screen.getByRole('link', { name: /^تعمیرات/ })).toHaveAttribute(
+      'href',
+      '/staff/maintenance',
+    );
+
+    rerender(
+      <StaffDashboardShell staff={{ ...receptionist, role: 'CASHIER' }} onLogout={vi.fn()}>
+        <p>صفحه صندوق</p>
+      </StaffDashboardShell>,
+    );
+    expect(screen.queryByRole('link', { name: /^تعمیرات/ })).not.toBeInTheDocument();
+  });
+
   it.each([
     ['ADMIN', '/staff/front-desk/arrivals'],
     ['MANAGER', '/staff/front-desk/arrivals'],

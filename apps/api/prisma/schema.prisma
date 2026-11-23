@@ -96,6 +96,25 @@ enum RoomDiscrepancyStatus {
   @@map("room_discrepancy_status")
 }
 
+enum MaintenanceCategory {
+  PLUMBING
+  ELECTRICAL
+  HVAC
+  APPLIANCE
+  STRUCTURAL
+  SAFETY
+  OTHER
+
+  @@map("maintenance_category")
+}
+
+enum MaintenanceRequestStatus {
+  OPEN
+  RESOLVED
+
+  @@map("maintenance_request_status")
+}
+
 model Hotel {
   id           String     @id @default(uuid()) @db.Uuid
   slug         String     @unique @db.VarChar(120)
@@ -156,6 +175,7 @@ model Room {
   assignments        RoomAssignment[]
   housekeepingTasks  HousekeepingTask[]
   discrepancies      RoomDiscrepancy[]
+  maintenanceRequests MaintenanceRequest[]
 
   @@unique([hotelId, roomNumber])
   @@unique([id, roomTypeId])
@@ -270,6 +290,37 @@ model RoomDiscrepancy {
   @@map("room_discrepancies")
 }
 
+model MaintenanceRequest {
+  id                       String                   @id @default(uuid()) @db.Uuid
+  roomId                   String                   @map("room_id") @db.Uuid
+  category                 MaintenanceCategory
+  description              String                   @db.VarChar(1000)
+  priority                 HousekeepingPriority     @default(NORMAL)
+  status                   MaintenanceRequestStatus @default(OPEN)
+  expectedDate             DateTime                 @map("expected_date") @db.Date
+  assignedToStaffUserId    String?                  @map("assigned_to_staff_user_id") @db.Uuid
+  assignedAt               DateTime?                @map("assigned_at") @db.Timestamptz(3)
+  assignedByStaffUserId    String?                  @map("assigned_by_staff_user_id") @db.Uuid
+  createdByStaffUserId     String                   @map("created_by_staff_user_id") @db.Uuid
+  openedAt                 DateTime                 @default(now()) @map("opened_at") @db.Timestamptz(3)
+  resolvedAt               DateTime?                @map("resolved_at") @db.Timestamptz(3)
+  resolvedByStaffUserId    String?                  @map("resolved_by_staff_user_id") @db.Uuid
+  resolutionNote           String?                  @map("resolution_note") @db.VarChar(500)
+  createdAt                DateTime                 @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt                DateTime                 @updatedAt @map("updated_at") @db.Timestamptz(3)
+  room                     Room                     @relation(fields: [roomId], references: [id], onDelete: Restrict)
+  assignedTo               StaffUser?               @relation("MaintenanceRequestAssignee", fields: [assignedToStaffUserId], references: [id], onDelete: Restrict)
+  assignedBy               StaffUser?               @relation("MaintenanceRequestAssigner", fields: [assignedByStaffUserId], references: [id], onDelete: Restrict)
+  createdBy                StaffUser                 @relation("MaintenanceRequestCreator", fields: [createdByStaffUserId], references: [id], onDelete: Restrict)
+  resolvedBy               StaffUser?               @relation("MaintenanceRequestResolver", fields: [resolvedByStaffUserId], references: [id], onDelete: Restrict)
+
+  @@index([roomId, status, openedAt])
+  @@index([status, expectedDate, priority])
+  @@index([assignedToStaffUserId, status, expectedDate])
+  @@index([createdAt])
+  @@map("maintenance_requests")
+}
+
 model RoomNightInventory {
   id                String   @id @default(uuid()) @db.Uuid
   roomTypeId        String   @map("room_type_id") @db.Uuid
@@ -372,6 +423,10 @@ model StaffUser {
   cancelledHousekeepingTasks HousekeepingTask[] @relation("HousekeepingTaskCanceller")
   reportedRoomDiscrepancies RoomDiscrepancy[] @relation("RoomDiscrepancyReporter")
   resolvedRoomDiscrepancies RoomDiscrepancy[] @relation("RoomDiscrepancyResolver")
+  createdMaintenanceRequests MaintenanceRequest[] @relation("MaintenanceRequestCreator")
+  assignedMaintenanceRequests MaintenanceRequest[] @relation("MaintenanceRequestAssignee")
+  assignedMaintenanceRequestHistory MaintenanceRequest[] @relation("MaintenanceRequestAssigner")
+  resolvedMaintenanceRequests MaintenanceRequest[] @relation("MaintenanceRequestResolver")
   auditEvents            AuditEvent[]
 
   @@index([isActive, role])

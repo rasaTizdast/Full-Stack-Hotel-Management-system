@@ -20,7 +20,12 @@ export type AuditSafeField =
   | 'roomQuantity'
   | 'roomId'
   | 'effectiveDate'
-  | 'businessDate';
+  | 'businessDate'
+  | 'maintenanceCategory'
+  | 'blockKind'
+  | 'startDate'
+  | 'endDate'
+  | 'expectedDate';
 
 export type AuditSnapshot = Partial<Record<AuditSafeField, string | number | boolean | null>>;
 
