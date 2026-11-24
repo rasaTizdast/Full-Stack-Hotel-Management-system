@@ -133,11 +133,15 @@ The following tickets extend the original booking engine into the single-propert
 - **Priority:** P1
 - **Depends on:** HPM-004, HPM-005, HPM-006, HPM-007, HPM-008
 - **Owner:** Backend senior + Front-end design master
-- **Status:** In progress
-- **Branch/worktree:** `codex/hpm-009-night-close-reports` — `../Hotel Booking system-worktrees/HPM-009`
+- **Status:** Done
+- **Branch/worktree:** `codex/hpm-009-night-close-reports` — `../Hotel Booking system-hpm-009`
 - **Plan:** `docs/superpowers/plans/2026-11-15-hotel-pms-staff-controls-and-daily-operations.md`
 - **Acceptance criteria:** Managers preview blockers separately from warnings, confirm a named business date/effects, run an all-or-nothing manual close, post at most one accommodation charge per assignment/date through the shared checkout service, advance business date once, retry safely after rollback, and view role-filtered summaries.
 - **Required tests:** Tehran timezone boundaries, rollback after charge inserts before date advance, retry after rollback and success, cross-path duplicate prevention, report totals against ledger fixtures, permissions, API/web E2E.
+- **Delivery:** Business-date/night-close migration, operations API, Jalali staff close/report screens, and [manual close runbook](booking-day-close-operations.md). Commits: `9462257`, `1b1e15c`, `aea21a6`.
+- **Checks:** Fresh isolated `hotel_hpm009_e2e_20261124_test` received all 17 migrations and seed; existing isolated `hotel_hpm009_final_20261124_test` reported no pending migrations. API unit **27 suites / 146 tests**; HPM-009 PostgreSQL HTTP suite **1 suite / 4 tests**; web unit **43 files / 259 tests**; ticket Playwright **2/2** across desktop and mobile with axe checks; API/web typecheck and lint, API/web production builds, and `git diff --check` passed. The close test injects a date-advance failure and verifies rollback/retry. Test-only `pg` client-query and injected-failure logs were non-fatal.
+- **Designer review:** Desktop and mobile report, close preview, and confirmation were reviewed; RTL hierarchy and responsive dialog passed with no blocking issue. Screenshots are in `output/playwright/hpm009/`.
+- **Operating limits:** Night close is manual; no scheduler is installed. The existing expiry worker remains single-process, so multiple API replicas are a deployment gate. Historical readiness, active-room, block, open-balance, and pending-queue snapshots are not stored; the report labels those values as current state. The development database and original dirty checkout were not modified.
 
 ### HPM-010 — Cross-role release QA and product documentation
 

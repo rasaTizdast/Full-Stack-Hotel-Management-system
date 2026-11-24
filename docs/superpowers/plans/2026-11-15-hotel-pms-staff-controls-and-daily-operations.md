@@ -40,17 +40,17 @@
 
 ## Ticket HPM-009 — Business date, nightly close, and reports
 
-**Worktree:** `../Hotel Booking system-worktrees/HPM-009`
+**Worktree:** `../Hotel Booking system-hpm-009`
 
 **Dependencies:** HPM-004, HPM-005, HPM-006, HPM-007, HPM-008
 **Files:** business-date/audit-run migration; `apps/api/src/operations/**`, folio charge helpers; API unit/database/e2e tests; dashboard/report route and components; operational runbook.
 
-- [ ] Add failing tests for Tehran business-date boundaries, due-in/out preview, one room-night posting per assignment/date, repeat close, rollback after postings but before date advance, close permission, and report totals.
-- [ ] Store the current property business date and close-run state/summary; use existing Hotel timezone `Asia/Tehran` and the check-in/out wall times introduced in HPM-001. Do not encode local legal/tax rates.
-- [ ] Implement manager-only `/staff/operations/close` preview with explicit blockers (unresolved due-in, unhandled due-out, missing checked-in assignment, failed invariant, unfinished previous close) and warnings (upcoming arrival, active in-house stay, open receivable, dirty room, maintenance block). Require confirm naming date, accommodation charges, date advance, and warning count.
-- [ ] Implement one all-or-nothing PostgreSQL transaction: lock Hotel/business-date row and eligible folios in stable order; post accommodation through the shared unique key; persist close result and advance date. Any failure rolls every write back; retry same date reruns, while retry after success returns the stored result.
-- [ ] Add `/staff/reports` for arrivals, departures, in-house, occupancy/readiness, blocks, pending requests, open balances, and daily debit/credit totals, filtered by business date and role. Never include guest phone/email in reports unless required for the role's action.
-- [ ] Run PostgreSQL/API tests and Playwright through a complete operating-day close, including interrupted transaction and retry. Document rollback/retry and single-instance scheduler limits.
+- [x] Add failing tests for Tehran business-date boundaries, due-in/out preview, one room-night posting per assignment/date, repeat close, rollback after postings but before date advance, close permission, and report totals.
+- [x] Store the current property business date and close-run state/summary; use existing Hotel timezone `Asia/Tehran` and the check-in/out wall times introduced in HPM-001. Do not encode local legal/tax rates.
+- [x] Implement manager-only `/staff/operations/close` preview with explicit blockers (unresolved due-in, unhandled due-out, missing checked-in assignment, failed invariant, unfinished previous close) and warnings (upcoming arrival, active in-house stay, open receivable, dirty room, maintenance block). Require confirm naming date, accommodation charges, date advance, and warning count.
+- [x] Implement one all-or-nothing PostgreSQL transaction: lock Hotel/business-date row and eligible folios in stable order; post accommodation through the shared unique key; persist close result and advance date. Any failure rolls every write back; retry same date reruns, while retry after success returns the stored result.
+- [x] Add `/staff/reports` for arrivals, departures, in-house, occupancy/readiness, blocks, pending requests, open balances, and daily debit/credit totals, filtered by business date and role. Never include guest phone/email in reports unless required for the role's action.
+- [x] Run PostgreSQL/API tests and Playwright through a complete operating-day close, including interrupted transaction and retry. Document rollback/retry and single-instance scheduler limits.
 
 ## Ticket HPM-010 — Cross-role release QA and product documentation
 
