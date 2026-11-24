@@ -45,6 +45,14 @@ type InventorySnapshot = {
   nights: InventoryNightSnapshot[];
 };
 
+async function selectRoomType(page: Page, roomTypeName: string) {
+  const roomType = page.getByRole('combobox', { name: 'نوع اتاق' });
+  await expect(roomType).toBeEnabled();
+  await roomType.click();
+  await page.getByRole('option', { name: roomTypeName, exact: true }).click();
+  await expect(roomType).toHaveText(roomTypeName);
+}
+
 async function currentStaffHeaders(page: Page, fallbackCookies: StaffBrowserCookie[]) {
   const currentCookies = await page.context().cookies(`${apiBaseUrl}/staff`);
   const cookies = new Map(currentCookies.map((cookie) => [cookie.name, cookie.value]));
@@ -257,7 +265,8 @@ test('admin sees physical capacity and saves rates only, and the page meets axe 
       await expect(table).toBeVisible();
     }
     const roomType = page.getByRole('combobox', { name: 'نوع اتاق' });
-    await expect(roomType).toHaveValue(/.+/);
+    await expect(roomType).toBeEnabled();
+    await expect(roomType).toHaveText(/.+/);
     const roomTypesPayload: unknown = await roomTypesResponse.json();
     if (!Array.isArray(roomTypesPayload)) {
       throw new Error('The inventory room-type options returned an invalid response.');
@@ -279,6 +288,7 @@ test('admin sees physical capacity and saves rates only, and the page meets axe 
       throw new Error('The default inventory date range was invalid.');
     }
     let roomTypeId: string | undefined;
+    let roomTypeName: string | undefined;
     let startDate: string | undefined;
     for (const option of activeRoomTypes) {
       const candidateNight = await findPricedProjectedNight(
@@ -289,14 +299,14 @@ test('admin sees physical capacity and saves rates only, and the page meets axe 
       );
       if (!candidateNight) continue;
       roomTypeId = option.id as string;
+      roomTypeName = option.name as string;
       startDate = candidateNight;
       break;
     }
-    if (!roomTypeId || !startDate) {
+    if (!roomTypeId || !roomTypeName || !startDate) {
       throw new Error('No active room type had priced projected inventory in the next 90 nights.');
     }
-    await roomType.selectOption(roomTypeId);
-    await expect(roomType).toHaveValue(roomTypeId);
+    await selectRoomType(page, roomTypeName);
     const endDate = addUtcDays(startDate, 1);
     const jalaliStartDate = formatGregorianAsJalali(startDate);
     const jalaliEndDate = formatGregorianAsJalali(endDate);
@@ -406,7 +416,7 @@ test('admin sees physical capacity and saves rates only, and the page meets axe 
     const updateResponse = await updateResponsePromise;
     expect(updateResponse.status()).toBe(200);
 
-    await expect(page.getByRole('status')).toContainText('نرخ');
+    await expect(page.getByText('نرخ شبانه به‌روز شد')).toBeVisible();
     if (isNarrowViewport) {
       const metrics = firstNightCard.locator('dl > div');
       await expect(metrics.nth(0).locator('dd')).toHaveText(
@@ -479,14 +489,36 @@ test('pending holds remain visible while inventory capacity stays derived and re
       throw new Error('The pending inventory fixture did not return a booking reference.');
     }
 
+    const roomTypesResponsePromise = page.waitForResponse((response) => {
+      const url = new URL(response.url());
+      return (
+        url.pathname === '/api/v1/staff/inventory/room-types' &&
+        response.request().method() === 'GET'
+      );
+    });
     await page.goto('/staff/inventory');
-    const roomType = page.getByRole('combobox', { name: 'نوع اتاق' });
-    await roomType.selectOption({ label: 'اتاق دوتخته باغ' });
+    const roomTypesResponse = await roomTypesResponsePromise;
+    expect(roomTypesResponse.ok()).toBe(true);
+    const roomTypesPayload: unknown = await roomTypesResponse.json();
+    if (!Array.isArray(roomTypesPayload)) {
+      throw new Error('The inventory room-type options returned an invalid response.');
+    }
+    const gardenRoomType = roomTypesPayload.find(
+      (option): option is Record<string, unknown> =>
+        isRecord(option) &&
+        option.slug === 'garden-double' &&
+        typeof option.id === 'string' &&
+        typeof option.name === 'string',
+    );
+    if (!gardenRoomType) {
+      throw new Error('The garden room type was missing from inventory options.');
+    }
+    await selectRoomType(page, gardenRoomType.name as string);
     await page.getByLabel('شروع بازه').fill(stay.checkInJalali);
     await page.getByLabel('پایان بازه').fill(stay.checkOutJalali);
     await page.getByRole('button', { name: 'نمایش بازه' }).click();
 
-    const roomTypeId = await roomType.inputValue();
+    const roomTypeId = gardenRoomType.id as string;
     const inventorySnapshot = await readInventorySnapshot(
       page,
       roomTypeId,

@@ -32,7 +32,10 @@ export function normalizeDigits(value: string): string {
 
 export function toGregorianIso(jalaliInput: string): string | null {
   const normalized = normalizeDigits(jalaliInput.trim());
-  const match = /^(\d{4})\/(\d{1,2})\/(\d{1,2})$/.exec(normalized);
+  const dateInput = /^\d{8}$/.test(normalized)
+    ? `${normalized.slice(0, 4)}/${normalized.slice(4, 6)}/${normalized.slice(6, 8)}`
+    : normalized;
+  const match = /^(\d{4})\/(\d{1,2})\/(\d{1,2})$/.exec(dateInput);
   if (!match) return null;
 
   const [, yearText, monthText, dayText] = match;

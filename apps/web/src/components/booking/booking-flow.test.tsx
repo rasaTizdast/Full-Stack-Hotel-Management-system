@@ -65,20 +65,26 @@ function fillGuestDetails() {
   });
 }
 
+function selectOption(option: HTMLElement) {
+  fireEvent.pointerDown(option, { button: 0, pointerType: 'mouse' });
+  fireEvent.click(option);
+}
+
 describe('BookingFlow', () => {
   it('shows the selected stay, capacity-aware room quantity, and server-based estimate', () => {
     renderBookingFlow();
 
     expect(screen.getByRole('heading', { name: 'اتاق دوتخته باغ' })).toBeVisible();
-    expect(screen.getByLabelText('تعداد اتاق')).toHaveValue('1');
+    expect(screen.getByRole('combobox', { name: 'تعداد اتاق' })).toHaveTextContent('۱ اتاق');
     expect(screen.getByText('۴٬۸۰۰٬۰۰۰')).toBeVisible();
     expect(screen.getByText('تومان')).toBeVisible();
     expect(screen.getByText('منتظر تأیید پذیرش')).toBeVisible();
   });
 
-  it('multiplies the server estimate by the selected room quantity', () => {
+  it('multiplies the server estimate by the selected room quantity', async () => {
     renderBookingFlow();
-    fireEvent.change(screen.getByLabelText('تعداد اتاق'), { target: { value: '2' } });
+    fireEvent.click(screen.getByRole('combobox', { name: 'تعداد اتاق' }));
+    selectOption(await screen.findByRole('option', { name: '۲ اتاق' }));
 
     expect(screen.getByText('۹٬۶۰۰٬۰۰۰')).toBeVisible();
   });

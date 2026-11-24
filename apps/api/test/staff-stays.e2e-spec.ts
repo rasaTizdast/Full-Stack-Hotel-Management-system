@@ -153,7 +153,10 @@ describe('Staff stay worklists HTTP API', () => {
   beforeAll(async () => {
     f = await RoomBoardFixture.start();
     [receptionist, cashier] = await Promise.all([f.staff('RECEPTIONIST'), f.staff('CASHIER')]);
-    const property = await f.createProperty(timeZone, new Date('2000-01-01T00:00:00.000Z'));
+    // The worklist API resolves the active property by oldest hotel. HPM-005's
+    // E2E fixture is preserved between suites with a 2000 timestamp, so keep
+    // this suite's fixture ahead of it in the shared E2E database.
+    const property = await f.createProperty(timeZone, new Date('1999-01-01T00:00:00.000Z'));
     roomType = property.type;
     rooms = property.rooms;
     hotelBusinessDate = dateAtTimeZone(timeZone);

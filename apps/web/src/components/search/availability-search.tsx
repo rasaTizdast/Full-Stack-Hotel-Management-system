@@ -3,6 +3,16 @@
 import Link from 'next/link';
 import Image from 'next/image';
 import { useState, type FormEvent } from 'react';
+import { Button } from '@/components/ui/button';
+import { Field, FieldDescription, FieldError, FieldLabel } from '@/components/ui/field';
+import { Input } from '@/components/ui/input';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import {
   AvailabilityApiError,
   classifyAvailabilityResults,
@@ -30,9 +40,9 @@ type SearchState = 'idle' | 'loading' | 'results' | 'unavailable' | 'server-erro
 function SearchFieldError({ id, message }: { id: string; message?: string }) {
   if (!message) return null;
   return (
-    <span id={id} className={styles.fieldError} role="alert">
+    <FieldError id={id} className={styles.fieldError}>
       {message}
-    </span>
+    </FieldError>
   );
 }
 
@@ -140,6 +150,25 @@ export function AvailabilitySearch({ roomTypes, initialStay }: AvailabilitySearc
     setFieldErrors(validation.errors);
     if (!validation.query) {
       setState('idle');
+      const fieldIds: Record<keyof AvailabilitySearchInput, string> = {
+        checkIn: 'search-check-in',
+        checkOut: 'search-check-out',
+        guests: 'search-guests',
+      };
+      const firstInvalid = Object.keys(validation.errors)[0] as
+        keyof AvailabilitySearchInput | undefined;
+      if (firstInvalid) {
+        window.setTimeout(() => {
+          const control = document.getElementById(fieldIds[firstInvalid]);
+          control?.focus();
+          control?.scrollIntoView({
+            block: 'center',
+            behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches
+              ? 'instant'
+              : 'smooth',
+          });
+        }, 0);
+      }
       return;
     }
 
@@ -149,16 +178,20 @@ export function AvailabilitySearch({ roomTypes, initialStay }: AvailabilitySearc
       setResult(response);
       setState('results');
     } catch (error) {
-      setState(
-        error instanceof AvailabilityApiError && error.kind === 'unavailable'
-          ? 'unavailable'
-          : 'server-error',
-      );
+      if (error instanceof AvailabilityApiError && error.kind === 'unavailable') {
+        setState('unavailable');
+      } else {
+        setState('server-error');
+      }
     }
   }
 
   const resultState = result ? classifyAvailabilityResults(result.roomTypes) : null;
   const roomDetails = new Map(roomTypes.map((room) => [room.slug, room]));
+  const guestOptions = Array.from({ length: 20 }, (_, index) => index + 1).map((guests) => ({
+    value: String(guests),
+    label: `${formatPersianInteger(guests)} مهمان`,
+  }));
 
   return (
     <section className={styles.search} id="stay-search" aria-labelledby="stay-search-title">
@@ -168,9 +201,10 @@ export function AvailabilitySearch({ roomTypes, initialStay }: AvailabilitySearc
       </div>
 
       <form className={styles.form} onSubmit={handleSubmit} noValidate aria-label="جستجوی اقامت">
-        <div className={styles.field}>
-          <label htmlFor="search-check-in">تاریخ ورود</label>
-          <input
+        <Field className={styles.field} data-invalid={Boolean(fieldErrors.checkIn)}>
+          <FieldLabel htmlFor="search-check-in">تاریخ ورود</FieldLabel>
+          <Input
+            className={styles.control}
             id="search-check-in"
             name="checkIn"
             type="text"
@@ -184,14 +218,15 @@ export function AvailabilitySearch({ roomTypes, initialStay }: AvailabilitySearc
             aria-describedby={`search-check-in-help${fieldErrors.checkIn ? ' search-check-in-error' : ''}`}
             aria-errormessage={fieldErrors.checkIn ? 'search-check-in-error' : undefined}
           />
-          <span id="search-check-in-help" className={styles.hint}>
-            سال / ماه / روز شمسی
-          </span>
+          <FieldDescription id="search-check-in-help" className={styles.hint}>
+            سال، ماه و روز شمسی؛ وارد کردن / اختیاری است
+          </FieldDescription>
           <SearchFieldError id="search-check-in-error" message={fieldErrors.checkIn} />
-        </div>
-        <div className={styles.field}>
-          <label htmlFor="search-check-out">تاریخ خروج</label>
-          <input
+        </Field>
+        <Field className={styles.field} data-invalid={Boolean(fieldErrors.checkOut)}>
+          <FieldLabel htmlFor="search-check-out">تاریخ خروج</FieldLabel>
+          <Input
+            className={styles.control}
             id="search-check-out"
             name="checkOut"
             type="text"
@@ -205,34 +240,41 @@ export function AvailabilitySearch({ roomTypes, initialStay }: AvailabilitySearc
             aria-describedby={`search-check-out-help${fieldErrors.checkOut ? ' search-check-out-error' : ''}`}
             aria-errormessage={fieldErrors.checkOut ? 'search-check-out-error' : undefined}
           />
-          <span id="search-check-out-help" className={styles.hint}>
+          <FieldDescription id="search-check-out-help" className={styles.hint}>
             روز خروج، شب اقامت محسوب نمی‌شود
-          </span>
+          </FieldDescription>
           <SearchFieldError id="search-check-out-error" message={fieldErrors.checkOut} />
-        </div>
-        <div className={styles.field}>
-          <label htmlFor="search-guests">تعداد مهمان</label>
-          <select
-            id="search-guests"
+        </Field>
+        <Field className={styles.field} data-invalid={Boolean(fieldErrors.guests)}>
+          <FieldLabel htmlFor="search-guests">تعداد مهمان</FieldLabel>
+          <Select
+            items={guestOptions}
             name="guests"
             value={input.guests}
             disabled={state === 'loading'}
-            onChange={(event) => updateInput('guests', event.target.value)}
-            aria-invalid={Boolean(fieldErrors.guests)}
-            aria-describedby={fieldErrors.guests ? 'search-guests-error' : undefined}
-            aria-errormessage={fieldErrors.guests ? 'search-guests-error' : undefined}
+            onValueChange={(value) => updateInput('guests', String(value ?? ''))}
           >
-            {Array.from({ length: 20 }, (_, index) => index + 1).map((guests) => (
-              <option value={String(guests)} key={guests}>
-                {formatPersianInteger(guests)} مهمان
-              </option>
-            ))}
-          </select>
+            <SelectTrigger
+              id="search-guests"
+              aria-invalid={Boolean(fieldErrors.guests)}
+              aria-describedby={fieldErrors.guests ? 'search-guests-error' : undefined}
+              aria-errormessage={fieldErrors.guests ? 'search-guests-error' : undefined}
+            >
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {guestOptions.map((option) => (
+                <SelectItem value={option.value} key={option.value}>
+                  {option.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
           <SearchFieldError id="search-guests-error" message={fieldErrors.guests} />
-        </div>
-        <button className={styles.submit} type="submit" disabled={state === 'loading'}>
+        </Field>
+        <Button className={styles.submit} size="lg" type="submit" disabled={state === 'loading'}>
           {state === 'loading' ? 'در حال بررسی…' : 'بررسی اتاق‌های موجود'}
-        </button>
+        </Button>
       </form>
 
       <div className={styles.results} aria-live="polite" aria-busy={state === 'loading'}>

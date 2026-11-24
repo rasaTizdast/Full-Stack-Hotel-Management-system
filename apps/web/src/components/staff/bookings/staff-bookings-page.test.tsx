@@ -1,5 +1,6 @@
 import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { Toaster } from '@/components/ui/sonner';
 import { StaffSessionProvider } from '@/components/staff/staff-session-provider';
 import type {
   StaffBookingDetail,
@@ -9,6 +10,11 @@ import type {
 import { StaffBookingsPage } from './staff-bookings-page';
 
 const router = vi.hoisted(() => ({ replace: vi.fn() }));
+
+function selectOption(option: HTMLElement) {
+  fireEvent.pointerDown(option, { button: 0, pointerType: 'mouse' });
+  fireEvent.click(option);
+}
 
 vi.mock('next/navigation', () => ({
   useRouter: () => router,
@@ -133,7 +139,10 @@ function setupApi(options: MockApiOptions = {}) {
   vi.stubGlobal('fetch', fetchMock);
   render(
     <StaffSessionProvider>
-      <StaffBookingsPage />
+      <>
+        <StaffBookingsPage />
+        <Toaster />
+      </>
     </StaffSessionProvider>,
   );
   return { fetchMock, requests };
@@ -168,7 +177,7 @@ describe('StaffBookingsPage', () => {
     ).toBeInTheDocument();
     expect(screen.getByText('maryam@example.test')).toBeInTheDocument();
     expect(screen.getAllByText('اتاق دوتخته باغ')).toHaveLength(2);
-    expect(screen.getAllByText('در انتظار تأیید')).toHaveLength(3);
+    expect(screen.getAllByText('در انتظار تأیید')).toHaveLength(2);
     expect(screen.getAllByText(/تومان/).length).toBeGreaterThan(0);
   });
 
@@ -190,9 +199,8 @@ describe('StaffBookingsPage', () => {
     const { requests } = setupApi({ lists: [pageOf(), pageOf()] });
     await screen.findByRole('button', { name: /HB-26-AB/ });
 
-    fireEvent.change(screen.getByLabelText('وضعیت درخواست'), {
-      target: { value: 'CONFIRMED' },
-    });
+    fireEvent.click(screen.getByRole('combobox', { name: 'وضعیت درخواست' }));
+    selectOption(await screen.findByRole('option', { name: 'تأییدشده' }));
     fireEvent.change(screen.getByLabelText('ورود از'), { target: { value: '۱۴۰۲/۱۲/۲۹' } });
     fireEvent.change(screen.getByLabelText('ورود تا'), { target: { value: '۱۴۰۳/۰۱/۰۱' } });
     fireEvent.change(screen.getByLabelText('کد رزرو یا موبایل'), {
@@ -220,7 +228,7 @@ describe('StaffBookingsPage', () => {
     fireEvent.change(screen.getByLabelText('ورود از'), { target: { value: '۱۴۰۰/۱۲/۳۰' } });
     fireEvent.click(screen.getByRole('button', { name: 'اعمال فیلترها' }));
 
-    expect(await screen.findByText('تاریخ ورود را معتبر وارد کنید.')).toBeInTheDocument();
+    expect(await screen.findByText('تاریخ آغاز بازه را معتبر وارد کنید.')).toBeInTheDocument();
     expect(requests.filter((request) => request.url.includes('/staff/bookings'))).toHaveLength(
       callsBeforeFilter,
     );

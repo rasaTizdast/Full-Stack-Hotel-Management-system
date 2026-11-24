@@ -3,8 +3,26 @@
 import Link from 'next/link';
 import Image from 'next/image';
 import { useEffect, useRef, useState, type FormEvent } from 'react';
-import { useForm, useWatch } from 'react-hook-form';
+import { Controller, useForm, useWatch } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
+import { Button } from '@/components/ui/button';
+import {
+  Field,
+  FieldDescription,
+  FieldError,
+  FieldGroup,
+  FieldLabel,
+  FieldLegend,
+  FieldSet,
+} from '@/components/ui/field';
+import { Input } from '@/components/ui/input';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import {
   createBookingFormSchema,
   type BookingFormInput,
@@ -38,7 +56,13 @@ function RoomImage({ slug }: { slug: string }) {
 
   return (
     <div className={styles.roomImage}>
-      <Image src={image.src} alt={image.alt} fill sizes="(max-width: 760px) 100vw, 38vw" />
+      <Image
+        src={image.src}
+        alt={image.alt}
+        fill
+        loading="eager"
+        sizes="(max-width: 760px) 100vw, 38vw"
+      />
       <span className={styles.imageCaption}>خانه‌باغ نارنج، شیراز</span>
     </div>
   );
@@ -50,15 +74,6 @@ function makeIdempotencyKey(): string {
   if (!cryptoApi?.getRandomValues) throw new Error('Secure randomness is unavailable.');
   const bytes = cryptoApi.getRandomValues(new Uint8Array(24));
   return Array.from(bytes, (byte) => byte.toString(16).padStart(2, '0')).join(''); // taste-skill-ignore: preserves byte width in a cryptographic key
-}
-
-function FieldError({ id, message }: { id: string; message?: string }) {
-  if (!message) return null;
-  return (
-    <span className={styles.fieldError} id={id} role="alert">
-      {message}
-    </span>
-  );
 }
 
 function getPropertyPhoneHref(phone: string | null): string | null {
@@ -226,6 +241,13 @@ export function BookingFlow({
   const quantity =
     Number(useWatch({ control: form.control, name: 'roomQuantity' })) || minimumRooms;
   const estimated = (BigInt(roomAvailability.totalPriceToman ?? '0') * BigInt(quantity)).toString();
+  const roomQuantityOptions = Array.from(
+    { length: Math.max(0, maxRooms - minimumRooms + 1) },
+    (_, index) => minimumRooms + index,
+  ).map((count) => ({
+    value: String(count),
+    label: `${formatPersianInteger(count)} اتاق`,
+  }));
 
   async function submit(values: BookingFormValues) {
     setFailure(null);
@@ -253,7 +275,8 @@ export function BookingFlow({
       const response = await submitBookingRequest(payload, attempt.current.key);
       setBooking({ response, submittedPhone: values.guestPhone });
     } catch (error) {
-      setFailure(error instanceof BookingApiError ? error.kind : 'server-error');
+      const kind = error instanceof BookingApiError ? error.kind : 'server-error';
+      setFailure(kind);
     }
   }
 
@@ -263,7 +286,23 @@ export function BookingFlow({
     submitting.current = true;
     const runSubmit = form.handleSubmit(submit, (invalid) => {
       const first = Object.keys(invalid)[0] as keyof BookingFormInput | undefined;
-      if (first) form.setFocus(first);
+      if (!first) return;
+
+      const fieldIds: Record<keyof BookingFormInput, string> = {
+        roomQuantity: 'booking-quantity',
+        guestName: 'booking-name',
+        guestPhone: 'booking-phone',
+        guestEmail: 'booking-email',
+      };
+      form.setFocus(first);
+      window.setTimeout(() => {
+        document.getElementById(fieldIds[first])?.scrollIntoView({
+          block: 'center',
+          behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches
+            ? 'instant'
+            : 'smooth',
+        });
+      }, 0);
     });
     void runSubmit(event)
       .catch(() => setFailure('server-error'))
@@ -299,84 +338,123 @@ export function BookingFlow({
           onSubmit={handleFormSubmit}
           aria-label="فرم درخواست اقامت"
         >
-          <fieldset disabled={form.formState.isSubmitting} className={styles.fields}>
-            <legend>مشخصات درخواست</legend>
-            <div className={styles.field}>
-              <label htmlFor="booking-quantity">تعداد اتاق</label>
-              <select
-                id="booking-quantity"
-                {...form.register('roomQuantity')}
-                aria-invalid={Boolean(fieldMessage('roomQuantity'))}
-                aria-describedby={
-                  fieldMessage('roomQuantity') ? 'booking-quantity-error' : undefined
-                }
+          <FieldSet disabled={form.formState.isSubmitting} className={styles.fields}>
+            <FieldLegend className={styles.fieldsLegend}>مشخصات درخواست</FieldLegend>
+            <FieldGroup className={styles.fieldGrid}>
+              <Controller
+                control={form.control}
+                name="roomQuantity"
+                render={({ field }) => (
+                  <Field
+                    className={`${styles.field} ${styles.roomQuantityField}`}
+                    data-invalid={Boolean(fieldMessage('roomQuantity'))}
+                  >
+                    <FieldLabel htmlFor="booking-quantity">تعداد اتاق</FieldLabel>
+                    <Select
+                      items={roomQuantityOptions}
+                      name={field.name}
+                      value={field.value}
+                      onValueChange={(value) => field.onChange(String(value ?? ''))}
+                      disabled={form.formState.isSubmitting}
+                    >
+                      <SelectTrigger
+                        id="booking-quantity"
+                        ref={field.ref}
+                        onBlur={field.onBlur}
+                        aria-invalid={Boolean(fieldMessage('roomQuantity'))}
+                        aria-describedby={
+                          fieldMessage('roomQuantity')
+                            ? 'booking-quantity-error'
+                            : 'booking-quantity-help'
+                        }
+                      >
+                        <SelectValue placeholder="تعداد اتاق را انتخاب کنید" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {roomQuantityOptions.map((option) => (
+                          <SelectItem key={option.value} value={option.value}>
+                            {option.label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <FieldDescription id="booking-quantity-help" className={styles.hint}>
+                      ظرفیت هر اتاق حداکثر {formatPersianInteger(room.maxGuestsPerRoom)} نفر است؛
+                      برای {formatPersianInteger(context.guestCount)} مهمان، حداقل{' '}
+                      {formatPersianInteger(minimumRooms)} اتاق لازم است.
+                    </FieldDescription>
+                    <FieldError id="booking-quantity-error" className={styles.fieldError}>
+                      {fieldMessage('roomQuantity')}
+                    </FieldError>
+                  </Field>
+                )}
+              />
+              <Field
+                className={`${styles.field} ${styles.nameField}`}
+                data-invalid={Boolean(fieldMessage('guestName'))}
               >
-                {Array.from(
-                  { length: Math.max(0, maxRooms - minimumRooms + 1) },
-                  (_, index) => minimumRooms + index,
-                ).map((count) => (
-                  <option value={String(count)} key={count}>
-                    {formatPersianInteger(count)} اتاق
-                  </option>
-                ))}
-              </select>
-              <span className={styles.hint}>
-                ظرفیت هر اتاق حداکثر {formatPersianInteger(room.maxGuestsPerRoom)} نفر است؛ برای{' '}
-                {formatPersianInteger(context.guestCount)} مهمان، حداقل{' '}
-                {formatPersianInteger(minimumRooms)} اتاق لازم است.
-              </span>
-              <FieldError id="booking-quantity-error" message={fieldMessage('roomQuantity')} />
-            </div>
-            <div className={styles.field}>
-              <label htmlFor="booking-name">نام و نام خانوادگی</label>
-              <input
-                id="booking-name"
-                autoComplete="name"
-                maxLength={160}
-                {...form.register('guestName')}
-                aria-invalid={Boolean(fieldMessage('guestName'))}
-                aria-describedby={fieldMessage('guestName') ? 'booking-name-error' : undefined}
-              />
-              <FieldError id="booking-name-error" message={fieldMessage('guestName')} />
-            </div>
-            <div className={styles.field}>
-              <label htmlFor="booking-phone">شماره موبایل</label>
-              <input
-                id="booking-phone"
-                type="tel"
-                inputMode="tel"
-                autoComplete="tel"
-                maxLength={32}
-                dir="ltr"
-                {...form.register('guestPhone')}
-                aria-invalid={Boolean(fieldMessage('guestPhone'))}
-                aria-describedby={
-                  fieldMessage('guestPhone') ? 'booking-phone-error' : 'booking-phone-help'
-                }
-              />
-              <span className={styles.hint} id="booking-phone-help">
-                شمارهٔ همراه ایران را با هر شکل نوشتاری وارد کنید.
-              </span>
-              <FieldError id="booking-phone-error" message={fieldMessage('guestPhone')} />
-            </div>
-            <div className={styles.field}>
-              <label htmlFor="booking-email">
-                ایمیل <span>(اختیاری)</span>
-              </label>
-              <input
-                id="booking-email"
-                type="email"
-                inputMode="email"
-                autoComplete="email"
-                maxLength={254}
-                dir="ltr"
-                {...form.register('guestEmail')}
-                aria-invalid={Boolean(fieldMessage('guestEmail'))}
-                aria-describedby={fieldMessage('guestEmail') ? 'booking-email-error' : undefined}
-              />
-              <FieldError id="booking-email-error" message={fieldMessage('guestEmail')} />
-            </div>
-          </fieldset>
+                <FieldLabel htmlFor="booking-name">نام و نام خانوادگی</FieldLabel>
+                <Input
+                  className={styles.control}
+                  id="booking-name"
+                  autoComplete="name"
+                  maxLength={160}
+                  placeholder="نام خود را وارد کنید"
+                  {...form.register('guestName')}
+                  aria-invalid={Boolean(fieldMessage('guestName'))}
+                  aria-describedby={fieldMessage('guestName') ? 'booking-name-error' : undefined}
+                />
+                <FieldError id="booking-name-error" className={styles.fieldError}>
+                  {fieldMessage('guestName')}
+                </FieldError>
+              </Field>
+              <Field className={styles.field} data-invalid={Boolean(fieldMessage('guestPhone'))}>
+                <FieldLabel htmlFor="booking-phone">شماره موبایل</FieldLabel>
+                <Input
+                  className={styles.control}
+                  id="booking-phone"
+                  type="tel"
+                  inputMode="tel"
+                  autoComplete="tel"
+                  maxLength={32}
+                  placeholder="۰۹۱۲ ۳۴۵ ۶۷۸۹"
+                  dir="ltr"
+                  {...form.register('guestPhone')}
+                  aria-invalid={Boolean(fieldMessage('guestPhone'))}
+                  aria-describedby={
+                    fieldMessage('guestPhone') ? 'booking-phone-error' : 'booking-phone-help'
+                  }
+                />
+                <FieldDescription id="booking-phone-help" className={styles.hint}>
+                  شمارهٔ همراه ایران را با هر شکل نوشتاری وارد کنید.
+                </FieldDescription>
+                <FieldError id="booking-phone-error" className={styles.fieldError}>
+                  {fieldMessage('guestPhone')}
+                </FieldError>
+              </Field>
+              <Field className={styles.field} data-invalid={Boolean(fieldMessage('guestEmail'))}>
+                <FieldLabel htmlFor="booking-email">
+                  ایمیل <span className={styles.optional}>(اختیاری)</span>
+                </FieldLabel>
+                <Input
+                  className={styles.control}
+                  id="booking-email"
+                  type="email"
+                  inputMode="email"
+                  autoComplete="email"
+                  maxLength={254}
+                  placeholder="name@example.com"
+                  dir="ltr"
+                  {...form.register('guestEmail')}
+                  aria-invalid={Boolean(fieldMessage('guestEmail'))}
+                  aria-describedby={fieldMessage('guestEmail') ? 'booking-email-error' : undefined}
+                />
+                <FieldError id="booking-email-error" className={styles.fieldError}>
+                  {fieldMessage('guestEmail')}
+                </FieldError>
+              </Field>
+            </FieldGroup>
+          </FieldSet>
           <div className={styles.notice}>
             <span aria-hidden="true">
               <svg viewBox="0 0 20 20" fill="none">
@@ -401,18 +479,25 @@ export function BookingFlow({
             </p>
           ) : null}
           {failure !== 'availability-changed' ? (
-            <button className={styles.submit} type="submit" disabled={form.formState.isSubmitting}>
+            <Button
+              className={styles.submit}
+              size="lg"
+              type="submit"
+              disabled={form.formState.isSubmitting}
+            >
               {form.formState.isSubmitting
                 ? 'در حال ثبت درخواست…'
                 : failure === 'server-error'
                   ? 'دوباره تلاش کنید'
                   : 'ثبت درخواست اقامت'}
-            </button>
+            </Button>
           ) : null}
         </form>
         <aside className={styles.aside} aria-label="خلاصهٔ اقامت">
+          <div className={styles.roomHeading}>
+            <h2>{room.name}</h2>
+          </div>
           <RoomImage slug={room.slug} />
-          <h2>{room.name}</h2>
           <StaySummary
             checkIn={context.checkIn}
             checkOut={context.checkOut}

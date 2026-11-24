@@ -25,6 +25,11 @@ const inventoryApi = vi.hoisted(() => ({
   updateStaffInventoryRange: vi.fn(),
 }));
 
+function selectOption(option: HTMLElement) {
+  fireEvent.pointerDown(option, { button: 0, pointerType: 'mouse' });
+  fireEvent.click(option);
+}
+
 vi.mock('./staff-session-provider', () => ({
   useStaffSession: () => session.current,
 }));
@@ -126,7 +131,8 @@ describe('StaffInventoryPage', () => {
     expect(
       await screen.findByRole('table', { name: 'وضعیت ظرفیت و نرخ هر شب' }),
     ).toBeInTheDocument();
-    expect(screen.getByRole('option', { name: 'اتاق باغ' })).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('combobox', { name: 'نوع اتاق' }));
+    expect(await screen.findByRole('option', { name: 'اتاق باغ' })).toBeInTheDocument();
     expect(screen.getByRole('option', { name: 'اتاق در حال تعمیر (غیرفعال)' })).toBeInTheDocument();
     expect(
       screen.getByText('ظرفیت از اتاق‌های فعال و مسدودی‌های هر شب به‌صورت خودکار محاسبه می‌شود.'),
@@ -147,9 +153,7 @@ describe('StaffInventoryPage', () => {
       expect.objectContaining({ roomTypeId: roomType.id }),
     );
 
-    fireEvent.change(screen.getByLabelText('نوع اتاق'), {
-      target: { value: inactiveRoomTypeOption.id },
-    });
+    selectOption(screen.getByRole('option', { name: 'اتاق در حال تعمیر (غیرفعال)' }));
     fireEvent.click(screen.getByRole('button', { name: 'نمایش بازه' }));
     await waitFor(() => {
       expect(inventoryApi.getStaffInventoryRange).toHaveBeenLastCalledWith(
@@ -304,11 +308,13 @@ describe('StaffInventoryPage', () => {
       }),
     );
 
-    fireEvent.change(screen.getByLabelText('نوع اتاق'), { target: { value: secondRoomType.id } });
+    fireEvent.click(screen.getByRole('combobox', { name: 'نوع اتاق' }));
+    selectOption(await screen.findByRole('option', { name: 'سوئیت باغ' }));
     fireEvent.click(screen.getByRole('button', { name: 'نمایش بازه' }));
     await waitFor(() => expect(inventoryApi.getStaffInventoryRange).toHaveBeenCalledTimes(2));
 
-    fireEvent.change(screen.getByLabelText('نوع اتاق'), { target: { value: roomType.id } });
+    fireEvent.click(screen.getByRole('combobox', { name: 'نوع اتاق' }));
+    selectOption(await screen.findByRole('option', { name: 'اتاق باغ' }));
     await act(async () => {
       resolveRange({
         ...response,

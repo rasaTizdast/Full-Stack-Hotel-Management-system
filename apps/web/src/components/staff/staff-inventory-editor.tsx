@@ -1,6 +1,16 @@
 'use client';
 
 import type { FormEvent } from 'react';
+import { Button } from '@/components/ui/button';
+import { Field, FieldDescription, FieldError, FieldLabel } from '@/components/ui/field';
+import { Input } from '@/components/ui/input';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import type {
   StaffInventoryNight,
   StaffInventoryRangeResponse,
@@ -26,7 +36,6 @@ interface StaffInventoryEditorProps {
   nightlyPriceToman: string;
   fieldErrors: InventoryFormErrors;
   formError: string | null;
-  successMessage: string | null;
   isLoadingRoomTypes: boolean;
   isLoadingRange: boolean;
   isSaving: boolean;
@@ -111,9 +120,10 @@ function DateField({
   const errorId = `${id}-error`;
 
   return (
-    <div className="staff-inventory__field">
-      <label htmlFor={id}>{label}</label>
-      <input
+    <Field className="staff-inventory__field" data-invalid={Boolean(error)}>
+      <FieldLabel htmlFor={id}>{label}</FieldLabel>
+      <Input
+        className="staff-inventory__input"
         id={id}
         inputMode="numeric"
         autoComplete="off"
@@ -123,15 +133,13 @@ function DateField({
         aria-invalid={Boolean(error)}
         aria-describedby={error ? errorId : helpId}
       />
-      <span id={helpId} className="staff-inventory__hint">
+      <FieldDescription id={helpId} className="staff-inventory__hint">
         {help}
-      </span>
-      {error ? (
-        <span id={errorId} className="staff-inventory__field-error" role="alert">
-          {error}
-        </span>
-      ) : null}
-    </div>
+      </FieldDescription>
+      <FieldError id={errorId} className="staff-inventory__field-error">
+        {error}
+      </FieldError>
+    </Field>
   );
 }
 
@@ -154,9 +162,10 @@ function NumericField({
   const errorId = `${id}-error`;
 
   return (
-    <div className="staff-inventory__field">
-      <label htmlFor={id}>{label}</label>
-      <input
+    <Field className="staff-inventory__field" data-invalid={Boolean(error)}>
+      <FieldLabel htmlFor={id}>{label}</FieldLabel>
+      <Input
+        className="staff-inventory__input"
         id={id}
         inputMode="numeric"
         dir="ltr"
@@ -165,15 +174,13 @@ function NumericField({
         aria-invalid={Boolean(error)}
         aria-describedby={error ? errorId : helpId}
       />
-      <span id={helpId} className="staff-inventory__hint">
+      <FieldDescription id={helpId} className="staff-inventory__hint">
         {help}
-      </span>
-      {error ? (
-        <span id={errorId} className="staff-inventory__field-error" role="alert">
-          {error}
-        </span>
-      ) : null}
-    </div>
+      </FieldDescription>
+      <FieldError id={errorId} className="staff-inventory__field-error">
+        {error}
+      </FieldError>
+    </Field>
   );
 }
 
@@ -212,23 +219,31 @@ function RangePicker({
       </div>
 
       <div className="staff-inventory__range-fields">
-        <div className="staff-inventory__field staff-inventory__field--room">
-          <label htmlFor="staff-inventory-room-type">نوع اتاق</label>
-          <select
-            id="staff-inventory-room-type"
+        <Field className="staff-inventory__field staff-inventory__field--room">
+          <FieldLabel htmlFor="staff-inventory-room-type">نوع اتاق</FieldLabel>
+          <Select
+            items={roomTypes.map((roomType) => ({
+              value: roomType.id,
+              label: `${roomType.name}${roomType.isActive ? '' : ' (غیرفعال)'}`,
+            }))}
+            name="roomTypeId"
             value={selectedRoomTypeId}
             disabled={isLoadingRoomTypes || roomTypes.length === 0}
-            onChange={(event) => onRoomTypeChange(event.target.value)}
+            onValueChange={(value) => onRoomTypeChange(String(value ?? ''))}
           >
-            {roomTypes.length === 0 ? <option value="">اتاقی برای نمایش نیست</option> : null}
-            {roomTypes.map((roomType) => (
-              <option key={roomType.id} value={roomType.id}>
-                {roomType.name}
-                {roomType.isActive ? '' : ' (غیرفعال)'}
-              </option>
-            ))}
-          </select>
-        </div>
+            <SelectTrigger id="staff-inventory-room-type">
+              <SelectValue placeholder="اتاقی برای نمایش نیست" />
+            </SelectTrigger>
+            <SelectContent>
+              {roomTypes.map((roomType) => (
+                <SelectItem key={roomType.id} value={roomType.id}>
+                  {roomType.name}
+                  {roomType.isActive ? '' : ' (غیرفعال)'}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </Field>
 
         <DateField
           id="staff-inventory-start-date"
@@ -247,13 +262,14 @@ function RangePicker({
           onChange={(value) => onRangeInputChange('endDate', value)}
         />
 
-        <button
-          className="button button--jade staff-inventory__load"
+        <Button
+          className="staff-inventory__load"
+          size="lg"
           type="submit"
           disabled={isLoadingRoomTypes || isLoadingRange || !selectedRoomTypeId}
         >
           {isLoadingRange ? 'در حال بارگذاری…' : 'نمایش بازه'}
-        </button>
+        </Button>
       </div>
     </form>
   );
@@ -261,23 +277,14 @@ function RangePicker({
 
 function EditorMessages({
   formError,
-  successMessage,
   isLoadingRoomTypes,
   roomTypes,
-}: Pick<
-  StaffInventoryEditorProps,
-  'formError' | 'successMessage' | 'isLoadingRoomTypes' | 'roomTypes'
->) {
+}: Pick<StaffInventoryEditorProps, 'formError' | 'isLoadingRoomTypes' | 'roomTypes'>) {
   return (
     <>
       {formError ? (
         <p className="staff-inventory__message staff-inventory__message--error" role="alert">
           {formError}
-        </p>
-      ) : null}
-      {successMessage ? (
-        <p className="staff-inventory__message staff-inventory__message--success" role="status">
-          {successMessage}
         </p>
       ) : null}
       {isLoadingRoomTypes && !formError ? (
@@ -440,13 +447,14 @@ function InventoryEditForm({
           onChange={onPriceChange}
         />
 
-        <button
-          className="button button--jade staff-inventory__save"
+        <Button
+          className="staff-inventory__save"
+          size="lg"
           type="submit"
           disabled={isSaving || isLoadingRange || historicalRange}
         >
           {isSaving ? 'در حال ذخیره…' : 'ذخیره برای همه شب‌ها'}
-        </button>
+        </Button>
       </div>
       {rangeTotal !== null ? (
         <p className="staff-inventory__rate-impact" aria-live="polite" dir="rtl">
