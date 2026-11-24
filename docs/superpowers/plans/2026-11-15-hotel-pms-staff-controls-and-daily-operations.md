@@ -64,7 +64,7 @@
 - [x] Inspect `.hallmark` artifacts and search project/global executables for a reproducible Hallmark runner. No runner is available, so no Hallmark pass is claimed. Playwright screenshots received Designer review; capture issues were fixed and rechecked. Record the missing runner and historical baseline public-room-list failure (hero ends at 1747px at 1920px) separately from new regressions.
 - [x] Run root `pnpm check`, verify fresh/upgrade migrations and seed behavior, inspect print output, and resolve applicable design findings. The successful run applied all 18 migrations to three fresh isolated test databases, validated repeatable fictional seed, and passed API/web tests, Playwright, API E2E, and builds. Existing final-check database migration status was up to date. A4 PDF output and narrow print screenshot were visually inspected.
 - [x] Update README for the actual implemented version: setup, roles, workflows, limitations, test gates, invoice/legal boundary, backup/restore expectations, and screenshots. Do not claim integrations or fiscal compliance that are absent.
-- [ ] Record exact checks, screenshots, known environment limits, commits, and merge state in the ticket register.
+- [x] Record exact checks, screenshots, known environment limits, commits, and merge state in the ticket register. The HPM-010 implementation commit is `1996a26`, fast-forwarded into `codex/hpm-006-010`; the original `main` worktree remains untouched. HPM-010 stays open because the live tester walkthrough and final ticket-worktree cleanup have not been completed.
 
 ## Merge gate
 
