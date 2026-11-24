@@ -32,6 +32,7 @@ test('admin reviews a date-filtered report and closes an unblocked operating day
   const dialog = page.getByRole('alertdialog');
   await expect(dialog).toBeVisible();
   await expect(dialog).toContainText('هشدار باقی می‌ماند');
+  await page.screenshot({ path: testInfo.outputPath('night-close-confirmation.png') });
   const closeResponsePromise = page.waitForResponse((response) => {
     const url = new URL(response.url());
     return url.pathname === '/api/v1/staff/operations/close' && response.request().method() === 'POST';
