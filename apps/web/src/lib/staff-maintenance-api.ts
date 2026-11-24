@@ -40,7 +40,8 @@ export interface StaffRoomBlock {
   id: string;
   room: MaintenanceRoom;
   startDate: string;
-  expectedReturnDate: string;
+  endDate: string;
+  expectedReturnDate: string | null;
   kind: StaffRoomBlockKind;
   reason: string;
   status: StaffRoomBlockStatus;
@@ -89,6 +90,7 @@ export interface CreateStaffRoomBlock {
   roomId: string;
   startDate: string;
   endDate: string;
+  expectedReturnDate?: string;
   kind: StaffRoomBlockKind;
   reason: string;
 }

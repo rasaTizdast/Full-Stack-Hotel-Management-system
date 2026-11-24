@@ -244,6 +244,104 @@ describe('PostgreSQL maintenance blocks', () => {
     ).toBe(1);
   });
 
+  it('does not restore capacity-preservation blocks created by the physical-room migration', async () => {
+    const isolated = await createProperty();
+    await createInventory(isolated.type.id, [fixture!.checkIn], { totalRooms: 2 });
+    const block = await fixture!.prisma.roomBlock.create({
+      data: {
+        roomId: isolated.rooms[0].id,
+        startDate: parseDateOnly(fixture!.checkIn),
+        endDate: parseDateOnly(fixture!.next),
+        kind: 'CAPACITY_CLOSED',
+        reason: 'Preserve legacy room-type nightly capacity during physical-room migration.',
+      },
+    });
+    await fixture!.prisma.roomNightInventory.updateMany({
+      where: { roomTypeId: isolated.type.id, stayDate: parseDateOnly(fixture!.checkIn) },
+      data: { blockedRooms: 1 },
+    });
+
+    const response = await fixture!
+      .client()
+      .post(`/api/v1/staff/maintenance/blocks/${block.id}/restore`)
+      .set(manager.headers)
+      .send({ reason: `${runTag} legacy capacity must remain preserved` });
+
+    expect(response.status).toBe(409);
+    expect(response.body).toMatchObject({ code: 'LEGACY_CAPACITY_BLOCK_IMMUTABLE' });
+    await expect(
+      fixture!.prisma.roomBlock.findUniqueOrThrow({ where: { id: block.id } }),
+    ).resolves.toMatchObject({ isActive: true });
+    await expect(
+      fixture!.prisma.roomNightInventory.findFirstOrThrow({
+        where: { roomTypeId: isolated.type.id, stayDate: parseDateOnly(fixture!.checkIn) },
+        select: { totalRooms: true, blockedRooms: true },
+      }),
+    ).resolves.toEqual({ totalRooms: 2, blockedRooms: 1 });
+  });
+
+  it('stores an optional expected return date separately from the block end date', async () => {
+    const isolated = await createProperty();
+    await createInventory(isolated.type.id, [fixture!.checkIn, fixture!.next, fixture!.checkOut]);
+
+    const withForecast = await fixture!
+      .client()
+      .post('/api/v1/staff/maintenance/blocks')
+      .set(manager.headers)
+      .send({
+        roomId: isolated.rooms[0].id,
+        startDate: fixture!.checkIn,
+        endDate: fixture!.checkOut,
+        expectedReturnDate: fixture!.next,
+        kind: 'OUT_OF_ORDER',
+        reason: `${runTag} forecasted repair return`,
+      })
+      .expect(201);
+
+    expect(withForecast.body).toMatchObject({
+      startDate: fixture!.checkIn,
+      endDate: fixture!.checkOut,
+      expectedReturnDate: fixture!.next,
+    });
+
+    const withoutForecast = await fixture!
+      .client()
+      .post('/api/v1/staff/maintenance/blocks')
+      .set(manager.headers)
+      .send({
+        roomId: isolated.rooms[1].id,
+        startDate: fixture!.checkIn,
+        endDate: fixture!.checkOut,
+        kind: 'OUT_OF_ORDER',
+        reason: `${runTag} repair has no forecast`,
+      })
+      .expect(201);
+
+    expect(withoutForecast.body).toMatchObject({
+      endDate: fixture!.checkOut,
+      expectedReturnDate: null,
+    });
+
+    const invalidForecast = await fixture!
+      .client()
+      .post('/api/v1/staff/maintenance/blocks')
+      .set(manager.headers)
+      .send({
+        roomId: isolated.rooms[2].id,
+        startDate: fixture!.checkIn,
+        endDate: fixture!.checkOut,
+        expectedReturnDate: addDays(fixture!.checkOut, 1),
+        kind: 'OUT_OF_ORDER',
+        reason: `${runTag} forecast outside block interval`,
+      })
+      .expect(400);
+
+    expect(invalidForecast.body).toMatchObject({ code: 'INVALID_EXPECTED_RETURN_DATE' });
+    expect(await fixture!.prisma.roomBlock.count({ where: { roomId: isolated.rooms[2].id } })).toBe(
+      0,
+    );
+  });
+
   it('keeps maintenance requests independent from blocks and lets reception submit repair work', async () => {
     const isolated = await createProperty();
     const createResponse = await fixture!

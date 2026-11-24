@@ -52,6 +52,7 @@ const block = {
   id: 'block-1',
   room,
   startDate: '2026-12-15',
+  endDate: '2026-12-19',
   expectedReturnDate: '2026-12-18',
   kind: 'OUT_OF_ORDER' as const,
   reason: 'تعویض لوله آب',
@@ -104,6 +105,80 @@ describe('StaffMaintenancePage', () => {
     ).toBeVisible();
     expect(api.getStaffMaintenanceAssignees).toHaveBeenCalledOnce();
     expect(api.getStaffMaintenanceRooms).toHaveBeenCalledOnce();
+  });
+
+  it('explains why legacy system capacity blocks cannot be restored', async () => {
+    api.getStaffRoomBlocks
+      .mockReset()
+      .mockResolvedValue(list([{ ...block, kind: 'CAPACITY_CLOSED', createdBy: null }]));
+    render(<StaffMaintenancePage />);
+
+    await screen.findByRole('heading', { name: 'تعمیرات و انسداد اتاق' });
+    const blockCard = screen.getByRole('article', { name: /انسداد اتاق ۱۰۱/ });
+
+    expect(
+      within(blockCard).queryByRole('button', { name: 'بازگرداندن اتاق به ظرفیت فروش' }),
+    ).not.toBeInTheDocument();
+    expect(within(blockCard).getByText(/انسداد سیستمی.*قابل بازگردانی نیست/)).toBeVisible();
+  });
+
+  it('keeps the block end required and lets managers omit an expected return forecast', async () => {
+    render(<StaffMaintenancePage />);
+    await screen.findByRole('heading', { name: 'تعمیرات و انسداد اتاق' });
+    fireEvent.click(screen.getByText('ثبت انسداد اتاق و بازه بازگشت'));
+
+    fireEvent.change(screen.getByLabelText('اتاق برای انسداد'), {
+      target: { value: room.id },
+    });
+    fireEvent.change(screen.getByLabelText('شروع انسداد'), {
+      target: { value: formatGregorianAsJalali('2026-12-15') },
+    });
+    fireEvent.change(screen.getByLabelText('پایان بازه انسداد (روز آزادسازی)'), {
+      target: { value: formatGregorianAsJalali('2026-12-19') },
+    });
+    fireEvent.change(screen.getByLabelText('دلیل انسداد', { selector: 'textarea' }), {
+      target: { value: 'تعمیر آزمایشی' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'ثبت بازه انسداد' }));
+
+    await waitFor(() =>
+      expect(api.createStaffRoomBlock).toHaveBeenCalledWith(
+        {
+          roomId: room.id,
+          kind: 'OUT_OF_ORDER',
+          startDate: '2026-12-15',
+          endDate: '2026-12-19',
+          reason: 'تعمیر آزمایشی',
+        },
+        'csrf-maintenance',
+      ),
+    );
+  });
+
+  it('rejects an expected return forecast outside the blocked interval', async () => {
+    render(<StaffMaintenancePage />);
+    await screen.findByRole('heading', { name: 'تعمیرات و انسداد اتاق' });
+    fireEvent.click(screen.getByText('ثبت انسداد اتاق و بازه بازگشت'));
+
+    fireEvent.change(screen.getByLabelText('اتاق برای انسداد'), {
+      target: { value: room.id },
+    });
+    fireEvent.change(screen.getByLabelText('شروع انسداد'), {
+      target: { value: formatGregorianAsJalali('2026-12-15') },
+    });
+    fireEvent.change(screen.getByLabelText('پایان بازه انسداد (روز آزادسازی)'), {
+      target: { value: formatGregorianAsJalali('2026-12-19') },
+    });
+    fireEvent.change(screen.getByLabelText('بازگشت پیش‌بینی‌شده (اختیاری)'), {
+      target: { value: formatGregorianAsJalali('2026-12-20') },
+    });
+    fireEvent.change(screen.getByLabelText('دلیل انسداد', { selector: 'textarea' }), {
+      target: { value: 'تعمیر آزمایشی' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'ثبت بازه انسداد' }));
+
+    expect(screen.getAllByText(/تاریخ پیش‌بینی معتبر/).length).toBeGreaterThan(0);
+    expect(api.createStaffRoomBlock).not.toHaveBeenCalled();
   });
 
   it('lets reception create a repair request but does not show manager block controls', async () => {

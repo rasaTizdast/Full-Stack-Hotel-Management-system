@@ -158,6 +158,12 @@ export class CreateRoomBlockDto {
   @Matches(DATE_ONLY)
   endDate!: string;
 
+  @ApiPropertyOptional({ format: 'date', example: '2026-11-27', nullable: true })
+  @IsOptional()
+  @IsString()
+  @Matches(DATE_ONLY)
+  expectedReturnDate?: string;
+
   @ApiProperty({ enum: RoomBlockKind })
   @IsEnum(RoomBlockKind)
   kind!: RoomBlockKind;
@@ -354,8 +360,11 @@ export class RoomBlockDto {
   @ApiProperty({ format: 'date' })
   startDate!: string;
 
-  @ApiProperty({ format: 'date', description: 'Exclusive end and expected return date.' })
-  expectedReturnDate!: string;
+  @ApiProperty({ format: 'date', description: 'Exclusive end date of the block.' })
+  endDate!: string;
+
+  @ApiProperty({ format: 'date', nullable: true, description: 'Optional expected return date.' })
+  expectedReturnDate!: string | null;
 
   @ApiProperty({ enum: RoomBlockKind })
   kind!: RoomBlockKind;

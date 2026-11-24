@@ -227,6 +227,14 @@ const SAFE_DOMAIN_ERRORS: Record<string, { statusCode: number; message: string }
     statusCode: 400,
     message: 'Cardholder data cannot be stored in a payment reference.',
   },
+  INVALID_EXPECTED_RETURN_DATE: {
+    statusCode: 400,
+    message: 'The expected return date must fall within the room-block interval.',
+  },
+  LEGACY_CAPACITY_BLOCK_IMMUTABLE: {
+    statusCode: 409,
+    message: 'A migration-created capacity block cannot be restored.',
+  },
   FOLIO_PAYMENT_EXCEEDS_BALANCE: {
     statusCode: 409,
     message: 'A payment cannot exceed the folio balance.',

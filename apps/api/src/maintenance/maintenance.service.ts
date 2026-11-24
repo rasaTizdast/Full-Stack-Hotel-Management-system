@@ -55,6 +55,7 @@ const roomBlockSelect = {
   roomId: true,
   startDate: true,
   endDate: true,
+  expectedReturnDate: true,
   kind: true,
   reason: true,
   isActive: true,
@@ -117,7 +118,8 @@ function toRoomBlockDto(record: RoomBlockRecord, businessDate: string): RoomBloc
       roomTypeName: record.room.roomType.name,
     },
     startDate: dateString(record.startDate),
-    expectedReturnDate: dateString(record.endDate),
+    endDate: dateString(record.endDate),
+    expectedReturnDate: record.expectedReturnDate ? dateString(record.expectedReturnDate) : null,
     kind: record.kind,
     reason: record.reason,
     status: record.isActive
@@ -339,7 +341,9 @@ export class MaintenanceService {
       ...(query.roomId ? { roomId: query.roomId } : {}),
       ...(query.floor ? { room: { floor: query.floor } } : {}),
       ...(query.kind ? { kind: query.kind } : {}),
-      ...(query.expectedReturnDate ? { endDate: parseDateOnly(query.expectedReturnDate) } : {}),
+      ...(query.expectedReturnDate
+        ? { expectedReturnDate: parseDateOnly(query.expectedReturnDate) }
+        : {}),
       ...(query.reason ? { reason: { contains: query.reason, mode: 'insensitive' } } : {}),
       ...(query.activeOn
         ? {
@@ -379,6 +383,15 @@ export class MaintenanceService {
       throw new BadRequestException({
         code: 'INVALID_BLOCK_DATE_RANGE',
         message: 'Block end date must be after its start date.',
+      });
+    }
+    const expectedReturnDate = dto.expectedReturnDate
+      ? parseDateOnly(dto.expectedReturnDate)
+      : null;
+    if (expectedReturnDate && (expectedReturnDate < startDate || expectedReturnDate > endDate)) {
+      throw new BadRequestException({
+        code: 'INVALID_EXPECTED_RETURN_DATE',
+        message: 'Expected return date must fall within the block interval.',
       });
     }
 
@@ -439,6 +452,7 @@ export class MaintenanceService {
           roomId: room.id,
           startDate,
           endDate,
+          expectedReturnDate,
           kind: dto.kind,
           reason: dto.reason,
           createdByStaffUserId: actor.id,
@@ -493,6 +507,12 @@ export class MaintenanceService {
         select: roomBlockSelect,
       });
       if (!current) throw new NotFoundException({ code: 'ROOM_BLOCK_NOT_FOUND' });
+      if (current.kind === 'CAPACITY_CLOSED' && current.createdBy === null) {
+        throw maintenanceConflict(
+          'LEGACY_CAPACITY_BLOCK_IMMUTABLE',
+          'This system block preserves the original nightly capacity and cannot be restored.',
+        );
+      }
       const businessDate = await this.capacity.getHotelBusinessDate(
         transaction,
         initial.room.roomTypeId,

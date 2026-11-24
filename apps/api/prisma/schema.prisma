@@ -255,6 +255,7 @@ model RoomBlock {
   roomId               String        @map("room_id") @db.Uuid
   startDate            DateTime      @map("start_date") @db.Date
   endDate              DateTime      @map("end_date") @db.Date
+  expectedReturnDate   DateTime?     @map("expected_return_date") @db.Date
   kind                 RoomBlockKind @default(OUT_OF_ORDER)
   reason               String        @db.VarChar(500)
   isActive             Boolean       @default(true) @map("is_active")
@@ -266,6 +267,7 @@ model RoomBlock {
 
   @@index([roomId, isActive, startDate, endDate])
   @@index([startDate, endDate])
+  @@index([expectedReturnDate])
   @@map("room_blocks")
 }
 

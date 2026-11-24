@@ -82,6 +82,7 @@ interface BlockForm {
   kind: StaffRoomBlockKind;
   startDate: string;
   endDate: string;
+  expectedReturnDate: string;
   reason: string;
 }
 
@@ -110,6 +111,7 @@ const EMPTY_BLOCK: BlockForm = {
   kind: 'OUT_OF_ORDER',
   startDate: '',
   endDate: '',
+  expectedReturnDate: '',
   reason: '',
 };
 
@@ -357,14 +359,19 @@ export function StaffMaintenancePage() {
     event.preventDefault();
     const startDate = toGregorianIso(blockForm.startDate);
     const endDate = toGregorianIso(blockForm.endDate);
+    const expectedReturnDate = blockForm.expectedReturnDate.trim()
+      ? toGregorianIso(blockForm.expectedReturnDate)
+      : undefined;
     if (
       !blockForm.roomId ||
       !startDate ||
       !endDate ||
       startDate >= endDate ||
+      (blockForm.expectedReturnDate.trim().length > 0 && !expectedReturnDate) ||
+      (expectedReturnDate && (expectedReturnDate < startDate || expectedReturnDate > endDate)) ||
       blockForm.reason.trim().length < 3
     ) {
-      setFormError('اتاق، بازه معتبر و دلیل حداقل سه‌حرفی را وارد کنید.');
+      setFormError('اتاق، بازه معتبر، تاریخ پیش‌بینی معتبر و دلیل حداقل سه‌حرفی را وارد کنید.');
       return;
     }
     if (!csrfToken) return;
@@ -379,6 +386,7 @@ export function StaffMaintenancePage() {
           kind: blockForm.kind,
           startDate,
           endDate,
+          ...(expectedReturnDate ? { expectedReturnDate } : {}),
           reason: blockForm.reason.trim(),
         },
         csrfToken,
@@ -602,7 +610,7 @@ export function StaffMaintenancePage() {
         <details className={styles.formPanel}>
           <summary>ثبت انسداد اتاق و بازه بازگشت</summary>
           <p className={styles.panelHint}>
-            بازه پایان‌انحصاری است؛ تاریخ بازگشت مورد انتظار دیگر جزو شب‌های مسدود نیست.
+            پایان بازه روز آزادسازی اتاق است و جزو شب‌های مسدود نیست؛ پیش‌بینی بازگشت اختیاری است.
           </p>
           <form className={styles.formGrid} onSubmit={submitBlock}>
             <RoomSelect
@@ -639,9 +647,17 @@ export function StaffMaintenancePage() {
             />
             <DateInput
               id="maintenance-block-end"
-              label="تاریخ بازگشت مورد انتظار"
+              label="پایان بازه انسداد (روز آزادسازی)"
               value={blockForm.endDate}
               onChange={(endDate) => setBlockForm((current) => ({ ...current, endDate }))}
+            />
+            <DateInput
+              id="maintenance-block-expected-return"
+              label="بازگشت پیش‌بینی‌شده (اختیاری)"
+              value={blockForm.expectedReturnDate}
+              onChange={(expectedReturnDate) =>
+                setBlockForm((current) => ({ ...current, expectedReturnDate }))
+              }
             />
             <label
               className={`${styles.field} ${styles.wideField}`}
@@ -963,38 +979,55 @@ export function StaffMaintenancePage() {
                         <dd>{jalaliDate(item.startDate)}</dd>
                       </div>
                       <div>
-                        <dt>بازگشت مورد انتظار</dt>
-                        <dd>{jalaliDate(item.expectedReturnDate)}</dd>
+                        <dt>پایان بازه انسداد</dt>
+                        <dd>{jalaliDate(item.endDate)}</dd>
+                      </div>
+                      <div>
+                        <dt>بازگشت پیش‌بینی‌شده</dt>
+                        <dd>
+                          {item.expectedReturnDate
+                            ? jalaliDate(item.expectedReturnDate)
+                            : 'تعیین نشده'}
+                        </dd>
                       </div>
                       <div>
                         <dt>ثبت‌کننده</dt>
                         <dd>{item.createdBy?.username ?? '—'}</dd>
                       </div>
                     </dl>
-                    {canManage && item.status === 'ACTIVE' && (
-                      <div className={styles.restoreAction}>
-                        <label className={styles.field} htmlFor={`maintenance-restore-${item.id}`}>
-                          <span>دلیل بازگردانی</span>
-                          <input
-                            id={`maintenance-restore-${item.id}`}
-                            value={restoreDrafts[item.id] ?? ''}
-                            onChange={(event) =>
-                              setRestoreDrafts((current) => ({
-                                ...current,
-                                [item.id]: event.target.value,
-                              }))
-                            }
-                          />
-                        </label>
-                        <button
-                          className={styles.secondaryButton}
-                          type="button"
-                          onClick={() => void restoreBlock(item.id)}
-                        >
-                          بازگرداندن اتاق به ظرفیت فروش
-                        </button>
-                      </div>
-                    )}
+                    {canManage &&
+                      item.status === 'ACTIVE' &&
+                      (item.kind === 'CAPACITY_CLOSED' && item.createdBy === null ? (
+                        <p className={styles.emptyInline}>
+                          این انسداد سیستمی از ظرفیت قدیمی ایجاد شده و قابل بازگردانی نیست.
+                        </p>
+                      ) : (
+                        <div className={styles.restoreAction}>
+                          <label
+                            className={styles.field}
+                            htmlFor={`maintenance-restore-${item.id}`}
+                          >
+                            <span>دلیل بازگردانی</span>
+                            <input
+                              id={`maintenance-restore-${item.id}`}
+                              value={restoreDrafts[item.id] ?? ''}
+                              onChange={(event) =>
+                                setRestoreDrafts((current) => ({
+                                  ...current,
+                                  [item.id]: event.target.value,
+                                }))
+                              }
+                            />
+                          </label>
+                          <button
+                            className={styles.secondaryButton}
+                            type="button"
+                            onClick={() => void restoreBlock(item.id)}
+                          >
+                            بازگرداندن اتاق به ظرفیت فروش
+                          </button>
+                        </div>
+                      ))}
                   </article>
                 ))}
               </div>
