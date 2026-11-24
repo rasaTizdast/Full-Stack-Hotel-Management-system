@@ -17,7 +17,7 @@ test('admin reviews a date-filtered report and closes an unblocked operating day
 
   await page.goto('/staff/reports');
   await expect(page.getByRole('heading', { name: 'گزارش روزانه' })).toBeVisible();
-  await expect(page.getByLabel('تاریخ کاری')).toHaveValue(/\d{4}-\d{2}-\d{2}/);
+  await expect(page.getByLabel('تاریخ کاری')).toHaveValue(/[۰-۹]{4}\/[۰-۹]{2}\/[۰-۹]{2}/);
   await expect(page.getByText(/موجودی فعال اتاق‌ها/)).toBeVisible();
   await expectNoA11yViolations(page);
   await page.screenshot({ path: testInfo.outputPath('operations-report.png'), fullPage: true });

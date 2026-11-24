@@ -113,9 +113,14 @@ describe('staff operations pages', () => {
     expect(screen.getByText('۲۵٪')).toBeVisible();
     expect(screen.getByText(/موجودی فعال اتاق‌ها/)).toBeVisible();
 
-    fireEvent.change(screen.getByLabelText('تاریخ کاری'), { target: { value: '2026-11-22' } });
+    fireEvent.change(screen.getByLabelText('تاریخ کاری'), { target: { value: '۱۴۰۵/۰۹/۰۱' } });
     fireEvent.click(screen.getByRole('button', { name: 'نمایش گزارش' }));
     await waitFor(() => expect(api.getStaffOperationsReport).toHaveBeenLastCalledWith('2026-11-22'));
+
+    fireEvent.change(screen.getByLabelText('تاریخ کاری'), { target: { value: '۱۴۰۵/۱۳/۰۱' } });
+    fireEvent.click(screen.getByRole('button', { name: 'نمایش گزارش' }));
+    expect(await screen.findByRole('alert')).toHaveTextContent('تاریخ کاری را به شکل شمسی معتبر وارد کنید.');
+    expect(api.getStaffOperationsReport).toHaveBeenCalledTimes(2);
   });
 
   it('does not show close or report data for a receptionist', () => {

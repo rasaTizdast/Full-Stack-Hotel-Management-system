@@ -16,7 +16,11 @@ import {
   type StaffOperationsReport,
   type StaffReportStay,
 } from '@/lib/staff-operations-api';
-import { formatGregorianAsJalali, formatPersianInteger } from '@/lib/jalali-date';
+import {
+  formatGregorianAsJalali,
+  formatPersianInteger,
+  toGregorianIso,
+} from '@/lib/jalali-date';
 import { useStaffSession } from '../staff-session-provider';
 import styles from './staff-operations.module.css';
 
@@ -349,7 +353,7 @@ function StayList({ title, stays, emptyText }: { title: string; stays: StaffRepo
 export function StaffOperationsReportPage() {
   const { status, staff } = useStaffSession();
   const [report, setReport] = useState<StaffOperationsReport | null>(null);
-  const [date, setDate] = useState('');
+  const [dateInput, setDateInput] = useState('');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const canManage = canRunOperations(staff);
@@ -360,7 +364,7 @@ export function StaffOperationsReportPage() {
     try {
       const next = await getStaffOperationsReport(selectedDate);
       setReport(next);
-      setDate(next.date);
+      setDateInput(formatGregorianAsJalali(next.date) ?? '');
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : 'گزارش روز دریافت نشد.');
     } finally {
@@ -375,7 +379,7 @@ export function StaffOperationsReportPage() {
       .then((next) => {
         if (!active) return;
         setReport(next);
-        setDate(next.date);
+        setDateInput(formatGregorianAsJalali(next.date) ?? '');
       })
       .catch((cause: unknown) => {
         if (active) setError(cause instanceof Error ? cause.message : 'گزارش روز دریافت نشد.');
@@ -393,7 +397,12 @@ export function StaffOperationsReportPage() {
 
   function submitDate(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    if (date) void loadReport(date);
+    const selectedDate = toGregorianIso(dateInput);
+    if (!selectedDate) {
+      setError('تاریخ کاری را به شکل شمسی معتبر وارد کنید.');
+      return;
+    }
+    void loadReport(selectedDate);
   }
 
   return (
@@ -411,14 +420,18 @@ export function StaffOperationsReportPage() {
         <label htmlFor="report-date">تاریخ کاری</label>
         <input
           id="report-date"
-          type="date"
-          value={date}
-          onChange={(event) => setDate(event.target.value)}
+          type="text"
+          inputMode="numeric"
+          dir="ltr"
+          autoComplete="off"
+          placeholder="۱۴۰۵/۰۹/۰۳"
+          value={dateInput}
+          onChange={(event) => setDateInput(event.target.value)}
           required
           aria-describedby="report-date-help"
         />
-        <span id="report-date-help">تاریخ فعلی اقامتگاه: {report ? dateLabel(report.businessDate) : '—'}</span>
-        <button className={styles.primaryButton} type="submit" disabled={loading || !date}>
+        <span id="report-date-help">فرمت تاریخ شمسی · تاریخ فعلی اقامتگاه: {report ? dateLabel(report.businessDate) : '—'}</span>
+        <button className={styles.primaryButton} type="submit" disabled={loading || !dateInput}>
           نمایش گزارش
         </button>
       </form>
@@ -428,7 +441,7 @@ export function StaffOperationsReportPage() {
       {!loading && !report && (
         <section className={styles.empty}>
           <p>گزارشی بارگذاری نشده است.</p>
-          <button type="button" className={styles.primaryButton} onClick={() => void loadReport(date || undefined)}>
+          <button type="button" className={styles.primaryButton} onClick={() => void loadReport()}>
             تلاش دوباره
           </button>
         </section>
