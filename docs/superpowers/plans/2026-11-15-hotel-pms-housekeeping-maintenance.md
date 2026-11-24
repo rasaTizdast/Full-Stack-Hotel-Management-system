@@ -97,6 +97,9 @@
 - [x] Keep a maintenance request open independently of a room block; require an explicit user action to block sale. Do not implement the product-specific OOS sellability behavior in this release.
 - [x] Build `/staff/maintenance` repair queue and room block controls with date, floor, room, reason, assignee, status, and expected return filters.
 - [x] Run focused PostgreSQL/API tests, web unit and Playwright, lint/typecheck; then inspect mobile and desktop and repeat the flow after the web E2E suite passes. Playwright passed on desktop and mobile; both screenshots reviewed.
+- [x] Preserve migration-generated legacy `CAPACITY_CLOSED` blocks from restoration so nightly-capacity snapshots cannot be erased. Cover the rejection and unchanged capacity in PostgreSQL tests; show a clear system-block explanation instead of a restore form.
+- [x] Store the block's exclusive end date separately from its optional expected-return forecast. Validate the forecast within the block interval and cover both omitted and supplied forecasts in API and UI tests.
+- [x] Rerun the complete root release check after these regressions: `pnpm check` passed all 10 gates, including all 19 migrations, 42 PostgreSQL suites / 269 tests, 43 web test files / 263 tests, 60 browser passes / 2 expected skips, 17 API E2E suites / 122 tests, and both production builds. Focused maintenance PostgreSQL passed 11/11, maintenance UI passed 7/7, and maintenance Playwright passed 2/2 desktop/mobile.
 
 ## Merge gate
 
