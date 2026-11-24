@@ -10,6 +10,7 @@ import {
   ParseUUIDPipe,
   Patch,
   Post,
+  Query,
   Req,
 } from '@nestjs/common';
 import {
@@ -23,6 +24,7 @@ import {
   ApiOkResponse,
   ApiOperation,
   ApiParam,
+  ApiQuery,
   ApiTags,
   ApiUnauthorizedResponse,
 } from '@nestjs/swagger';
@@ -39,6 +41,8 @@ import {
   RecordFolioPaymentDto,
   RefundFolioPaymentDto,
   StaffFolioDto,
+  StaffFolioLookupDto,
+  StaffFolioLookupQueryDto,
   StaffFolioPrintDto,
   UpdateServiceItemDto,
 } from './dto/folio.dto';
@@ -49,6 +53,22 @@ import { FoliosService } from './folios.service';
 @Controller('staff')
 export class FoliosController {
   constructor(private readonly folios: FoliosService) {}
+
+  @Get('folios/lookup')
+  @RequireStaffCapabilities('VIEW_FOLIOS')
+  @Header('Cache-Control', 'private, no-store')
+  @ApiOperation({
+    summary: 'Find an in-house or outstanding receivable folio by exact booking reference.',
+  })
+  @ApiQuery({ name: 'reference', required: true, minLength: 8, maxLength: 16 })
+  @ApiOkResponse({ type: StaffFolioLookupDto })
+  @ApiBadRequestResponse({ type: ApiErrorResponseDto })
+  @ApiNotFoundResponse({ type: ApiErrorResponseDto })
+  @ApiUnauthorizedResponse({ type: ApiErrorResponseDto })
+  @ApiForbiddenResponse({ type: ApiErrorResponseDto })
+  lookupFolio(@Query() query: StaffFolioLookupQueryDto): Promise<StaffFolioLookupDto> {
+    return this.folios.lookupFolio(query.reference);
+  }
 
   @Get('services')
   @RequireStaffCapabilities('VIEW_FOLIOS')

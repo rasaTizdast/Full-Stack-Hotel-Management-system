@@ -3,6 +3,7 @@ import {
   adjustStaffFolio,
   createStaffServiceItem,
   getStaffFolio,
+  lookupStaffFolio,
   getStaffFolioPrint,
   getStaffServiceItems,
   postStaffServiceCharge,
@@ -22,6 +23,7 @@ describe('staff folio API client', () => {
 
     await getStaffServiceItems();
     await getStaffFolio('booking/123');
+    await lookupStaffFolio(' ref / 123 ');
 
     expect(fetchMock).toHaveBeenNthCalledWith(
       1,
@@ -31,6 +33,11 @@ describe('staff folio API client', () => {
     expect(fetchMock).toHaveBeenNthCalledWith(
       2,
       'http://localhost:4000/api/v1/staff/folios/booking%2F123',
+      expect.objectContaining({ cache: 'no-store', credentials: 'include' }),
+    );
+    expect(fetchMock).toHaveBeenNthCalledWith(
+      3,
+      'http://localhost:4000/api/v1/staff/folios/lookup?reference=ref%20%2F%20123',
       expect.objectContaining({ cache: 'no-store', credentials: 'include' }),
     );
   });

@@ -19,6 +19,7 @@ import type {
   RecordFolioPaymentDto,
   RefundFolioPaymentDto,
   StaffFolioPrintDto,
+  StaffFolioLookupDto,
   PostServiceChargeDto,
   StaffFolioDto,
   UpdateServiceItemDto,
@@ -359,6 +360,50 @@ export class FoliosService {
         balanceAfterToman: running[index].balanceAfterToman.toString(),
         createdAt: entry.createdAt.toISOString(),
       })),
+    };
+  }
+
+  async lookupFolio(reference: string): Promise<StaffFolioLookupDto> {
+    const record = await this.prisma.$transaction(
+      (transaction) =>
+        transaction.folio.findFirst({
+          where: { booking: { publicReference: reference } },
+          select: {
+            status: true,
+            entries: { select: { direction: true, amountToman: true } },
+            booking: {
+              select: {
+                id: true,
+                publicReference: true,
+                guestName: true,
+                status: true,
+                checkIn: true,
+                checkOut: true,
+              },
+            },
+          },
+        }),
+      { isolationLevel: Prisma.TransactionIsolationLevel.RepeatableRead },
+    );
+    if (!record) throw new NotFoundException({ code: 'BOOKING_NOT_FOUND' });
+
+    const balance = calculateFolioBalance(record.entries);
+    const isInHouse = record.booking.status === 'CHECKED_IN' && record.status === 'OPEN';
+    const isOutstandingReceivable =
+      record.booking.status === 'CHECKED_OUT' && record.status === 'CLOSED_DUE' && balance > 0n;
+    if (!isInHouse && !isOutstandingReceivable) {
+      throw new NotFoundException({ code: 'BOOKING_NOT_FOUND' });
+    }
+    const folioStatus = isInHouse ? 'OPEN' : 'CLOSED_DUE';
+
+    return {
+      bookingId: record.booking.id,
+      reference: record.booking.publicReference,
+      guestName: record.booking.guestName,
+      checkIn: dateString(record.booking.checkIn),
+      checkOut: dateString(record.booking.checkOut),
+      folioStatus,
+      balanceToman: balance.toString(),
     };
   }
 

@@ -41,6 +41,11 @@ const operationalLinks = {
     title: 'گزارش روزانه',
     detail: 'ورود و خروج، آمادگی اتاق‌ها و گردش مالی را مرور کنید.',
   },
+  folioLookup: {
+    href: '/staff/folios/lookup',
+    title: 'جستجوی صورتحساب',
+    detail: 'با کد رزرو، صورتحساب مهمان حاضر یا مانده قابل‌دریافت را پیدا کنید.',
+  },
 };
 
 type OperationalLink = (typeof operationalLinks)[keyof typeof operationalLinks];
@@ -74,7 +79,7 @@ const roleWorkspace: Record<StaffRole, { heading: string; links: readonly Operat
     links: [operationalLinks.frontDesk, operationalLinks.bookings],
   },
   HOUSEKEEPER: { heading: 'فضای خانه‌داری شما آماده است', links: [] },
-  CASHIER: { heading: 'فضای صندوق شما آماده است', links: [] },
+  CASHIER: { heading: 'فضای صندوق شما آماده است', links: [operationalLinks.folioLookup] },
 };
 
 function WorkspaceLink({

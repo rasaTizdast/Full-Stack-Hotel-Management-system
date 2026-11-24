@@ -16,10 +16,21 @@ import {
 
 const DATE_ONLY = /^\d{4}-\d{2}-\d{2}$/;
 const POSITIVE_INTEGER_STRING = /^[1-9]\d{0,18}$/;
+const PUBLIC_REFERENCE = /^[A-Za-z0-9_-]{8,16}$/;
 export const PAYMENT_METHODS = ['CASH', 'BANK_TERMINAL', 'BANK_TRANSFER', 'OTHER'] as const;
 
 function trimText(value: unknown): unknown {
   return typeof value === 'string' ? value.trim() : value;
+}
+
+export class StaffFolioLookupQueryDto {
+  @ApiProperty({ minLength: 8, maxLength: 16, pattern: PUBLIC_REFERENCE.source })
+  @Transform(({ value }: { value: unknown }) => trimText(value))
+  @IsString()
+  @MinLength(8)
+  @MaxLength(16)
+  @Matches(PUBLIC_REFERENCE)
+  reference!: string;
 }
 
 export class CreateServiceItemDto {
@@ -316,6 +327,29 @@ export class StaffFolioDto {
 
   @ApiProperty({ type: [FolioEntryDto] })
   entries!: FolioEntryDto[];
+}
+
+export class StaffFolioLookupDto {
+  @ApiProperty({ format: 'uuid' })
+  bookingId!: string;
+
+  @ApiProperty({ minLength: 8, maxLength: 16 })
+  reference!: string;
+
+  @ApiProperty()
+  guestName!: string;
+
+  @ApiProperty({ format: 'date' })
+  checkIn!: string;
+
+  @ApiProperty({ format: 'date' })
+  checkOut!: string;
+
+  @ApiProperty({ enum: ['OPEN', 'CLOSED_DUE'] })
+  folioStatus!: 'OPEN' | 'CLOSED_DUE';
+
+  @ApiProperty({ type: String, example: '250000' })
+  balanceToman!: string;
 }
 
 export class StaffFolioPrintDto {

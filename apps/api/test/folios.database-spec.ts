@@ -72,6 +72,26 @@ describe('PostgreSQL folio ledger and service catalog', () => {
       balanceToman: '0',
       entries: [],
     });
+
+    const lookup = await fixture!
+      .client()
+      .get(`${api}/folios/lookup`)
+      .query({ reference: booking.publicReference })
+      .set(cashier.headers)
+      .expect(200);
+    expect(lookup.headers['cache-control']).toBe('private, no-store');
+    expect(lookup.body).toEqual({
+      bookingId: booking.id,
+      reference: booking.publicReference,
+      guestName: booking.guestName,
+      checkIn: fixture!.today,
+      checkOut: addDays(fixture!.today, 2),
+      folioStatus: 'OPEN',
+      balanceToman: '0',
+    });
+    expect(lookup.body).not.toHaveProperty('guestPhone');
+    expect(lookup.body).not.toHaveProperty('guestEmail');
+    expect(lookup.body).not.toHaveProperty('entries');
   });
 
   it('enforces service-catalog permissions, positive whole-Toman price and case-insensitive unique names', async () => {
@@ -364,5 +384,129 @@ describe('PostgreSQL folio ledger and service catalog', () => {
     expect(managerCatalog.items).toContainEqual(
       expect.objectContaining({ id: serviceItem.id, isActive: false }),
     );
+  });
+
+  it('finds receivable folios and hides checked-out-settled and pre-check-in bookings', async () => {
+    const lookupService = await fixture!
+      .client()
+      .post(`${api}/services`)
+      .set(manager.headers)
+      .send({
+        name: `${runTag} Lookup service`,
+        category: 'Test',
+        currentPriceToman: '125000',
+      })
+      .expect(201);
+    const lookupServiceId = (lookupService.body as { id: string }).id;
+    const receivableCheckIn = addDays(fixture!.today, -1);
+    const receivable = await fixture!.booking(property.type.id, 1, receivableCheckIn);
+    await fixture!.prisma.booking.update({
+      where: { id: receivable.id },
+      data: { status: 'CHECKED_IN', checkedInAt: new Date() },
+    });
+    await fixture!.prisma.roomAssignment.create({
+      data: {
+        bookingId: receivable.id,
+        roomId: property.rooms[1].id,
+        roomTypeId: property.type.id,
+        startDate: parseDateOnly(receivableCheckIn),
+        endDate: receivable.checkOut,
+      },
+    });
+    await fixture!.prisma.roomNightInventory.upsert({
+      where: {
+        roomTypeId_stayDate: {
+          roomTypeId: property.type.id,
+          stayDate: parseDateOnly(fixture!.today),
+        },
+      },
+      create: {
+        roomTypeId: property.type.id,
+        stayDate: parseDateOnly(fixture!.today),
+        totalRooms: 100,
+        bookedRooms: 1,
+        nightlyPriceToman: 1500n,
+      },
+      update: { bookedRooms: { increment: 1 } },
+    });
+    await fixture!
+      .client()
+      .post(`${api}/folios/${receivable.id}/services`)
+      .set({ ...cashier.headers, 'Idempotency-Key': `${runTag}-lookup-due-charge` })
+      .send({ serviceItemId: lookupServiceId, quantity: 1, serviceDate: fixture!.today })
+      .expect(200);
+    await fixture!
+      .client()
+      .post(`${api}/folios/${receivable.id}/checkout`)
+      .set({ ...manager.headers, 'Idempotency-Key': `${runTag}-lookup-due-checkout` })
+      .send({ onAccountReason: 'Fictional test receivable' })
+      .expect(200);
+
+    const dueLookup = await fixture!
+      .client()
+      .get(`${api}/folios/lookup`)
+      .query({ reference: receivable.publicReference })
+      .set(cashier.headers)
+      .expect(200);
+    expect(dueLookup.body).toMatchObject({
+      bookingId: receivable.id,
+      reference: receivable.publicReference,
+      folioStatus: 'CLOSED_DUE',
+      balanceToman: '126500',
+    });
+    expect(dueLookup.body).not.toHaveProperty('guestPhone');
+    expect(dueLookup.body).not.toHaveProperty('guestEmail');
+    expect(dueLookup.body).not.toHaveProperty('entries');
+
+    const settled = await fixture!.booking(property.type.id, 1, fixture!.today);
+    await fixture!.prisma.booking.update({
+      where: { id: settled.id },
+      data: { status: 'CHECKED_IN', checkedInAt: new Date() },
+    });
+    await fixture!.prisma.roomAssignment.create({
+      data: {
+        bookingId: settled.id,
+        roomId: property.rooms[2].id,
+        roomTypeId: property.type.id,
+        startDate: parseDateOnly(fixture!.today),
+        endDate: parseDateOnly(addDays(fixture!.today, 2)),
+      },
+    });
+    for (const stayDate of [fixture!.today, addDays(fixture!.today, 1)]) {
+      await fixture!.prisma.roomNightInventory.upsert({
+        where: {
+          roomTypeId_stayDate: { roomTypeId: property.type.id, stayDate: parseDateOnly(stayDate) },
+        },
+        create: {
+          roomTypeId: property.type.id,
+          stayDate: parseDateOnly(stayDate),
+          totalRooms: 100,
+          bookedRooms: 1,
+          nightlyPriceToman: 1500n,
+        },
+        update: { bookedRooms: { increment: 1 } },
+      });
+    }
+    await fixture!
+      .client()
+      .post(`${api}/folios/${settled.id}/checkout`)
+      .set({ ...manager.headers, 'Idempotency-Key': `${runTag}-lookup-settled-checkout` })
+      .send({})
+      .expect(200);
+
+    await fixture!
+      .client()
+      .get(`${api}/folios/lookup`)
+      .query({ reference: settled.publicReference })
+      .set(cashier.headers)
+      .expect(404);
+
+    const confirmed = await fixture!.booking(property.type.id, 1, fixture!.today);
+    await fixture!
+      .client()
+      .get(`${api}/folios/lookup`)
+      .query({ reference: confirmed.publicReference })
+      .set(cashier.headers)
+      .expect(404);
   });
 });

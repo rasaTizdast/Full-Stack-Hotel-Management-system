@@ -72,18 +72,27 @@ describe('StaffDashboardPage', () => {
     expect(screen.queryByRole('link', { name: /^مدیریت ظرفیت و نرخ‌ها/ })).not.toBeInTheDocument();
   });
 
-  it.each([
-    ['HOUSEKEEPER', 'فضای خانه‌داری شما آماده است'],
-    ['CASHIER', 'فضای صندوق شما آماده است'],
-  ] as const)(
-    'shows a calm role-specific home for %s without broken workspace links',
-    (role, heading) => {
-      session.current.staff.role = role;
-      const { container } = render(<StaffDashboardPage />);
+  it('shows housekeeping a calm home without folio links', () => {
+    session.current.staff.role = 'HOUSEKEEPER';
+    const { container } = render(<StaffDashboardPage />);
 
-      expect(screen.getByRole('heading', { level: 1, name: heading })).toBeVisible();
-      expect(container.querySelectorAll('a[href^="/staff/"]')).toHaveLength(0);
-      expect(screen.getByText('هیچ کاری برای انجام در این لحظه ثبت نشده است.')).toBeVisible();
-    },
-  );
+    expect(
+      screen.getByRole('heading', { level: 1, name: 'فضای خانه‌داری شما آماده است' }),
+    ).toBeVisible();
+    expect(container.querySelectorAll('a[href^="/staff/"]')).toHaveLength(0);
+    expect(screen.getByText('هیچ کاری برای انجام در این لحظه ثبت نشده است.')).toBeVisible();
+  });
+
+  it('gives cashiers a direct booking-reference folio lookup', () => {
+    session.current.staff.role = 'CASHIER';
+    render(<StaffDashboardPage />);
+
+    expect(
+      screen.getByRole('heading', { level: 1, name: 'فضای صندوق شما آماده است' }),
+    ).toBeVisible();
+    expect(screen.getByRole('link', { name: /^جستجوی صورتحساب/ })).toHaveAttribute(
+      'href',
+      '/staff/folios/lookup',
+    );
+  });
 });

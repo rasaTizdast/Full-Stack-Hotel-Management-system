@@ -30,6 +30,25 @@ describe('Staff folio and catalog HTTP access (e2e)', () => {
       .expect(403)
       .expect('Cache-Control', 'private, no-store');
 
+    const lookupPath = '/api/v1/staff/folios/lookup?reference=fictional123';
+    await fixture!
+      .client()
+      .get(lookupPath)
+      .expect(401)
+      .expect('Cache-Control', 'private, no-store');
+    await fixture!
+      .client()
+      .get(lookupPath)
+      .set(housekeeper.headers)
+      .expect(403)
+      .expect('Cache-Control', 'private, no-store');
+    await fixture!
+      .client()
+      .get(lookupPath)
+      .set(cashier.headers)
+      .expect(404)
+      .expect('Cache-Control', 'private, no-store');
+
     const services = await fixture!
       .client()
       .get('/api/v1/staff/services')
@@ -60,7 +79,7 @@ describe('Staff folio and catalog HTTP access (e2e)', () => {
         guestCount: 1,
         roomQuantity: 1,
         guestName: 'مهمان آزمایشی',
-        guestPhone: '+989123456701',
+        guestPhone: '+989155557701',
         guestEmail: 'hpm007-guest@example.invalid',
       })
       .expect(201);

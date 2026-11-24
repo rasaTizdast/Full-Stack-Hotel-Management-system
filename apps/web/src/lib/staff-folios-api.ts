@@ -52,6 +52,16 @@ export interface StaffFolio {
   entries: StaffFolioEntry[];
 }
 
+export interface StaffFolioLookup {
+  bookingId: string;
+  reference: string;
+  guestName: string;
+  checkIn: string;
+  checkOut: string;
+  folioStatus: 'OPEN' | 'CLOSED_DUE';
+  balanceToman: string;
+}
+
 export interface StaffFolioPrint {
   label: 'Interim folio' | 'Final folio';
   printedAt: string;
@@ -106,6 +116,10 @@ export function updateStaffServiceItem(
 
 export function getStaffFolio(bookingId: string): Promise<StaffFolio> {
   return requestStaffApi(`folios/${encodeURIComponent(bookingId)}`);
+}
+
+export function lookupStaffFolio(reference: string): Promise<StaffFolioLookup> {
+  return requestStaffApi(`folios/lookup?reference=${encodeURIComponent(reference.trim())}`);
 }
 
 export function getStaffFolioPrint(bookingId: string): Promise<StaffFolioPrint> {

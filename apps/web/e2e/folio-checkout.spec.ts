@@ -251,6 +251,25 @@ test('cashier settles an in-house folio, checks out, and prints a final statemen
       'HPM010',
     );
     await (async (page: Page) => {
+      await page.goto('/staff');
+      await page.getByRole('link', { name: /^جستجوی صورتحساب/ }).click();
+      await page.getByLabel('کد رزرو').fill(reference);
+      const lookup = page.waitForResponse((response) => {
+        const url = new URL(response.url());
+        return (
+          url.pathname === '/api/v1/staff/folios/lookup' && response.request().method() === 'GET'
+        );
+      });
+      await page.getByRole('button', { name: 'جستجوی صورتحساب' }).click();
+      expect((await lookup).status()).toBe(200);
+      await expect(page.getByText(guestName, { exact: true })).toBeVisible();
+      await expect(page.getByText(reference, { exact: true })).toBeVisible();
+      await expect(page.getByText('266,000 تومان', { exact: true })).toBeVisible();
+      await expect(
+        page.getByRole('region', { name: 'نتیجه جستجوی صورتحساب' }).getByText(/\+98|@/),
+      ).toHaveCount(0);
+      await page.getByRole('link', { name: 'باز کردن صورتحساب' }).click();
+      await expect(page).toHaveURL(`/staff/folios/${bookingId}`);
       await page.goto(`/staff/folios/${bookingId}`);
       await expect(page.getByText(serviceName, { exact: true }).first()).toBeVisible();
       await page.screenshot({
