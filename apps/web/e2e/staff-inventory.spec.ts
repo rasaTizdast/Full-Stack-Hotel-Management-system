@@ -159,9 +159,7 @@ async function findPricedProjectedNight(
   const endDate = addUtcDays(startDate, 90);
   const snapshot = await readInventorySnapshot(page, roomTypeId, startDate, endDate, staffCookies);
   return snapshot.nights.find(
-    (night) =>
-      isPricedProjectedNight(night) &&
-      night.totalRooms + night.blockedRooms > 0,
+    (night) => isPricedProjectedNight(night) && night.totalRooms + night.blockedRooms > 0,
   )?.stayDate;
 }
 
@@ -212,7 +210,10 @@ test('admin sees physical capacity and saves rates only, and the page meets axe 
   await withFailureSafeCleanup(async (registerCleanup) => {
     const roomTypesResponsePromise = page.waitForResponse((response) => {
       const url = new URL(response.url());
-      return url.pathname === '/api/v1/staff/inventory/room-types' && response.request().method() === 'GET';
+      return (
+        url.pathname === '/api/v1/staff/inventory/room-types' &&
+        response.request().method() === 'GET'
+      );
     });
     await page.goto('/staff/inventory');
     const roomTypesResponse = await roomTypesResponsePromise;
@@ -229,15 +230,22 @@ test('admin sees physical capacity and saves rates only, and the page meets axe 
       expect(navBox).not.toBeNull();
       expect(activeLinkBox).not.toBeNull();
       expect(activeLinkBox!.x).toBeGreaterThanOrEqual(navBox!.x);
-      expect(activeLinkBox!.x + activeLinkBox!.width).toBeLessThanOrEqual(navBox!.x + navBox!.width);
+      expect(activeLinkBox!.x + activeLinkBox!.width).toBeLessThanOrEqual(
+        navBox!.x + navBox!.width,
+      );
     }
     const rateDisclosure = page.locator('.staff-inventory__rate-disclosure > summary');
     await expect(rateDisclosure).toBeVisible();
     await expect(rateDisclosure).toHaveAccessibleName('تنظیم نرخ شبانه');
-    const rateEditorPrecedesOverview = await page.locator('.staff-inventory__rate-disclosure').evaluate((disclosure) => {
-      const overview = document.querySelector('.staff-inventory__overview');
-      return Boolean(overview && disclosure.compareDocumentPosition(overview) & Node.DOCUMENT_POSITION_FOLLOWING);
-    });
+    const rateEditorPrecedesOverview = await page
+      .locator('.staff-inventory__rate-disclosure')
+      .evaluate((disclosure) => {
+        const overview = document.querySelector('.staff-inventory__overview');
+        return Boolean(
+          overview &&
+          disclosure.compareDocumentPosition(overview) & Node.DOCUMENT_POSITION_FOLLOWING,
+        );
+      });
     expect(rateEditorPrecedesOverview).toBe(true);
     await rateDisclosure.focus();
     await page.keyboard.press('Enter');
@@ -361,7 +369,9 @@ test('admin sees physical capacity and saves rates only, and the page meets axe 
       );
     } else {
       const cells = table.getByRole('row').nth(1).getByRole('cell');
-      await expect(cells.nth(0)).toHaveText(format(firstNight.totalRooms + firstNight.blockedRooms));
+      await expect(cells.nth(0)).toHaveText(
+        format(firstNight.totalRooms + firstNight.blockedRooms),
+      );
       await expect(cells.nth(1)).toHaveText(format(firstNight.blockedRooms));
       await expect(cells.nth(2)).toHaveText(format(firstNight.heldRooms));
       await expect(cells.nth(3)).toHaveText(format(firstNight.bookedRooms));
@@ -405,7 +415,9 @@ test('admin sees physical capacity and saves rates only, and the page meets axe 
       await expect(metrics.nth(5).locator('dd')).toContainText(format(BigInt(nextPrice)));
     } else {
       const cells = table.getByRole('row').nth(1).getByRole('cell');
-      await expect(cells.nth(0)).toHaveText(format(firstNight.totalRooms + firstNight.blockedRooms));
+      await expect(cells.nth(0)).toHaveText(
+        format(firstNight.totalRooms + firstNight.blockedRooms),
+      );
       await expect(cells.nth(5)).toContainText(format(BigInt(nextPrice)));
     }
 
@@ -433,90 +445,90 @@ test('pending holds remain visible while inventory capacity stays derived and re
   const guestPhone = `+98916${randomInt(0, 10_000_000).toString().padStart(7, '0')}`;
   const guestEmail = `hbe020-oversell-${randomUUID()}@example.test`;
   await withStaffBookingCleanup(page, guestPhone, staffCookies, async (markBookingCreated) => {
-      markBookingCreated();
-      const bookingResponse = await request.post(`${apiBaseUrl}/bookings`, {
-        headers: { 'Idempotency-Key': randomUUID() },
-        data: {
-          roomTypeSlug: 'garden-double',
-          checkIn,
-          checkOut,
-          guestCount: 2,
-          roomQuantity: 1,
-          guestName: 'مریم رضایی؛ آزمون موجودی HBE-020',
-          guestPhone,
-          guestEmail,
-        },
-      });
-      const bookingPayload: unknown = await bookingResponse.json().catch(() => undefined);
-      if (bookingResponse.status() === 201) {
-        markBookingCreated(
-          isRecord(bookingPayload) &&
-            typeof bookingPayload.reference === 'string' &&
-            /^[A-Za-z0-9_-]{12,16}$/.test(bookingPayload.reference.trim())
-            ? bookingPayload.reference.trim()
-            : undefined,
-        );
-      }
-
-      expect(bookingResponse.status()).toBe(201);
-      if (
-        !isRecord(bookingPayload) ||
-        typeof bookingPayload.reference !== 'string' ||
-        !/^[A-Za-z0-9_-]{12,16}$/.test(bookingPayload.reference.trim())
-      ) {
-        throw new Error('The pending inventory fixture did not return a booking reference.');
-      }
-
-      await page.goto('/staff/inventory');
-      const roomType = page.getByRole('combobox', { name: 'نوع اتاق' });
-      await roomType.selectOption({ label: 'اتاق دوتخته باغ' });
-      await page.getByLabel('شروع بازه').fill(stay.checkInJalali);
-      await page.getByLabel('پایان بازه').fill(stay.checkOutJalali);
-      await page.getByRole('button', { name: 'نمایش بازه' }).click();
-
-      const roomTypeId = await roomType.inputValue();
-      const inventorySnapshot = await readInventorySnapshot(
-        page,
-        roomTypeId,
+    markBookingCreated();
+    const bookingResponse = await request.post(`${apiBaseUrl}/bookings`, {
+      headers: { 'Idempotency-Key': randomUUID() },
+      data: {
+        roomTypeSlug: 'garden-double',
         checkIn,
         checkOut,
-        staffCookies,
+        guestCount: 2,
+        roomQuantity: 1,
+        guestName: 'مریم رضایی؛ آزمون موجودی HBE-020',
+        guestPhone,
+        guestEmail,
+      },
+    });
+    const bookingPayload: unknown = await bookingResponse.json().catch(() => undefined);
+    if (bookingResponse.status() === 201) {
+      markBookingCreated(
+        isRecord(bookingPayload) &&
+          typeof bookingPayload.reference === 'string' &&
+          /^[A-Za-z0-9_-]{12,16}$/.test(bookingPayload.reference.trim())
+          ? bookingPayload.reference.trim()
+          : undefined,
       );
-      const inventoryTable = page.getByRole('table', { name: 'وضعیت ظرفیت و نرخ هر شب' });
-      const isNarrowViewport = (page.viewportSize()?.width ?? 0) <= 760;
-      const rows = inventoryTable.getByRole('row');
-      if (isNarrowViewport) {
-        await expect(page.locator('.staff-inventory__night-cards')).toBeVisible();
-        await expect(inventoryTable).not.toBeVisible();
-      } else {
-        await expect(rows).toHaveCount(3);
-      }
-      await expect(page.getByLabel('ظرفیت کل اتاق‌ها')).toHaveCount(0);
-      const capacityNights = inventorySnapshot.nights.map(requireProjectedCapacityNight);
-      expect(capacityNights).toHaveLength(2);
-      expect(capacityNights.every((night) => night.heldRooms >= 1)).toBe(true);
-      if (isNarrowViewport) {
-        for (const night of capacityNights) {
-          const card = page
-            .locator('.staff-inventory__night-card')
-            .filter({ has: page.locator(`time[datetime="${night.stayDate}"]`) });
-          await expect(card.locator('dl > div').nth(0).locator('dd')).toHaveText(
-            new Intl.NumberFormat('fa-IR').format(night.totalRooms + night.blockedRooms),
-          );
-          await expect(card.locator('dl > div').nth(2).locator('dd')).toHaveText(
-            new Intl.NumberFormat('fa-IR').format(night.heldRooms),
-          );
-        }
-      } else {
-        for (const rowIndex of [1, 2]) {
-          await expect(rows.nth(rowIndex).getByRole('cell').nth(2)).toContainText(/[۱-۹]/);
-        }
-        await expect(rows.nth(1).getByRole('cell').nth(0)).toHaveText(
-          new Intl.NumberFormat('fa-IR').format(
-            capacityNights[0]!.totalRooms + capacityNights[0]!.blockedRooms,
-          ),
+    }
+
+    expect(bookingResponse.status()).toBe(201);
+    if (
+      !isRecord(bookingPayload) ||
+      typeof bookingPayload.reference !== 'string' ||
+      !/^[A-Za-z0-9_-]{12,16}$/.test(bookingPayload.reference.trim())
+    ) {
+      throw new Error('The pending inventory fixture did not return a booking reference.');
+    }
+
+    await page.goto('/staff/inventory');
+    const roomType = page.getByRole('combobox', { name: 'نوع اتاق' });
+    await roomType.selectOption({ label: 'اتاق دوتخته باغ' });
+    await page.getByLabel('شروع بازه').fill(stay.checkInJalali);
+    await page.getByLabel('پایان بازه').fill(stay.checkOutJalali);
+    await page.getByRole('button', { name: 'نمایش بازه' }).click();
+
+    const roomTypeId = await roomType.inputValue();
+    const inventorySnapshot = await readInventorySnapshot(
+      page,
+      roomTypeId,
+      checkIn,
+      checkOut,
+      staffCookies,
+    );
+    const inventoryTable = page.getByRole('table', { name: 'وضعیت ظرفیت و نرخ هر شب' });
+    const isNarrowViewport = (page.viewportSize()?.width ?? 0) <= 760;
+    const rows = inventoryTable.getByRole('row');
+    if (isNarrowViewport) {
+      await expect(page.locator('.staff-inventory__night-cards')).toBeVisible();
+      await expect(inventoryTable).not.toBeVisible();
+    } else {
+      await expect(rows).toHaveCount(3);
+    }
+    await expect(page.getByLabel('ظرفیت کل اتاق‌ها')).toHaveCount(0);
+    const capacityNights = inventorySnapshot.nights.map(requireProjectedCapacityNight);
+    expect(capacityNights).toHaveLength(2);
+    expect(capacityNights.every((night) => night.heldRooms >= 1)).toBe(true);
+    if (isNarrowViewport) {
+      for (const night of capacityNights) {
+        const card = page
+          .locator('.staff-inventory__night-card')
+          .filter({ has: page.locator(`time[datetime="${night.stayDate}"]`) });
+        await expect(card.locator('dl > div').nth(0).locator('dd')).toHaveText(
+          new Intl.NumberFormat('fa-IR').format(night.totalRooms + night.blockedRooms),
+        );
+        await expect(card.locator('dl > div').nth(2).locator('dd')).toHaveText(
+          new Intl.NumberFormat('fa-IR').format(night.heldRooms),
         );
       }
+    } else {
+      for (const rowIndex of [1, 2]) {
+        await expect(rows.nth(rowIndex).getByRole('cell').nth(2)).toContainText(/[۱-۹]/);
+      }
+      await expect(rows.nth(1).getByRole('cell').nth(0)).toHaveText(
+        new Intl.NumberFormat('fa-IR').format(
+          capacityNights[0]!.totalRooms + capacityNights[0]!.blockedRooms,
+        ),
+      );
+    }
   });
 });
 
@@ -592,7 +604,10 @@ test('keeps each rate amount and toman label on one line at 390px', async ({ pag
   const moneyGroups = page.locator('.staff-inventory__money');
   await expect(moneyGroups).toHaveCount(2);
   for (let index = 0; index < 2; index += 1) {
-    const amount = await moneyGroups.nth(index).locator('.staff-inventory__money-amount').boundingBox();
+    const amount = await moneyGroups
+      .nth(index)
+      .locator('.staff-inventory__money-amount')
+      .boundingBox();
     const unit = await moneyGroups.nth(index).locator('.staff-inventory__money-unit').boundingBox();
     expect(amount).not.toBeNull();
     expect(unit).not.toBeNull();

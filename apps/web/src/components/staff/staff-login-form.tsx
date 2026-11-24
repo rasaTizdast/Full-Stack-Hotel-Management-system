@@ -20,7 +20,9 @@ export function StaffLoginForm() {
     try {
       const session = await loginStaff(email.trim(), password);
       router.replace(
-        session.staff.mustChangePassword ? '/staff/change-password' : getStaffHomePath(session.staff.role),
+        session.staff.mustChangePassword
+          ? '/staff/change-password'
+          : getStaffHomePath(session.staff.role),
       );
     } catch (cause) {
       if (cause instanceof StaffApiError && cause.status === 401) {
@@ -40,7 +42,7 @@ export function StaffLoginForm() {
   }
 
   return (
-      <form className="staff-login-form" method="post" onSubmit={handleSubmit}>
+    <form className="staff-login-form" method="post" onSubmit={handleSubmit}>
       <div className="staff-login-form__field">
         <label htmlFor="staff-email">ایمیل کاری</label>
         <input

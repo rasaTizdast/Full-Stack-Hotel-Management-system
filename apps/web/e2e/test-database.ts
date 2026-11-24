@@ -16,13 +16,13 @@ export function readE2eEnvironment(workspaceRoot: string): E2eEnvironment {
     : '';
   const candidates = [
     resolve(workspaceRoot, '.env'),
-    ...(mainCheckoutName
-      ? [resolve(dirname(worktreesDirectory), mainCheckoutName, '.env')]
-      : []),
+    ...(mainCheckoutName ? [resolve(dirname(worktreesDirectory), mainCheckoutName, '.env')] : []),
   ];
   const envPath = candidates.find((candidate) => existsSync(candidate));
   if (!envPath) {
-    throw new Error('Playwright requires the local project .env with an isolated test DATABASE_URL.');
+    throw new Error(
+      'Playwright requires the local project .env with an isolated test DATABASE_URL.',
+    );
   }
   const content = readFileSync(envPath, 'utf8');
   return {
@@ -41,9 +41,7 @@ export function getE2eDatabaseUrl(workspaceRoot: string): string {
 
 export function getE2eEnvironmentValue(name: string, workspaceRoot: string): string | undefined {
   const { content } = readE2eEnvironment(workspaceRoot);
-  const line = content
-    .split(/\r?\n/)
-    .find((entry) => entry.trimStart().startsWith(`${name}=`));
+  const line = content.split(/\r?\n/).find((entry) => entry.trimStart().startsWith(`${name}=`));
   return line
     ?.slice(line.indexOf('=') + 1)
     .trim()

@@ -163,7 +163,8 @@ describe('StaffRoomBoardPage', () => {
     if (!checkedInRoom) throw new Error('The room-board fixture must contain a room.');
     checkedInRoom.occupancy = 'OCCUPIED';
     const checkedInContext = checkedInRoom.reservationContexts[0];
-    if (!checkedInContext) throw new Error('The checked-in room fixture must contain a reservation.');
+    if (!checkedInContext)
+      throw new Error('The checked-in room fixture must contain a reservation.');
     checkedInContext.stayContext = 'IN_HOUSE';
     boardApi.getStaffRoomBoard.mockResolvedValueOnce(checkedInBoard);
 
@@ -187,7 +188,8 @@ describe('StaffRoomBoardPage', () => {
     if (!departingRoom) throw new Error('The room-board fixture must contain a room.');
     departingRoom.occupancy = 'UNKNOWN';
     const departingContext = departingRoom.reservationContexts[0];
-    if (!departingContext) throw new Error('The departing room fixture must contain a reservation.');
+    if (!departingContext)
+      throw new Error('The departing room fixture must contain a reservation.');
     departingContext.stayContext = 'DEPARTING';
     boardApi.getStaffRoomBoard.mockResolvedValueOnce(checkoutDayBoard);
 
@@ -270,13 +272,17 @@ describe('StaffRoomBoardPage', () => {
 
     expect(await screen.findByRole('alert')).toHaveTextContent('تخصیص اتاق هم‌زمان تغییر کرده است');
     expect(screen.queryByRole('group', { name: /تخصیص اتاق ۱۰۲/ })).not.toBeInTheDocument();
-    expect(screen.getByRole('region', { name: 'آخرین تخصیص‌های ثبت‌شده' })).toHaveTextContent('۱۰۳');
+    expect(screen.getByRole('region', { name: 'آخرین تخصیص‌های ثبت‌شده' })).toHaveTextContent(
+      '۱۰۳',
+    );
     expect(screen.getByRole('button', { name: 'اعمال پیش‌نویس من با نسخهٔ جدید' })).toBeVisible();
 
     fireEvent.click(screen.getByRole('button', { name: 'اعمال پیش‌نویس من با نسخهٔ جدید' }));
     fireEvent.click(screen.getByRole('button', { name: 'ذخیره تخصیص‌ها' }));
 
-    await waitFor(() => expect(boardApi.replaceStaffBookingRoomAssignments).toHaveBeenCalledTimes(2));
+    await waitFor(() =>
+      expect(boardApi.replaceStaffBookingRoomAssignments).toHaveBeenCalledTimes(2),
+    );
     expect(boardApi.replaceStaffBookingRoomAssignments).toHaveBeenLastCalledWith(
       'ABC123456789',
       {
@@ -306,7 +312,9 @@ describe('StaffRoomBoardPage', () => {
     session.current.staff.role = 'CASHIER';
     render(<StaffRoomBoardPage />);
 
-    expect(screen.getByRole('alert')).toHaveTextContent('این بخش برای پذیرش و مدیران در دسترس است.');
+    expect(screen.getByRole('alert')).toHaveTextContent(
+      'این بخش برای پذیرش و مدیران در دسترس است.',
+    );
     expect(boardApi.getStaffRoomBoard).not.toHaveBeenCalled();
   });
 });

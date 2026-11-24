@@ -39,20 +39,31 @@ const preview = {
 const report = {
   date: '2026-11-23',
   businessDate: '2026-11-23',
-  arrivals: [{
-    reference: 'HBE-TEST-001', guestName: 'مهمان آزمایشی', checkIn: '2026-11-23',
-    checkOut: '2026-11-25', roomTypeName: 'اتاق باغ', roomQuantity: 1, rooms: ['101'],
-  }],
+  arrivals: [
+    {
+      reference: 'HBE-TEST-001',
+      guestName: 'مهمان آزمایشی',
+      checkIn: '2026-11-23',
+      checkOut: '2026-11-25',
+      roomTypeName: 'اتاق باغ',
+      roomQuantity: 1,
+      rooms: ['101'],
+    },
+  ],
   departures: [],
   inHouse: [],
   rooms: {
-    total: 4, occupied: 1, available: 3, occupancyPercent: 25,
+    total: 4,
+    occupied: 1,
+    available: 3,
+    occupancyPercent: 25,
     readiness: { inspected: 1, clean: 2, dirty: 1 },
   },
   blocks: { outOfOrder: 1, capacityClosed: 0, total: 1 },
   pendingRequests: { reservations: 2, maintenance: 1 },
   openBalances: {
-    count: 1, balanceToman: '250000',
+    count: 1,
+    balanceToman: '250000',
     items: [{ reference: 'HBE-TEST-002', guestName: 'مهمان دوم', balanceToman: '250000' }],
   },
   dailyTotals: { debitsToman: '1500000', creditsToman: '500000' },
@@ -101,7 +112,9 @@ describe('staff operations pages', () => {
     expect(dialog).toHaveTextContent('۱ هشدار باقی می‌ماند');
     fireEvent.click(screen.getByRole('button', { name: 'تأیید بستن روز' }));
 
-    await waitFor(() => expect(api.runStaffNightClose).toHaveBeenCalledWith(preview, 'csrf-operations'));
+    await waitFor(() =>
+      expect(api.runStaffNightClose).toHaveBeenCalledWith(preview, 'csrf-operations'),
+    );
     expect(await screen.findByText('روز کاری با موفقیت بسته شد.')).toBeVisible();
     expect(screen.getByText(/به ۱۴۰۵\/۰۹\/۰۳ منتقل شد/)).toBeVisible();
     expect(api.getStaffNightClosePreview).toHaveBeenCalledTimes(2);
@@ -115,11 +128,15 @@ describe('staff operations pages', () => {
 
     fireEvent.change(screen.getByLabelText('تاریخ کاری'), { target: { value: '۱۴۰۵/۰۹/۰۱' } });
     fireEvent.click(screen.getByRole('button', { name: 'نمایش گزارش' }));
-    await waitFor(() => expect(api.getStaffOperationsReport).toHaveBeenLastCalledWith('2026-11-22'));
+    await waitFor(() =>
+      expect(api.getStaffOperationsReport).toHaveBeenLastCalledWith('2026-11-22'),
+    );
 
     fireEvent.change(screen.getByLabelText('تاریخ کاری'), { target: { value: '۱۴۰۵/۱۳/۰۱' } });
     fireEvent.click(screen.getByRole('button', { name: 'نمایش گزارش' }));
-    expect(await screen.findByRole('alert')).toHaveTextContent('تاریخ کاری را به شکل شمسی معتبر وارد کنید.');
+    expect(await screen.findByRole('alert')).toHaveTextContent(
+      'تاریخ کاری را به شکل شمسی معتبر وارد کنید.',
+    );
     expect(api.getStaffOperationsReport).toHaveBeenCalledTimes(2);
   });
 

@@ -207,6 +207,27 @@ describe('StaffFrontDeskPage', () => {
     expect(frontDeskApi.getStaffStayWorklist).not.toHaveBeenCalled();
   });
 
+  it('aligns the default queue date and walk-in action with the persisted business date', async () => {
+    frontDeskApi.getStaffStayWorklist
+      .mockResolvedValueOnce({ ...worklist([]), businessDate: '2026-11-19' })
+      .mockResolvedValueOnce({
+        ...worklist([]),
+        date: '2026-11-19',
+        businessDate: '2026-11-19',
+      });
+
+    renderPage('arrivals');
+
+    await waitFor(() =>
+      expect(frontDeskApi.getStaffStayWorklist).toHaveBeenLastCalledWith(
+        'arrivals',
+        expect.objectContaining({ date: '2026-11-19' }),
+      ),
+    );
+    expect(screen.getByLabelText('تاریخ کاری')).toHaveValue(formatGregorianAsJalali('2026-11-19'));
+    expect(screen.getByRole('button', { name: 'ثبت ورود بدون رزرو قبلی' })).toBeEnabled();
+  });
+
   it('separates due-today and overdue arrivals and links incomplete assignments to rooms', async () => {
     const overdue = copyStay();
     overdue.reference = 'OLD123456789';

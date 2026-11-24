@@ -365,9 +365,7 @@ export function getStaffRoomBoard(
   if (query.stayContext) params.set('stayContext', query.stayContext);
   if (query.blockKind) params.set('blockKind', query.blockKind);
   const search = params.toString();
-  return requestStaffApi<StaffRoomBoardResponse>(
-    `rooms/board${search ? `?${search}` : ''}`,
-  );
+  return requestStaffApi<StaffRoomBoardResponse>(`rooms/board${search ? `?${search}` : ''}`);
 }
 
 export function replaceStaffBookingRoomAssignments(

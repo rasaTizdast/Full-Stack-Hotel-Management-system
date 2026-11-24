@@ -11,6 +11,7 @@ import type {
 } from '../src/lib/staff-housekeeping-api';
 import { formatGregorianAsJalali } from '../src/lib/jalali-date';
 import { test, withFailureSafeCleanup } from './staff-fixtures';
+import { prepareReleaseScreenshot, releaseScreenshotStyle } from './release-screenshot';
 import {
   cleanupUnfinishedHousekeepingRecords,
   createHousekeepingStaffSession,
@@ -21,7 +22,11 @@ import {
   type HousekeepingTaskRef,
 } from './housekeeping-fixtures';
 
-function apiResponseIs(response: { url(): string; request(): { method(): string } }, method: string, path: string) {
+function apiResponseIs(
+  response: { url(): string; request(): { method(): string } },
+  method: string,
+  path: string,
+) {
   return new URL(response.url()).pathname === path && response.request().method() === method;
 }
 
@@ -31,9 +36,9 @@ function taskCard(page: Page, task: Pick<HousekeepingTask, 'id'>) {
 
 async function filterTaskBoard(page: Page, task: HousekeepingTask) {
   const filterControls = page.locator('#housekeeping-filter-controls');
-  const filterToggle = page.locator('button[aria-controls="housekeeping-filter-controls"]');
+  const filterToggle = page.getByRole('button', { name: /^(نمایش|بستن) فیلترها$/ });
   const roomFilter = filterControls.getByLabel('اتاق', { exact: true });
-  if (await filterToggle.isVisible()) {
+  if ((page.viewportSize()?.width ?? 1280) <= 1050) {
     await expect(filterToggle).toBeVisible();
     const expanded = await filterToggle.getAttribute('aria-expanded');
     expect(['true', 'false']).toContain(expanded);
@@ -52,7 +57,10 @@ async function filterTaskBoard(page: Page, task: HousekeepingTask) {
   await page.getByRole('button', { name: 'اعمال فیلترها' }).click();
 }
 
-test('mobile housekeeping filters start collapsed and can be opened', async ({ page, staffCookies }, testInfo) => {
+test('mobile housekeeping filters start collapsed and can be opened', async ({
+  page,
+  staffCookies,
+}, testInfo) => {
   const viewport = page.viewportSize();
   test.skip(!viewport || viewport.width > 600, 'This responsive assertion runs on mobile only.');
   await page.context().addCookies(staffCookies);
@@ -86,9 +94,15 @@ test('mobile housekeeping filters start collapsed and can be opened', async ({ p
   });
 });
 
-test('tablet housekeeping filters stay collapsed until staff opens them while desktop stays expanded', async ({ page, staffCookies }, testInfo) => {
+test('tablet housekeeping filters stay collapsed until staff opens them while desktop stays expanded', async ({
+  page,
+  staffCookies,
+}, testInfo) => {
   const viewport = page.viewportSize();
-  test.skip(!viewport || viewport.width < 700, 'This responsive assertion runs on desktop and tablet widths.');
+  test.skip(
+    !viewport || viewport.width < 700,
+    'This responsive assertion runs on desktop and tablet widths.',
+  );
   await page.context().addCookies(staffCookies);
 
   const filterControls = page.locator('#housekeeping-filter-controls');
@@ -98,7 +112,10 @@ test('tablet housekeeping filters stay collapsed until staff opens them while de
   const screenshotDirectory = testInfo.outputPath();
   mkdirSync(screenshotDirectory, { recursive: true });
 
-  for (const { width, height } of [{ width: 768, height: 1024 }, { width: 1024, height: 768 }]) {
+  for (const { width, height } of [
+    { width: 768, height: 1024 },
+    { width: 1024, height: 768 },
+  ]) {
     await page.setViewportSize({ width, height });
     await page.goto('/staff/housekeeping');
     await expect(page.getByRole('heading', { name: 'خانه‌داری' })).toBeVisible();
@@ -110,8 +127,14 @@ test('tablet housekeeping filters stay collapsed until staff opens them while de
     await expect(clearButton).toBeVisible();
     const toggleBox = await filterToggle.boundingBox();
     const clearBox = await clearButton.boundingBox();
-    expect(toggleBox?.height, `filter toggle should remain touch-sized at ${width}px`).toBeGreaterThanOrEqual(44);
-    expect(clearBox?.height, `clear-filter action should remain touch-sized at ${width}px`).toBeGreaterThanOrEqual(44);
+    expect(
+      toggleBox?.height,
+      `filter toggle should remain touch-sized at ${width}px`,
+    ).toBeGreaterThanOrEqual(44);
+    expect(
+      clearBox?.height,
+      `clear-filter action should remain touch-sized at ${width}px`,
+    ).toBeGreaterThanOrEqual(44);
     await page.screenshot({
       path: resolve(screenshotDirectory, `housekeeping-filters-${width}-collapsed.png`),
       fullPage: true,
@@ -134,26 +157,28 @@ test('tablet housekeeping filters stay collapsed until staff opens them while de
 });
 
 function staffHeadersFromPage(page: Page, refererPath = '/staff/housekeeping') {
-  return page.context().cookies(`${housekeepingApiBaseUrl}/staff`).then((cookies) => {
-    const session = cookies.find((cookie) => cookie.name === 'hotel_staff_session')?.value;
-    const csrf = cookies.find((cookie) => cookie.name === 'hotel_staff_csrf')?.value;
-    if (!session || !csrf) {
-      throw new Error('The authenticated housekeeping role session is unavailable.');
-    }
-    return {
-      Cookie: `hotel_staff_session=${session}; hotel_staff_csrf=${csrf}`,
-      Origin: housekeepingWebOrigin,
-      Referer: `${housekeepingWebOrigin}${refererPath}`,
-      'X-CSRF-Token': csrf,
-    };
-  });
+  return page
+    .context()
+    .cookies(`${housekeepingApiBaseUrl}/staff`)
+    .then((cookies) => {
+      const session = cookies.find((cookie) => cookie.name === 'hotel_staff_session')?.value;
+      const csrf = cookies.find((cookie) => cookie.name === 'hotel_staff_csrf')?.value;
+      if (!session || !csrf) {
+        throw new Error('The authenticated housekeeping role session is unavailable.');
+      }
+      return {
+        Cookie: `hotel_staff_session=${session}; hotel_staff_csrf=${csrf}`,
+        Origin: housekeepingWebOrigin,
+        Referer: `${housekeepingWebOrigin}${refererPath}`,
+        'X-CSRF-Token': csrf,
+      };
+    });
 }
 
 async function getRooms(page: Page): Promise<HousekeepingRoomOption[]> {
-  const response = await page.request.get(
-    `${housekeepingApiBaseUrl}/staff/housekeeping/rooms`,
-    { headers: await staffHeadersFromPage(page) },
-  );
+  const response = await page.request.get(`${housekeepingApiBaseUrl}/staff/housekeeping/rooms`, {
+    headers: await staffHeadersFromPage(page),
+  });
   expect(response.status()).toBe(200);
   const payload: unknown = await response.json();
   expectNoGuestOrFolioData(payload);
@@ -233,10 +258,7 @@ function normalizeTask(value: unknown): HousekeepingTask {
   return value as unknown as HousekeepingTask;
 }
 
-async function expectRoomReadiness(
-  page: Page,
-  room: HousekeepingRoomOption,
-): Promise<void> {
+async function expectRoomReadiness(page: Page, room: HousekeepingRoomOption): Promise<void> {
   const card = page.getByRole('article', { name: `وضعیت اتاق ${room.roomNumber}` });
   await expect(card).toBeVisible();
   const conditionLabel = {
@@ -329,7 +351,11 @@ async function getTasks(
   );
   expect(response.status()).toBe(200);
   const payload: unknown = await response.json();
-  if (!isRecord(payload) || !Array.isArray(payload.items) || typeof payload.businessDate !== 'string') {
+  if (
+    !isRecord(payload) ||
+    !Array.isArray(payload.items) ||
+    typeof payload.businessDate !== 'string'
+  ) {
     throw new Error('Housekeeping task list returned an invalid response.');
   }
   expectNoGuestOrFolioData(payload);
@@ -373,7 +399,11 @@ async function getDiscrepancies(
   );
   expect(response.status()).toBe(200);
   const payload: unknown = await response.json();
-  if (!isRecord(payload) || !Array.isArray(payload.items) || typeof payload.businessDate !== 'string') {
+  if (
+    !isRecord(payload) ||
+    !Array.isArray(payload.items) ||
+    typeof payload.businessDate !== 'string'
+  ) {
     throw new Error('Housekeeping discrepancy list returned an invalid response.');
   }
   return payload as unknown as HousekeepingList<HousekeepingDiscrepancy>;
@@ -471,11 +501,7 @@ async function assignTaskToHousekeeper(
   await dialog.getByLabel('خانه‌دار مسئول').selectOption(housekeeper.accountId);
 
   const responsePromise = manager.page.waitForResponse((response) =>
-    apiResponseIs(
-      response,
-      'PATCH',
-      `/api/v1/staff/housekeeping/tasks/${task.id}/assignment`,
-    ),
+    apiResponseIs(response, 'PATCH', `/api/v1/staff/housekeeping/tasks/${task.id}/assignment`),
   );
   await dialog.getByRole('button', { name: 'ثبت تخصیص' }).click();
   const response = await responsePromise;
@@ -483,12 +509,14 @@ async function assignTaskToHousekeeper(
   const assignmentKeys = isRecord(assignmentResponse)
     ? Object.keys(assignmentResponse).sort().join(',')
     : 'invalid';
-  const assignmentStatus = isRecord(assignmentResponse) && typeof assignmentResponse.status === 'string'
-    ? assignmentResponse.status
-    : 'missing';
-  const assignmentMatches = isRecord(assignmentResponse) && isRecord(assignmentResponse.assignee)
-    ? assignmentResponse.assignee.id === housekeeper.accountId
-    : false;
+  const assignmentStatus =
+    isRecord(assignmentResponse) && typeof assignmentResponse.status === 'string'
+      ? assignmentResponse.status
+      : 'missing';
+  const assignmentMatches =
+    isRecord(assignmentResponse) && isRecord(assignmentResponse.assignee)
+      ? assignmentResponse.assignee.id === housekeeper.accountId
+      : false;
   const listAfterAssignment = await getTasks(manager.page, {
     businessDate: task.dueDate,
     roomId: task.room.id,
@@ -537,11 +565,7 @@ async function cancelTaskAsManager(
   const dialog = manager.page.getByRole('dialog', { name: `لغو کار اتاق ${task.room.roomNumber}` });
   await dialog.getByLabel('دلیل لغو').fill(`${runMarker}: لغو کار آزمایشی پذیرش.`);
   const responsePromise = manager.page.waitForResponse((response) =>
-    apiResponseIs(
-      response,
-      'POST',
-      `/api/v1/staff/housekeeping/tasks/${task.id}/cancel`,
-    ),
+    apiResponseIs(response, 'POST', `/api/v1/staff/housekeeping/tasks/${task.id}/cancel`),
   );
   await dialog.getByRole('button', { name: 'لغو کار', exact: true }).click();
   const response = await responsePromise;
@@ -551,15 +575,12 @@ async function cancelTaskAsManager(
     throw new Error('Manager cancellation did not return a cancelled housekeeping task.');
   }
   const successMessage = `کار اتاق ${task.room.roomNumber} لغو شد.`;
-  await expect(
-    manager.page.getByRole('status').filter({ hasText: successMessage }),
-  ).toContainText(successMessage);
+  await expect(manager.page.getByRole('status').filter({ hasText: successMessage })).toContainText(
+    successMessage,
+  );
 }
 
-async function startHousekeeperTask(
-  housekeeper: HousekeepingStaffSession,
-  task: HousekeepingTask,
-) {
+async function startHousekeeperTask(housekeeper: HousekeepingStaffSession, task: HousekeepingTask) {
   await housekeeper.page.goto('/staff/housekeeping');
   await filterTaskBoard(housekeeper.page, task);
   const card = taskCard(housekeeper.page, task);
@@ -571,12 +592,16 @@ async function startHousekeeperTask(
   const followUpTaskListRequests = new Set<import('@playwright/test').Request>();
   let resolveStartEvidence!: (value: { httpStatus: number; taskStatus: string }) => void;
   let resolveReadbackEvidence!: (value: { httpStatus: number; taskStatus: string }) => void;
-  const startEvidencePromise = new Promise<{ httpStatus: number; taskStatus: string }>((resolve) => {
-    resolveStartEvidence = resolve;
-  });
-  const readbackEvidencePromise = new Promise<{ httpStatus: number; taskStatus: string }>((resolve) => {
-    resolveReadbackEvidence = resolve;
-  });
+  const startEvidencePromise = new Promise<{ httpStatus: number; taskStatus: string }>(
+    (resolve) => {
+      resolveStartEvidence = resolve;
+    },
+  );
+  const readbackEvidencePromise = new Promise<{ httpStatus: number; taskStatus: string }>(
+    (resolve) => {
+      resolveReadbackEvidence = resolve;
+    },
+  );
   const startPath = `/api/v1/staff/housekeeping/tasks/${task.id}/start`;
   const tasksPath = '/api/v1/staff/housekeeping/tasks';
   const captureRequest = (request: import('@playwright/test').Request) => {
@@ -593,24 +618,30 @@ async function startHousekeeperTask(
     const path = new URL(response.url()).pathname;
     if (request.method() === 'POST' && path === startPath) {
       startResponseSeen = true;
-      void response.json().then((payload: unknown) => {
-        const taskStatus = isRecord(payload) && typeof payload.status === 'string'
-          ? payload.status
-          : 'missing';
-        resolveStartEvidence({ httpStatus: response.status(), taskStatus });
-      }, () => resolveStartEvidence({ httpStatus: response.status(), taskStatus: 'unreadable' }));
+      void response.json().then(
+        (payload: unknown) => {
+          const taskStatus =
+            isRecord(payload) && typeof payload.status === 'string' ? payload.status : 'missing';
+          resolveStartEvidence({ httpStatus: response.status(), taskStatus });
+        },
+        () => resolveStartEvidence({ httpStatus: response.status(), taskStatus: 'unreadable' }),
+      );
       return;
     }
     if (request.method() !== 'GET' || !followUpTaskListRequests.has(request)) return;
     followUpTaskListRequests.delete(request);
-    void response.json().then((payload: unknown) => {
-      const items = isRecord(payload) && Array.isArray(payload.items) ? payload.items : [];
-      const refreshedTask = items.find((item) => isRecord(item) && item.id === task.id);
-      const taskStatus = isRecord(refreshedTask) && typeof refreshedTask.status === 'string'
-        ? refreshedTask.status
-        : 'missing';
-      resolveReadbackEvidence({ httpStatus: response.status(), taskStatus });
-    }, () => resolveReadbackEvidence({ httpStatus: response.status(), taskStatus: 'unreadable' }));
+    void response.json().then(
+      (payload: unknown) => {
+        const items = isRecord(payload) && Array.isArray(payload.items) ? payload.items : [];
+        const refreshedTask = items.find((item) => isRecord(item) && item.id === task.id);
+        const taskStatus =
+          isRecord(refreshedTask) && typeof refreshedTask.status === 'string'
+            ? refreshedTask.status
+            : 'missing';
+        resolveReadbackEvidence({ httpStatus: response.status(), taskStatus });
+      },
+      () => resolveReadbackEvidence({ httpStatus: response.status(), taskStatus: 'unreadable' }),
+    );
   };
   housekeeper.page.on('request', captureRequest);
   housekeeper.page.on('response', captureResponse);
@@ -646,8 +677,11 @@ async function startHousekeeperTask(
     await expect(updatedCard).toContainText('در حال انجام');
   } catch {
     const statusLines = await updatedCard.locator('span').allTextContents();
-    const renderedStatus = statusLines.map((line) => line.trim()).find((line) => line.startsWith('کار:')) ?? 'missing';
-    throw new Error(`Housekeeping start UI did not reflect the API readback (${diagnostic}; rendered=${renderedStatus}).`);
+    const renderedStatus =
+      statusLines.map((line) => line.trim()).find((line) => line.startsWith('کار:')) ?? 'missing';
+    throw new Error(
+      `Housekeeping start UI did not reflect the API readback (${diagnostic}; rendered=${renderedStatus}).`,
+    );
   }
 }
 
@@ -670,16 +704,12 @@ async function failInspection(
     name: `ثبت نتیجهٔ بازرسی اتاق ${task.room.roomNumber}`,
   });
   await dialog.getByRole('radio', { name: 'نیازمند نظافت دوباره' }).check();
-  await dialog.getByLabel('دلیل نیاز به نظافت دوباره').fill(
-    `${runMarker}: رسوب آزمایشی برای نظافت دوباره.`,
-  );
+  await dialog
+    .getByLabel('دلیل نیاز به نظافت دوباره')
+    .fill(`${runMarker}: رسوب آزمایشی برای نظافت دوباره.`);
 
   const responsePromise = housekeeper.page.waitForResponse((response) =>
-    apiResponseIs(
-      response,
-      'POST',
-      `/api/v1/staff/housekeeping/tasks/${task.id}/complete`,
-    ),
+    apiResponseIs(response, 'POST', `/api/v1/staff/housekeeping/tasks/${task.id}/complete`),
   );
   await dialog.getByRole('button', { name: 'ثبت نتیجهٔ بازرسی' }).click();
   const response = await responsePromise;
@@ -705,10 +735,7 @@ async function failInspection(
   await expect(housekeeper.page.getByRole('status')).toContainText('نظافت دوباره');
 }
 
-async function completeCleaningTask(
-  housekeeper: HousekeepingStaffSession,
-  task: HousekeepingTask,
-) {
+async function completeCleaningTask(housekeeper: HousekeepingStaffSession, task: HousekeepingTask) {
   await filterTaskBoard(housekeeper.page, task);
   const card = taskCard(housekeeper.page, task);
   await expect(card).toBeVisible();
@@ -719,11 +746,7 @@ async function completeCleaningTask(
     name: `ثبت پایان کار اتاق ${task.room.roomNumber}`,
   });
   const responsePromise = housekeeper.page.waitForResponse((response) =>
-    apiResponseIs(
-      response,
-      'POST',
-      `/api/v1/staff/housekeeping/tasks/${task.id}/complete`,
-    ),
+    apiResponseIs(response, 'POST', `/api/v1/staff/housekeeping/tasks/${task.id}/complete`),
   );
   await dialog.getByRole('button', { name: 'ثبت پایان کار' }).click();
   const response = await responsePromise;
@@ -734,10 +757,7 @@ async function completeCleaningTask(
   ).toContainText(successMessage);
 }
 
-async function passInspection(
-  housekeeper: HousekeepingStaffSession,
-  task: HousekeepingTask,
-) {
+async function passInspection(housekeeper: HousekeepingStaffSession, task: HousekeepingTask) {
   await filterTaskBoard(housekeeper.page, task);
   const card = taskCard(housekeeper.page, task);
   await expect(card).toBeVisible();
@@ -748,11 +768,7 @@ async function passInspection(
     name: `ثبت نتیجهٔ بازرسی اتاق ${task.room.roomNumber}`,
   });
   const responsePromise = housekeeper.page.waitForResponse((response) =>
-    apiResponseIs(
-      response,
-      'POST',
-      `/api/v1/staff/housekeeping/tasks/${task.id}/complete`,
-    ),
+    apiResponseIs(response, 'POST', `/api/v1/staff/housekeeping/tasks/${task.id}/complete`),
   );
   await dialog.getByRole('button', { name: 'ثبت نتیجهٔ بازرسی' }).click();
   const response = await responsePromise;
@@ -779,8 +795,12 @@ async function reportSleepWhileAssignedWorkIsActive(
   if ((housekeeper.page.viewportSize()?.width ?? 1280) <= 600) {
     await assertNoMobileOverflow(housekeeper.page);
   }
-  await expect(housekeeper.page.getByRole('button', { name: 'ایجاد کار', exact: true })).toHaveCount(0);
-  await expect(housekeeper.page.getByRole('button', { name: /تخصیص کار|تغییر مسئول/ })).toHaveCount(0);
+  await expect(
+    housekeeper.page.getByRole('button', { name: 'ایجاد کار', exact: true }),
+  ).toHaveCount(0);
+  await expect(housekeeper.page.getByRole('button', { name: /تخصیص کار|تغییر مسئول/ })).toHaveCount(
+    0,
+  );
   await housekeeper.page.getByRole('button', { name: 'گزارش مغایرت حضور' }).click();
   const reportDialog = housekeeper.page.getByRole('dialog', { name: 'گزارش مغایرت حضور' });
   await reportDialog.getByLabel('اتاق').selectOption(room.id);
@@ -790,11 +810,7 @@ async function reportSleepWhileAssignedWorkIsActive(
     .fill(`${runMarker}: کارکنان حضور را در اتاق خالی مشاهده کردند.`);
 
   const reportResponsePromise = housekeeper.page.waitForResponse((response) =>
-    apiResponseIs(
-      response,
-      'POST',
-      `/api/v1/staff/housekeeping/rooms/${room.id}/discrepancies`,
-    ),
+    apiResponseIs(response, 'POST', `/api/v1/staff/housekeeping/rooms/${room.id}/discrepancies`),
   );
   await reportDialog.getByRole('button', { name: 'ثبت مغایرت' }).click();
   const reportResponse = await reportResponsePromise;
@@ -852,10 +868,11 @@ async function attachFixtureIds(
   });
 }
 
-test('real staff roles run housekeeping task, SLEEP, and access-boundary flows', async (
-  { page, browser, staffCookies },
-  testInfo,
-) => {
+test('real staff roles run housekeeping task, SLEEP, and access-boundary flows', async ({
+  page,
+  browser,
+  staffCookies,
+}, testInfo) => {
   // Four real role accounts complete forced-password setup, task flows, and discrepancy readback.
   test.setTimeout(300_000);
   await page.context().addCookies(staffCookies);
@@ -926,7 +943,9 @@ test('real staff roles run housekeeping task, SLEEP, and access-boundary flows',
         !busyRoomIds.has(candidate.id),
     );
     if (!room) {
-      throw new Error('HPM-005 E2E requires an unoccupied clean/inspected room with no active task.');
+      throw new Error(
+        'HPM-005 E2E requires an unoccupied clean/inspected room with no active task.',
+      );
     }
     await expectRoomReadiness(manager.page, room);
     await expectDueArrivalReadinessPresentation(manager.page, room);
@@ -944,7 +963,9 @@ test('real staff roles run housekeeping task, SLEEP, and access-boundary flows',
     const receptionistTaskCard = taskCard(receptionist.page, receptionistTask);
     await expect(receptionistTaskCard).toBeVisible();
     await expect(receptionistTaskCard).toContainText('در انتظار شروع');
-    await expect(receptionistTaskCard.getByRole('button', { name: /تخصیص کار|تغییر مسئول/ })).toHaveCount(0);
+    await expect(
+      receptionistTaskCard.getByRole('button', { name: /تخصیص کار|تغییر مسئول/ }),
+    ).toHaveCount(0);
     await expect(receptionistTaskCard.getByRole('button', { name: 'لغو کار' })).toHaveCount(0);
     await manager.page.reload();
     await cancelTaskAsManager(manager, receptionistTask, runMarker);
@@ -1002,11 +1023,7 @@ test('real staff roles run housekeeping task, SLEEP, and access-boundary flows',
     });
     await assignmentDialog.getByLabel('خانه‌دار مسئول').selectOption(housekeeper.accountId);
     const recleanAssignment = manager.page.waitForResponse((response) =>
-      apiResponseIs(
-        response,
-        'PATCH',
-        `/api/v1/staff/housekeeping/tasks/${reclean.id}/assignment`,
-      ),
+      apiResponseIs(response, 'PATCH', `/api/v1/staff/housekeeping/tasks/${reclean.id}/assignment`),
     );
     await assignmentDialog.getByRole('button', { name: 'ثبت تخصیص' }).click();
     expect((await recleanAssignment).status()).toBe(200);
@@ -1038,7 +1055,9 @@ test('real staff roles run housekeeping task, SLEEP, and access-boundary flows',
       discrepancyRefs,
     );
     await passInspection(housekeeper, finalInspection);
-    const inspectedRoom = (await getRooms(manager.page)).find((candidate) => candidate.id === room.id);
+    const inspectedRoom = (await getRooms(manager.page)).find(
+      (candidate) => candidate.id === room.id,
+    );
     expect(inspectedRoom?.housekeepingStatus).toBe('INSPECTED');
     expect(inspectedRoom?.occupancy).toBe('VACANT');
     await manager.page.reload();
@@ -1052,9 +1071,11 @@ test('real staff roles run housekeeping task, SLEEP, and access-boundary flows',
     if (testInfo.project.name === 'mobile-chrome') {
       await assertNoMobileOverflow(manager.page);
     }
+    await prepareReleaseScreenshot(manager.page);
     await manager.page.screenshot({
       path: testInfo.outputPath('housekeeping-task-board.png'),
       fullPage: true,
+      style: releaseScreenshotStyle,
     });
 
     const realDiscrepancies = await getDiscrepancies(
@@ -1087,21 +1108,24 @@ test('real staff roles run housekeeping task, SLEEP, and access-boundary flows',
     await expect(sleepCard).toContainText('مشاهدهٔ کارکنان: اشغال');
     await expect(sleepCard).toContainText(formatGregorianAsJalali(businessDate) ?? businessDate);
     await expect(sleepCard).toContainText('نیازمند بررسی');
+    await expect(receptionist.page.getByRole('button', { name: 'گزارش مغایرت حضور' })).toHaveCount(
+      0,
+    );
     await expect(
-      receptionist.page.getByRole('button', { name: 'گزارش مغایرت حضور' }),
+      receptionist.page.getByRole('button', { name: /تخصیص کار|تغییر مسئول/ }),
     ).toHaveCount(0);
-    await expect(receptionist.page.getByRole('button', { name: /تخصیص کار|تغییر مسئول/ })).toHaveCount(0);
     await sleepCard.getByRole('button', { name: 'رد با ذکر دلیل' }).click();
     const dismissDialog = receptionist.page.getByRole('dialog', {
       name: `رد مغایرت اتاق ${room.roomNumber}`,
     });
-    await dismissDialog.getByLabel('دلیل رد').fill(
-      `${runMarker}: بازبینی پذیرش نشان داد اتاق خالی است.`,
-    );
-    const dismissResponsePromise = receptionist.page.waitForResponse((response) =>
-      new URL(response.url()).pathname.endsWith(
-        `/staff/housekeeping/discrepancies/${reported.id}/dismiss`,
-      ) && response.request().method() === 'POST',
+    await dismissDialog
+      .getByLabel('دلیل رد')
+      .fill(`${runMarker}: بازبینی پذیرش نشان داد اتاق خالی است.`);
+    const dismissResponsePromise = receptionist.page.waitForResponse(
+      (response) =>
+        new URL(response.url()).pathname.endsWith(
+          `/staff/housekeeping/discrepancies/${reported.id}/dismiss`,
+        ) && response.request().method() === 'POST',
     );
     await dismissDialog.getByRole('button', { name: /ثبت دلیل و رد/ }).click();
     const dismissResponse = await dismissResponsePromise;
@@ -1178,9 +1202,11 @@ test('real staff roles run housekeeping task, SLEEP, and access-boundary flows',
     if ((receptionist.page.viewportSize()?.width ?? 1280) <= 600) {
       await assertNoMobileOverflow(receptionist.page);
     }
+    await prepareReleaseScreenshot(receptionist.page);
     await receptionist.page.screenshot({
       path: testInfo.outputPath('housekeeping-sleep-dismissed-history.png'),
       fullPage: true,
+      style: releaseScreenshotStyle,
     });
 
     // UI-only coverage: this historical SKIP row is narrowly mocked. Its real
@@ -1207,7 +1233,10 @@ test('real staff roles run housekeeping task, SLEEP, and access-boundary flows',
     await manager.page.route('**/staff/housekeeping/discrepancies**', async (route) => {
       const request = route.request();
       const url = new URL(request.url());
-      if (request.method() === 'GET' && url.pathname.endsWith('/staff/housekeeping/discrepancies')) {
+      if (
+        request.method() === 'GET' &&
+        url.pathname.endsWith('/staff/housekeeping/discrepancies')
+      ) {
         await route.fulfill({
           status: 200,
           contentType: 'application/json',
@@ -1221,9 +1250,7 @@ test('real staff roles run housekeeping task, SLEEP, and access-boundary flows',
       }
       if (
         request.method() === 'POST' &&
-        url.pathname.endsWith(
-          `/staff/housekeeping/discrepancies/${mockedSkipId}/dismiss`,
-        )
+        url.pathname.endsWith(`/staff/housekeeping/discrepancies/${mockedSkipId}/dismiss`)
       ) {
         const postBody = request.postDataJSON() as { reason?: string };
         expect(postBody.reason).toContain(runMarker);
@@ -1257,9 +1284,7 @@ test('real staff roles run housekeeping task, SLEEP, and access-boundary flows',
     const skipDialog = manager.page.getByRole('dialog', {
       name: `رد مغایرت اتاق ${room.roomNumber}`,
     });
-    await skipDialog.getByLabel('دلیل رد').fill(
-      `${runMarker}: تاریخچهٔ نمونه پس از بررسی رد شد.`,
-    );
+    await skipDialog.getByLabel('دلیل رد').fill(`${runMarker}: تاریخچهٔ نمونه پس از بررسی رد شد.`);
     await skipDialog.getByRole('button', { name: /ثبت دلیل و رد/ }).click();
     await expect(skipCard).toContainText('ردشده با توضیح');
 
@@ -1273,7 +1298,9 @@ test('real staff roles run housekeeping task, SLEEP, and access-boundary flows',
       await assertNoMobileOverflow(cashier.page);
     }
     await expect(cashier.page.getByRole('heading', { name: 'دسترسی به خانه‌داری' })).toBeVisible();
-    await expect(cashier.page.getByRole('button', { name: 'ایجاد کار', exact: true })).toHaveCount(0);
+    await expect(cashier.page.getByRole('button', { name: 'ایجاد کار', exact: true })).toHaveCount(
+      0,
+    );
     const cashierDiscrepancies = await cashier.page.request.get(
       `${housekeepingApiBaseUrl}/staff/housekeeping/discrepancies`,
       { headers: await staffHeadersFromPage(cashier.page) },

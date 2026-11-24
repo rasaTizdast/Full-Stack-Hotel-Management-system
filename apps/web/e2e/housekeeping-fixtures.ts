@@ -93,6 +93,7 @@ export async function createHousekeepingStaffSession(
   browser: Browser,
   role: HousekeepingStaffRole,
   registerCleanup: CleanupRegistrar,
+  runTag = 'HPM005',
 ): Promise<HousekeepingStaffSession> {
   const initialAdministratorHeaders = await administratorHeaders(administratorPage);
   const administratorSessionResponse = await administratorPage.request.get(
@@ -126,10 +127,12 @@ export async function createHousekeepingStaffSession(
   ).toBe(administratorCsrf);
 
   const runPart = randomUUID().slice(0, 8);
-  const username = `hpm005-${role.toLowerCase()}-${runPart}`;
+  const normalizedRunTag = runTag.toLowerCase();
+  const passwordRunTag = runTag.toUpperCase();
+  const username = `${normalizedRunTag}-${role.toLowerCase()}-${runPart}`;
   const email = `${username}@example.test`;
-  const initialPassword = `Hpm005!${randomUUID()}aA1`;
-  const replacementPassword = `Hpm005!${randomUUID()}zZ2`;
+  const initialPassword = `${passwordRunTag}!${randomUUID()}aA1`;
+  const replacementPassword = `${passwordRunTag}!${randomUUID()}zZ2`;
 
   const createResponse = await administratorPage.request.post(
     `${housekeepingApiBaseUrl}/staff/admin/accounts`,
@@ -157,7 +160,7 @@ export async function createHousekeepingStaffSession(
       `${housekeepingApiBaseUrl}/staff/admin/accounts/${encodeURIComponent(accountId)}/deactivate`,
       {
         headers: await administratorHeaders(administratorPage),
-        data: { reason: 'HPM-005 E2E generated role-account cleanup.' },
+        data: { reason: `${passwordRunTag} E2E generated role-account cleanup.` },
       },
     );
     if (response.status() !== 200) {
@@ -189,10 +192,9 @@ export async function createHousekeepingStaffSession(
       throw new Error(`The ${role} fixture login did not require the initial password change.`);
     }
 
-    const forcedSessionResponse = await accountApi.get(
-      `${housekeepingApiBaseUrl}/staff/auth/me`,
-      { headers: { Referer: `${housekeepingWebOrigin}/staff/change-password` } },
-    );
+    const forcedSessionResponse = await accountApi.get(`${housekeepingApiBaseUrl}/staff/auth/me`, {
+      headers: { Referer: `${housekeepingWebOrigin}/staff/change-password` },
+    });
     expect(
       forcedSessionResponse.status(),
       `The ${role} forced-password session check failed.`,
@@ -214,19 +216,16 @@ export async function createHousekeepingStaffSession(
         data: { currentPassword: initialPassword, newPassword: replacementPassword },
       },
     );
-    expect(
-      passwordChangeResponse.status(),
-      `The ${role} fixture password transition failed.`,
-    ).toBe(204);
-
-    const activeSessionResponse = await accountApi.get(
-      `${housekeepingApiBaseUrl}/staff/auth/me`,
-      { headers: { Referer: `${housekeepingWebOrigin}/staff` } },
+    expect(passwordChangeResponse.status(), `The ${role} fixture password transition failed.`).toBe(
+      204,
     );
-    expect(
-      activeSessionResponse.status(),
-      `The ${role} post-change session check failed.`,
-    ).toBe(200);
+
+    const activeSessionResponse = await accountApi.get(`${housekeepingApiBaseUrl}/staff/auth/me`, {
+      headers: { Referer: `${housekeepingWebOrigin}/staff` },
+    });
+    expect(activeSessionResponse.status(), `The ${role} post-change session check failed.`).toBe(
+      200,
+    );
     const activeSession: unknown = await activeSessionResponse.json();
     if (
       !isStaffAuthPayload(activeSession) ||

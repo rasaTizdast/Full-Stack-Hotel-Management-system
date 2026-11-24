@@ -221,7 +221,10 @@
 .room {
   display: grid;
   min-width: 0;
-  grid-template-columns: minmax(8rem, 0.9fr) minmax(10rem, 1fr) minmax(14rem, 1.45fr) minmax(10rem, 0.9fr);
+  grid-template-columns: minmax(8rem, 0.9fr) minmax(10rem, 1fr) minmax(14rem, 1.45fr) minmax(
+      10rem,
+      0.9fr
+    );
   align-items: center;
   gap: 0.8rem;
   border-block-start: 1px solid var(--border);

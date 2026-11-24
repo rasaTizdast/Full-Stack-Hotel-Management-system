@@ -41,7 +41,8 @@ describe('isolated Playwright database target', () => {
   });
 
   it('uses an explicit isolated override while keeping a development .env for credentials', () => {
-    const override = 'postgresql://tester:secret@127.0.0.1:55432/hotel_booking_hpm001_test?schema=public';
+    const override =
+      'postgresql://tester:secret@127.0.0.1:55432/hotel_booking_hpm001_test?schema=public';
     expect(
       getIsolatedTestDatabaseUrl(
         'DATABASE_URL=postgresql://tester:secret@127.0.0.1:5433/hotel_booking_dev?schema=public',

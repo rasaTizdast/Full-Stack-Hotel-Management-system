@@ -2,10 +2,7 @@
 
 import Link from 'next/link';
 import { useCallback, useEffect, useRef, useState, type FormEvent } from 'react';
-import {
-  StaffApiError,
-  type StaffMember,
-} from '@/lib/staff-api';
+import { StaffApiError, type StaffMember } from '@/lib/staff-api';
 import {
   getStaffNightClosePreview,
   getStaffOperationsReport,
@@ -16,11 +13,7 @@ import {
   type StaffOperationsReport,
   type StaffReportStay,
 } from '@/lib/staff-operations-api';
-import {
-  formatGregorianAsJalali,
-  formatPersianInteger,
-  toGregorianIso,
-} from '@/lib/jalali-date';
+import { formatGregorianAsJalali, formatPersianInteger, toGregorianIso } from '@/lib/jalali-date';
 import { useStaffSession } from '../staff-session-provider';
 import styles from './staff-operations.module.css';
 
@@ -101,7 +94,8 @@ export function StaffNightClosePage() {
 
   useEffect(() => {
     if (!confirming) return;
-    const previousFocus = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+    const previousFocus =
+      document.activeElement instanceof HTMLElement ? document.activeElement : null;
     confirmationRef.current?.focus();
     const onKeyDown = (event: KeyboardEvent) => {
       if (event.key === 'Escape' && !saving) setConfirming(false);
@@ -116,7 +110,10 @@ export function StaffNightClosePage() {
       }
       const first = focusable[0]!;
       const last = focusable[focusable.length - 1]!;
-      if (event.shiftKey && (document.activeElement === first || document.activeElement === confirmationRef.current)) {
+      if (
+        event.shiftKey &&
+        (document.activeElement === first || document.activeElement === confirmationRef.current)
+      ) {
         event.preventDefault();
         last.focus();
       } else if (!event.shiftKey && document.activeElement === last) {
@@ -152,7 +149,8 @@ export function StaffNightClosePage() {
         if (active) setPreview(next);
       })
       .catch((cause: unknown) => {
-        if (active) setError(cause instanceof Error ? cause.message : 'پیش‌نمایش بستن روز دریافت نشد.');
+        if (active)
+          setError(cause instanceof Error ? cause.message : 'پیش‌نمایش بستن روز دریافت نشد.');
       })
       .finally(() => {
         if (active) setLoading(false);
@@ -193,23 +191,31 @@ export function StaffNightClosePage() {
     <div className={styles.page}>
       <header className={styles.header}>
         <div>
-          <p className={styles.eyebrow}>عملیات پایان روز · {preview?.hotelName ?? 'مدیریت اقامتگاه'}</p>
+          <p className={styles.eyebrow}>
+            عملیات پایان روز · {preview?.hotelName ?? 'مدیریت اقامتگاه'}
+          </p>
           <h1>بستن روز کاری</h1>
           <p className={styles.lead}>
             این کار ثبت هزینه اقامت شب و انتقال تاریخ کاری اقامتگاه را در یک مرحله انجام می‌دهد.
           </p>
         </div>
-        <Link className={styles.secondaryButton} href="/staff/reports">گزارش روزانه</Link>
+        <Link className={styles.secondaryButton} href="/staff/reports">
+          گزارش روزانه
+        </Link>
       </header>
 
-      {error && <p className={styles.error} role="alert">{error}</p>}
+      {error && (
+        <p className={styles.error} role="alert">
+          {error}
+        </p>
+      )}
       {result && (
         <section className={styles.success} role="status" aria-live="polite">
           <div>
             <strong>روز کاری با موفقیت بسته شد.</strong>
             <p>
-              تاریخ {dateLabel(result.businessDate)} به {dateLabel(result.nextBusinessDate)} منتقل شد؛{' '}
-              {formatPersianInteger(result.roomNightCount)} شب اقامت به مبلغ{' '}
+              تاریخ {dateLabel(result.businessDate)} به {dateLabel(result.nextBusinessDate)} منتقل
+              شد؛ {formatPersianInteger(result.roomNightCount)} شب اقامت به مبلغ{' '}
               <bdi>{toman(result.accommodationAmountToman)}</bdi> ثبت شد.
               {result.replayed ? ' نتیجه بسته‌شدن قبلی بازیابی شد.' : ''}
             </p>
@@ -220,7 +226,11 @@ export function StaffNightClosePage() {
         </section>
       )}
 
-      {loading && <p className={styles.loading} role="status">در حال دریافت وضعیت روز کاری…</p>}
+      {loading && (
+        <p className={styles.loading} role="status">
+          در حال دریافت وضعیت روز کاری…
+        </p>
+      )}
       {!loading && !preview && (
         <section className={styles.empty}>
           <p>وضعیت بستن روز در دسترس نیست.</p>
@@ -236,7 +246,9 @@ export function StaffNightClosePage() {
             <div>
               <span>تاریخ کاری فعلی</span>
               <strong>{dateLabel(preview.businessDate)}</strong>
-              <small dir="ltr">{preview.businessDate} · {preview.timezone}</small>
+              <small dir="ltr">
+                {preview.businessDate} · {preview.timezone}
+              </small>
             </div>
             <div>
               <span>پس از بستن</span>
@@ -245,7 +257,9 @@ export function StaffNightClosePage() {
             </div>
             <div>
               <span>هزینه اقامت قابل ثبت</span>
-              <strong><bdi>{toman(preview.accommodation.amountToman)}</bdi></strong>
+              <strong>
+                <bdi>{toman(preview.accommodation.amountToman)}</bdi>
+              </strong>
               <small>{formatPersianInteger(preview.accommodation.roomNightCount)} شب اتاق</small>
             </div>
             <div>
@@ -270,7 +284,12 @@ export function StaffNightClosePage() {
               </p>
             </div>
             <div className={styles.actionButtons}>
-              <button type="button" className={styles.secondaryButton} onClick={() => void loadPreview()} disabled={loading || saving}>
+              <button
+                type="button"
+                className={styles.secondaryButton}
+                onClick={() => void loadPreview()}
+                disabled={loading || saving}
+              >
                 تازه‌سازی وضعیت
               </button>
               <button
@@ -306,10 +325,20 @@ export function StaffNightClosePage() {
               {formatPersianInteger(preview.warningCount)} هشدار باقی می‌ماند.
             </p>
             <div className={styles.dialogActions}>
-              <button type="button" className={styles.secondaryButton} onClick={() => setConfirming(false)} disabled={saving}>
+              <button
+                type="button"
+                className={styles.secondaryButton}
+                onClick={() => setConfirming(false)}
+                disabled={saving}
+              >
                 بازگشت و بررسی
               </button>
-              <button type="button" className={styles.primaryButton} onClick={() => void confirmClose()} disabled={saving}>
+              <button
+                type="button"
+                className={styles.primaryButton}
+                onClick={() => void confirmClose()}
+                disabled={saving}
+              >
                 {saving ? 'در حال بستن روز…' : 'تأیید بستن روز'}
               </button>
             </div>
@@ -320,7 +349,15 @@ export function StaffNightClosePage() {
   );
 }
 
-function StayList({ title, stays, emptyText }: { title: string; stays: StaffReportStay[]; emptyText: string }) {
+function StayList({
+  title,
+  stays,
+  emptyText,
+}: {
+  title: string;
+  stays: StaffReportStay[];
+  emptyText: string;
+}) {
   return (
     <section className={styles.panel}>
       <div className={styles.panelHeading}>
@@ -338,9 +375,15 @@ function StayList({ title, stays, emptyText }: { title: string; stays: StaffRepo
                 <span dir="ltr">{stay.reference}</span>
               </div>
               <div className={styles.stayDetails}>
-                <span>{stay.roomTypeName} · {formatPersianInteger(stay.roomQuantity)} اتاق</span>
-                <span>{stay.rooms.length ? `اتاق ${stay.rooms.join('، ')}` : 'بدون تخصیص اتاق'}</span>
-                <span>{dateLabel(stay.checkIn)} تا {dateLabel(stay.checkOut)}</span>
+                <span>
+                  {stay.roomTypeName} · {formatPersianInteger(stay.roomQuantity)} اتاق
+                </span>
+                <span>
+                  {stay.rooms.length ? `اتاق ${stay.rooms.join('، ')}` : 'بدون تخصیص اتاق'}
+                </span>
+                <span>
+                  {dateLabel(stay.checkIn)} تا {dateLabel(stay.checkOut)}
+                </span>
               </div>
             </li>
           ))}
@@ -411,9 +454,13 @@ export function StaffOperationsReportPage() {
         <div>
           <p className={styles.eyebrow}>گزارش عملیاتی اقامتگاه</p>
           <h1>گزارش روزانه</h1>
-          <p className={styles.lead}>ورود و خروج، وضعیت اتاق‌ها و گردش دفتر مالی در تاریخ انتخابی.</p>
+          <p className={styles.lead}>
+            ورود و خروج، وضعیت اتاق‌ها و گردش دفتر مالی در تاریخ انتخابی.
+          </p>
         </div>
-        <Link className={styles.secondaryButton} href="/staff/operations/close">بستن روز کاری</Link>
+        <Link className={styles.secondaryButton} href="/staff/operations/close">
+          بستن روز کاری
+        </Link>
       </header>
 
       <form className={styles.dateForm} onSubmit={submitDate}>
@@ -430,14 +477,24 @@ export function StaffOperationsReportPage() {
           required
           aria-describedby="report-date-help"
         />
-        <span id="report-date-help">فرمت تاریخ شمسی · تاریخ فعلی اقامتگاه: {report ? dateLabel(report.businessDate) : '—'}</span>
+        <span id="report-date-help">
+          فرمت تاریخ شمسی · تاریخ فعلی اقامتگاه: {report ? dateLabel(report.businessDate) : '—'}
+        </span>
         <button className={styles.primaryButton} type="submit" disabled={loading || !dateInput}>
           نمایش گزارش
         </button>
       </form>
 
-      {error && <p className={styles.error} role="alert">{error}</p>}
-      {loading && <p className={styles.loading} role="status">در حال دریافت گزارش…</p>}
+      {error && (
+        <p className={styles.error} role="alert">
+          {error}
+        </p>
+      )}
+      {loading && (
+        <p className={styles.loading} role="status">
+          در حال دریافت گزارش…
+        </p>
+      )}
       {!loading && !report && (
         <section className={styles.empty}>
           <p>گزارشی بارگذاری نشده است.</p>
@@ -457,20 +514,37 @@ export function StaffOperationsReportPage() {
             <Metric label="ورود امروز" value={report.arrivals.length} />
             <Metric label="خروج ثبت‌شده" value={report.departures.length} />
             <Metric label="اقامت در این تاریخ" value={report.inHouse.length} />
-            <Metric label="اشغال اتاق‌ها" value={`${formatPersianInteger(report.rooms.occupancyPercent)}٪`} detail={`${formatPersianInteger(report.rooms.occupied)} از ${formatPersianInteger(report.rooms.total)} اتاق`} />
-            <Metric label="اتاق آماده" value={report.rooms.readiness.inspected + report.rooms.readiness.clean} detail={`بازرسی‌شده ${formatPersianInteger(report.rooms.readiness.inspected)} · تمیز ${formatPersianInteger(report.rooms.readiness.clean)}`} />
-            <Metric label="انسداد فعال" value={report.blocks.total} detail={`خارج از سرویس ${formatPersianInteger(report.blocks.outOfOrder)} · ظرفیت ${formatPersianInteger(report.blocks.capacityClosed)}`} />
+            <Metric
+              label="اشغال اتاق‌ها"
+              value={`${formatPersianInteger(report.rooms.occupancyPercent)}٪`}
+              detail={`${formatPersianInteger(report.rooms.occupied)} از ${formatPersianInteger(report.rooms.total)} اتاق`}
+            />
+            <Metric
+              label="اتاق آماده"
+              value={report.rooms.readiness.inspected + report.rooms.readiness.clean}
+              detail={`بازرسی‌شده ${formatPersianInteger(report.rooms.readiness.inspected)} · تمیز ${formatPersianInteger(report.rooms.readiness.clean)}`}
+            />
+            <Metric
+              label="انسداد فعال"
+              value={report.blocks.total}
+              detail={`خارج از سرویس ${formatPersianInteger(report.blocks.outOfOrder)} · ظرفیت ${formatPersianInteger(report.blocks.capacityClosed)}`}
+            />
             <Metric label="درخواست‌های رزرو باز" value={report.pendingRequests.reservations} />
             <Metric label="درخواست‌های تعمیر باز" value={report.pendingRequests.maintenance} />
           </section>
           <p className={styles.dataNote}>
-            آمادگی، موجودی فعال اتاق‌ها، انسدادها، مانده دفترهای مالی و صف درخواست‌ها از وضعیت فعلی می‌آیند؛ برای این موارد در تاریخ گذشته snapshot جداگانه نداریم.
+            آمادگی، موجودی فعال اتاق‌ها، انسدادها، مانده دفترهای مالی و صف درخواست‌ها از وضعیت فعلی
+            می‌آیند؛ برای این موارد در تاریخ گذشته snapshot جداگانه نداریم.
           </p>
 
           <section className={styles.financeGrid} aria-label="خلاصه مالی روز">
             <Metric label="بدهکار روز" value={toman(report.dailyTotals.debitsToman)} />
             <Metric label="بستانکار روز" value={toman(report.dailyTotals.creditsToman)} />
-            <Metric label="مانده باز" value={toman(report.openBalances.balanceToman)} detail={`${formatPersianInteger(report.openBalances.count)} دفتر مالی`} />
+            <Metric
+              label="مانده باز"
+              value={toman(report.openBalances.balanceToman)}
+              detail={`${formatPersianInteger(report.openBalances.count)} دفتر مالی`}
+            />
           </section>
 
           {report.openBalances.items.length > 0 && (
@@ -482,7 +556,10 @@ export function StaffOperationsReportPage() {
               <ul className={styles.balanceList}>
                 {report.openBalances.items.map((item) => (
                   <li key={item.reference}>
-                    <div><strong>{item.guestName}</strong><span dir="ltr">{item.reference}</span></div>
+                    <div>
+                      <strong>{item.guestName}</strong>
+                      <span dir="ltr">{item.reference}</span>
+                    </div>
                     <bdi>{toman(item.balanceToman)}</bdi>
                   </li>
                 ))}
@@ -491,9 +568,21 @@ export function StaffOperationsReportPage() {
           )}
 
           <div className={styles.stayGrid}>
-            <StayList title="ورودها" stays={report.arrivals} emptyText="ورودی برای این تاریخ ثبت نشده است." />
-            <StayList title="خروج‌ها" stays={report.departures} emptyText="خروج ثبت‌شده‌ای برای این تاریخ نیست." />
-            <StayList title="اقامت‌های جاری در تاریخ" stays={report.inHouse} emptyText="اقامت فعالی در این تاریخ نیست." />
+            <StayList
+              title="ورودها"
+              stays={report.arrivals}
+              emptyText="ورودی برای این تاریخ ثبت نشده است."
+            />
+            <StayList
+              title="خروج‌ها"
+              stays={report.departures}
+              emptyText="خروج ثبت‌شده‌ای برای این تاریخ نیست."
+            />
+            <StayList
+              title="اقامت‌های جاری در تاریخ"
+              stays={report.inHouse}
+              emptyText="اقامت فعالی در این تاریخ نیست."
+            />
           </div>
         </>
       )}
@@ -501,7 +590,15 @@ export function StaffOperationsReportPage() {
   );
 }
 
-function Metric({ label, value, detail }: { label: string; value: number | string; detail?: string }) {
+function Metric({
+  label,
+  value,
+  detail,
+}: {
+  label: string;
+  value: number | string;
+  detail?: string;
+}) {
   return (
     <article className={styles.metric}>
       <span>{label}</span>

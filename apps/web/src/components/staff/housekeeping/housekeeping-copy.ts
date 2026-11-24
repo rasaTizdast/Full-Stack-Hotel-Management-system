@@ -53,15 +53,18 @@ const PRIORITY_ORDER: Record<HousekeepingPriority, number> = {
   LOW: 3,
 };
 
-export function sortHousekeepingTasksByUrgency<T extends {
-  taskType: HousekeepingTaskType;
-  priority: HousekeepingPriority;
-  arrivalDue: boolean;
-  departureDue: boolean;
-  isOverdue: boolean;
-  dueDate: string;
-}>(tasks: readonly T[]): T[] {
-  const group = (task: T) => task.arrivalDue ? 0 : task.taskType === 'DEPARTURE_CLEAN' && task.isOverdue ? 1 : 2;
+export function sortHousekeepingTasksByUrgency<
+  T extends {
+    taskType: HousekeepingTaskType;
+    priority: HousekeepingPriority;
+    arrivalDue: boolean;
+    departureDue: boolean;
+    isOverdue: boolean;
+    dueDate: string;
+  },
+>(tasks: readonly T[]): T[] {
+  const group = (task: T) =>
+    task.arrivalDue ? 0 : task.taskType === 'DEPARTURE_CLEAN' && task.isOverdue ? 1 : 2;
   return [...tasks].sort((first, second) => {
     const byGroup = group(first) - group(second);
     if (byGroup !== 0) return byGroup;
@@ -69,8 +72,10 @@ export function sortHousekeepingTasksByUrgency<T extends {
       const byDueDate = first.dueDate.localeCompare(second.dueDate);
       if (byDueDate !== 0) return byDueDate;
     }
-    return PRIORITY_ORDER[first.priority] - PRIORITY_ORDER[second.priority] ||
-      Number(second.departureDue) - Number(first.departureDue);
+    return (
+      PRIORITY_ORDER[first.priority] - PRIORITY_ORDER[second.priority] ||
+      Number(second.departureDue) - Number(first.departureDue)
+    );
   });
 }
 

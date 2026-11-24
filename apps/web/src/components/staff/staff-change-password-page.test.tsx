@@ -109,9 +109,13 @@ describe('StaffChangePasswordPage', () => {
     session.current.refreshSession.mockRejectedValueOnce(new Error('وضعیت ورود تازه نشد.'));
 
     render(<StaffChangePasswordPage />);
-    fireEvent.change(screen.getByLabelText('گذرواژه فعلی'), { target: { value: 'initial-password' } });
+    fireEvent.change(screen.getByLabelText('گذرواژه فعلی'), {
+      target: { value: 'initial-password' },
+    });
     fireEvent.change(screen.getByLabelText('گذرواژه تازه'), { target: { value: 'new-password' } });
-    fireEvent.change(screen.getByLabelText('تکرار گذرواژه تازه'), { target: { value: 'new-password' } });
+    fireEvent.change(screen.getByLabelText('تکرار گذرواژه تازه'), {
+      target: { value: 'new-password' },
+    });
     fireEvent.click(screen.getByRole('button', { name: 'تغییر گذرواژه' }));
 
     expect(await screen.findByRole('alert')).toHaveTextContent('وضعیت ورود تازه نشد.');

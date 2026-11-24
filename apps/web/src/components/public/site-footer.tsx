@@ -26,12 +26,8 @@ export function SiteFooter({ hotel }: { hotel: PublicHotel }) {
               {hotel.contactPhone}
             </a>
           ) : null}
-          {hasContactEmail ? (
-            <a href={`mailto:${hotel.contactEmail}`}>{contactEmail}</a>
-          ) : null}
-          {!hotel.contactPhone && !hasContactEmail ? (
-            <p>اطلاعات تماس هنوز ثبت نشده است.</p>
-          ) : null}
+          {hasContactEmail ? <a href={`mailto:${hotel.contactEmail}`}>{contactEmail}</a> : null}
+          {!hotel.contactPhone && !hasContactEmail ? <p>اطلاعات تماس هنوز ثبت نشده است.</p> : null}
         </div>
 
         <div className={styles.links}>
@@ -43,9 +39,7 @@ export function SiteFooter({ hotel }: { hotel: PublicHotel }) {
 
       <div className={styles.bottom}>
         <span>درخواست اقامت پس از بررسی کارکنان قطعی می‌شود.</span>
-        <a href="#top">
-          بازگشت به بالا
-        </a>
+        <a href="#top">بازگشت به بالا</a>
       </div>
     </footer>
   );

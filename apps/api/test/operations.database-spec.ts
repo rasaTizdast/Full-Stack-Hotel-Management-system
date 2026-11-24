@@ -117,7 +117,11 @@ describe('PostgreSQL business date, night close, and reports', () => {
       where: { hotelId: { in: oldFixtures.map(({ id }) => id) } },
     });
     await fixture.prisma.hotel.deleteMany({ where: { slug: { startsWith: 'hpm009-' } } });
-    const property = await fixture.createProperty('Asia/Tehran', undefined, `hpm009-${tag}`);
+    const property = await fixture.createProperty(
+      'Asia/Tehran',
+      new Date('1900-01-01T00:00:00.000Z'),
+      `hpm009-${tag}`,
+    );
     hotelId = property.hotel.id;
     const initialDate = await fixture.prisma.$queryRaw<Array<{ businessDate: Date }>>`
       SELECT business_date AS "businessDate" FROM hotels WHERE id = ${hotelId}::uuid

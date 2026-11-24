@@ -1,6 +1,6 @@
-# Hotel Booking Engine
+# Hotel Booking and Property Management System
 
-A Persian-first hotel booking request system. Guests can search rooms and send a stay request. Hotel staff review each request and must confirm it before it becomes a reservation. The system does not process online payments.
+A Persian-first booking and hotel operations system. Guests can request a stay; hotel staff confirm requests, assign rooms, manage housekeeping and maintenance, post operational folio charges, record offline payments, check guests out, and close business days. Guest requests require staff confirmation. The system does not process online payments or issue statutory tax invoices.
 
 The product scope and behavior are defined in [prd.md](prd.md); completed and active work is tracked in [docs/implementation-tickets.md](docs/implementation-tickets.md).
 
@@ -8,7 +8,7 @@ The product scope and behavior are defined in [prd.md](prd.md); completed and ac
 
 - Shows the hotel profile, active room types, amenities, availability, and nightly prices.
 - Accepts a guest request with an idempotency key and holds available room-night inventory while the request awaits staff review.
-- Lets staff sign in, filter and process requests, and lets administrators manage room-night capacity and prices.
+- Gives named staff roles a private operational workspace for reservations, arrivals/departures, room readiness, housekeeping, maintenance, folios, service catalog, checkout, reports, and manual night close.
 - Uses fictional hotel and staff seed data for local development. Guest and staff data should not be entered into a shared demo environment.
 
 This is a booking-request workflow, not instant booking: staff confirmation is required, and no payment is collected.
@@ -18,7 +18,7 @@ This is a booking-request workflow, not instant booking: staff confirmation is r
 The Persian RTL interface uses a warm stone palette, deep garden-green accents, one Vazirmatn Variable font family, shared responsive typography and spacing tokens, and clear focus states across guest and staff pages. A generated courtyard-and-orange-blossom emblem is shared by the guest site, staff workspace, footer, favicon, and Apple touch icon.
 
 - **Guests** can explore the property, search by dates and party size, compare available rooms and prices, review a room, and submit a stay request. The request page explains that reception must confirm it and that no payment is taken online.
-- **Staff** use a separate sign-in and operational workspace for the overview, booking requests, and room-night inventory. Receptionists handle requests; administrators can also edit nightly capacity and prices.
+- **Staff** use a separate sign-in and role-protected operational workspace. Reception handles bookings and arrivals; housekeeping works assigned tasks; cashiers post folio charges and offline payments; managers oversee operations, maintenance, service catalog, folios, and night close; administrators also manage staff accounts and all capabilities. Authorization is enforced by the API.
 
 The four WebP images and `hotel-mark.png` in `apps/web/public/images/hotel/` are generated conceptual artwork for the fictional Shiraz demo property. The same emblem supplies the browser and Apple icons in `apps/web/src/app/`. Replace the artwork with approved property photography and brand assets before using the site for a real hotel.
 
@@ -33,13 +33,36 @@ flowchart LR
   staff -. secure session cookie and CSRF proof .-> api
 ```
 
-| Part       | Responsibility                                                                                                                   |
-| ---------- | -------------------------------------------------------------------------------------------------------------------------------- |
-| `apps/web` | Persian RTL guest search and request flow, plus staff booking and inventory pages.                                               |
-| `apps/api` | Versioned REST endpoints, validation, availability and booking rules, staff authentication, and inventory operations.            |
-| PostgreSQL | Hotel, room types, room-night inventory, booking requests, and staff sessions. Migrations are stored with the API Prisma schema. |
+| Part       | Responsibility                                                                                                                                                                                       |
+| ---------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `apps/web` | Persian RTL guest search/request flow and responsive staff operations, including front desk, housekeeping, maintenance, folios, reports, and night close.                                            |
+| `apps/api` | Versioned REST endpoints, booking and inventory rules, staff authentication and capability checks, housekeeping/maintenance, folios, audit history, and business-date operations.                    |
+| PostgreSQL | Hotel and staff records, room-night inventory/assignments/blocks, bookings, housekeeping, maintenance, folio ledger, audit events, and close runs. Migrations are stored with the API Prisma schema. |
 
 Guest requests are created as `PENDING_CONFIRMATION`. The API checks and holds every night in a stay transactionally. Staff confirmation converts the hold to booked inventory; rejection, cancellation, or expiry releases it. Staff sessions use HTTP-only cookies. State-changing staff requests also require a CSRF token. The API accepts Gregorian ISO date-only values; the Persian UI presents Jalali dates.
+
+## Staff roles and operating workflows
+
+All staff use accounts created by an administrator. First sign-in requires password replacement. The API checks each protected action against the account's named role.
+
+| Role             | Main access                                                                                                                                                                                          |
+| ---------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **ADMIN**        | All operational capabilities, staff account administration, inventory and room catalog, folios, payments, checkout, reports, and night close.                                                        |
+| **MANAGER**      | Booking and room operations, inventory and catalog, housekeeping oversight, maintenance blocks, folio adjustments and service catalog, settlement overrides with a reason, reports, and night close. |
+| **RECEPTIONIST** | Guest requests and front desk stays, room board, housekeeping/maintenance requests, folio viewing, and checkout when its balance rules allow.                                                        |
+| **HOUSEKEEPER**  | Assigned room tasks, housekeeping updates, and maintenance requests. Task access is limited to the signed-in worker's assignments.                                                                   |
+| **CASHIER**      | Folio viewing, ledger charges and offline payment entries, room-number display, and checkout.                                                                                                        |
+
+Typical operating flow:
+
+1. A guest searches dates and submits a request. The request holds availability while it awaits staff review. Confirmation by reception or a manager turns it into a reservation; rejection, cancellation, or expiry releases the hold.
+2. Reception reviews arrivals, assigns available rooms, and checks guests in after the room is inspected. Dirty, blocked, or conflicting rooms cannot be used for check-in. Room moves keep dated assignment history.
+3. Housekeeping completes assigned room tasks and inspections. Reception and housekeeping can raise maintenance requests; managers/admins manage maintenance blocks that remove rooms from availability.
+4. Staff post catalog services to the operational folio. Cashiers/managers/admins can record cash, terminal, bank transfer, or other offline settlement details. The app records the payment; it never moves money or stores cardholder data.
+5. Reception/cashier/manager/admin can check out when the folio is settled. A manager/admin may use the reasoned on-account override. Checkout finalizes the folio and marks the room dirty for housekeeping. The authenticated print view produces an operational statement.
+6. A manager/admin reviews the business-date preview and manually closes the day. Resolve blockers, confirm the displayed date and accommodation total, and use the [close runbook](docs/booking-day-close-operations.md) for rollback/retry guidance.
+
+The service catalog, private folios, staff reports, and business-day close are staff-only. Public booking responses do not include staff notes, guest contact details, or folio data.
 
 ## Requirements
 
@@ -100,20 +123,25 @@ Health endpoints remain outside the versioned prefix: `GET /health/live` checks 
 
 ## API overview
 
-| Method | Path                                                                   | Purpose                                                                                                   |
-| ------ | ---------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------- |
-| `GET`  | `/api/v1/hotel`                                                        | Read the public hotel profile.                                                                            |
-| `GET`  | `/api/v1/room-types`                                                   | List active public room types.                                                                            |
-| `GET`  | `/api/v1/availability?checkIn=2027-05-01&checkOut=2027-05-04&guests=2` | Search available rooms and prices. Dates use Gregorian `YYYY-MM-DD`; checkout is exclusive.               |
-| `POST` | `/api/v1/bookings`                                                     | Submit a pending request. Include an `Idempotency-Key` header and the request body documented in Swagger. |
-| `POST` | `/api/v1/staff/auth/login`                                             | Sign in with the local staff account; sets staff and CSRF cookies.                                        |
-| `GET`  | `/api/v1/staff/auth/me`                                                | Read the current staff profile and rotate the CSRF token.                                                 |
-| `POST` | `/api/v1/staff/auth/logout`                                            | Revoke the current staff session.                                                                         |
-| `GET`  | `/api/v1/staff/bookings`                                               | Filter and paginate requests; requires staff session.                                                     |
-| `GET`  | `/api/v1/staff/inventory`                                              | Read room-night inventory; requires staff session.                                                        |
-| `PUT`  | `/api/v1/staff/inventory`                                              | Set capacity and nightly price; administrator only, with CSRF proof.                                      |
+| Method       | Path                                                                   | Purpose                                                                                                   |
+| ------------ | ---------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------- |
+| `GET`        | `/api/v1/hotel`                                                        | Read the public hotel profile.                                                                            |
+| `GET`        | `/api/v1/room-types`                                                   | List active public room types.                                                                            |
+| `GET`        | `/api/v1/availability?checkIn=2027-05-01&checkOut=2027-05-04&guests=2` | Search available rooms and prices. Dates use Gregorian `YYYY-MM-DD`; checkout is exclusive.               |
+| `POST`       | `/api/v1/bookings`                                                     | Submit a pending request. Include an `Idempotency-Key` header and the request body documented in Swagger. |
+| `POST`       | `/api/v1/staff/auth/login`                                             | Sign in with the local staff account; sets staff and CSRF cookies.                                        |
+| `GET`        | `/api/v1/staff/auth/me`                                                | Read the current staff profile and rotate the CSRF token.                                                 |
+| `POST`       | `/api/v1/staff/auth/logout`                                            | Revoke the current staff session.                                                                         |
+| `GET`        | `/api/v1/staff/bookings`                                               | Filter and paginate guest requests; requires an authorized staff session.                                 |
+| `GET`        | `/api/v1/staff/inventory`                                              | Read room-night inventory; requires staff session.                                                        |
+| `PUT`        | `/api/v1/staff/inventory`                                              | Set capacity and nightly price; requires inventory capability and CSRF proof.                             |
+| `GET`        | `/api/v1/staff/rooms/board`                                            | Read room status, assignments, and readiness; role-filtered.                                              |
+| `GET`/`POST` | `/api/v1/staff/housekeeping/**`                                        | Work queues, tasks, inspection, and room readiness; role-filtered.                                        |
+| `GET`/`POST` | `/api/v1/staff/maintenance/**`                                         | Maintenance requests and room blocks; role-filtered.                                                      |
+| `GET`/`POST` | `/api/v1/staff/folios/**`                                              | Operational ledger, services, payments, checkout, and authenticated print data.                           |
+| `GET`/`POST` | `/api/v1/staff/operations/**`                                          | Business-date reports, night-close preview, and manual close.                                             |
 
-The staff panel also exposes request detail, confirm, reject, cancel, and administrator room-type options. Role requirements, request and response schemas, error formats, and the remaining routes are described in Swagger. API validation rejects unknown body fields; errors include a stable code, safe message, and request ID.
+The staff panel also exposes request detail, confirm, reject, cancel, staff-account administration, room/assignment changes, housekeeping and maintenance workflows, folio/service-catalog operations, and reports. Role requirements, request and response schemas, error formats, and the remaining routes are described in Swagger. API validation rejects unknown body fields; errors include a stable code, safe message, and request ID. Authenticated staff responses use private no-store cache headers; state-changing requests require CSRF proof.
 
 ## Local demo flow
 
@@ -121,13 +149,26 @@ The staff panel also exposes request detail, confirm, reject, cancel, and admini
 2. On the guest site, search a stay and open a room’s request form.
 3. Submit a fictional guest request. The confirmation page shows that it is awaiting staff review.
 4. Open `/staff/login` and sign in with the local `DEMO_ADMIN_EMAIL` and `DEMO_ADMIN_PASSWORD` values from `.env`.
-5. Open the request in the staff panel and confirm or reject it. Use the administrator inventory page to review and edit nightly capacity or prices.
+5. Open the request in the staff panel and confirm or reject it. For PMS flows, create separate fictional staff accounts for the needed roles from **Staff → Staff accounts**; review arrivals, assign an inspected room, complete housekeeping tasks, post a test service, record a test offline payment, check out, then review and close the business day as manager/admin.
 
-The seeded account and demo data are for local testing only. This app is not a payment processor, and a guest request is not confirmed until staff accept it.
+The seeded account and demo data are for local testing only. A guest request is not confirmed until staff accept it.
+
+## Operating limits and legal boundary
+
+- Payments are manual records only. There is no online payment gateway, card processing, bank reconciliation, email/SMS notification provider, or external identity integration.
+- Printed folios are operational statements, not statutory tax invoices, receipts, or proof of fiscal compliance. The app does not calculate jurisdiction-specific taxes, fees, or legal rates. Confirm local accounting and invoice requirements before using real guest or payment data.
+- Night close is manager/admin initiated; no automatic close scheduler is installed. The existing booking-expiry worker runs in-process, and the supported deployment is a single API instance until that worker has distributed coordination.
+- Reports filter stays and ledger totals by business date. Readiness, active room/block state, open balances, and pending queues are current-state values; historical snapshots are not retained for those measures.
+- The property business date uses the configured hotel timezone (seeded demo: `Asia/Tehran`). API date-only inputs use Gregorian `YYYY-MM-DD`; staff and guest screens display Persian Jalali dates.
+- Before real use, configure deployment TLS, trusted proxy addresses, rate limits at the production edge, security headers, secret storage/rotation, access monitoring, and an incident/restore procedure. Local checks do not verify a live proxy/CDN or production login-limiter topology.
+
+## Database backup and restore expectations
+
+The local Compose named volume persists PostgreSQL data when the container stops; it is not a backup. This repository does not schedule or manage production backups. Before using real data, operators must define encrypted off-host backups, retention, access controls, recovery point/time objectives, and regular restore drills. PostgreSQL backups should use `pg_dump` custom format and be restored with `pg_restore` into a separate, empty recovery database first. Verify restored data and migrations with the release checks before directing application traffic to it. Never test restore commands against the active production database.
 
 ## Screenshots
 
-These screenshots show the refreshed Persian RTL guest and staff journeys using fictional local seed data and generated conceptual hotel imagery.
+These screenshots show the Persian RTL guest request and staff journeys using fictional test data and generated conceptual hotel imagery. The PMS screenshots below were captured by the successful HPM release Playwright run and are tracked here for review.
 
 ### Guest experience
 
@@ -148,6 +189,32 @@ Room detail: [garden double](docs/screenshots/public-room-detail.png). Mobile: [
 ![Staff inventory editor](docs/screenshots/staff-inventory.png)
 
 Mobile inventory: [staff inventory view](docs/screenshots/staff-inventory-mobile.png).
+
+### PMS workflows
+
+![Guest request confirmation](docs/screenshots/pms-guest-confirmation.png)
+
+Mobile: [guest confirmation](docs/screenshots/pms-guest-confirmation-mobile.png).
+
+![Reception arrivals worklist](docs/screenshots/pms-front-desk-arrivals.png)
+
+Mobile: [reception arrivals](docs/screenshots/pms-front-desk-arrivals-mobile.png).
+
+![Reception walk-in confirmation](docs/screenshots/pms-front-desk-walk-in.png)
+
+Mobile: [walk-in confirmation](docs/screenshots/pms-front-desk-walk-in-mobile.png).
+
+![Housekeeping task board](docs/screenshots/pms-housekeeping-board.png)
+
+Mobile: [housekeeping task board](docs/screenshots/pms-housekeeping-board-mobile.png). Maintenance: [desktop](docs/screenshots/pms-maintenance-blocks.png), [mobile](docs/screenshots/pms-maintenance-blocks-mobile.png).
+
+![Cashier's final folio print](docs/screenshots/pms-cashier-folio-print.png)
+
+Narrow print preview: [folio print](docs/screenshots/pms-cashier-folio-print-narrow.png).
+
+![Manager's night-close preview](docs/screenshots/pms-night-close.png)
+
+Mobile: [night-close preview](docs/screenshots/pms-night-close-mobile.png). Daily report: [operations report](docs/screenshots/pms-daily-report.png).
 
 To regenerate the screenshots, start the apps, seed the fictional local staff account, install Playwright Chromium, and run:
 
@@ -173,7 +240,7 @@ Run the complete documented release gate with:
 pnpm check
 ```
 
-The release gate runs format checking, lint, type checking, unit/component tests, PostgreSQL-backed API integration/coverage, seed validation, web coverage, desktop/mobile Playwright, API end-to-end tests, and production builds. Playwright runs before API end-to-end tests against the same isolated `_test` database; it does not reset or drop the configured local database. The release gate uses only fictional test data and does not require production credentials.
+The release gate runs format checking, lint, type checking, unit/component tests, PostgreSQL-backed API integration/coverage, seed validation, web coverage, desktop/mobile Playwright, API end-to-end tests, and production builds. `DATABASE_URL` must use an isolated local PostgreSQL database name ending in `_test`; the check script derives its connection details and creates a unique database for API coverage, Playwright, and API end-to-end tests on each run. It does not reset or drop existing databases. The new test databases remain in PostgreSQL for manual cleanup. The release gate uses only fictional test data and does not require production credentials. Set `HBE_E2E_CHROMIUM_EXECUTABLE_PATH` when using installed Chrome instead of Playwright's bundled Chromium.
 
 Useful focused commands:
 

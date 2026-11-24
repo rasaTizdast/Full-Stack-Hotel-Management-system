@@ -112,7 +112,9 @@ export function StaffBookingsPage() {
   const actionHeadingRef = useRef<HTMLHeadingElement>(null);
   const detailHeadingRef = useRef<HTMLHeadingElement>(null);
   const triggerRef = useRef<HTMLButtonElement>(null);
-  const canViewBookings = status === 'authenticated' && Boolean(staff && ['ADMIN', 'MANAGER', 'RECEPTIONIST'].includes(staff.role));
+  const canViewBookings =
+    status === 'authenticated' &&
+    Boolean(staff && ['ADMIN', 'MANAGER', 'RECEPTIONIST'].includes(staff.role));
 
   useEffect(() => {
     if (!canViewBookings) return;

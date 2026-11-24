@@ -100,7 +100,7 @@ describe('StaffRoomsPage', () => {
   });
 
   it('announces loading and recovers from a list error with a retry action', async () => {
-    let resolveRooms!: (value: { items: typeof generatedRoom[] }) => void;
+    let resolveRooms!: (value: { items: (typeof generatedRoom)[] }) => void;
     roomsApi.getStaffRooms.mockReturnValueOnce(
       new Promise((resolve) => {
         resolveRooms = resolve;
@@ -140,7 +140,9 @@ describe('StaffRoomsPage', () => {
     fireEvent.click(screen.getByRole('button', { name: 'افزودن اتاق' }));
 
     const editor = await screen.findByRole('form', { name: 'افزودن اتاق' });
-    expect(roomList.compareDocumentPosition(editor) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(
+      roomList.compareDocumentPosition(editor) & Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy();
     expect(screen.getByRole('heading', { level: 2, name: 'افزودن اتاق' })).toHaveFocus();
   });
 
@@ -151,11 +153,19 @@ describe('StaffRoomsPage', () => {
     const filterForm = screen.getByRole('form', { name: 'فیلتر اتاق‌ها' });
     const searchInput = within(filterForm).getByLabelText('جست‌وجوی شماره اتاق');
     const applyButton = within(filterForm).getByRole('button', { name: 'اعمال فیلترها' });
-    expect(searchInput.compareDocumentPosition(applyButton) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
-    fireEvent.change(within(filterForm).getByLabelText('نوع اتاق'), { target: { value: roomType.id } });
+    expect(
+      searchInput.compareDocumentPosition(applyButton) & Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy();
+    fireEvent.change(within(filterForm).getByLabelText('نوع اتاق'), {
+      target: { value: roomType.id },
+    });
     fireEvent.change(within(filterForm).getByLabelText('طبقه'), { target: { value: '۲' } });
-    fireEvent.change(within(filterForm).getByLabelText('وضعیت اتاق'), { target: { value: 'true' } });
-    fireEvent.change(within(filterForm).getByLabelText('جست‌وجوی شماره اتاق'), { target: { value: '۲۰۱' } });
+    fireEvent.change(within(filterForm).getByLabelText('وضعیت اتاق'), {
+      target: { value: 'true' },
+    });
+    fireEvent.change(within(filterForm).getByLabelText('جست‌وجوی شماره اتاق'), {
+      target: { value: '۲۰۱' },
+    });
     fireEvent.click(within(filterForm).getByRole('button', { name: 'اعمال فیلترها' }));
 
     await waitFor(() => {
@@ -169,7 +179,12 @@ describe('StaffRoomsPage', () => {
   });
 
   it('creates a physical room with only the supported room fields', async () => {
-    const createdRoom = { ...generatedRoom, id: 'e1fa0dbb-0d31-4d0f-b82d-997476f4db0f', roomNumber: '۲۰۳', isGenerated: false };
+    const createdRoom = {
+      ...generatedRoom,
+      id: 'e1fa0dbb-0d31-4d0f-b82d-997476f4db0f',
+      roomNumber: '۲۰۳',
+      isGenerated: false,
+    };
     roomsApi.createStaffRoom.mockResolvedValue(createdRoom);
     render(<StaffRoomsPage />);
     await screen.findByText('اتاق باغ ۱');
@@ -180,7 +195,9 @@ describe('StaffRoomsPage', () => {
     fireEvent.change(within(form).getByLabelText('نوع اتاق'), { target: { value: roomType.id } });
     fireEvent.change(within(form).getByLabelText('شماره اتاق'), { target: { value: '۲۰۳' } });
     fireEvent.change(within(form).getByLabelText('طبقه'), { target: { value: '۳' } });
-    fireEvent.change(within(form).getByLabelText('امکانات'), { target: { value: 'تراس، رو به باغ' } });
+    fireEvent.change(within(form).getByLabelText('امکانات'), {
+      target: { value: 'تراس، رو به باغ' },
+    });
     fireEvent.click(within(form).getByRole('button', { name: 'افزودن اتاق' }));
 
     await waitFor(() => {
@@ -228,7 +245,9 @@ describe('StaffRoomsPage', () => {
       expect(roomsApi.getStaffRooms).toHaveBeenLastCalledWith({ search: generatedRoom.roomNumber });
     });
 
-    fireEvent.click(screen.getByRole('button', { name: `ویرایش اتاق ${generatedRoom.roomNumber}` }));
+    fireEvent.click(
+      screen.getByRole('button', { name: `ویرایش اتاق ${generatedRoom.roomNumber}` }),
+    );
     const editor = screen.getByRole('form', { name: 'ویرایش اتاق' });
     fireEvent.change(within(editor).getByLabelText('شماره اتاق'), { target: { value: '۲۰۳' } });
     fireEvent.click(within(editor).getByRole('button', { name: 'ذخیره تغییرات اتاق' }));
@@ -274,11 +293,15 @@ describe('StaffRoomsPage', () => {
     fireEvent.click(screen.getByRole('button', { name: 'ویرایش اتاق اتاق باغ ۱' }));
     const form = screen.getByRole('form', { name: 'ویرایش اتاق' });
     const roomNumber = within(form).getByLabelText('شماره اتاق');
-    expect(screen.getByText('شماره‌های نمونه باید پیش از بهره‌برداری با شماره واقعی جایگزین شوند.')).toBeInTheDocument();
+    expect(
+      screen.getByText('شماره‌های نمونه باید پیش از بهره‌برداری با شماره واقعی جایگزین شوند.'),
+    ).toBeInTheDocument();
     fireEvent.change(roomNumber, { target: { value: '۲۰۲' } });
     fireEvent.click(within(form).getByRole('button', { name: 'ذخیره تغییرات اتاق' }));
 
-    expect(await screen.findByRole('alert')).toHaveTextContent('این شماره قبلاً برای اتاق دیگری ثبت شده است.');
+    expect(await screen.findByRole('alert')).toHaveTextContent(
+      'این شماره قبلاً برای اتاق دیگری ثبت شده است.',
+    );
     expect(roomNumber).toHaveAttribute('aria-invalid', 'true');
   });
 
@@ -329,12 +352,18 @@ describe('StaffRoomsPage', () => {
     fireEvent.click(within(dialog).getByRole('button', { name: 'تأیید غیرفعال‌سازی' }));
 
     expect(await screen.findByText('اتاق اتاق باغ ۱ غیرفعال شد.')).toBeInTheDocument();
-    expect(within(screen.getByRole('article', { name: 'اتاق باغ ۱' })).getByText('غیرفعال')).toBeInTheDocument();
+    expect(
+      within(screen.getByRole('article', { name: 'اتاق باغ ۱' })).getByText('غیرفعال'),
+    ).toBeInTheDocument();
   });
 
   it('reactivates inactive rooms and explains capacity projection conflicts', async () => {
     roomsApi.reactivateStaffRoom.mockRejectedValue(
-      new StaffApiError('Reactivation conflicts with reservations.', 409, 'CAPACITY_BELOW_RESERVED'),
+      new StaffApiError(
+        'Reactivation conflicts with reservations.',
+        409,
+        'CAPACITY_BELOW_RESERVED',
+      ),
     );
     render(<StaffRoomsPage />);
     await screen.findByText('۲۰۲');

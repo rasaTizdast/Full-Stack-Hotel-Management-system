@@ -14,7 +14,11 @@ interface UseFrontDeskStayDetailOptions {
   refreshNumber: number;
 }
 
-export function useFrontDeskStayDetail({ allowed, businessDate, refreshNumber }: UseFrontDeskStayDetailOptions) {
+export function useFrontDeskStayDetail({
+  allowed,
+  businessDate,
+  refreshNumber,
+}: UseFrontDeskStayDetailOptions) {
   const returnFocusTarget = useRef<HTMLElement | null>(null);
   const [selectedReference, setSelectedReference] = useState<string | null>(null);
   const [detail, setDetail] = useState<StaffBookingDetail | null>(null);
@@ -52,8 +56,12 @@ export function useFrontDeskStayDetail({ allowed, businessDate, refreshNumber }:
       .catch((cause: unknown) => {
         if (current) setError(safeErrorMessage(cause));
       })
-      .finally(() => { if (current) setLoading(false); });
-    return () => { current = false; };
+      .finally(() => {
+        if (current) setLoading(false);
+      });
+    return () => {
+      current = false;
+    };
   }, [selectedReference, allowed, refreshNumber]);
 
   useEffect(() => {
@@ -108,10 +116,18 @@ export function useFrontDeskStayDetail({ allowed, businessDate, refreshNumber }:
     }
     const payload = {
       ...(draft.guestName.trim() !== detail.guestName ? { guestName: draft.guestName.trim() } : {}),
-      ...(draft.guestPhone.trim() !== detail.guestPhone ? { guestPhone: draft.guestPhone.trim() } : {}),
-      ...(draft.guestEmail.trim() !== (detail.guestEmail ?? '') ? { guestEmail: draft.guestEmail.trim() || null } : {}),
-      ...(Number(draft.guestCount) !== detail.guestCount ? { guestCount: Number(draft.guestCount) } : {}),
-      ...(Number(draft.roomQuantity) !== detail.roomQuantity ? { roomQuantity: Number(draft.roomQuantity) } : {}),
+      ...(draft.guestPhone.trim() !== detail.guestPhone
+        ? { guestPhone: draft.guestPhone.trim() }
+        : {}),
+      ...(draft.guestEmail.trim() !== (detail.guestEmail ?? '')
+        ? { guestEmail: draft.guestEmail.trim() || null }
+        : {}),
+      ...(Number(draft.guestCount) !== detail.guestCount
+        ? { guestCount: Number(draft.guestCount) }
+        : {}),
+      ...(Number(draft.roomQuantity) !== detail.roomQuantity
+        ? { roomQuantity: Number(draft.roomQuantity) }
+        : {}),
       ...(checkIn !== detail.checkIn ? { checkIn } : {}),
       ...(checkOut !== detail.checkOut ? { checkOut } : {}),
     };

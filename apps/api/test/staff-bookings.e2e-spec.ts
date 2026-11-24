@@ -25,6 +25,7 @@ type StaffBookingItem = {
   createdAt: string;
 };
 type StaffBookingDetail = StaffBookingItem & {
+  id: string;
   guestEmail: string | null;
   totalPriceToman: string;
   internalNote: string | null;
@@ -338,7 +339,7 @@ describe('Staff bookings API (e2e)', () => {
       guestEmail: `hbe011-list-1-${suffix}@example.invalid`,
       internalNote: 'HBE-011 internal confirmation fixture.',
     });
-    expect(detail).not.toHaveProperty('id');
+    expect(detail.id).toMatch(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i);
     expect(detail).not.toHaveProperty('idempotencyKey');
     expect(detail).not.toHaveProperty('idempotencyRequestHash');
     expect(detail).not.toHaveProperty('roomTypeId');

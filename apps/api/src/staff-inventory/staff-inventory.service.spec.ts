@@ -1,4 +1,4 @@
-import { ConflictException, NotFoundException } from '@nestjs/common';
+import { BadRequestException, ConflictException, NotFoundException } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
 import { PrismaService } from '../database/prisma.service';
 import { AuditService } from '../audit/audit.service';
@@ -248,6 +248,28 @@ describe('StaffInventoryService', () => {
     expect(transaction.roomNightInventory.findMany).not.toHaveBeenCalled();
   });
 
+  it('returns not found when the room type cannot be locked or has no business date', async () => {
+    capacity.lockRoomType.mockResolvedValueOnce(false);
+    const dto: UpdateStaffInventoryDto = {
+      roomTypeId: roomType.id,
+      startDate: '2027-01-02',
+      endDate: '2027-01-04',
+      nightlyPriceToman: '4500000',
+    };
+    await expect(service.updateRange(dto, 'inventory-actor')).rejects.toBeInstanceOf(
+      NotFoundException,
+    );
+
+    capacity.getHotelBusinessDate.mockResolvedValueOnce(null);
+    await expect(
+      service.findRange({
+        roomTypeId: roomType.id,
+        startDate: '2027-01-02',
+        endDate: '2027-01-04',
+      }),
+    ).rejects.toBeInstanceOf(NotFoundException);
+  });
+
   it('marks past dates without a snapshot unavailable instead of using current room counts', async () => {
     transaction.roomNightInventory.findMany.mockResolvedValueOnce([]);
     const query: StaffInventoryRangeQueryDto = {
@@ -273,6 +295,58 @@ describe('StaffInventoryService', () => {
     expect(capacity.projectDateRange).not.toHaveBeenCalled();
   });
 
+  it('returns historical snapshots and zero projected capacity when no projection exists', async () => {
+    transaction.roomNightInventory.findMany.mockResolvedValueOnce([
+      {
+        stayDate: new Date('2020-01-10T00:00:00.000Z'),
+        totalRooms: 2,
+        blockedRooms: 1,
+        heldRooms: 0,
+        bookedRooms: 1,
+        nightlyPriceToman: 2_500_000n,
+      },
+    ]);
+    await expect(
+      service.findRange({
+        roomTypeId: roomType.id,
+        startDate: '2020-01-10',
+        endDate: '2020-01-11',
+      }),
+    ).resolves.toMatchObject({
+      nights: [
+        {
+          capacitySource: 'HISTORICAL',
+          totalRooms: 2,
+          heldRooms: 0,
+          bookedRooms: 1,
+          blockedRooms: 1,
+          availableRooms: 1,
+          nightlyPriceToman: '2500000',
+        },
+      ],
+    });
+
+    capacity.projectDateRange.mockResolvedValueOnce([]);
+    await expect(
+      service.findRange({
+        roomTypeId: roomType.id,
+        startDate: '2027-01-02',
+        endDate: '2027-01-03',
+      }),
+    ).resolves.toMatchObject({
+      nights: [
+        {
+          capacitySource: 'PROJECTED',
+          totalRooms: 0,
+          heldRooms: 1,
+          bookedRooms: 0,
+          blockedRooms: 0,
+          availableRooms: -1,
+        },
+      ],
+    });
+  });
+
   it('rejects historical rate writes without creating or reprojecting rows', async () => {
     const dto: UpdateStaffInventoryDto = {
       roomTypeId: roomType.id,
@@ -286,5 +360,32 @@ describe('StaffInventoryService', () => {
     });
     expect(transaction.roomNightInventory.createMany).not.toHaveBeenCalled();
     expect(capacity.lockAndProjectInventory).not.toHaveBeenCalled();
+  });
+
+  it('rejects amounts outside PostgreSQL bigint and incomplete locked ranges', async () => {
+    await expect(
+      service.updateRange(
+        {
+          roomTypeId: roomType.id,
+          startDate: '2027-01-02',
+          endDate: '2027-01-04',
+          nightlyPriceToman: '9223372036854775808',
+        },
+        'inventory-actor',
+      ),
+    ).rejects.toBeInstanceOf(BadRequestException);
+
+    capacity.lockAndProjectInventory.mockResolvedValueOnce([]);
+    await expect(
+      service.updateRange(
+        {
+          roomTypeId: roomType.id,
+          startDate: '2027-01-02',
+          endDate: '2027-01-04',
+          nightlyPriceToman: '4500000',
+        },
+        'inventory-actor',
+      ),
+    ).rejects.toBeInstanceOf(ConflictException);
   });
 });

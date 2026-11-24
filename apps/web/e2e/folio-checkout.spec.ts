@@ -2,7 +2,8 @@ import { randomInt, randomUUID } from 'node:crypto';
 import { expect, type Page } from '@playwright/test';
 import { isAvailabilityResult } from '../src/lib/availability';
 import { formatGregorianAsJalali } from '../src/lib/jalali-date';
-import { test } from './staff-fixtures';
+import { createHousekeepingStaffSession } from './housekeeping-fixtures';
+import { test, withFailureSafeCleanup } from './staff-fixtures';
 
 const apiPort = process.env.HBE_E2E_API_PORT ?? '4015';
 const webPort = process.env.HBE_E2E_WEB_PORT ?? '3015';
@@ -35,8 +36,9 @@ async function sessionHeaders(page: Page): Promise<Record<string, string>> {
   };
 }
 
-test('admin settles an in-house folio, checks out, and prints a final statement', async ({
+test('cashier settles an in-house folio, checks out, and prints a final statement', async ({
   page,
+  browser,
   staffCookies,
 }, testInfo) => {
   await page.context().addCookies(staffCookies);
@@ -240,144 +242,168 @@ test('admin settles an in-house folio, checks out, and prints a final statement'
     );
     expect(additionalService.status()).toBe(200);
   }
-  await page.reload();
-  await expect(page.getByText(serviceName, { exact: true }).first()).toBeVisible();
-  await page.screenshot({
-    path: testInfo.outputPath('hpm008-folio-screen-active.png'),
-    fullPage: true,
-  });
-  await page.goto(`/staff/folios/${bookingId}/print`);
-  await expect(page.getByRole('heading', { name: 'صورتحساب موقت' })).toBeVisible();
-  const interimStatement = page.getByRole('article', { name: 'صورتحساب موقت' });
-  await expect(interimStatement).toContainText(guestName);
-  await expect(interimStatement).toContainText(serviceName);
-  await expect(interimStatement).toContainText(`اتاق ${roomNumber}`);
-  await page.goto(`/staff/folios/${bookingId}`);
-  await expect(page.getByRole('heading', { name: 'صورتحساب اقامت' })).toBeVisible();
-
-  await expect(page.getByLabel('دلیل تسویه با مانده')).toBeVisible();
-  await expect(page.getByRole('button', { name: 'ثبت خروج' })).toBeDisabled();
-  const totalServiceAmount = (
-    BigInt(servicePriceToman) * BigInt(printedServiceRowCount)
-  ).toString();
-  await page.getByLabel('مبلغ پرداخت · تومان').fill(totalServiceAmount);
-  await page.getByLabel('روش پرداخت').selectOption('BANK_TRANSFER');
-  await page.getByLabel('شماره رسید بانکی · اختیاری').fill('HPM008-TRANSFER-01');
-  const paymentPosting = page.waitForResponse((response) => {
-    const url = new URL(response.url());
-    return (
-      url.pathname === `/api/v1/staff/folios/${bookingId}/payments` &&
-      response.request().method() === 'POST'
+  await withFailureSafeCleanup(async (registerCleanup) => {
+    const cashier = await createHousekeepingStaffSession(
+      page,
+      browser,
+      'CASHIER',
+      registerCleanup,
+      'HPM010',
     );
-  });
-  await page.getByRole('button', { name: 'ثبت پرداخت' }).click();
-  const payment = await paymentPosting;
-  expect(payment.status()).toBe(200);
-  await expect(page.getByText('پرداخت آفلاین در صورتحساب ثبت شد.')).toBeVisible();
-  await expect(page.getByText('روش پرداخت: حواله بانکی', { exact: true })).toBeVisible();
-  await expect(page.getByText('HPM008-TRANSFER-01')).toBeVisible();
+    await (async (page: Page) => {
+      await page.goto(`/staff/folios/${bookingId}`);
+      await expect(page.getByText(serviceName, { exact: true }).first()).toBeVisible();
+      await page.screenshot({
+        path: testInfo.outputPath('hpm008-folio-screen-active.png'),
+        fullPage: true,
+      });
+      await page.goto(`/staff/folios/${bookingId}/print`);
+      await expect(page.getByRole('heading', { name: 'صورتحساب موقت' })).toBeVisible();
+      const interimStatement = page.getByRole('article', { name: 'صورتحساب موقت' });
+      await expect(interimStatement).toContainText(guestName);
+      await expect(interimStatement).toContainText(serviceName);
+      await expect(interimStatement).toContainText(`اتاق ${roomNumber}`);
+      await page.goto(`/staff/folios/${bookingId}`);
+      await expect(page.getByRole('heading', { name: 'صورتحساب اقامت' })).toBeVisible();
 
-  const originalPaymentRequest = payment.request();
-  const paymentIdempotencyKey = originalPaymentRequest.headers()['idempotency-key'];
-  const paymentRetryHeaders = await sessionHeaders(page);
-  expect(paymentIdempotencyKey).toBeTruthy();
-  const retriedPayment = await page.request.post(
-    `${apiBaseUrl}/staff/folios/${bookingId}/payments`,
-    {
-      headers: { ...paymentRetryHeaders, 'Idempotency-Key': paymentIdempotencyKey },
-      data: originalPaymentRequest.postDataJSON(),
-    },
-  );
-  const retriedPaymentBody = await retriedPayment.text();
-  expect(retriedPayment.status(), retriedPaymentBody).toBe(200);
-  const retriedPaymentFolio: unknown = JSON.parse(retriedPaymentBody);
-  if (!isRecord(retriedPaymentFolio) || !Array.isArray(retriedPaymentFolio.entries)) {
-    throw new Error('The retried payment response did not include folio entries.');
-  }
-  expect(
-    retriedPaymentFolio.entries.filter((entry) => isRecord(entry) && entry.kind === 'PAYMENT'),
-  ).toHaveLength(1);
+      await expect(page.getByLabel('دلیل تسویه با مانده')).toHaveCount(0);
+      await expect(page.getByRole('button', { name: 'ثبت خروج' })).toBeDisabled();
+      const totalServiceAmount = (
+        BigInt(servicePriceToman) * BigInt(printedServiceRowCount)
+      ).toString();
+      await page.getByLabel('مبلغ پرداخت · تومان').fill(totalServiceAmount);
+      await page.getByLabel('روش پرداخت').selectOption('BANK_TRANSFER');
+      await page.getByLabel('شماره رسید بانکی · اختیاری').fill('HPM008-TRANSFER-01');
+      const paymentPosting = page.waitForResponse((response) => {
+        const url = new URL(response.url());
+        return (
+          url.pathname === `/api/v1/staff/folios/${bookingId}/payments` &&
+          response.request().method() === 'POST'
+        );
+      });
+      await page.getByRole('button', { name: 'ثبت پرداخت' }).click();
+      const payment = await paymentPosting;
+      expect(payment.status()).toBe(200);
+      await expect(page.getByText('پرداخت آفلاین در صورتحساب ثبت شد.')).toBeVisible();
+      await expect(page.getByText('روش پرداخت: حواله بانکی', { exact: true })).toBeVisible();
+      await expect(page.getByText('HPM008-TRANSFER-01')).toBeVisible();
 
-  const checkoutResponse = page.waitForResponse((response) => {
-    const url = new URL(response.url());
-    return (
-      url.pathname === `/api/v1/staff/folios/${bookingId}/checkout` &&
-      response.request().method() === 'POST'
-    );
-  });
-  await page.getByRole('button', { name: 'ثبت خروج' }).click();
-  const checkout = await checkoutResponse;
-  expect(checkout.status()).toBe(200);
-  expect(checkout.headers()['cache-control']).toContain('private, no-store');
-  await expect(page.getByText('خروج نهایی ثبت شد و اتاق برای نظافت علامت‌گذاری شد.')).toBeVisible();
-  await expect(page.getByText('صورتحساب عملیاتی · نهایی')).toBeVisible();
+      const originalPaymentRequest = payment.request();
+      const paymentIdempotencyKey = originalPaymentRequest.headers()['idempotency-key'];
+      const paymentRetryHeaders = await sessionHeaders(page);
+      expect(paymentIdempotencyKey).toBeTruthy();
+      const retriedPayment = await page.request.post(
+        `${apiBaseUrl}/staff/folios/${bookingId}/payments`,
+        {
+          headers: { ...paymentRetryHeaders, 'Idempotency-Key': paymentIdempotencyKey },
+          data: originalPaymentRequest.postDataJSON(),
+        },
+      );
+      const retriedPaymentBody = await retriedPayment.text();
+      expect(retriedPayment.status(), retriedPaymentBody).toBe(200);
+      const retriedPaymentFolio: unknown = JSON.parse(retriedPaymentBody);
+      if (!isRecord(retriedPaymentFolio) || !Array.isArray(retriedPaymentFolio.entries)) {
+        throw new Error('The retried payment response did not include folio entries.');
+      }
+      expect(
+        retriedPaymentFolio.entries.filter((entry) => isRecord(entry) && entry.kind === 'PAYMENT'),
+      ).toHaveLength(1);
 
-  const finalResponse = await page.request.get(`${apiBaseUrl}/staff/folios/${bookingId}/print`, {
-    headers,
-  });
-  expect(finalResponse.status()).toBe(200);
-  expect(finalResponse.headers()['cache-control']).toContain('private, no-store');
-  const finalStatement: unknown = await finalResponse.json();
-  expect(isRecord(finalStatement) && finalStatement.label).toBe('Final folio');
-  if (
-    !isRecord(finalStatement) ||
-    !isRecord(finalStatement.folio) ||
-    !Array.isArray(finalStatement.folio.entries)
-  ) {
-    throw new Error('The final print response did not include its ledger entries.');
-  }
-  const finalEntries = finalStatement.folio.entries.filter(isRecord);
-  expect(finalEntries).toHaveLength(printedServiceRowCount + 1);
-  expect(finalEntries.filter((entry) => entry.kind === 'SERVICE')).toHaveLength(
-    printedServiceRowCount,
-  );
-  expect(finalEntries.filter((entry) => entry.kind === 'PAYMENT')).toHaveLength(1);
-  expect(
-    isRecord(finalStatement) && isRecord(finalStatement.folio) && finalStatement.folio.balanceToman,
-  ).toBe('0');
+      const checkoutResponse = page.waitForResponse((response) => {
+        const url = new URL(response.url());
+        return (
+          url.pathname === `/api/v1/staff/folios/${bookingId}/checkout` &&
+          response.request().method() === 'POST'
+        );
+      });
+      await page.getByRole('button', { name: 'ثبت خروج' }).click();
+      const checkout = await checkoutResponse;
+      expect(checkout.status()).toBe(200);
+      expect(checkout.headers()['cache-control']).toContain('private, no-store');
+      await expect(
+        page.getByText('خروج نهایی ثبت شد و اتاق برای نظافت علامت‌گذاری شد.'),
+      ).toBeVisible();
+      await expect(page.getByText('صورتحساب عملیاتی · نهایی')).toBeVisible();
 
-  const printResponse = await page.goto(`/staff/folios/${bookingId}/print`);
-  // Next.js development mode forces no-store on document responses.
-  expect(printResponse?.headers()['cache-control']).toContain('no-store');
-  await expect(page.getByRole('heading', { name: 'صورتحساب نهایی' })).toBeVisible();
-  const printedStatement = page.getByRole('article', { name: 'صورتحساب نهایی' });
-  await expect(printedStatement).toContainText(guestName);
-  await expect(printedStatement).toContainText(reference);
-  await expect(printedStatement).toContainText(serviceName);
-  await expect(printedStatement).toContainText('19,000 تومان');
-  await expect(printedStatement).toContainText('حواله بانکی');
-  await expect(printedStatement).toContainText('HPM008-TRANSFER-01');
-  await expect(page.getByRole('table', { name: 'ردیف‌های صورتحساب عملیاتی اقامت' })).toBeVisible();
-  await page.screenshot({
-    path: testInfo.outputPath('hpm008-folio-screen-desktop.png'),
-    fullPage: true,
-  });
-  await page.setViewportSize({ width: 390, height: 844 });
-  await expect(page.getByRole('button', { name: 'چاپ' })).toBeVisible();
-  await page.screenshot({
-    path: testInfo.outputPath('hpm008-folio-screen-narrow.png'),
-    fullPage: true,
-  });
-  await page.emulateMedia({ media: 'print' });
-  await expect(page.getByRole('button', { name: 'چاپ' })).toBeHidden();
-  await expect(page.locator('.staff-topbar')).toBeHidden();
-  await expect(page.locator('.staff-sidebar')).toBeHidden();
-  await expect(page.getByRole('table', { name: 'ردیف‌های صورتحساب عملیاتی اقامت' })).toBeVisible();
-  await page.screenshot({
-    path: testInfo.outputPath('hpm008-folio-print-narrow.png'),
-    fullPage: true,
-  });
-  await page.setViewportSize({ width: 1440, height: 960 });
-  await expect(page.getByRole('table', { name: 'ردیف‌های صورتحساب عملیاتی اقامت' })).toBeVisible();
-  await page.screenshot({
-    path: testInfo.outputPath('hpm008-folio-print-desktop.png'),
-    fullPage: true,
-  });
-  await page.pdf({
-    path: testInfo.outputPath('hpm008-folio-print.pdf'),
-    format: 'A4',
-    printBackground: true,
-    preferCSSPageSize: true,
+      const finalResponse = await page.request.get(
+        `${apiBaseUrl}/staff/folios/${bookingId}/print`,
+        {
+          headers: await sessionHeaders(page),
+        },
+      );
+      expect(finalResponse.status()).toBe(200);
+      expect(finalResponse.headers()['cache-control']).toContain('private, no-store');
+      const finalStatement: unknown = await finalResponse.json();
+      expect(isRecord(finalStatement) && finalStatement.label).toBe('Final folio');
+      if (
+        !isRecord(finalStatement) ||
+        !isRecord(finalStatement.folio) ||
+        !Array.isArray(finalStatement.folio.entries)
+      ) {
+        throw new Error('The final print response did not include its ledger entries.');
+      }
+      const finalEntries = finalStatement.folio.entries.filter(isRecord);
+      expect(finalEntries).toHaveLength(printedServiceRowCount + 1);
+      expect(finalEntries.filter((entry) => entry.kind === 'SERVICE')).toHaveLength(
+        printedServiceRowCount,
+      );
+      expect(finalEntries.filter((entry) => entry.kind === 'PAYMENT')).toHaveLength(1);
+      expect(
+        isRecord(finalStatement) &&
+          isRecord(finalStatement.folio) &&
+          finalStatement.folio.balanceToman,
+      ).toBe('0');
+
+      const printResponse = await page.goto(`/staff/folios/${bookingId}/print`);
+      // Next.js development mode forces no-store on document responses.
+      expect(printResponse?.headers()['cache-control']).toContain('no-store');
+      await expect(page.getByRole('heading', { name: 'صورتحساب نهایی' })).toBeVisible();
+      const printedStatement = page.getByRole('article', { name: 'صورتحساب نهایی' });
+      await expect(printedStatement).toContainText(guestName);
+      await expect(printedStatement).toContainText(reference);
+      await expect(printedStatement).toContainText(serviceName);
+      await expect(printedStatement).toContainText('19,000 تومان');
+      await expect(printedStatement).toContainText('حواله بانکی');
+      await expect(printedStatement).toContainText('HPM008-TRANSFER-01');
+      await expect(
+        page.getByRole('table', { name: 'ردیف‌های صورتحساب عملیاتی اقامت' }),
+      ).toBeVisible();
+      await page.screenshot({
+        path: testInfo.outputPath('hpm008-folio-screen-desktop.png'),
+        fullPage: true,
+      });
+      await page.setViewportSize({ width: 390, height: 844 });
+      await expect(page.getByRole('button', { name: 'چاپ' })).toBeVisible();
+      await page.screenshot({
+        path: testInfo.outputPath('hpm008-folio-screen-narrow.png'),
+        fullPage: true,
+      });
+      await page.emulateMedia({ media: 'print' });
+      await expect(page.getByRole('button', { name: 'چاپ' })).toBeHidden();
+      await expect(page.locator('.staff-topbar')).toBeHidden();
+      await expect(page.locator('.staff-sidebar')).toBeHidden();
+      await expect(
+        page.getByRole('table', { name: 'ردیف‌های صورتحساب عملیاتی اقامت' }),
+      ).toBeVisible();
+      await page.screenshot({
+        path: testInfo.outputPath('hpm008-folio-print-narrow.png'),
+        fullPage: true,
+      });
+      await page.setViewportSize({ width: 1440, height: 960 });
+      await expect(
+        page.getByRole('table', { name: 'ردیف‌های صورتحساب عملیاتی اقامت' }),
+      ).toBeVisible();
+      await page.screenshot({
+        path: testInfo.outputPath('hpm008-folio-print-desktop.png'),
+        fullPage: true,
+      });
+      await page.pdf({
+        path: testInfo.outputPath('hpm008-folio-print.pdf'),
+        format: 'A4',
+        printBackground: true,
+        preferCSSPageSize: true,
+      });
+    })(cashier.page);
   });
 });
 

@@ -2,7 +2,11 @@
 
 import type { ReactNode } from 'react';
 import { formatPersianInteger } from '@/lib/jalali-date';
-import { type StaffStayQueue, type StaffStayWorklist, type StaffStayWorklistItem } from '@/lib/staff-front-desk-api';
+import {
+  type StaffStayQueue,
+  type StaffStayWorklist,
+  type StaffStayWorklistItem,
+} from '@/lib/staff-front-desk-api';
 import { dateLabel } from './front-desk-domain';
 import type { ListState } from './front-desk-types';
 import { WorklistGroup } from './worklist-group';
@@ -54,15 +58,29 @@ interface FrontDeskQueueResultsProps {
   selectedDetail: SelectedStayDetail | null;
 }
 
-export function FrontDeskQueueResults({ queue, copy, model, actions, selectedDetail }: FrontDeskQueueResultsProps) {
-  const { queryDate, page, worklist, listState, listError, items, selectedDate, groupedItems } = model;
+export function FrontDeskQueueResults({
+  queue,
+  copy,
+  model,
+  actions,
+  selectedDetail,
+}: FrontDeskQueueResultsProps) {
+  const { queryDate, page, worklist, listState, listError, items, selectedDate, groupedItems } =
+    model;
 
-  if (listState === 'loading') return <p className={styles.status} role="status">{copy.loading}</p>;
+  if (listState === 'loading')
+    return (
+      <p className={styles.status} role="status">
+        {copy.loading}
+      </p>
+    );
   if (listState === 'error') {
     return (
       <div className={styles.errorPanel}>
         <p role="alert">{listError}</p>
-        <button className={styles.secondaryButton} type="button" onClick={actions.refresh}>تلاش دوباره</button>
+        <button className={styles.secondaryButton} type="button" onClick={actions.refresh}>
+          تلاش دوباره
+        </button>
       </div>
     );
   }
@@ -71,10 +89,16 @@ export function FrontDeskQueueResults({ queue, copy, model, actions, selectedDet
   return (
     <>
       <div className={styles.freshness}>
-        <span>تاریخ انتخاب‌شده: <strong>{dateLabel(worklist.date)}</strong></span>
-        <button className={styles.secondaryButton} type="button" onClick={actions.refresh}>دریافت دوباره</button>
+        <span>
+          تاریخ انتخاب‌شده: <strong>{dateLabel(worklist.date)}</strong>
+        </span>
+        <button className={styles.secondaryButton} type="button" onClick={actions.refresh}>
+          دریافت دوباره
+        </button>
       </div>
-      {items.length === 0 ? <p className={styles.empty}>{copy.empty}</p> : (
+      {items.length === 0 ? (
+        <p className={styles.empty}>{copy.empty}</p>
+      ) : (
         <div className={styles.groups}>
           <WorklistGroup
             queue={queue}
@@ -106,22 +130,49 @@ export function FrontDeskQueueResults({ queue, copy, model, actions, selectedDet
       )}
       {worklist.pagination.totalPages > 1 && (
         <nav className={styles.pagination} aria-label="صفحه‌های فهرست">
-          <button className={styles.secondaryButton} type="button" disabled={page <= 1} onClick={() => actions.changePage(-1)}>صفحه پیشین</button>
-          <span>صفحه {formatPersianInteger(worklist.pagination.page)} از {formatPersianInteger(worklist.pagination.totalPages)}</span>
-          <button className={styles.secondaryButton} type="button" disabled={page >= worklist.pagination.totalPages} onClick={() => actions.changePage(1)}>صفحه بعد</button>
+          <button
+            className={styles.secondaryButton}
+            type="button"
+            disabled={page <= 1}
+            onClick={() => actions.changePage(-1)}
+          >
+            صفحه پیشین
+          </button>
+          <span>
+            صفحه {formatPersianInteger(worklist.pagination.page)} از{' '}
+            {formatPersianInteger(worklist.pagination.totalPages)}
+          </span>
+          <button
+            className={styles.secondaryButton}
+            type="button"
+            disabled={page >= worklist.pagination.totalPages}
+            onClick={() => actions.changePage(1)}
+          >
+            صفحه بعد
+          </button>
         </nav>
       )}
     </>
   );
 }
 
-function getPrimaryGroupTitle(queue: StaffStayQueue, queryDate: string, worklist: StaffStayWorklist) {
-  if (queue === 'arrivals') return queryDate === worklist.businessDate ? 'ورودهای امروز' : 'ورودهای تاریخ انتخاب‌شده';
+function getPrimaryGroupTitle(
+  queue: StaffStayQueue,
+  queryDate: string,
+  worklist: StaffStayWorklist,
+) {
+  if (queue === 'arrivals')
+    return queryDate === worklist.businessDate ? 'ورودهای امروز' : 'ورودهای تاریخ انتخاب‌شده';
   if (queue === 'in-house') return 'اقامت‌های در جریان';
   return 'موعدهای رسیده';
 }
 
-function getSecondaryGroupTitle(queue: StaffStayQueue, queryDate: string, worklist: StaffStayWorklist) {
-  if (queue === 'arrivals') return queryDate === worklist.businessDate ? 'ورودهای معوق' : 'ورودهای پیش از تاریخ انتخاب‌شده';
+function getSecondaryGroupTitle(
+  queue: StaffStayQueue,
+  queryDate: string,
+  worklist: StaffStayWorklist,
+) {
+  if (queue === 'arrivals')
+    return queryDate === worklist.businessDate ? 'ورودهای معوق' : 'ورودهای پیش از تاریخ انتخاب‌شده';
   return 'موعد خروج گذشته';
 }

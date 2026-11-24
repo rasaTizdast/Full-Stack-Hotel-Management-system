@@ -11,7 +11,11 @@ import {
 import { formatGregorianAsJalali, toGregorianIso } from '@/lib/jalali-date';
 import { useStaffSession } from '../staff-session-provider';
 import { isDateWithinAssignmentInterval } from './room-board-date';
-import { RoomAssignmentEditor, type DraftAssignment, type StaleConflict } from './room-assignment-editor';
+import {
+  RoomAssignmentEditor,
+  type DraftAssignment,
+  type StaleConflict,
+} from './room-assignment-editor';
 import {
   AssignableBookings,
   EMPTY_ROOM_BOARD_FILTERS,
@@ -46,8 +50,10 @@ function assignmentErrorMessage(cause: unknown): string {
     ROOM_ASSIGNMENT_DUPLICATE_ROOM: 'هر اتاق را فقط یک‌بار در این تخصیص وارد کنید.',
     ROOM_ASSIGNMENT_OUTSIDE_BOOKING: 'بازهٔ هر تخصیص باید داخل تاریخ ورود و خروج رزرو باشد.',
     ROOM_TYPE_MISMATCH: 'نوع اتاق انتخابی با نوع اتاق رزرو هم‌خوان نیست.',
-    ROOM_ASSIGNMENT_OVERLAP: 'این اتاق در بخشی از بازه برای رزرو دیگری تخصیص دارد؛ اتاق دیگری انتخاب کنید.',
-    ROOM_BLOCKED: 'این اتاق در بخشی از بازه مسدود است؛ اتاق دیگری انتخاب کنید یا تاریخ را تغییر دهید.',
+    ROOM_ASSIGNMENT_OVERLAP:
+      'این اتاق در بخشی از بازه برای رزرو دیگری تخصیص دارد؛ اتاق دیگری انتخاب کنید.',
+    ROOM_BLOCKED:
+      'این اتاق در بخشی از بازه مسدود است؛ اتاق دیگری انتخاب کنید یا تاریخ را تغییر دهید.',
     BOOKING_STATUS_CONFLICT: 'این رزرو دیگر تأییدشده نیست؛ فهرست را به‌روزرسانی کنید.',
   };
   return messages[cause.code ?? ''] ?? cause.message;
@@ -60,7 +66,9 @@ function dateQuery(date: string | undefined): StaffRoomBoardQuery {
 export function StaffRoomBoardPage() {
   const { status, staff, csrfToken } = useStaffSession();
   const canViewBoard = Boolean(
-    status === 'authenticated' && staff && ['ADMIN', 'MANAGER', 'RECEPTIONIST'].includes(staff.role),
+    status === 'authenticated' &&
+    staff &&
+    ['ADMIN', 'MANAGER', 'RECEPTIONIST'].includes(staff.role),
   );
   const [board, setBoard] = useState<Awaited<ReturnType<typeof getStaffRoomBoard>> | null>(null);
   const [draftFilters, setDraftFilters] = useState<RoomBoardFilters>(EMPTY_ROOM_BOARD_FILTERS);
@@ -72,7 +80,9 @@ export function StaffRoomBoardPage() {
   const [isStale, setIsStale] = useState(false);
   const [dateError, setDateError] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
-  const [selectedBooking, setSelectedBooking] = useState<StaffRoomBoardAssignableBooking | null>(null);
+  const [selectedBooking, setSelectedBooking] = useState<StaffRoomBoardAssignableBooking | null>(
+    null,
+  );
   const [draftAssignments, setDraftAssignments] = useState<DraftAssignment[]>([]);
   const [expectedRevision, setExpectedRevision] = useState<string | null>(null);
   const [reason, setReason] = useState('');
@@ -132,11 +142,19 @@ export function StaffRoomBoardPage() {
   );
   const roomTypes = useMemo(() => {
     const types = new Map<string, { id: string; name: string }>();
-    for (const room of board?.items ?? []) types.set(room.roomType.id, { id: room.roomType.id, name: room.roomType.name });
+    for (const room of board?.items ?? [])
+      types.set(room.roomType.id, { id: room.roomType.id, name: room.roomType.name });
     return [...types.values()].sort((first, second) => first.name.localeCompare(second.name, 'fa'));
   }, [board?.items]);
   const floors = useMemo(
-    () => [...new Set((board?.items ?? []).map((room) => room.floor).filter((floor): floor is string => Boolean(floor)))].sort((a, b) => a.localeCompare(b, 'fa')),
+    () =>
+      [
+        ...new Set(
+          (board?.items ?? [])
+            .map((room) => room.floor)
+            .filter((floor): floor is string => Boolean(floor)),
+        ),
+      ].sort((a, b) => a.localeCompare(b, 'fa')),
     [board?.items],
   );
 
@@ -152,7 +170,7 @@ export function StaffRoomBoardPage() {
   }
 
   function updateFilter(field: keyof RoomBoardFilters, value: string) {
-    setDraftFilters((current) => ({ ...current, [field]: value } as RoomBoardFilters));
+    setDraftFilters((current) => ({ ...current, [field]: value }) as RoomBoardFilters);
     if (field === 'date') setDateError(null);
   }
 
@@ -199,14 +217,16 @@ export function StaffRoomBoardPage() {
   }
 
   function updateAssignment(key: number, field: 'roomId' | 'startDate' | 'endDate', value: string) {
-    setDraftAssignments((current) => current.map((assignment) => {
-      if (assignment.key !== key) return assignment;
-      if (field === 'roomId') {
-        const room = board?.items.find((item) => item.id === value);
-        return { ...assignment, roomId: value, roomNumber: room?.roomNumber ?? '' };
-      }
-      return { ...assignment, [field]: value };
-    }));
+    setDraftAssignments((current) =>
+      current.map((assignment) => {
+        if (assignment.key !== key) return assignment;
+        if (field === 'roomId') {
+          const room = board?.items.find((item) => item.id === value);
+          return { ...assignment, roomId: value, roomNumber: room?.roomNumber ?? '' };
+        }
+        return { ...assignment, [field]: value };
+      }),
+    );
     setEditorError(null);
   }
 
@@ -224,15 +244,20 @@ export function StaffRoomBoardPage() {
       return;
     }
     const assignedRoomIds = new Set(draftAssignments.map((assignment) => assignment.roomId));
-    const availableRoom = board.items.find((room) =>
-      room.isActive &&
-      room.roomType.id === selectedBooking.roomTypeId &&
-      !assignedRoomIds.has(room.id) &&
-      room.blocks.length === 0 &&
-      room.reservationContexts.every((context) => context.reference === selectedBooking.reference),
+    const availableRoom = board.items.find(
+      (room) =>
+        room.isActive &&
+        room.roomType.id === selectedBooking.roomTypeId &&
+        !assignedRoomIds.has(room.id) &&
+        room.blocks.length === 0 &&
+        room.reservationContexts.every(
+          (context) => context.reference === selectedBooking.reference,
+        ),
     );
     if (!availableRoom) {
-      setEditorError('اتاق هم‌نوع و بدون تداخل برای این تاریخ پیدا نشد. فیلترهای فهرست را پاک یا تاریخ را بررسی کنید.');
+      setEditorError(
+        'اتاق هم‌نوع و بدون تداخل برای این تاریخ پیدا نشد. فیلترهای فهرست را پاک یا تاریخ را بررسی کنید.',
+      );
       return;
     }
     const startDate = selectedBooking.checkIn > board.date ? selectedBooking.checkIn : board.date;
@@ -300,7 +325,9 @@ export function StaffRoomBoardPage() {
     event.preventDefault();
     if (!selectedBooking || !expectedRevision) return;
     if (staleConflict) {
-      setEditorError('پیش از ذخیره، آخرین تخصیص را بارگذاری کنید یا پیش‌نویس را آگاهانه با نسخهٔ جدید ادامه دهید.');
+      setEditorError(
+        'پیش از ذخیره، آخرین تخصیص را بارگذاری کنید یا پیش‌نویس را آگاهانه با نسخهٔ جدید ادامه دهید.',
+      );
       return;
     }
     if (!csrfToken) {
@@ -351,7 +378,9 @@ export function StaffRoomBoardPage() {
       if (savedDate) await loadBoard(savedDate);
     } catch (cause) {
       if (cause instanceof StaffApiError && cause.code === 'ROOM_ASSIGNMENT_STALE') {
-        setEditorError('تخصیص اتاق هم‌زمان تغییر کرده است. پیش‌نویس شما حفظ شد؛ نسخه‌ها را بررسی کنید.');
+        setEditorError(
+          'تخصیص اتاق هم‌زمان تغییر کرده است. پیش‌نویس شما حفظ شد؛ نسخه‌ها را بررسی کنید.',
+        );
         await loadLatestAssignments();
       } else {
         setEditorError(assignmentErrorMessage(cause));
@@ -362,9 +391,10 @@ export function StaffRoomBoardPage() {
   }
 
   const staleBanner = Boolean(refreshError && board && isStale);
-  const staleMessage = board && appliedDate && appliedDate !== board.date
-    ? `دریافت تاریخ ${displayRoomBoardDate(appliedDate)} ناموفق بود؛ اطلاعات تاریخ ${displayRoomBoardDate(board.date)} باقی مانده است.`
-    : 'نمایش داده‌ها ممکن است قدیمی باشد.';
+  const staleMessage =
+    board && appliedDate && appliedDate !== board.date
+      ? `دریافت تاریخ ${displayRoomBoardDate(appliedDate)} ناموفق بود؛ اطلاعات تاریخ ${displayRoomBoardDate(board.date)} باقی مانده است.`
+      : 'نمایش داده‌ها ممکن است قدیمی باشد.';
 
   return (
     <section className={styles.page} aria-labelledby="staff-room-board-title">
@@ -378,19 +408,34 @@ export function StaffRoomBoardPage() {
       {refreshError && !board ? (
         <div className={`${styles.message} ${styles.messageError}`} role="alert">
           <p>{refreshError}</p>
-          <button className="button button--quiet" type="button" onClick={() => void loadBoard(appliedDate)} disabled={isRefreshing}>
+          <button
+            className="button button--quiet"
+            type="button"
+            onClick={() => void loadBoard(appliedDate)}
+            disabled={isRefreshing}
+          >
             تلاش دوباره
           </button>
         </div>
       ) : null}
       {staleBanner ? (
         <div className={`${styles.message} ${styles.messageWarning}`} role="alert">
-          <p>{refreshError} {staleMessage}</p>
+          <p>
+            {refreshError} {staleMessage}
+          </p>
           <span>نمایش داده‌ها ممکن است قدیمی باشد.</span>
         </div>
       ) : null}
-      {successMessage ? <p className={`${styles.message} ${styles.messageSuccess}`} role="status">{successMessage}</p> : null}
-      {isLoading ? <p className={styles.loading} role="status">در حال دریافت وضعیت اتاق‌ها…</p> : null}
+      {successMessage ? (
+        <p className={`${styles.message} ${styles.messageSuccess}`} role="status">
+          {successMessage}
+        </p>
+      ) : null}
+      {isLoading ? (
+        <p className={styles.loading} role="status">
+          در حال دریافت وضعیت اتاق‌ها…
+        </p>
+      ) : null}
 
       {board ? (
         <>
@@ -406,7 +451,11 @@ export function StaffRoomBoardPage() {
             onSubmit={applyFilters}
             onClear={clearFilters}
           />
-          <RoomBoardList items={visibleItems} date={board.date} isBusy={isLoading || isRefreshing} />
+          <RoomBoardList
+            items={visibleItems}
+            date={board.date}
+            isBusy={isLoading || isRefreshing}
+          />
           <AssignableBookings board={board} onEdit={openAssignmentEditor} />
           {selectedBooking ? (
             <RoomAssignmentEditor
@@ -420,7 +469,9 @@ export function StaffRoomBoardPage() {
               isSaving={isSaving}
               onClose={closeAssignmentEditor}
               onUpdate={updateAssignment}
-              onRemove={(key) => setDraftAssignments((current) => current.filter((item) => item.key !== key))}
+              onRemove={(key) =>
+                setDraftAssignments((current) => current.filter((item) => item.key !== key))
+              }
               onAdd={addAssignment}
               onReasonChange={setReason}
               onSave={saveAssignments}

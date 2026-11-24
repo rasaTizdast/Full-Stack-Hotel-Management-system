@@ -141,8 +141,7 @@ export async function seedDemoData(
       }
     }
 
-    const firstNight = new Date();
-    firstNight.setUTCHours(0, 0, 0, 0);
+    const firstNight = new Date(hotel.businessDate);
     const lastNightExclusive = new Date(firstNight);
     lastNightExclusive.setUTCDate(lastNightExclusive.getUTCDate() + 91);
     const activeRoomCounts = new Map(
@@ -171,9 +170,9 @@ export async function seedDemoData(
       },
     });
     const inventory = storedRoomTypes.flatMap((roomType) =>
-      Array.from({ length: 90 }, (_, index) => {
+      Array.from({ length: 91 }, (_, index) => {
         const stayDate = new Date(firstNight);
-        stayDate.setUTCDate(stayDate.getUTCDate() + index + 1);
+        stayDate.setUTCDate(stayDate.getUTCDate() + index);
         const blockedRoomIds = new Set(
           blocks
             .filter(

@@ -1,8 +1,7 @@
 import { getPublicRoomTypes, type PublicRoomType } from './public-api';
 
 export type FrontDeskRoomTypesResult =
-  | { status: 'ready'; roomTypes: PublicRoomType[] }
-  | { status: 'error'; roomTypes: [] };
+  { status: 'ready'; roomTypes: PublicRoomType[] } | { status: 'error'; roomTypes: [] };
 
 export async function getFrontDeskRoomTypes(): Promise<FrontDeskRoomTypesResult> {
   try {

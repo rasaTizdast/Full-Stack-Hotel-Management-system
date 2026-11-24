@@ -14,9 +14,11 @@ function keepFocusInside(event: KeyboardEvent<HTMLElement>, onClose: () => void)
     return;
   }
   if (event.key !== 'Tab') return;
-  const focusable = Array.from(event.currentTarget.querySelectorAll<HTMLElement>(
-    'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled])',
-  ));
+  const focusable = Array.from(
+    event.currentTarget.querySelectorAll<HTMLElement>(
+      'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled])',
+    ),
+  );
   if (focusable.length === 0) {
     event.preventDefault();
     return;
@@ -24,9 +26,14 @@ function keepFocusInside(event: KeyboardEvent<HTMLElement>, onClose: () => void)
   const first = focusable[0];
   const last = focusable[focusable.length - 1];
   const activeElement = document.activeElement;
-  const activeNonTabbableChild = activeElement instanceof HTMLElement &&
-    event.currentTarget.contains(activeElement) && activeElement.tabIndex < 0;
-  if (event.shiftKey && (activeElement === first || activeElement === event.currentTarget || activeNonTabbableChild)) {
+  const activeNonTabbableChild =
+    activeElement instanceof HTMLElement &&
+    event.currentTarget.contains(activeElement) &&
+    activeElement.tabIndex < 0;
+  if (
+    event.shiftKey &&
+    (activeElement === first || activeElement === event.currentTarget || activeNonTabbableChild)
+  ) {
     event.preventDefault();
     last.focus();
   } else if (!event.shiftKey && activeElement === last) {

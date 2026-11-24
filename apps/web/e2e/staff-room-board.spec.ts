@@ -79,7 +79,8 @@ async function createPendingBooking(
         : undefined;
     if (response.status() === 201) markBookingCreated(reference);
     expect(response.status()).toBe(201);
-    if (!reference) throw new Error('Room-board setup response did not include a booking reference.');
+    if (!reference)
+      throw new Error('Room-board setup response did not include a booking reference.');
     return { reference, checkIn };
   }
 
@@ -92,7 +93,11 @@ async function getBookingBoardRoomTypeId(page: import('@playwright/test').Page, 
   );
   expect(bookingResponse.status()).toBe(200);
   const booking: unknown = await bookingResponse.json();
-  if (!isRecord(booking) || !isRecord(booking.roomType) || typeof booking.roomType.slug !== 'string') {
+  if (
+    !isRecord(booking) ||
+    !isRecord(booking.roomType) ||
+    typeof booking.roomType.slug !== 'string'
+  ) {
     throw new Error('The room-board booking detail did not include its room-type slug.');
   }
   const roomTypeSlug = booking.roomType.slug;
@@ -116,10 +121,11 @@ async function getBookingBoardRoomTypeId(page: import('@playwright/test').Page, 
   return matchingOptions[0].id as string;
 }
 
-test('staff assigns and unassigns a room from the responsive room board', async (
-  { page, request, staffCookies },
-  testInfo,
-) => {
+test('staff assigns and unassigns a room from the responsive room board', async ({
+  page,
+  request,
+  staffCookies,
+}, testInfo) => {
   const guestPhone = uniqueGuestPhone();
   await page.context().addCookies(staffCookies);
 
@@ -204,7 +210,9 @@ test('staff assigns and unassigns a room from the responsive room board', async 
     await page.getByLabel('دلیل تغییر تخصیص').fill('تخصیص هنگام پذیرش آزمایشی');
     await page.getByRole('button', { name: 'ذخیره تخصیص‌ها' }).click();
 
-    await expect(page.getByRole('status')).toContainText(`تخصیص اتاق‌های رزرو ${reference} ذخیره شد.`);
+    await expect(page.getByRole('status')).toContainText(
+      `تخصیص اتاق‌های رزرو ${reference} ذخیره شد.`,
+    );
     await expect(bookingCard).toContainText('۰ واحد بدون تخصیص');
     await expect(bookingCard).toContainText('۱ از ۱ واحد برای این تاریخ تخصیص دارد');
 
@@ -214,7 +222,9 @@ test('staff assigns and unassigns a room from the responsive room board', async 
     await page.getByRole('textbox', { name: 'دلیل تغییر تخصیص' }).fill('لغو تخصیص آزمایشی');
     await page.getByRole('button', { name: 'ذخیره تخصیص‌ها' }).click();
 
-    await expect(page.getByRole('status')).toContainText(`تخصیص اتاق‌های رزرو ${reference} ذخیره شد.`);
+    await expect(page.getByRole('status')).toContainText(
+      `تخصیص اتاق‌های رزرو ${reference} ذخیره شد.`,
+    );
     await expect(bookingCard).toContainText('۱ واحد بدون تخصیص');
     await expect(bookingCard).toContainText('۰ از ۱ واحد برای این تاریخ تخصیص دارد');
   });

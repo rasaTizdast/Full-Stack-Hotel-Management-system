@@ -1,11 +1,7 @@
 'use client';
 
 import { useEffect, useRef, useState, type FormEvent } from 'react';
-import {
-  getStaffRoomBoard,
-  type StaffRole,
-  type StaffRoomBoardItem,
-} from '@/lib/staff-api';
+import { getStaffRoomBoard, type StaffRole, type StaffRoomBoardItem } from '@/lib/staff-api';
 import { toGregorianIso } from '@/lib/jalali-date';
 import {
   checkInStaffStay,
@@ -17,7 +13,13 @@ import {
   type StaffWalkInInput,
 } from '@/lib/staff-front-desk-api';
 import type { PublicRoomType } from '@/lib/public-api';
-import { assignmentsOnDate, dateLabel, isManager, isStayActiveOn, nextIsoDate } from './front-desk-domain';
+import {
+  assignmentsOnDate,
+  dateLabel,
+  isManager,
+  isStayActiveOn,
+  nextIsoDate,
+} from './front-desk-domain';
 import { hasRoomRecovery, safeErrorMessage } from './front-desk-errors';
 import type { DialogState, WalkInDraft } from './front-desk-types';
 
@@ -67,42 +69,71 @@ function createWalkInAttempt(
   };
   const signature = JSON.stringify(input);
   if (existingAttempt?.signature === signature) return { attempt: existingAttempt };
-  const key = typeof crypto !== 'undefined' && 'randomUUID' in crypto
-    ? crypto.randomUUID()
-    : `${Date.now().toString(36)}-${Math.random().toString(36).slice(2)}-walkin`;
+  const key =
+    typeof crypto !== 'undefined' && 'randomUUID' in crypto
+      ? crypto.randomUUID()
+      : `${Date.now().toString(36)}-${Math.random().toString(36).slice(2)}-walkin`;
   return { attempt: { signature, key, input } };
 }
 
-function checkIn(stay: StaffStayWorklistItem, role: StaffRole | undefined, reason: string, businessDate: string, csrfToken: string) {
+function checkIn(
+  stay: StaffStayWorklistItem,
+  role: StaffRole | undefined,
+  reason: string,
+  businessDate: string,
+  csrfToken: string,
+) {
   if (!isStayActiveOn(stay, businessDate)) {
-    throw new DialogValidationError('ورود فقط در بازه فعال این اقامت در تاریخ کاری جاری در دسترس است.');
+    throw new DialogValidationError(
+      'ورود فقط در بازه فعال این اقامت در تاریخ کاری جاری در دسترس است.',
+    );
   }
   return checkInStaffStay(stay.reference, csrfToken, {
     ...(isManager(role) && reason.trim() ? { earlyCheckInReason: reason.trim() } : {}),
   }).then(() => `ورود مهمان ${stay.guestName} ثبت شد.`);
 }
 
-function markNoShow(stay: StaffStayWorklistItem, reason: string, businessDate: string, csrfToken: string) {
+function markNoShow(
+  stay: StaffStayWorklistItem,
+  reason: string,
+  businessDate: string,
+  csrfToken: string,
+) {
   if (!isStayActiveOn(stay, businessDate)) {
-    throw new DialogValidationError('ثبت عدم مراجعه فقط در بازه فعال این اقامت در تاریخ کاری جاری در دسترس است.');
+    throw new DialogValidationError(
+      'ثبت عدم مراجعه فقط در بازه فعال این اقامت در تاریخ کاری جاری در دسترس است.',
+    );
   }
   if (!reason.trim()) throw new DialogValidationError('ثبت دلیل برای عدم مراجعه الزامی است.');
-  return markStaffStayNoShow(stay.reference, csrfToken, { reason: reason.trim() })
-    .then(() => `عدم مراجعه رزرو ${stay.reference} ثبت شد.`);
+  return markStaffStayNoShow(stay.reference, csrfToken, { reason: reason.trim() }).then(
+    () => `عدم مراجعه رزرو ${stay.reference} ثبت شد.`,
+  );
 }
 
-function moveRoom(stay: StaffStayWorklistItem, businessDate: string, reason: string, event: FormEvent<HTMLFormElement>, csrfToken: string) {
+function moveRoom(
+  stay: StaffStayWorklistItem,
+  businessDate: string,
+  reason: string,
+  event: FormEvent<HTMLFormElement>,
+  csrfToken: string,
+) {
   const form = new FormData(event.currentTarget);
   const targetRoomId = String(form.get('targetRoomId') ?? '');
   const sourceAssignmentId = String(form.get('sourceAssignmentId') ?? '');
   if (stay.status !== 'CHECKED_IN' || !isStayActiveOn(stay, businessDate)) {
-    throw new DialogValidationError('انتقال اتاق فقط در بازه فعال اقامت در تاریخ کاری جاری در دسترس است.');
+    throw new DialogValidationError(
+      'انتقال اتاق فقط در بازه فعال اقامت در تاریخ کاری جاری در دسترس است.',
+    );
   }
-  const assignment = assignmentsOnDate(stay, businessDate).find((room) => room.assignmentId === sourceAssignmentId);
+  const assignment = assignmentsOnDate(stay, businessDate).find(
+    (room) => room.assignmentId === sourceAssignmentId,
+  );
   if (!assignment || !targetRoomId || !reason.trim()) {
-    throw new DialogValidationError(assignment
-      ? 'اتاق مقصد و دلیل انتقال را کامل کنید.'
-      : 'برای تاریخ کاری جاری تخصیص اتاق فعالی وجود ندارد؛ ابتدا برنامه اتاق را بررسی کنید.');
+    throw new DialogValidationError(
+      assignment
+        ? 'اتاق مقصد و دلیل انتقال را کامل کنید.'
+        : 'برای تاریخ کاری جاری تخصیص اتاق فعالی وجود ندارد؛ ابتدا برنامه اتاق را بررسی کنید.',
+    );
   }
   return moveStaffStayRoom(stay.reference, csrfToken, {
     sourceAssignmentId: assignment.assignmentId,
@@ -111,7 +142,15 @@ function moveRoom(stay: StaffStayWorklistItem, businessDate: string, reason: str
   }).then(() => `درخواست انتقال اتاق رزرو ${stay.reference} ثبت شد.`);
 }
 
-export function useFrontDeskActions({ role, csrfToken, worklist, selectedDate, roomTypes, onRefresh, onSuccess }: UseFrontDeskActionsOptions) {
+export function useFrontDeskActions({
+  role,
+  csrfToken,
+  worklist,
+  selectedDate,
+  roomTypes,
+  onRefresh,
+  onSuccess,
+}: UseFrontDeskActionsOptions) {
   const [dialog, setDialog] = useState<DialogState>(null);
   const [reason, setReason] = useState('');
   const [error, setError] = useState<string | null>(null);
@@ -158,7 +197,8 @@ export function useFrontDeskActions({ role, csrfToken, worklist, selectedDate, r
     setReason('');
     setError(null);
     setRoomRecovery(false);
-    const preserveWalkInAttempt = nextDialog?.kind === 'walk-in' && walkInRetry && walkInAttemptRef.current !== null;
+    const preserveWalkInAttempt =
+      nextDialog?.kind === 'walk-in' && walkInRetry && walkInAttemptRef.current !== null;
     if (!preserveWalkInAttempt) {
       setWalkInError(null);
       setWalkInFieldError(null);
@@ -179,7 +219,10 @@ export function useFrontDeskActions({ role, csrfToken, worklist, selectedDate, r
     const requestId = ++moveRoomsRequestIdRef.current;
     setMoveRooms([]);
     setMoveRoomsLoading(true);
-    getStaffRoomBoard({ date: worklist?.businessDate ?? selectedDate, roomTypeId: stay.roomType.id })
+    getStaffRoomBoard({
+      date: worklist?.businessDate ?? selectedDate,
+      roomTypeId: stay.roomType.id,
+    })
       .then((board) => {
         if (requestId === moveRoomsRequestIdRef.current) setMoveRooms(board.items);
       })
@@ -208,16 +251,21 @@ export function useFrontDeskActions({ role, csrfToken, worklist, selectedDate, r
     setBusy(true);
     try {
       const businessDate = worklist?.businessDate ?? selectedDate;
-      const success = dialog.kind === 'check-in'
-        ? await checkIn(dialog.stay, role, reason, businessDate, csrfToken)
-        : dialog.kind === 'no-show'
-          ? await markNoShow(dialog.stay, reason, businessDate, csrfToken)
-          : await moveRoom(dialog.stay, businessDate, reason, event, csrfToken);
+      const success =
+        dialog.kind === 'check-in'
+          ? await checkIn(dialog.stay, role, reason, businessDate, csrfToken)
+          : dialog.kind === 'no-show'
+            ? await markNoShow(dialog.stay, reason, businessDate, csrfToken)
+            : await moveRoom(dialog.stay, businessDate, reason, event, csrfToken);
       onSuccess(success);
       setDialog(null);
       onRefresh();
     } catch (cause) {
-      setError(cause instanceof DialogValidationError ? cause.message : safeErrorMessage(cause, dialog.kind === 'move' ? 'move' : undefined));
+      setError(
+        cause instanceof DialogValidationError
+          ? cause.message
+          : safeErrorMessage(cause, dialog.kind === 'move' ? 'move' : undefined),
+      );
       setRoomRecovery(hasRoomRecovery(cause));
     } finally {
       setBusy(false);

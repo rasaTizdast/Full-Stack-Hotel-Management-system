@@ -43,7 +43,11 @@ function formatNightValue(night: StaffInventoryNight, value: number | null): str
 }
 
 function formatActiveRoomCount(night: StaffInventoryNight): string {
-  if (night.capacitySource === 'UNAVAILABLE' || night.totalRooms === null || night.blockedRooms === null) {
+  if (
+    night.capacitySource === 'UNAVAILABLE' ||
+    night.totalRooms === null ||
+    night.blockedRooms === null
+  ) {
     return 'نامشخص';
   }
   return formatPersianInteger(night.totalRooms + night.blockedRooms);
@@ -55,7 +59,10 @@ function capacitySourceLabel(night: StaffInventoryNight): string {
   return 'ظرفیت محاسبه‌شده';
 }
 
-function formatTomanValue(value: string | null, capacitySource: StaffInventoryNight['capacitySource']): string {
+function formatTomanValue(
+  value: string | null,
+  capacitySource: StaffInventoryNight['capacitySource'],
+): string {
   if (value === null) return capacitySource === 'UNAVAILABLE' ? 'نامشخص' : 'نرخ ثبت نشده';
   return /^\d+$/.test(value) ? formatPersianInteger(BigInt(value)) : 'نامعتبر';
 }
@@ -76,7 +83,9 @@ function NightRow({ night }: { night: StaffInventoryNight }) {
       <td>{formatNightValue(night, night.heldRooms)}</td>
       <td>{formatNightValue(night, night.bookedRooms)}</td>
       <td>{formatNightValue(night, night.availableRooms)}</td>
-      <td className={night.nightlyPriceToman === null ? 'staff-inventory__missing-rate' : undefined}>
+      <td
+        className={night.nightlyPriceToman === null ? 'staff-inventory__missing-rate' : undefined}
+      >
         <bdi>{formatTomanValue(night.nightlyPriceToman, night.capacitySource)}</bdi>
       </td>
     </tr>
@@ -332,13 +341,35 @@ function InventoryOverview({
               <span className="staff-inventory__capacity-source">{capacitySourceLabel(night)}</span>
             </h3>
             <dl>
-              <div><dt>اتاق فعال</dt><dd>{formatActiveRoomCount(night)}</dd></div>
-              <div><dt>مسدود</dt><dd>{formatNightValue(night, night.blockedRooms)}</dd></div>
-              <div><dt>در انتظار</dt><dd>{formatNightValue(night, night.heldRooms)}</dd></div>
-              <div><dt>رزرو قطعی</dt><dd>{formatNightValue(night, night.bookedRooms)}</dd></div>
-              <div><dt>اتاق آزاد</dt><dd>{formatNightValue(night, night.availableRooms)}</dd></div>
-              <div className={night.nightlyPriceToman === null ? 'staff-inventory__missing-rate' : undefined}>
-                <dt>نرخ شبانه</dt><dd><bdi>{formatTomanValue(night.nightlyPriceToman, night.capacitySource)}</bdi></dd>
+              <div>
+                <dt>اتاق فعال</dt>
+                <dd>{formatActiveRoomCount(night)}</dd>
+              </div>
+              <div>
+                <dt>مسدود</dt>
+                <dd>{formatNightValue(night, night.blockedRooms)}</dd>
+              </div>
+              <div>
+                <dt>در انتظار</dt>
+                <dd>{formatNightValue(night, night.heldRooms)}</dd>
+              </div>
+              <div>
+                <dt>رزرو قطعی</dt>
+                <dd>{formatNightValue(night, night.bookedRooms)}</dd>
+              </div>
+              <div>
+                <dt>اتاق آزاد</dt>
+                <dd>{formatNightValue(night, night.availableRooms)}</dd>
+              </div>
+              <div
+                className={
+                  night.nightlyPriceToman === null ? 'staff-inventory__missing-rate' : undefined
+                }
+              >
+                <dt>نرخ شبانه</dt>
+                <dd>
+                  <bdi>{formatTomanValue(night.nightlyPriceToman, night.capacitySource)}</bdi>
+                </dd>
               </div>
             </dl>
           </article>
@@ -374,9 +405,8 @@ function InventoryEditForm({
     parsedNightlyPrice !== null && rangeNightCount > 0
       ? BigInt(parsedNightlyPrice) * BigInt(rangeNightCount)
       : null;
-  const historicalRange = inventory?.nights.some(
-    (night) => night.capacitySource !== 'PROJECTED',
-  ) ?? false;
+  const historicalRange =
+    inventory?.nights.some((night) => night.capacitySource !== 'PROJECTED') ?? false;
 
   return (
     <form
@@ -389,7 +419,9 @@ function InventoryEditForm({
         <div>
           <h2>تنظیم نرخ شبانه</h2>
         </div>
-        <p>نرخ تازه برای همه شب‌های انتخاب‌شده ذخیره می‌شود؛ ظرفیت از اتاق‌های فیزیکی محاسبه می‌شود.</p>
+        <p>
+          نرخ تازه برای همه شب‌های انتخاب‌شده ذخیره می‌شود؛ ظرفیت از اتاق‌های فیزیکی محاسبه می‌شود.
+        </p>
       </div>
 
       {historicalRange ? (
@@ -423,8 +455,8 @@ function InventoryEditForm({
             <span className="staff-inventory__money" dir="rtl">
               <bdi className="staff-inventory__money-amount" dir="ltr">
                 {formatPersianInteger(BigInt(parsedNightlyPrice!))}
-              </bdi>
-              {' '}<span className="staff-inventory__money-unit">تومان</span>
+              </bdi>{' '}
+              <span className="staff-inventory__money-unit">تومان</span>
             </span>{' '}
             <span className="staff-inventory__equation-token">×</span>{' '}
             <span className="staff-inventory__equation-token">
@@ -434,8 +466,8 @@ function InventoryEditForm({
             <span className="staff-inventory__money" dir="rtl">
               <bdi className="staff-inventory__money-amount" dir="ltr">
                 {formatPersianInteger(rangeTotal)}
-              </bdi>
-              {' '}<span className="staff-inventory__money-unit">تومان</span>
+              </bdi>{' '}
+              <span className="staff-inventory__money-unit">تومان</span>
             </span>
           </span>
         </p>

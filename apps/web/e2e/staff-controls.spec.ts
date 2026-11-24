@@ -95,7 +95,9 @@ test('admin creates and manages an account with forced password replacement', as
 
     const createResponsePromise = page.waitForResponse((response) => {
       const url = new URL(response.url());
-      return url.pathname === '/api/v1/staff/admin/accounts' && response.request().method() === 'POST';
+      return (
+        url.pathname === '/api/v1/staff/admin/accounts' && response.request().method() === 'POST'
+      );
     });
     await page.getByRole('button', { name: 'ایجاد حساب' }).click();
     const createResponse = await createResponsePromise;
@@ -122,7 +124,10 @@ test('admin creates and manages an account with forced password replacement', as
     await roleForm.getByLabel('دلیل تغییر نقش').fill('Shift management responsibilities.');
     const roleResponsePromise = page.waitForResponse((response) => {
       const url = new URL(response.url());
-      return url.pathname.endsWith(`/staff/admin/accounts/${accountId}/role`) && response.request().method() === 'PATCH';
+      return (
+        url.pathname.endsWith(`/staff/admin/accounts/${accountId}/role`) &&
+        response.request().method() === 'PATCH'
+      );
     });
     await roleForm.getByRole('button', { name: 'ذخیره نقش' }).click();
     expect((await roleResponsePromise).status()).toBe(200);
@@ -155,7 +160,10 @@ test('admin creates and manages an account with forced password replacement', as
       await deactivateForm.getByLabel('دلیل غیرفعال‌سازی').fill('Account closure in E2E cleanup.');
       const deactivateResponsePromise = page.waitForResponse((response) => {
         const url = new URL(response.url());
-        return url.pathname.endsWith(`/staff/admin/accounts/${accountId}/deactivate`) && response.request().method() === 'POST';
+        return (
+          url.pathname.endsWith(`/staff/admin/accounts/${accountId}/deactivate`) &&
+          response.request().method() === 'POST'
+        );
       });
       await deactivateForm.getByRole('button', { name: 'تأیید غیرفعال‌سازی' }).click();
       expect((await deactivateResponsePromise).status()).toBe(200);

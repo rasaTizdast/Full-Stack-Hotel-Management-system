@@ -3,7 +3,8 @@ import { StaffApiError } from '@/lib/staff-api';
 export function safeErrorMessage(error: unknown, context?: 'move'): string {
   if (!(error instanceof StaffApiError)) return 'درخواست انجام نشد. دوباره تلاش کنید.';
   if (error.status === 0) return 'ارتباط با سامانه برقرار نشد. اتصال را بررسی و دوباره تلاش کنید.';
-  if (error.status === 403) return 'دسترسی شما برای انجام این کار تأیید نشد. صفحه را تازه‌سازی کنید یا با سرپرست شیفت تماس بگیرید.';
+  if (error.status === 403)
+    return 'دسترسی شما برای انجام این کار تأیید نشد. صفحه را تازه‌سازی کنید یا با سرپرست شیفت تماس بگیرید.';
   switch (error.code) {
     case 'ROOM_ASSIGNMENT_INCOMPLETE':
       return 'تخصیص اتاق‌ها کامل نیست. ابتدا اتاق‌های باقی‌مانده را در وضعیت اتاق‌ها تخصیص دهید.';
@@ -23,10 +24,13 @@ export function safeErrorMessage(error: unknown, context?: 'move'): string {
 }
 
 export function hasRoomRecovery(error: unknown): boolean {
-  return error instanceof StaffApiError && [
-    'ROOM_ASSIGNMENT_INCOMPLETE',
-    'ROOM_NOT_INSPECTED',
-    'ROOM_ASSIGNMENT_OVERLAP',
-    'ROOM_BLOCKED',
-  ].includes(error.code ?? '');
+  return (
+    error instanceof StaffApiError &&
+    [
+      'ROOM_ASSIGNMENT_INCOMPLETE',
+      'ROOM_NOT_INSPECTED',
+      'ROOM_ASSIGNMENT_OVERLAP',
+      'ROOM_BLOCKED',
+    ].includes(error.code ?? '')
+  );
 }

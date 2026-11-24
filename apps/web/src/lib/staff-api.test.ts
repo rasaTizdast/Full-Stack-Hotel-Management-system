@@ -68,9 +68,9 @@ describe('room board API', () => {
       items: [],
       assignableBookings: [],
     };
-    const fetchMock = vi.fn().mockResolvedValue(
-      new Response(JSON.stringify(board), { status: 200 }),
-    );
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValue(new Response(JSON.stringify(board), { status: 200 }));
     vi.stubGlobal('fetch', fetchMock);
 
     await expect(
@@ -93,7 +93,13 @@ describe('room board API', () => {
   it('accepts and serializes the in-house stay-context filter', async () => {
     const fetchMock = vi.fn().mockResolvedValue(
       new Response(
-        JSON.stringify({ date: '2026-11-17', businessDate: '2026-11-17', updatedAt: '', items: [], assignableBookings: [] }),
+        JSON.stringify({
+          date: '2026-11-17',
+          businessDate: '2026-11-17',
+          updatedAt: '',
+          items: [],
+          assignableBookings: [],
+        }),
         { status: 200 },
       ),
     );
@@ -124,17 +130,23 @@ describe('room board API', () => {
       reason: 'تخصیص پیش از ورود',
     };
     const response = { revision: 'b'.repeat(64), assignments: [] };
-    const fetchMock = vi.fn()
+    const fetchMock = vi
+      .fn()
       .mockResolvedValueOnce(new Response(JSON.stringify(response), { status: 200 }))
       .mockResolvedValueOnce(
         new Response(
-          JSON.stringify({ message: 'Assignment changed elsewhere.', code: 'ROOM_ASSIGNMENT_STALE' }),
+          JSON.stringify({
+            message: 'Assignment changed elsewhere.',
+            code: 'ROOM_ASSIGNMENT_STALE',
+          }),
           { status: 409 },
         ),
       );
     vi.stubGlobal('fetch', fetchMock);
 
-    await expect(replaceAssignments('ABC123456789', input, 'csrf-token')).resolves.toEqual(response);
+    await expect(replaceAssignments('ABC123456789', input, 'csrf-token')).resolves.toEqual(
+      response,
+    );
     expect(fetchMock).toHaveBeenNthCalledWith(
       1,
       'http://localhost:4000/api/v1/staff/bookings/ABC123456789/room-assignments',

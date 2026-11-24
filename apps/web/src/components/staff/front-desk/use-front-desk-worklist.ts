@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useMemo, useState, type FormEvent } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState, type FormEvent } from 'react';
 import { StaffApiError } from '@/lib/staff-api';
 import { getHotelTodayIso, toGregorianIso } from '@/lib/jalali-date';
 import {
@@ -28,10 +28,13 @@ interface GroupedItems {
 }
 
 export function useFrontDeskWorklist(queue: StaffStayQueue, allowed: boolean) {
-  const [dateDraft, setDateDraft] = useState(() => dateLabel(getHotelTodayIso()));
+  const [initialClientDate] = useState(() => getHotelTodayIso());
+  const initialDateAligned = useRef(false);
+  const hasSubmittedFilters = useRef(false);
+  const [dateDraft, setDateDraft] = useState(() => dateLabel(initialClientDate));
   const [searchDraft, setSearchDraft] = useState('');
   const [query, setQuery] = useState<WorklistQuery>(() => ({
-    date: getHotelTodayIso(),
+    date: initialClientDate,
     search: '',
     page: 1,
     pageSize: PAGE_SIZE,
@@ -48,18 +51,35 @@ export function useFrontDeskWorklist(queue: StaffStayQueue, allowed: boolean) {
     getStaffStayWorklist(queue, query)
       .then((result) => {
         if (!current) return;
+        if (!initialDateAligned.current) {
+          initialDateAligned.current = true;
+          if (
+            !hasSubmittedFilters.current &&
+            query.date === initialClientDate &&
+            result.businessDate !== query.date
+          ) {
+            setDateDraft(dateLabel(result.businessDate));
+            setQuery((currentQuery) => ({ ...currentQuery, date: result.businessDate }));
+            setListState('loading');
+            return;
+          }
+        }
         setWorklist(result);
         setListState('ready');
       })
       .catch((error: unknown) => {
         if (!current) return;
-        setListError(error instanceof StaffApiError && error.status === 403
-          ? 'دسترسی شما برای مشاهده این فهرست تأیید نشد. با سرپرست شیفت تماس بگیرید.'
-          : safeErrorMessage(error));
+        setListError(
+          error instanceof StaffApiError && error.status === 403
+            ? 'دسترسی شما برای مشاهده این فهرست تأیید نشد. با سرپرست شیفت تماس بگیرید.'
+            : safeErrorMessage(error),
+        );
         setListState('error');
       });
-    return () => { current = false; };
-  }, [allowed, queue, query, refreshNumber]);
+    return () => {
+      current = false;
+    };
+  }, [allowed, initialClientDate, queue, query, refreshNumber]);
 
   const refreshList = useCallback(() => {
     setListState('loading');
@@ -69,6 +89,7 @@ export function useFrontDeskWorklist(queue: StaffStayQueue, allowed: boolean) {
 
   function applyFilters(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    hasSubmittedFilters.current = true;
     const date = toGregorianIso(dateDraft);
     if (!date) {
       setFilterError('تاریخ را به شکل سال/ماه/روز معتبر وارد کنید.');

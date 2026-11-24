@@ -47,7 +47,9 @@ describe('StaffDashboardPage', () => {
     session.current.staff.role = 'ADMIN';
     render(<StaffDashboardPage />);
 
-    expect(screen.getByRole('heading', { level: 1, name: 'مدیریت حساب‌های کارکنان' })).toBeVisible();
+    expect(
+      screen.getByRole('heading', { level: 1, name: 'مدیریت حساب‌های کارکنان' }),
+    ).toBeVisible();
     expect(screen.getByRole('link', { name: /^میز پذیرش/ })).toHaveAttribute(
       'href',
       '/staff/front-desk/arrivals',
@@ -73,12 +75,15 @@ describe('StaffDashboardPage', () => {
   it.each([
     ['HOUSEKEEPER', 'فضای خانه‌داری شما آماده است'],
     ['CASHIER', 'فضای صندوق شما آماده است'],
-  ] as const)('shows a calm role-specific home for %s without broken workspace links', (role, heading) => {
-    session.current.staff.role = role;
-    const { container } = render(<StaffDashboardPage />);
+  ] as const)(
+    'shows a calm role-specific home for %s without broken workspace links',
+    (role, heading) => {
+      session.current.staff.role = role;
+      const { container } = render(<StaffDashboardPage />);
 
-    expect(screen.getByRole('heading', { level: 1, name: heading })).toBeVisible();
-    expect(container.querySelectorAll('a[href^="/staff/"]')).toHaveLength(0);
-    expect(screen.getByText('هیچ کاری برای انجام در این لحظه ثبت نشده است.')).toBeVisible();
-  });
+      expect(screen.getByRole('heading', { level: 1, name: heading })).toBeVisible();
+      expect(container.querySelectorAll('a[href^="/staff/"]')).toHaveLength(0);
+      expect(screen.getByText('هیچ کاری برای انجام در این لحظه ثبت نشده است.')).toBeVisible();
+    },
+  );
 });

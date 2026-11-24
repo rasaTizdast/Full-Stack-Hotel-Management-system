@@ -129,7 +129,10 @@ describe('BookingFlow', () => {
   });
 
   it('exposes the confirmation as a named region instead of a long status live region', async () => {
-    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(Response.json(bookingResponse, { status: 201 })));
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue(Response.json(bookingResponse, { status: 201 })),
+    );
     renderBookingFlow();
     fillGuestDetails();
     fireEvent.click(screen.getByRole('button', { name: 'ثبت درخواست اقامت' }));

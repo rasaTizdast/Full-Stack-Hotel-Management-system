@@ -47,6 +47,27 @@ function paymentMethodLabel(method: StaffFolioEntry['paymentMethod']): string {
   }
 }
 
+function entryKindLabel(kind: StaffFolioEntry['kind']): string {
+  switch (kind) {
+    case 'ACCOMMODATION':
+      return 'اقامت';
+    case 'SERVICE':
+      return 'خدمت';
+    case 'FEE':
+      return 'هزینه';
+    case 'TAX':
+      return 'مالیات';
+    case 'DISCOUNT':
+      return 'تخفیف';
+    case 'ADJUSTMENT':
+      return 'اصلاح';
+    case 'PAYMENT':
+      return 'پرداخت';
+    case 'REFUND':
+      return 'بازپرداخت';
+  }
+}
+
 function messageFor(error: unknown): string {
   if (error instanceof StaffApiError && error.status === 403) {
     return 'نمایش صورتحساب برای نقش شما فعال نیست.';
@@ -186,6 +207,14 @@ export function StaffFolioPrintPage({ bookingId }: { bookingId: string }) {
         <div className={styles.ledgerWrap}>
           <table className={styles.ledger}>
             <caption>ردیف‌های صورتحساب عملیاتی اقامت</caption>
+            <colgroup>
+              <col className={styles.dateColumn} />
+              <col className={styles.descriptionColumn} />
+              <col className={styles.roomColumn} />
+              <col className={styles.methodColumn} />
+              <col className={styles.amountColumn} />
+              <col className={styles.amountColumn} />
+            </colgroup>
             <thead>
               <tr>
                 <th scope="col">تاریخ</th>
@@ -215,10 +244,7 @@ export function StaffFolioPrintPage({ bookingId }: { bookingId: string }) {
                     {entry.correctionReason && <small>دلیل: {entry.correctionReason}</small>}
                   </td>
                   <td>{entry.roomNumber ? `اتاق ${entry.roomNumber}` : '—'}</td>
-                  <td>
-                    {paymentMethodLabel(entry.paymentMethod) ||
-                      (entry.kind === 'PAYMENT' ? 'پرداخت آفلاین' : entry.kind)}
-                  </td>
+                  <td>{paymentMethodLabel(entry.paymentMethod) || entryKindLabel(entry.kind)}</td>
                   <td dir="ltr">
                     {entry.direction === 'DEBIT' ? amountText(entry.amountToman) : '—'}
                   </td>

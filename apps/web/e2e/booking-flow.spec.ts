@@ -2,6 +2,7 @@ import { randomInt } from 'node:crypto';
 import { expect, type APIRequestContext, type Page, type TestInfo } from '@playwright/test';
 import AxeBuilder from '@axe-core/playwright';
 import { findAvailableGardenStay } from './available-stay';
+import { prepareReleaseScreenshot, releaseScreenshotStyle } from './release-screenshot';
 import { test, withStaffBookingCleanup } from './staff-fixtures';
 
 async function expectAxeClean(page: Page) {
@@ -95,6 +96,12 @@ test('guest submits a request and sees a safe pending confirmation', async ({
     await expect(page.getByText('در انتظار تأیید پذیرش')).toBeVisible();
     await expectAxeClean(page);
     await expect(page.getByText(/کد پیگیری/)).toBeVisible();
+    await prepareReleaseScreenshot(page);
+    await page.screenshot({
+      path: testInfo.outputPath('guest-request-confirmation.png'),
+      fullPage: true,
+      style: releaseScreenshotStyle,
+    });
     await expect(page.getByText('مریم رضایی')).toHaveCount(0);
     await expect(page.getByLabel('شماره موبایل')).toHaveCount(0);
     expect(submitted?.headers['idempotency-key']).toMatch(/^[A-Za-z0-9._~-]{16,128}$/);

@@ -1,8 +1,5 @@
 import type { FormEvent } from 'react';
-import {
-  formatGregorianAsJalali,
-  formatPersianInteger,
-} from '@/lib/jalali-date';
+import { formatGregorianAsJalali, formatPersianInteger } from '@/lib/jalali-date';
 import type {
   StaffRoomBoardItem,
   StaffRoomBoardResponse,
@@ -129,13 +126,20 @@ interface RoomBoardHeaderProps {
   onRefresh: () => void;
 }
 
-export function RoomBoardHeader({ board, isLoading, isRefreshing, onRefresh }: RoomBoardHeaderProps) {
+export function RoomBoardHeader({
+  board,
+  isLoading,
+  isRefreshing,
+  onRefresh,
+}: RoomBoardHeaderProps) {
   return (
     <header className={styles.header}>
       <div>
         <p className={styles.eyebrow}>پذیرش و گردش اتاق</p>
         <h1 id="staff-room-board-title">وضعیت اتاق‌ها</h1>
-        <p className={styles.lead}>رزرو، حضور مهمان، نظافت و مسدودی هر اتاق را جداگانه بررسی کنید.</p>
+        <p className={styles.lead}>
+          رزرو، حضور مهمان، نظافت و مسدودی هر اتاق را جداگانه بررسی کنید.
+        </p>
       </div>
       <div className={styles.freshness}>
         <div>
@@ -163,13 +167,34 @@ export function RoomBoardSummary({ items }: { items: StaffRoomBoardItem[] }) {
   const counts = roomBoardCounts(items);
   return (
     <section className={styles.summary} aria-label="خلاصهٔ وضعیت اتاق‌های نمایش‌داده‌شده">
-      <div><strong>{formatPersianInteger(counts.ready)}</strong><span>خالی و بازرسی‌شده</span></div>
-      <div><strong>{formatPersianInteger(counts.dirty)}</strong><span>خالی و نیازمند نظافت</span></div>
-      <div><strong>{formatPersianInteger(counts.arriving)}</strong><span>ورود امروز</span></div>
-      <div><strong>{formatPersianInteger(counts.reserved)}</strong><span>رزرو در جریان</span></div>
-      <div><strong>{formatPersianInteger(counts.departing)}</strong><span>خروج امروز</span></div>
-      <div><strong>{formatPersianInteger(counts.occupied)}</strong><span>اشغال با ثبت پذیرش</span></div>
-      <div><strong>{formatPersianInteger(counts.blocked)}</strong><span>دارای مسدودی</span></div>
+      <div>
+        <strong>{formatPersianInteger(counts.ready)}</strong>
+        <span>خالی و بازرسی‌شده</span>
+      </div>
+      <div>
+        <strong>{formatPersianInteger(counts.dirty)}</strong>
+        <span>خالی و نیازمند نظافت</span>
+      </div>
+      <div>
+        <strong>{formatPersianInteger(counts.arriving)}</strong>
+        <span>ورود امروز</span>
+      </div>
+      <div>
+        <strong>{formatPersianInteger(counts.reserved)}</strong>
+        <span>رزرو در جریان</span>
+      </div>
+      <div>
+        <strong>{formatPersianInteger(counts.departing)}</strong>
+        <span>خروج امروز</span>
+      </div>
+      <div>
+        <strong>{formatPersianInteger(counts.occupied)}</strong>
+        <span>اشغال با ثبت پذیرش</span>
+      </div>
+      <div>
+        <strong>{formatPersianInteger(counts.blocked)}</strong>
+        <span>دارای مسدودی</span>
+      </div>
     </section>
   );
 }
@@ -219,25 +244,49 @@ export function RoomBoardFiltersForm({
             aria-describedby={dateError ? 'room-board-date-error' : 'room-board-date-help'}
           />
           <span id="room-board-date-help">خالی بماند تا تاریخ کاری اقامتگاه نمایش داده شود.</span>
-          {dateError ? <span id="room-board-date-error" className={styles.fieldError} role="alert">{dateError}</span> : null}
+          {dateError ? (
+            <span id="room-board-date-error" className={styles.fieldError} role="alert">
+              {dateError}
+            </span>
+          ) : null}
         </div>
         <div className={styles.field}>
           <label htmlFor="room-board-type">نوع اتاق</label>
-          <select id="room-board-type" value={filters.roomTypeId} onChange={(event) => onChange('roomTypeId', event.target.value)}>
+          <select
+            id="room-board-type"
+            value={filters.roomTypeId}
+            onChange={(event) => onChange('roomTypeId', event.target.value)}
+          >
             <option value="">همهٔ انواع اتاق</option>
-            {roomTypes.map((roomType) => <option key={roomType.id} value={roomType.id}>{roomType.name}</option>)}
+            {roomTypes.map((roomType) => (
+              <option key={roomType.id} value={roomType.id}>
+                {roomType.name}
+              </option>
+            ))}
           </select>
         </div>
         <div className={styles.field}>
           <label htmlFor="room-board-floor">طبقه</label>
-          <select id="room-board-floor" value={filters.floor} onChange={(event) => onChange('floor', event.target.value)}>
+          <select
+            id="room-board-floor"
+            value={filters.floor}
+            onChange={(event) => onChange('floor', event.target.value)}
+          >
             <option value="">همهٔ طبقه‌ها</option>
-            {floors.map((floor) => <option key={floor} value={floor}>طبقهٔ {floor}</option>)}
+            {floors.map((floor) => (
+              <option key={floor} value={floor}>
+                طبقهٔ {floor}
+              </option>
+            ))}
           </select>
         </div>
         <div className={styles.field}>
           <label htmlFor="room-board-occupancy">وضعیت حضور</label>
-          <select id="room-board-occupancy" value={filters.occupancy} onChange={(event) => onChange('occupancy', event.target.value)}>
+          <select
+            id="room-board-occupancy"
+            value={filters.occupancy}
+            onChange={(event) => onChange('occupancy', event.target.value)}
+          >
             <option value="">همهٔ وضعیت‌ها</option>
             <option value="VACANT">خالی</option>
             <option value="UNKNOWN">رزرو دارد؛ حضور ثبت نشده</option>
@@ -246,7 +295,11 @@ export function RoomBoardFiltersForm({
         </div>
         <div className={styles.field}>
           <label htmlFor="room-board-housekeeping">نظافت</label>
-          <select id="room-board-housekeeping" value={filters.housekeepingStatus} onChange={(event) => onChange('housekeepingStatus', event.target.value)}>
+          <select
+            id="room-board-housekeeping"
+            value={filters.housekeepingStatus}
+            onChange={(event) => onChange('housekeepingStatus', event.target.value)}
+          >
             <option value="">همهٔ وضعیت‌های نظافت</option>
             <option value="DIRTY">نیازمند نظافت</option>
             <option value="CLEAN">نظافت‌شده</option>
@@ -255,7 +308,11 @@ export function RoomBoardFiltersForm({
         </div>
         <div className={styles.field}>
           <label htmlFor="room-board-stay">وضعیت رزرو</label>
-          <select id="room-board-stay" value={filters.stayContext} onChange={(event) => onChange('stayContext', event.target.value)}>
+          <select
+            id="room-board-stay"
+            value={filters.stayContext}
+            onChange={(event) => onChange('stayContext', event.target.value)}
+          >
             <option value="">همهٔ اقامت‌ها</option>
             <option value="NONE">بدون رزرو فعال</option>
             <option value="ARRIVING">ورود امروز</option>
@@ -266,7 +323,11 @@ export function RoomBoardFiltersForm({
         </div>
         <div className={styles.field}>
           <label htmlFor="room-board-block">مسدودی</label>
-          <select id="room-board-block" value={filters.blockKind} onChange={(event) => onChange('blockKind', event.target.value)}>
+          <select
+            id="room-board-block"
+            value={filters.blockKind}
+            onChange={(event) => onChange('blockKind', event.target.value)}
+          >
             <option value="">همهٔ مسدودی‌ها</option>
             <option value="NONE">بدون مسدودی</option>
             <option value="OUT_OF_ORDER">خارج از سرویس</option>
@@ -275,8 +336,12 @@ export function RoomBoardFiltersForm({
         </div>
       </div>
       <div className={styles.actions}>
-        <button className="button button--jade" type="submit" disabled={disabled}>اعمال فیلترها</button>
-        <button className="button button--quiet" type="button" onClick={onClear}>پاک‌کردن فیلترها</button>
+        <button className="button button--jade" type="submit" disabled={disabled}>
+          اعمال فیلترها
+        </button>
+        <button className="button button--quiet" type="button" onClick={onClear}>
+          پاک‌کردن فیلترها
+        </button>
       </div>
     </form>
   );
@@ -306,38 +371,62 @@ export function RoomBoardList({ items, date, isBusy }: RoomBoardListProps) {
       ) : (
         <div className={styles.roomList}>
           {items.map((room) => (
-            <article className={styles.room} key={room.id} aria-labelledby={`room-board-${room.id}`}>
+            <article
+              className={styles.room}
+              key={room.id}
+              aria-labelledby={`room-board-${room.id}`}
+            >
               <div className={styles.roomIdentity}>
                 <div>
-                  <span>{room.roomType.name} · طبقهٔ {room.floor || 'ثبت‌نشده'}</span>
+                  <span>
+                    {room.roomType.name} · طبقهٔ {room.floor || 'ثبت‌نشده'}
+                  </span>
                   <h3 id={`room-board-${room.id}`}>اتاق {room.roomNumber}</h3>
                 </div>
-                {!room.isActive ? <span className={`${styles.pill} ${styles.pillBlocked}`}>غیرفعال</span> : null}
+                {!room.isActive ? (
+                  <span className={`${styles.pill} ${styles.pillBlocked}`}>غیرفعال</span>
+                ) : null}
               </div>
               <div className={styles.roomState}>
                 <span className={`${styles.pill} ${styles[`occupancy${room.occupancy}`]}`}>
-                  <span aria-hidden="true" />{occupancyLabels[room.occupancy]}
+                  <span aria-hidden="true" />
+                  {occupancyLabels[room.occupancy]}
                 </span>
-                <span className={`${styles.pill} ${styles[`housekeeping${room.housekeepingStatus}`]}`}>
-                  <span aria-hidden="true" />{housekeepingLabels[room.housekeepingStatus]}
+                <span
+                  className={`${styles.pill} ${styles[`housekeeping${room.housekeepingStatus}`]}`}
+                >
+                  <span aria-hidden="true" />
+                  {housekeepingLabels[room.housekeepingStatus]}
                 </span>
               </div>
               <div className={styles.roomStays}>
-                {room.reservationContexts.length ? room.reservationContexts.map((context) => (
-                  <div className={styles.stay} key={context.assignmentId}>
-                    <strong>{stayLabels[context.stayContext]}</strong>
-                    <span>رزرو {context.reference}</span>
-                    <span>{context.guestName}</span>
-                    <span>{displayRoomBoardDate(context.startDate)} تا خروج {displayRoomBoardDate(context.endDate)}</span>
-                  </div>
-                )) : <span className={styles.muted}>رزرو تخصیص‌یافته‌ای برای این تاریخ ندارد.</span>}
+                {room.reservationContexts.length ? (
+                  room.reservationContexts.map((context) => (
+                    <div className={styles.stay} key={context.assignmentId}>
+                      <strong>{stayLabels[context.stayContext]}</strong>
+                      <span>رزرو {context.reference}</span>
+                      <span>{context.guestName}</span>
+                      <span>
+                        {displayRoomBoardDate(context.startDate)} تا خروج{' '}
+                        {displayRoomBoardDate(context.endDate)}
+                      </span>
+                    </div>
+                  ))
+                ) : (
+                  <span className={styles.muted}>رزرو تخصیص‌یافته‌ای برای این تاریخ ندارد.</span>
+                )}
               </div>
               <div className={styles.roomBlocks}>
-                {room.blocks.length ? room.blocks.map((block) => (
-                  <span className={`${styles.pill} ${styles.pillBlocked}`} key={block.id}>
-                    {blockLabels[block.kind]} · {displayRoomBoardDate(block.startDate)} تا {displayRoomBoardDate(block.endDate)}
-                  </span>
-                )) : <span className={styles.muted}>بدون مسدودی</span>}
+                {room.blocks.length ? (
+                  room.blocks.map((block) => (
+                    <span className={`${styles.pill} ${styles.pillBlocked}`} key={block.id}>
+                      {blockLabels[block.kind]} · {displayRoomBoardDate(block.startDate)} تا{' '}
+                      {displayRoomBoardDate(block.endDate)}
+                    </span>
+                  ))
+                ) : (
+                  <span className={styles.muted}>بدون مسدودی</span>
+                )}
               </div>
             </article>
           ))}
@@ -352,10 +441,12 @@ interface AssignableBookingsProps {
   onEdit: (reference: string, trigger: HTMLButtonElement) => void;
 }
 
-function assignmentCountOnDate(booking: StaffRoomBoardResponse['assignableBookings'][number], date: string) {
-  return booking.assignments.filter(
-    (assignment) =>
-      isDateWithinAssignmentInterval(assignment.startDate, assignment.endDate, date),
+function assignmentCountOnDate(
+  booking: StaffRoomBoardResponse['assignableBookings'][number],
+  date: string,
+) {
+  return booking.assignments.filter((assignment) =>
+    isDateWithinAssignmentInterval(assignment.startDate, assignment.endDate, date),
   ).length;
 }
 
@@ -377,12 +468,22 @@ export function AssignableBookings({ board, onEdit }: AssignableBookingsProps) {
             <article className={styles.booking} key={booking.reference}>
               <div className={styles.bookingDetails}>
                 <h3>{booking.guestName}</h3>
-                <p>کد رزرو <bdi dir="ltr">{booking.reference}</bdi> · {booking.roomTypeName}</p>
-                <p>{displayRoomBoardDate(booking.checkIn)} تا خروج {displayRoomBoardDate(booking.checkOut)}</p>
+                <p>
+                  کد رزرو <bdi dir="ltr">{booking.reference}</bdi> · {booking.roomTypeName}
+                </p>
+                <p>
+                  {displayRoomBoardDate(booking.checkIn)} تا خروج{' '}
+                  {displayRoomBoardDate(booking.checkOut)}
+                </p>
               </div>
               <div className={styles.bookingCounts}>
-                <strong>{formatPersianInteger(booking.unassignedRoomQuantity)} واحد بدون تخصیص</strong>
-                <span>{formatPersianInteger(assignmentCountOnDate(booking, board.date))} از {formatPersianInteger(booking.roomQuantity)} واحد برای این تاریخ تخصیص دارد</span>
+                <strong>
+                  {formatPersianInteger(booking.unassignedRoomQuantity)} واحد بدون تخصیص
+                </strong>
+                <span>
+                  {formatPersianInteger(assignmentCountOnDate(booking, board.date))} از{' '}
+                  {formatPersianInteger(booking.roomQuantity)} واحد برای این تاریخ تخصیص دارد
+                </span>
               </div>
               <button
                 className="button button--quiet"

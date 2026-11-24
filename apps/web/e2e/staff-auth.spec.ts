@@ -11,8 +11,10 @@ const apiBaseUrl = `http://127.0.0.1:${apiPort}/api/v1`;
 
 function demoCredentials() {
   const workspaceRoot = resolve(process.cwd(), '../..');
-  const email = process.env.DEMO_ADMIN_EMAIL ?? getE2eEnvironmentValue('DEMO_ADMIN_EMAIL', workspaceRoot);
-  const password = process.env.DEMO_ADMIN_PASSWORD ?? getE2eEnvironmentValue('DEMO_ADMIN_PASSWORD', workspaceRoot);
+  const email =
+    process.env.DEMO_ADMIN_EMAIL ?? getE2eEnvironmentValue('DEMO_ADMIN_EMAIL', workspaceRoot);
+  const password =
+    process.env.DEMO_ADMIN_PASSWORD ?? getE2eEnvironmentValue('DEMO_ADMIN_PASSWORD', workspaceRoot);
   if (!email || !password) {
     throw new Error('Set fictional DEMO_ADMIN_EMAIL and DEMO_ADMIN_PASSWORD in the local .env.');
   }

@@ -92,8 +92,24 @@ const discrepancyPage = (items = [discrepancyFixture]) => ({
 });
 
 const roomOptions = [
-  { id: 'room-101', roomNumber: '۱۰۱', floor: '۲', housekeepingStatus: 'DIRTY', occupancy: 'VACANT', dueArrival: true, dueDeparture: false },
-  { id: 'room-102', roomNumber: '۱۰۲', floor: '۳', housekeepingStatus: 'CLEAN', occupancy: 'OCCUPIED', dueArrival: false, dueDeparture: true },
+  {
+    id: 'room-101',
+    roomNumber: '۱۰۱',
+    floor: '۲',
+    housekeepingStatus: 'DIRTY',
+    occupancy: 'VACANT',
+    dueArrival: true,
+    dueDeparture: false,
+  },
+  {
+    id: 'room-102',
+    roomNumber: '۱۰۲',
+    floor: '۳',
+    housekeepingStatus: 'CLEAN',
+    occupancy: 'OCCUPIED',
+    dueArrival: false,
+    dueDeparture: true,
+  },
 ];
 const roomPage = {
   businessDate: '2026-11-17',
@@ -104,7 +120,12 @@ const roomPage = {
 function setRole(role: typeof session.current.staff.role) {
   session.current = {
     status: 'authenticated',
-    staff: { username: 'attendant-1', email: 'attendant@example.test', role, mustChangePassword: false },
+    staff: {
+      username: 'attendant-1',
+      email: 'attendant@example.test',
+      role,
+      mustChangePassword: false,
+    },
     csrfToken: 'csrf-housekeeping',
   };
 }
@@ -113,20 +134,34 @@ describe('StaffHousekeepingPage', () => {
   beforeEach(() => {
     setRole('HOUSEKEEPER');
     housekeepingApi.getStaffHousekeepingTasks.mockReset().mockResolvedValue(taskPage());
-    housekeepingApi.getStaffHousekeepingDiscrepancies.mockReset().mockResolvedValue(discrepancyPage());
+    housekeepingApi.getStaffHousekeepingDiscrepancies
+      .mockReset()
+      .mockResolvedValue(discrepancyPage());
     housekeepingApi.getStaffHousekeepingRooms.mockReset().mockResolvedValue(roomPage);
-    housekeepingApi.getStaffHousekeepingAssignees.mockReset().mockResolvedValue({ items: [
-      { id: 'staff-1', username: 'attendant-1' },
-      { id: 'staff-2', username: 'attendant-2' },
-    ] });
+    housekeepingApi.getStaffHousekeepingAssignees.mockReset().mockResolvedValue({
+      items: [
+        { id: 'staff-1', username: 'attendant-1' },
+        { id: 'staff-2', username: 'attendant-2' },
+      ],
+    });
     housekeepingApi.createStaffHousekeepingTask.mockReset().mockResolvedValue(taskFixture);
     housekeepingApi.assignStaffHousekeepingTask.mockReset().mockResolvedValue(taskFixture);
-    housekeepingApi.startStaffHousekeepingTask.mockReset().mockResolvedValue({ ...taskFixture, status: 'IN_PROGRESS' });
-    housekeepingApi.completeStaffHousekeepingTask.mockReset().mockResolvedValue({ ...taskFixture, status: 'COMPLETED', completionOutcome: 'DONE' });
-    housekeepingApi.cancelStaffHousekeepingTask.mockReset().mockResolvedValue({ ...taskFixture, status: 'CANCELLED' });
+    housekeepingApi.startStaffHousekeepingTask
+      .mockReset()
+      .mockResolvedValue({ ...taskFixture, status: 'IN_PROGRESS' });
+    housekeepingApi.completeStaffHousekeepingTask
+      .mockReset()
+      .mockResolvedValue({ ...taskFixture, status: 'COMPLETED', completionOutcome: 'DONE' });
+    housekeepingApi.cancelStaffHousekeepingTask
+      .mockReset()
+      .mockResolvedValue({ ...taskFixture, status: 'CANCELLED' });
     housekeepingApi.reportStaffRoomDiscrepancy.mockReset().mockResolvedValue(discrepancyFixture);
-    housekeepingApi.resolveStaffHousekeepingDiscrepancy.mockReset().mockResolvedValue({ ...discrepancyFixture, status: 'RESOLVED' });
-    housekeepingApi.dismissStaffHousekeepingDiscrepancy.mockReset().mockResolvedValue({ ...discrepancyFixture, status: 'DISMISSED' });
+    housekeepingApi.resolveStaffHousekeepingDiscrepancy
+      .mockReset()
+      .mockResolvedValue({ ...discrepancyFixture, status: 'RESOLVED' });
+    housekeepingApi.dismissStaffHousekeepingDiscrepancy
+      .mockReset()
+      .mockResolvedValue({ ...discrepancyFixture, status: 'DISMISSED' });
   });
 
   it('shows separate room occupancy, condition, task priority, and due context without guest or folio data', async () => {
@@ -151,7 +186,9 @@ describe('StaffHousekeepingPage', () => {
     expect(within(roomCard).getByText('نیازمند نظافت')).toBeVisible();
     expect(screen.getByRole('region', { name: 'مغایرت‌های حضور' })).toBeVisible();
 
-    fireEvent.change(screen.getByLabelText('فیلتر حضور اتاق‌ها'), { target: { value: 'OCCUPIED' } });
+    fireEvent.change(screen.getByLabelText('فیلتر حضور اتاق‌ها'), {
+      target: { value: 'OCCUPIED' },
+    });
     expect(screen.getByRole('article', { name: 'وضعیت اتاق ۱۰۲' })).toBeVisible();
     expect(screen.queryByRole('article', { name: 'وضعیت اتاق ۱۰۱' })).not.toBeInTheDocument();
     expect(screen.getByRole('article', { name: /کار خانه‌داری اتاق ۱۰۱/ })).toBeVisible();
@@ -191,7 +228,9 @@ describe('StaffHousekeepingPage', () => {
     expect(within(room101).getByText('وضعیت نظافت:')).toBeVisible();
     expect(within(room101).getByText('نیازمند نظافت')).toBeVisible();
 
-    fireEvent.change(screen.getByLabelText('فیلتر حضور اتاق‌ها'), { target: { value: 'OCCUPIED' } });
+    fireEvent.change(screen.getByLabelText('فیلتر حضور اتاق‌ها'), {
+      target: { value: 'OCCUPIED' },
+    });
     expect(screen.getByRole('article', { name: 'وضعیت اتاق ۱۰۲' })).toBeVisible();
     expect(screen.queryByRole('article', { name: 'وضعیت اتاق ۱۰۱' })).not.toBeInTheDocument();
     expect(screen.getByRole('article', { name: /کار خانه‌داری اتاق ۱۰۱/ })).toBeVisible();
@@ -210,13 +249,26 @@ describe('StaffHousekeepingPage', () => {
     };
     housekeepingApi.getStaffHousekeepingRooms
       .mockReset()
-      .mockResolvedValueOnce({ ...roomPage, pagination: { page: 1, pageSize: 100, totalItems: 3, totalPages: 2 } })
-      .mockResolvedValueOnce({ ...roomPage, items: [thirdRoom], pagination: { page: 2, pageSize: 100, totalItems: 3, totalPages: 2 } });
+      .mockResolvedValueOnce({
+        ...roomPage,
+        pagination: { page: 1, pageSize: 100, totalItems: 3, totalPages: 2 },
+      })
+      .mockResolvedValueOnce({
+        ...roomPage,
+        items: [thirdRoom],
+        pagination: { page: 2, pageSize: 100, totalItems: 3, totalPages: 2 },
+      });
     render(<StaffHousekeepingPage />);
 
     expect(await screen.findByRole('article', { name: 'وضعیت اتاق ۱۰۳' })).toBeVisible();
-    expect(housekeepingApi.getStaffHousekeepingRooms).toHaveBeenNthCalledWith(1, { page: 1, pageSize: 100 });
-    expect(housekeepingApi.getStaffHousekeepingRooms).toHaveBeenNthCalledWith(2, { page: 2, pageSize: 100 });
+    expect(housekeepingApi.getStaffHousekeepingRooms).toHaveBeenNthCalledWith(1, {
+      page: 1,
+      pageSize: 100,
+    });
+    expect(housekeepingApi.getStaffHousekeepingRooms).toHaveBeenNthCalledWith(2, {
+      page: 2,
+      pageSize: 100,
+    });
   });
 
   it('filters discrepancy history independently from task filters', async () => {
@@ -226,11 +278,18 @@ describe('StaffHousekeepingPage', () => {
 
     fireEvent.change(screen.getByLabelText('وضعیت گزارش‌ها'), { target: { value: 'DISMISSED' } });
 
-    await waitFor(() => expect(housekeepingApi.getStaffHousekeepingDiscrepancies).toHaveBeenLastCalledWith(
-      expect.objectContaining({ status: 'DISMISSED' }),
-    ));
-    expect(housekeepingApi.getStaffHousekeepingDiscrepancies).toHaveBeenCalledWith(expect.objectContaining({ status: 'OPEN' }));
-    expect(housekeepingApi.getStaffHousekeepingTasks.mock.lastCall?.[0]).not.toHaveProperty('status', 'DISMISSED');
+    await waitFor(() =>
+      expect(housekeepingApi.getStaffHousekeepingDiscrepancies).toHaveBeenLastCalledWith(
+        expect.objectContaining({ status: 'DISMISSED' }),
+      ),
+    );
+    expect(housekeepingApi.getStaffHousekeepingDiscrepancies).toHaveBeenCalledWith(
+      expect.objectContaining({ status: 'OPEN' }),
+    );
+    expect(housekeepingApi.getStaffHousekeepingTasks.mock.lastCall?.[0]).not.toHaveProperty(
+      'status',
+      'DISMISSED',
+    );
   });
 
   it('shows reporter and resolution history when the closed report filter is selected', async () => {
@@ -254,7 +313,10 @@ describe('StaffHousekeepingPage', () => {
     expect(within(card).getByText(/گزارش attendant-1/)).toBeVisible();
     expect(within(card).getByText(/بررسی shift-manager/)).toBeVisible();
     expect(within(card).getByText('توضیح: پس از بررسی، حضور مهمان تأیید نشد')).toBeVisible();
-    expect(within(card).getByLabelText('زمان بررسی مغایرت')).toHaveAttribute('datetime', '2026-11-17T09:20:00.000Z');
+    expect(within(card).getByLabelText('زمان بررسی مغایرت')).toHaveAttribute(
+      'datetime',
+      '2026-11-17T09:20:00.000Z',
+    );
   });
 
   it('requires an inspection reason for rework, submits completion, and announces the result', async () => {
@@ -266,25 +328,33 @@ describe('StaffHousekeepingPage', () => {
     const rework = within(dialog).getByRole('radio', { name: 'نیازمند نظافت دوباره' });
     fireEvent.click(rework);
     expect(within(dialog).getByRole('button', { name: 'ثبت نتیجهٔ بازرسی' })).toBeDisabled();
-    fireEvent.change(within(dialog).getByLabelText('دلیل نیاز به نظافت دوباره'), { target: { value: 'رسوب در حمام' } });
+    fireEvent.change(within(dialog).getByLabelText('دلیل نیاز به نظافت دوباره'), {
+      target: { value: 'رسوب در حمام' },
+    });
 
     const submit = within(dialog).getByRole('button', { name: 'ثبت نتیجهٔ بازرسی' });
     expect(submit).toBeEnabled();
     fireEvent.click(submit);
 
-    await waitFor(() => expect(housekeepingApi.completeStaffHousekeepingTask).toHaveBeenCalledWith(
-      'task-1',
-      { outcome: 'NEEDS_REWORK', reason: 'رسوب در حمام' },
-      'csrf-housekeeping',
-    ));
-    expect(await screen.findByRole('status')).toHaveTextContent('نظافت دوباره برای اتاق ۱۰۱ ثبت شد');
+    await waitFor(() =>
+      expect(housekeepingApi.completeStaffHousekeepingTask).toHaveBeenCalledWith(
+        'task-1',
+        { outcome: 'NEEDS_REWORK', reason: 'رسوب در حمام' },
+        'csrf-housekeeping',
+      ),
+    );
+    expect(await screen.findByRole('status')).toHaveTextContent(
+      'نظافت دوباره برای اتاق ۱۰۱ ثبت شد',
+    );
   });
 
   it('refreshes the readiness card after a manager completes room work', async () => {
     setRole('MANAGER');
     const inspectedPage = {
       ...roomPage,
-      items: roomOptions.map((room) => room.id === 'room-101' ? { ...room, housekeepingStatus: 'INSPECTED' } : room),
+      items: roomOptions.map((room) =>
+        room.id === 'room-101' ? { ...room, housekeepingStatus: 'INSPECTED' } : room,
+      ),
     };
     housekeepingApi.getStaffHousekeepingRooms
       .mockReset()
@@ -306,15 +376,25 @@ describe('StaffHousekeepingPage', () => {
     fireEvent.click(await screen.findByRole('button', { name: 'گزارش مغایرت حضور' }));
     const dialog = await screen.findByRole('dialog', { name: 'گزارش مغایرت حضور' });
     fireEvent.change(within(dialog).getByLabelText('اتاق'), { target: { value: 'room-101' } });
-    fireEvent.change(within(dialog).getByLabelText('حضور مشاهده‌شده'), { target: { value: 'true' } });
-    fireEvent.change(within(dialog).getByLabelText('یادداشت عملیاتی'), { target: { value: 'صدای حضور داخل اتاق شنیده شد' } });
+    fireEvent.change(within(dialog).getByLabelText('حضور مشاهده‌شده'), {
+      target: { value: 'true' },
+    });
+    fireEvent.change(within(dialog).getByLabelText('یادداشت عملیاتی'), {
+      target: { value: 'صدای حضور داخل اتاق شنیده شد' },
+    });
     fireEvent.click(within(dialog).getByRole('button', { name: 'ثبت مغایرت' }));
 
-    await waitFor(() => expect(housekeepingApi.reportStaffRoomDiscrepancy).toHaveBeenCalledWith(
-      'room-101',
-      { businessDate: '2026-11-17', observedOccupied: true, note: 'صدای حضور داخل اتاق شنیده شد' },
-      'csrf-housekeeping',
-    ));
+    await waitFor(() =>
+      expect(housekeepingApi.reportStaffRoomDiscrepancy).toHaveBeenCalledWith(
+        'room-101',
+        {
+          businessDate: '2026-11-17',
+          observedOccupied: true,
+          note: 'صدای حضور داخل اتاق شنیده شد',
+        },
+        'csrf-housekeeping',
+      ),
+    );
     expect(await screen.findByText(/اتاق خالی ثبت شده/)).toBeVisible();
     expect(housekeepingApi.resolveStaffHousekeepingDiscrepancy).not.toHaveBeenCalled();
   });
@@ -327,10 +407,12 @@ describe('StaffHousekeepingPage', () => {
     expect(within(card).getByText(/مشاهدهٔ کارکنان: اشغال/)).toBeVisible();
     fireEvent.click(within(card).getByRole('button', { name: 'تأیید اصلاح مغایرت' }));
 
-    await waitFor(() => expect(housekeepingApi.resolveStaffHousekeepingDiscrepancy).toHaveBeenCalledWith(
-      'discrepancy-1',
-      'csrf-housekeeping',
-    ));
+    await waitFor(() =>
+      expect(housekeepingApi.resolveStaffHousekeepingDiscrepancy).toHaveBeenCalledWith(
+        'discrepancy-1',
+        'csrf-housekeeping',
+      ),
+    );
     expect(await screen.findByRole('status')).toHaveTextContent('مغایرت اتاق ۱۰۱ اصلاح شد');
     expect(screen.queryByRole('button', { name: /گزارش مغایرت/ })).not.toBeInTheDocument();
   });
@@ -340,8 +422,12 @@ describe('StaffHousekeepingPage', () => {
     render(<StaffHousekeepingPage />);
     expect(await screen.findByRole('article', { name: /کار خانه‌داری اتاق ۱۰۱/ })).toBeVisible();
     expect(await screen.findByRole('article', { name: /اتاق خالی ثبت شده/ })).toBeVisible();
-    housekeepingApi.getStaffHousekeepingTasks.mockRejectedValueOnce(new StaffApiError('Offline', 0));
-    housekeepingApi.getStaffHousekeepingDiscrepancies.mockRejectedValueOnce(new StaffApiError('Offline', 0));
+    housekeepingApi.getStaffHousekeepingTasks.mockRejectedValueOnce(
+      new StaffApiError('Offline', 0),
+    );
+    housekeepingApi.getStaffHousekeepingDiscrepancies.mockRejectedValueOnce(
+      new StaffApiError('Offline', 0),
+    );
     fireEvent.click(screen.getByRole('button', { name: 'به‌روزرسانی فهرست' }));
 
     await waitFor(() => expect(screen.getAllByRole('alert')).toHaveLength(1));
@@ -368,10 +454,14 @@ describe('StaffHousekeepingPage', () => {
     fireEvent.change(screen.getByLabelText('موعد انجام کار'), { target: { value: '۱۴۰۵/۰۸/۲۷' } });
     fireEvent.click(screen.getByRole('button', { name: 'اعمال فیلترها' }));
 
-    await waitFor(() => expect(housekeepingApi.getStaffHousekeepingTasks).toHaveBeenLastCalledWith(
-      expect.objectContaining({ dueDate: '2026-11-18' }),
-    ));
-    expect(housekeepingApi.getStaffHousekeepingTasks.mock.lastCall?.[0]).not.toHaveProperty('businessDate');
+    await waitFor(() =>
+      expect(housekeepingApi.getStaffHousekeepingTasks).toHaveBeenLastCalledWith(
+        expect.objectContaining({ dueDate: '2026-11-18' }),
+      ),
+    );
+    expect(housekeepingApi.getStaffHousekeepingTasks.mock.lastCall?.[0]).not.toHaveProperty(
+      'businessDate',
+    );
   });
 
   it('keeps the applied-filter summary and clear action available while mobile filters are collapsed', async () => {
@@ -418,7 +508,9 @@ describe('StaffHousekeepingPage', () => {
     const describedBy = dueDate.getAttribute('aria-describedby')?.split(' ') ?? [];
     expect(describedBy).toContain('housekeeping-due-date-help');
     expect(describedBy).toContain('housekeeping-due-date-error');
-    expect(document.getElementById('housekeeping-due-date-error')).toHaveTextContent('تاریخ کاری را به‌شکل سال/ماه/روز شمسی معتبر وارد کنید.');
+    expect(document.getElementById('housekeeping-due-date-error')).toHaveTextContent(
+      'تاریخ کاری را به‌شکل سال/ماه/روز شمسی معتبر وارد کنید.',
+    );
 
     fireEvent.change(dueDate, { target: { value: '۱۴۰۵/۰۸/۲۷' } });
     expect(dueDate).not.toHaveAttribute('aria-invalid', 'true');
@@ -427,30 +519,46 @@ describe('StaffHousekeepingPage', () => {
 
   it('lets managers filter by active housekeeper and preserves that filter through pagination and clearing', async () => {
     setRole('MANAGER');
-    housekeepingApi.getStaffHousekeepingTasks.mockImplementation((query: { page?: number; pageSize?: number }) => Promise.resolve({
-      ...taskPage(),
-      pagination: { page: query.page ?? 1, pageSize: query.pageSize ?? 20, totalItems: 21, totalPages: 2 },
-    }));
+    housekeepingApi.getStaffHousekeepingTasks.mockImplementation(
+      (query: { page?: number; pageSize?: number }) =>
+        Promise.resolve({
+          ...taskPage(),
+          pagination: {
+            page: query.page ?? 1,
+            pageSize: query.pageSize ?? 20,
+            totalItems: 21,
+            totalPages: 2,
+          },
+        }),
+    );
     render(<StaffHousekeepingPage />);
     const assigneeFilter = await screen.findByLabelText('مسئول کار');
     expect(housekeepingApi.getStaffHousekeepingAssignees).toHaveBeenCalledOnce();
-    expect(await within(assigneeFilter).findByRole('option', { name: 'attendant-2' })).toBeInTheDocument();
+    expect(
+      await within(assigneeFilter).findByRole('option', { name: 'attendant-2' }),
+    ).toBeInTheDocument();
 
     fireEvent.change(assigneeFilter, { target: { value: 'staff-2' } });
     fireEvent.click(screen.getByRole('button', { name: 'اعمال فیلترها' }));
-    await waitFor(() => expect(housekeepingApi.getStaffHousekeepingTasks).toHaveBeenLastCalledWith(
-      expect.objectContaining({ assigneeStaffUserId: 'staff-2', page: 1 }),
-    ));
+    await waitFor(() =>
+      expect(housekeepingApi.getStaffHousekeepingTasks).toHaveBeenLastCalledWith(
+        expect.objectContaining({ assigneeStaffUserId: 'staff-2', page: 1 }),
+      ),
+    );
 
     fireEvent.click(screen.getByRole('button', { name: 'صفحهٔ بعد' }));
-    await waitFor(() => expect(housekeepingApi.getStaffHousekeepingTasks).toHaveBeenLastCalledWith(
-      expect.objectContaining({ assigneeStaffUserId: 'staff-2', page: 2 }),
-    ));
+    await waitFor(() =>
+      expect(housekeepingApi.getStaffHousekeepingTasks).toHaveBeenLastCalledWith(
+        expect.objectContaining({ assigneeStaffUserId: 'staff-2', page: 2 }),
+      ),
+    );
 
     fireEvent.click(screen.getByRole('button', { name: 'پاک‌کردن فیلترها' }));
-    await waitFor(() => expect(housekeepingApi.getStaffHousekeepingTasks).toHaveBeenLastCalledWith(
-      expect.not.objectContaining({ assigneeStaffUserId: expect.anything() }),
-    ));
+    await waitFor(() =>
+      expect(housekeepingApi.getStaffHousekeepingTasks).toHaveBeenLastCalledWith(
+        expect.not.objectContaining({ assigneeStaffUserId: expect.anything() }),
+      ),
+    );
     expect(screen.getByLabelText('مسئول کار')).toHaveValue('');
   });
 
@@ -465,7 +573,9 @@ describe('StaffHousekeepingPage', () => {
 
   it('keeps the assignee retry action outside its label and links the error to the select', async () => {
     setRole('MANAGER');
-    housekeepingApi.getStaffHousekeepingAssignees.mockRejectedValueOnce(new StaffApiError('Offline', 0));
+    housekeepingApi.getStaffHousekeepingAssignees.mockRejectedValueOnce(
+      new StaffApiError('Offline', 0),
+    );
     render(<StaffHousekeepingPage />);
     await screen.findByText('فهرست مسئول‌ها دریافت نشد.');
     const select = await screen.findByLabelText('مسئول کار');
@@ -488,30 +598,45 @@ describe('StaffHousekeepingPage', () => {
     fireEvent.change(within(dialog).getByLabelText('اولویت'), { target: { value: 'HIGH' } });
     fireEvent.click(within(dialog).getByRole('button', { name: 'ایجاد کار' }));
 
-    await waitFor(() => expect(housekeepingApi.createStaffHousekeepingTask).toHaveBeenCalledWith(
-      { roomId: 'room-101', taskType: 'INSPECTION', businessDate: '2026-11-17', priority: 'HIGH' },
-      'csrf-housekeeping',
-    ));
+    await waitFor(() =>
+      expect(housekeepingApi.createStaffHousekeepingTask).toHaveBeenCalledWith(
+        {
+          roomId: 'room-101',
+          taskType: 'INSPECTION',
+          businessDate: '2026-11-17',
+          priority: 'HIGH',
+        },
+        'csrf-housekeeping',
+      ),
+    );
     expect(await screen.findByRole('status')).toHaveTextContent(/کار خانه‌داری ثبت شد/);
   });
 
   it('loads active housekeepers and submits manager assignment by staff id', async () => {
     setRole('MANAGER');
-    housekeepingApi.getStaffHousekeepingTasks.mockResolvedValue(taskPage([{ ...taskFixture, allowedActions: { ...taskFixture.allowedActions, canAssign: true } }]));
+    housekeepingApi.getStaffHousekeepingTasks.mockResolvedValue(
+      taskPage([
+        { ...taskFixture, allowedActions: { ...taskFixture.allowedActions, canAssign: true } },
+      ]),
+    );
     render(<StaffHousekeepingPage />);
     const card = await screen.findByRole('article', { name: /کار خانه‌داری اتاق ۱۰۱/ });
     fireEvent.click(within(card).getByRole('button', { name: 'تغییر مسئول' }));
 
     const dialog = await screen.findByRole('dialog', { name: 'تخصیص کار اتاق ۱۰۱' });
     expect(housekeepingApi.getStaffHousekeepingAssignees).toHaveBeenCalledTimes(2);
-    fireEvent.change(within(dialog).getByLabelText('خانه‌دار مسئول'), { target: { value: 'staff-2' } });
+    fireEvent.change(within(dialog).getByLabelText('خانه‌دار مسئول'), {
+      target: { value: 'staff-2' },
+    });
     fireEvent.click(within(dialog).getByRole('button', { name: 'ثبت تخصیص' }));
 
-    await waitFor(() => expect(housekeepingApi.assignStaffHousekeepingTask).toHaveBeenCalledWith(
-      'task-1',
-      { assigneeStaffUserId: 'staff-2' },
-      'csrf-housekeeping',
-    ));
+    await waitFor(() =>
+      expect(housekeepingApi.assignStaffHousekeepingTask).toHaveBeenCalledWith(
+        'task-1',
+        { assigneeStaffUserId: 'staff-2' },
+        'csrf-housekeeping',
+      ),
+    );
   });
 
   it('denies cashier access before requesting any housekeeping data', () => {

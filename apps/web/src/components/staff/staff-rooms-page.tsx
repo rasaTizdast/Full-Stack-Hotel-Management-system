@@ -1,6 +1,13 @@
 'use client';
 
-import { useEffect, useRef, useState, type FormEvent, type KeyboardEvent, type MouseEvent } from 'react';
+import {
+  useEffect,
+  useRef,
+  useState,
+  type FormEvent,
+  type KeyboardEvent,
+  type MouseEvent,
+} from 'react';
 import {
   StaffApiError,
   createStaffRoom,
@@ -62,19 +69,24 @@ function formatRoomError(cause: unknown): { message: string; field?: 'roomNumber
     }
     if (cause.code === 'ROOM_HAS_ACTIVE_ASSIGNMENTS') {
       return {
-        message: 'برای غیرفعال‌کردن اتاق، ابتدا پذیرش باید انتساب‌های جاری یا آینده را جابه‌جا کند.',
+        message:
+          'برای غیرفعال‌کردن اتاق، ابتدا پذیرش باید انتساب‌های جاری یا آینده را جابه‌جا کند.',
       };
     }
     if (cause.code === 'CAPACITY_BELOW_RESERVED') {
       return {
-        message: 'ظرفیت قابل عرضه با اتاق‌های رزروشده هم‌خوان نیست؛ موجودی این نوع اتاق را بررسی کنید.',
+        message:
+          'ظرفیت قابل عرضه با اتاق‌های رزروشده هم‌خوان نیست؛ موجودی این نوع اتاق را بررسی کنید.',
       };
     }
     if (cause.code === 'ROOM_TYPE_INACTIVE') {
       return { message: 'این نوع اتاق غیرفعال است؛ نوع اتاق فعال دیگری انتخاب کنید.' };
     }
     if (cause.fields?.some((item) => item.field === 'roomNumber')) {
-      return { message: 'شماره اتاق را بررسی کنید؛ باید یکتا و حداکثر ۳۲ نویسه باشد.', field: 'roomNumber' };
+      return {
+        message: 'شماره اتاق را بررسی کنید؛ باید یکتا و حداکثر ۳۲ نویسه باشد.',
+        field: 'roomNumber',
+      };
     }
     return { message: cause.message };
   }
@@ -135,9 +147,10 @@ export function StaffRoomsPage() {
   const [loadError, setLoadError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
-  const [pendingAction, setPendingAction] = useState<{ room: StaffRoom; action: RoomAction } | null>(
-    null,
-  );
+  const [pendingAction, setPendingAction] = useState<{
+    room: StaffRoom;
+    action: RoomAction;
+  } | null>(null);
   const loadRequestId = useRef(0);
   const confirmationButton = useRef<HTMLButtonElement>(null);
   const actionTrigger = useRef<HTMLButtonElement | null>(null);
@@ -313,11 +326,7 @@ export function StaffRoomsPage() {
           features,
           ...(roomNumber !== editingRoom.roomNumber ? { roomNumber } : {}),
         };
-        const updated = await updateStaffRoom(
-          editingRoom.id,
-          update,
-          csrfToken,
-        );
+        const updated = await updateStaffRoom(editingRoom.id, update, csrfToken);
         const matchesFilters = roomMatchesFilters(updated, filters);
         setRooms((current) => replaceRoom(current, updated, filters));
         setSuccessMessage(
@@ -328,7 +337,10 @@ export function StaffRoomsPage() {
         setHiddenRoomNumber(matchesFilters ? null : updated.roomNumber);
         setIsEditorOpen(false);
         setEditingRoom(null);
-        setDraft({ ...emptyDraft, roomTypeId: roomTypes.find((option) => option.isActive)?.id ?? '' });
+        setDraft({
+          ...emptyDraft,
+          roomTypeId: roomTypes.find((option) => option.isActive)?.id ?? '',
+        });
       } else {
         const created = await createStaffRoom(
           {
@@ -348,7 +360,10 @@ export function StaffRoomsPage() {
         );
         setHiddenRoomNumber(matchesFilters ? null : created.roomNumber);
         setIsEditorOpen(false);
-        setDraft({ ...emptyDraft, roomTypeId: roomTypes.find((option) => option.isActive)?.id ?? '' });
+        setDraft({
+          ...emptyDraft,
+          roomTypeId: roomTypes.find((option) => option.isActive)?.id ?? '',
+        });
       }
     } catch (cause) {
       const error = formatRoomError(cause);
@@ -470,7 +485,11 @@ export function StaffRoomsPage() {
           </button>
         </div>
       ) : null}
-      {formError ? <p className="staff-rooms__message staff-rooms__message--error" role="alert">{formError}</p> : null}
+      {formError ? (
+        <p className="staff-rooms__message staff-rooms__message--error" role="alert">
+          {formError}
+        </p>
+      ) : null}
       {successMessage ? (
         <div className="staff-rooms__message staff-rooms__message--success" role="status">
           <p>{successMessage}</p>
@@ -492,18 +511,40 @@ export function StaffRoomsPage() {
         <div className="staff-rooms__filter-fields">
           <div className="staff-rooms__field">
             <label htmlFor="staff-rooms-filter-type">نوع اتاق</label>
-            <select id="staff-rooms-filter-type" value={filters.roomTypeId} disabled={isSaving} onChange={(event) => updateFilter('roomTypeId', event.target.value)}>
+            <select
+              id="staff-rooms-filter-type"
+              value={filters.roomTypeId}
+              disabled={isSaving}
+              onChange={(event) => updateFilter('roomTypeId', event.target.value)}
+            >
               <option value="">همه انواع اتاق</option>
-              {roomTypes.map((roomType) => <option key={roomType.id} value={roomType.id}>{roomType.name}{roomType.isActive ? '' : ' (غیرفعال)'}</option>)}
+              {roomTypes.map((roomType) => (
+                <option key={roomType.id} value={roomType.id}>
+                  {roomType.name}
+                  {roomType.isActive ? '' : ' (غیرفعال)'}
+                </option>
+              ))}
             </select>
           </div>
           <div className="staff-rooms__field">
             <label htmlFor="staff-rooms-filter-floor">طبقه</label>
-            <input id="staff-rooms-filter-floor" value={filters.floor} disabled={isSaving} onChange={(event) => updateFilter('floor', event.target.value)} />
+            <input
+              id="staff-rooms-filter-floor"
+              value={filters.floor}
+              disabled={isSaving}
+              onChange={(event) => updateFilter('floor', event.target.value)}
+            />
           </div>
           <div className="staff-rooms__field">
             <label htmlFor="staff-rooms-filter-status">وضعیت اتاق</label>
-            <select id="staff-rooms-filter-status" value={filters.activeState} disabled={isSaving} onChange={(event) => updateFilter('activeState', event.target.value as RoomFilters['activeState'])}>
+            <select
+              id="staff-rooms-filter-status"
+              value={filters.activeState}
+              disabled={isSaving}
+              onChange={(event) =>
+                updateFilter('activeState', event.target.value as RoomFilters['activeState'])
+              }
+            >
               <option value="">فعال و غیرفعال</option>
               <option value="true">فعال</option>
               <option value="false">غیرفعال</option>
@@ -511,25 +552,45 @@ export function StaffRoomsPage() {
           </div>
           <div className="staff-rooms__field staff-rooms__field--search">
             <label htmlFor="staff-rooms-filter-search">جست‌وجوی شماره اتاق</label>
-            <input id="staff-rooms-filter-search" type="search" value={filters.search} disabled={isSaving} onChange={(event) => updateFilter('search', event.target.value)} />
+            <input
+              id="staff-rooms-filter-search"
+              type="search"
+              value={filters.search}
+              disabled={isSaving}
+              onChange={(event) => updateFilter('search', event.target.value)}
+            />
           </div>
         </div>
         <div className="staff-rooms__filter-actions">
-          <button className="button button--jade staff-rooms__filter-button" type="submit" disabled={isLoading}>
+          <button
+            className="button button--jade staff-rooms__filter-button"
+            type="submit"
+            disabled={isLoading}
+          >
             اعمال فیلترها
           </button>
         </div>
       </form>
 
-      <section className="staff-rooms__list" aria-labelledby="staff-rooms-list-title" aria-busy={isLoading}>
+      <section
+        className="staff-rooms__list"
+        aria-labelledby="staff-rooms-list-title"
+        aria-busy={isLoading}
+      >
         <div className="staff-rooms__list-heading">
           <div>
-            <h2 id="staff-rooms-list-title" ref={roomListHeading} tabIndex={-1}>فهرست اتاق‌ها</h2>
+            <h2 id="staff-rooms-list-title" ref={roomListHeading} tabIndex={-1}>
+              فهرست اتاق‌ها
+            </h2>
             <p>ظرفیت این نوع اتاق با تعداد اتاق‌های فعال و مسدودی‌های ثبت‌شده محاسبه می‌شود.</p>
           </div>
           <span>{formatPersianInteger(rooms.length)} مورد</span>
         </div>
-        {isLoading ? <p className="staff-rooms__state" role="status" aria-live="polite">در حال دریافت اتاق‌ها…</p> : null}
+        {isLoading ? (
+          <p className="staff-rooms__state" role="status" aria-live="polite">
+            در حال دریافت اتاق‌ها…
+          </p>
+        ) : null}
         {!isLoading && !loadError && rooms.length === 0 ? (
           <div className="staff-rooms__empty" role="status">
             <h3>اتاقی برای این فیلتر پیدا نشد</h3>
@@ -539,30 +600,76 @@ export function StaffRoomsPage() {
         {!isLoading && rooms.length > 0 ? (
           <div className="staff-rooms__grid">
             {rooms.map((room) => (
-              <article className="staff-rooms__card" key={room.id} aria-labelledby={`staff-room-${room.id}`}>
+              <article
+                className="staff-rooms__card"
+                key={room.id}
+                aria-labelledby={`staff-room-${room.id}`}
+              >
                 <div className="staff-rooms__card-heading">
                   <div>
                     <p>{room.roomType.name}</p>
                     <h3 id={`staff-room-${room.id}`}>{room.roomNumber}</h3>
                   </div>
-                  <span className={room.isActive ? 'staff-rooms__status staff-rooms__status--active' : 'staff-rooms__status'}>
+                  <span
+                    className={
+                      room.isActive
+                        ? 'staff-rooms__status staff-rooms__status--active'
+                        : 'staff-rooms__status'
+                    }
+                  >
                     {room.isActive ? 'فعال' : 'غیرفعال'}
                   </span>
                 </div>
-                {room.isGenerated ? <p className="staff-rooms__generated-badge">شمارهٔ پیشنهادی</p> : null}
+                {room.isGenerated ? (
+                  <p className="staff-rooms__generated-badge">شمارهٔ پیشنهادی</p>
+                ) : null}
                 <dl className="staff-rooms__details">
-                  <div><dt>طبقه</dt><dd>{room.floor || 'ثبت نشده'}</dd></div>
-                  <div><dt>نظافت</dt><dd>{housekeepingLabel(room.housekeepingStatus)}</dd></div>
+                  <div>
+                    <dt>طبقه</dt>
+                    <dd>{room.floor || 'ثبت نشده'}</dd>
+                  </div>
+                  <div>
+                    <dt>نظافت</dt>
+                    <dd>{housekeepingLabel(room.housekeepingStatus)}</dd>
+                  </div>
                 </dl>
                 <div className="staff-rooms__features" aria-label="امکانات اتاق">
-                  {room.features.length ? room.features.map((feature) => <span key={feature}>{feature}</span>) : <span>امکانات ثبت نشده</span>}
+                  {room.features.length ? (
+                    room.features.map((feature) => <span key={feature}>{feature}</span>)
+                  ) : (
+                    <span>امکانات ثبت نشده</span>
+                  )}
                 </div>
                 <div className="staff-rooms__card-actions">
-                  <button type="button" className="button button--quiet" onClick={() => startEdit(room)} disabled={isSaving} aria-label={`ویرایش اتاق ${room.roomNumber}`}>ویرایش</button>
+                  <button
+                    type="button"
+                    className="button button--quiet"
+                    onClick={() => startEdit(room)}
+                    disabled={isSaving}
+                    aria-label={`ویرایش اتاق ${room.roomNumber}`}
+                  >
+                    ویرایش
+                  </button>
                   {room.isActive ? (
-                    <button type="button" className="button button--danger-quiet" onClick={(event) => requestRoomAction(room, 'deactivate', event)} disabled={isSaving} aria-label={`غیرفعال‌کردن اتاق ${room.roomNumber}`}>غیرفعال‌کردن</button>
+                    <button
+                      type="button"
+                      className="button button--danger-quiet"
+                      onClick={(event) => requestRoomAction(room, 'deactivate', event)}
+                      disabled={isSaving}
+                      aria-label={`غیرفعال‌کردن اتاق ${room.roomNumber}`}
+                    >
+                      غیرفعال‌کردن
+                    </button>
                   ) : (
-                    <button type="button" className="button button--quiet" onClick={(event) => requestRoomAction(room, 'reactivate', event)} disabled={isSaving} aria-label={`فعال‌کردن اتاق ${room.roomNumber}`}>فعال‌کردن</button>
+                    <button
+                      type="button"
+                      className="button button--quiet"
+                      onClick={(event) => requestRoomAction(room, 'reactivate', event)}
+                      disabled={isSaving}
+                      aria-label={`فعال‌کردن اتاق ${room.roomNumber}`}
+                    >
+                      فعال‌کردن
+                    </button>
                   )}
                 </div>
               </article>
@@ -580,7 +687,9 @@ export function StaffRoomsPage() {
       >
         <div className="staff-rooms__editor-heading">
           <div>
-            <p className="staff-rooms__eyebrow">{editingRoom ? 'ویرایش اطلاعات' : 'ثبت اتاق واقعی'}</p>
+            <p className="staff-rooms__eyebrow">
+              {editingRoom ? 'ویرایش اطلاعات' : 'ثبت اتاق واقعی'}
+            </p>
             <h2 ref={editorHeading} tabIndex={-1}>
               {editingRoom ? `ویرایش اتاق ${editingRoom.roomNumber}` : 'افزودن اتاق'}
             </h2>
@@ -603,7 +712,9 @@ export function StaffRoomsPage() {
               >
                 <option value="">انتخاب نوع اتاق</option>
                 {activeRoomTypes.map((roomType) => (
-                  <option key={roomType.id} value={roomType.id}>{roomType.name}</option>
+                  <option key={roomType.id} value={roomType.id}>
+                    {roomType.name}
+                  </option>
                 ))}
               </select>
             </div>
@@ -692,15 +803,34 @@ export function StaffRoomsPage() {
             onKeyDown={handleDialogKeyDown}
           >
             <p className="staff-rooms__eyebrow">تأیید تغییر وضعیت</p>
-            <h2 id="staff-rooms-confirm-title">{pendingAction.action === 'deactivate' ? 'غیرفعال‌کردن اتاق' : 'فعال‌کردن دوباره اتاق'}</h2>
+            <h2 id="staff-rooms-confirm-title">
+              {pendingAction.action === 'deactivate'
+                ? 'غیرفعال‌کردن اتاق'
+                : 'فعال‌کردن دوباره اتاق'}
+            </h2>
             <p id="staff-rooms-confirm-description">
               {pendingAction.action === 'deactivate'
                 ? `اتاق ${pendingAction.room.roomNumber} از ظرفیت قابل عرضه خارج می‌شود. اگر انتساب جاری یا آینده داشته باشد، سامانه تغییر را نمی‌پذیرد.`
                 : `اتاق ${pendingAction.room.roomNumber} دوباره به ظرفیت قابل عرضه اضافه می‌شود.`}
             </p>
             <div className="staff-rooms__confirm-actions">
-              <button type="button" className="button button--quiet" onClick={() => setPendingAction(null)}>بازگشت</button>
-              <button ref={confirmationButton} type="button" className={pendingAction.action === 'deactivate' ? 'button button--danger' : 'button button--jade'} onClick={() => void confirmRoomAction()}>
+              <button
+                type="button"
+                className="button button--quiet"
+                onClick={() => setPendingAction(null)}
+              >
+                بازگشت
+              </button>
+              <button
+                ref={confirmationButton}
+                type="button"
+                className={
+                  pendingAction.action === 'deactivate'
+                    ? 'button button--danger'
+                    : 'button button--jade'
+                }
+                onClick={() => void confirmRoomAction()}
+              >
                 {pendingAction.action === 'deactivate' ? 'تأیید غیرفعال‌سازی' : 'تأیید فعال‌سازی'}
               </button>
             </div>

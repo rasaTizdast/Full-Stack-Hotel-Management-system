@@ -144,10 +144,7 @@ function Confirmation({
   }, []);
 
   return (
-    <section
-      className={styles.confirmation}
-      aria-labelledby="booking-confirmation-title"
-    >
+    <section className={styles.confirmation} aria-labelledby="booking-confirmation-title">
       <span className={styles.confirmationMark} aria-hidden="true">
         <svg viewBox="0 0 20 20" fill="none">
           <path d="m4.5 10.5 3.6 3.6 7.4-8.1" />

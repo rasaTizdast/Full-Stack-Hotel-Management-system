@@ -25,9 +25,9 @@ afterEach(() => {
 
 describe('staff physical rooms API client', () => {
   it('loads rooms using filters and private uncached staff requests', async () => {
-    const fetchMock = vi.fn().mockResolvedValue(
-      new Response(JSON.stringify({ items: [room] }), { status: 200 }),
-    );
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValue(new Response(JSON.stringify({ items: [room] }), { status: 200 }));
     vi.stubGlobal('fetch', fetchMock);
 
     await expect(
@@ -41,9 +41,9 @@ describe('staff physical rooms API client', () => {
   });
 
   it('sends only room fields and CSRF for create and edit', async () => {
-    const fetchMock = vi.fn().mockImplementation(
-      () => new Response(JSON.stringify(room), { status: 200 }),
-    );
+    const fetchMock = vi
+      .fn()
+      .mockImplementation(() => new Response(JSON.stringify(room), { status: 200 }));
     vi.stubGlobal('fetch', fetchMock);
     const create = { roomTypeId, roomNumber: '۲۰۱', floor: '۲', features: ['بالکن'] };
     const update = { roomNumber: '۲۰۲', floor: '۳', features: ['تراس'] };
@@ -76,9 +76,11 @@ describe('staff physical rooms API client', () => {
   });
 
   it('posts explicit deactivate and reactivate actions with CSRF', async () => {
-    const fetchMock = vi.fn().mockImplementation(
-      () => new Response(JSON.stringify({ ...room, isActive: false }), { status: 200 }),
-    );
+    const fetchMock = vi
+      .fn()
+      .mockImplementation(
+        () => new Response(JSON.stringify({ ...room, isActive: false }), { status: 200 }),
+      );
     vi.stubGlobal('fetch', fetchMock);
 
     await deactivateStaffRoom(room.id, 'csrf-admin');

@@ -1,11 +1,7 @@
 import { requestStaffApi } from './staff-api';
 
 export type HousekeepingTaskType =
-  | 'DEPARTURE_CLEAN'
-  | 'STAYOVER_CLEAN'
-  | 'INSPECTION'
-  | 'GUEST_REQUEST'
-  | 'RE_CLEAN';
+  'DEPARTURE_CLEAN' | 'STAYOVER_CLEAN' | 'INSPECTION' | 'GUEST_REQUEST' | 'RE_CLEAN';
 export type HousekeepingTaskStatus = 'OPEN' | 'IN_PROGRESS' | 'COMPLETED' | 'CANCELLED';
 export type HousekeepingPriority = 'LOW' | 'NORMAL' | 'HIGH' | 'URGENT';
 export type HousekeepingOutcome = 'DONE' | 'NEEDS_REWORK';
@@ -193,7 +189,10 @@ export function assignStaffHousekeepingTask(
   });
 }
 
-export function startStaffHousekeepingTask(taskId: string, csrfToken: string): Promise<HousekeepingTask> {
+export function startStaffHousekeepingTask(
+  taskId: string,
+  csrfToken: string,
+): Promise<HousekeepingTask> {
   return requestStaffApi(`housekeeping/tasks/${encodeURIComponent(taskId)}/start`, {
     method: 'POST',
     headers: csrfHeaders(csrfToken),
@@ -256,10 +255,13 @@ export function resolveStaffHousekeepingDiscrepancy(
   discrepancyId: string,
   csrfToken: string,
 ): Promise<HousekeepingDiscrepancy> {
-  return requestStaffApi(`housekeeping/discrepancies/${encodeURIComponent(discrepancyId)}/resolve`, {
-    method: 'POST',
-    headers: csrfHeaders(csrfToken),
-  });
+  return requestStaffApi(
+    `housekeeping/discrepancies/${encodeURIComponent(discrepancyId)}/resolve`,
+    {
+      method: 'POST',
+      headers: csrfHeaders(csrfToken),
+    },
+  );
 }
 
 export function dismissStaffHousekeepingDiscrepancy(
@@ -267,9 +269,12 @@ export function dismissStaffHousekeepingDiscrepancy(
   input: ReasonInput,
   csrfToken: string,
 ): Promise<HousekeepingDiscrepancy> {
-  return requestStaffApi(`housekeeping/discrepancies/${encodeURIComponent(discrepancyId)}/dismiss`, {
-    method: 'POST',
-    headers: csrfHeaders(csrfToken),
-    body: JSON.stringify(input),
-  });
+  return requestStaffApi(
+    `housekeeping/discrepancies/${encodeURIComponent(discrepancyId)}/dismiss`,
+    {
+      method: 'POST',
+      headers: csrfHeaders(csrfToken),
+      body: JSON.stringify(input),
+    },
+  );
 }

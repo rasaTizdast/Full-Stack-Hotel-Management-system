@@ -128,15 +128,21 @@ describe('StaffInventoryPage', () => {
     ).toBeInTheDocument();
     expect(screen.getByRole('option', { name: 'اتاق باغ' })).toBeInTheDocument();
     expect(screen.getByRole('option', { name: 'اتاق در حال تعمیر (غیرفعال)' })).toBeInTheDocument();
-    expect(screen.getByText('ظرفیت از اتاق‌های فعال و مسدودی‌های هر شب به‌صورت خودکار محاسبه می‌شود.')).toBeInTheDocument();
+    expect(
+      screen.getByText('ظرفیت از اتاق‌های فعال و مسدودی‌های هر شب به‌صورت خودکار محاسبه می‌شود.'),
+    ).toBeInTheDocument();
     expect(screen.getByText('قیمت ثبت‌شده برای رزروهای موجود تغییر نمی‌کند.')).toBeInTheDocument();
     expect(screen.getAllByText('ظرفیت محاسبه‌شده')).toHaveLength(4);
     expect(screen.getAllByText('۴')).toHaveLength(4);
     expect(screen.getAllByText('نرخ ثبت نشده')).toHaveLength(2);
     const inventoryTable = screen.getByRole('table', { name: 'وضعیت ظرفیت و نرخ هر شب' });
     expect(within(inventoryTable).getByRole('columnheader', { name: 'مسدود' })).toBeInTheDocument();
-    expect(within(inventoryTable).getByRole('columnheader', { name: 'در انتظار' })).toBeInTheDocument();
-    expect(within(inventoryTable).getByRole('columnheader', { name: 'رزرو قطعی' })).toBeInTheDocument();
+    expect(
+      within(inventoryTable).getByRole('columnheader', { name: 'در انتظار' }),
+    ).toBeInTheDocument();
+    expect(
+      within(inventoryTable).getByRole('columnheader', { name: 'رزرو قطعی' }),
+    ).toBeInTheDocument();
     expect(inventoryApi.getStaffInventoryRange).toHaveBeenCalledWith(
       expect.objectContaining({ roomTypeId: roomType.id }),
     );
@@ -156,7 +162,9 @@ describe('StaffInventoryPage', () => {
     session.current.staff.role = 'MANAGER';
     render(<StaffInventoryPage />);
 
-    expect(await screen.findByRole('table', { name: 'وضعیت ظرفیت و نرخ هر شب' })).toBeInTheDocument();
+    expect(
+      await screen.findByRole('table', { name: 'وضعیت ظرفیت و نرخ هر شب' }),
+    ).toBeInTheDocument();
     expect(inventoryApi.getStaffInventoryRoomTypes).toHaveBeenCalledOnce();
   });
 
@@ -233,7 +241,9 @@ describe('StaffInventoryPage', () => {
     expect(disclosure).not.toBeNull();
     expect(overview).not.toBeNull();
     expect(summary).not.toBeNull();
-    expect(disclosure!.compareDocumentPosition(overview!) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(
+      disclosure!.compareDocumentPosition(overview!) & Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy();
     expect(disclosure).not.toHaveAttribute('open');
 
     fireEvent.click(summary!);
@@ -311,7 +321,9 @@ describe('StaffInventoryPage', () => {
       });
     });
 
-    expect(screen.queryByRole('table', { name: 'وضعیت ظرفیت و نرخ هر شب' })).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole('table', { name: 'وضعیت ظرفیت و نرخ هر شب' }),
+    ).not.toBeInTheDocument();
     expect(screen.queryByLabelText('ظرفیت مشتق‌شده')).not.toBeInTheDocument();
   });
 
@@ -343,7 +355,9 @@ describe('StaffInventoryPage', () => {
       expect.objectContaining({ roomTypeId: roomType.id, nightlyPriceToman: '4000000' }),
       'csrf-token',
     );
-    expect(inventoryApi.updateStaffInventoryRange.mock.calls[0]?.[0]).not.toHaveProperty('totalRooms');
+    expect(inventoryApi.updateStaffInventoryRange.mock.calls[0]?.[0]).not.toHaveProperty(
+      'totalRooms',
+    );
   });
 
   it('maps the historical inventory conflict to Persian recovery guidance', async () => {

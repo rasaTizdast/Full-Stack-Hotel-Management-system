@@ -83,6 +83,7 @@ describe('StaffFolioPrintPage', () => {
 
     expect(await screen.findByText('صورتحساب نهایی')).toBeVisible();
     expect(screen.getByText('مهمان آزمایشی بلند نام')).toBeVisible();
+    expect(screen.getByText('اقامت')).toBeVisible();
     expect(screen.getAllByText('اتاق 101').length).toBeGreaterThan(0);
     expect(screen.getByText('صورتحساب عملیاتی؛ فاکتور مالیاتی نیست.')).toBeVisible();
     expect(screen.getByRole('button', { name: 'چاپ' })).toBeVisible();

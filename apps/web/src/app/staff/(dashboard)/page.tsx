@@ -77,15 +77,23 @@ const roleWorkspace: Record<StaffRole, { heading: string; links: readonly Operat
   CASHIER: { heading: 'فضای صندوق شما آماده است', links: [] },
 };
 
-function WorkspaceLink({ link }: { link: (typeof operationalLinks)[keyof typeof operationalLinks] }) {
+function WorkspaceLink({
+  link,
+}: {
+  link: (typeof operationalLinks)[keyof typeof operationalLinks];
+}) {
   return (
     <Link className="staff-overview__action" href={link.href}>
       <span className="staff-overview__action-icon" aria-hidden="true">
-        <svg viewBox="0 0 24 24" fill="none"><path d="M4 19.5h16M5.5 19V7.5h13V19M8 10h3v3H8zM13 10h3v3h-3z" /></svg>
+        <svg viewBox="0 0 24 24" fill="none">
+          <path d="M4 19.5h16M5.5 19V7.5h13V19M8 10h3v3H8zM13 10h3v3h-3z" />
+        </svg>
       </span>
       <strong>{link.title}</strong>
       <span className="staff-overview__action-description">{link.detail}</span>
-      <span className="staff-overview__action-link">رفتن به بخش <span aria-hidden="true">←</span></span>
+      <span className="staff-overview__action-link">
+        رفتن به بخش <span aria-hidden="true">←</span>
+      </span>
     </Link>
   );
 }
@@ -110,7 +118,9 @@ export default function StaffDashboardPage() {
           </p>
         </div>
         <aside className="staff-overview__hero-note" aria-label="وضعیت فضای کاری">
-          <span className="staff-overview__note-mark" aria-hidden="true">✦</span>
+          <span className="staff-overview__note-mark" aria-hidden="true">
+            ✦
+          </span>
           <strong>{getStaffRoleLabel(staff.role)}</strong>
           <p>دسترسی‌ها بر اساس نقش کاری شما تنظیم شده‌اند.</p>
         </aside>
@@ -123,7 +133,9 @@ export default function StaffDashboardPage() {
             <p>بخش‌های قابل استفاده برای نقش شما</p>
           </div>
           <div className="staff-overview__actions">
-            {links.map((link) => <WorkspaceLink key={link.href} link={link} />)}
+            {links.map((link) => (
+              <WorkspaceLink key={link.href} link={link} />
+            ))}
           </div>
         </>
       ) : (

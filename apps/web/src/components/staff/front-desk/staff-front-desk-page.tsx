@@ -22,7 +22,10 @@ import styles from './staff-front-desk.module.css';
 const ALLOWED_ROLES: StaffRole[] = ['ADMIN', 'MANAGER', 'RECEPTIONIST'];
 const EMPTY_ROOM_TYPES: PublicRoomType[] = [];
 
-const QUEUE_COPY: Record<StaffStayQueue, { title: string; lead: string; empty: string; loading: string }> = {
+const QUEUE_COPY: Record<
+  StaffStayQueue,
+  { title: string; lead: string; empty: string; loading: string }
+> = {
   arrivals: {
     title: 'ورودهای مهمانان',
     lead: 'ورودهای برنامه‌ریزی‌شده و اقامت‌های معوق را پیگیری کنید.',
@@ -49,16 +52,34 @@ interface StaffFrontDeskPageProps {
   roomTypesStatus?: 'ready' | 'error';
 }
 
-export function StaffFrontDeskPage({ queue, roomTypes = EMPTY_ROOM_TYPES, roomTypesStatus = 'ready' }: StaffFrontDeskPageProps) {
+export function StaffFrontDeskPage({
+  queue,
+  roomTypes = EMPTY_ROOM_TYPES,
+  roomTypesStatus = 'ready',
+}: StaffFrontDeskPageProps) {
   const router = useRouter();
   const { status, staff, csrfToken } = useStaffSession();
-  const allowed = status === 'authenticated' && Boolean(staff && ALLOWED_ROLES.includes(staff.role));
+  const allowed =
+    status === 'authenticated' && Boolean(staff && ALLOWED_ROLES.includes(staff.role));
   const copy = QUEUE_COPY[queue];
   const worklistState = useFrontDeskWorklist(queue, allowed);
   const {
-    dateDraft, setDateDraft, searchDraft, setSearchDraft, query, worklist, listState,
-    listError, filterError, refreshNumber, items, selectedDate, groupedItems,
-    applyFilters, refreshList: refreshWorklist, changePage,
+    dateDraft,
+    setDateDraft,
+    searchDraft,
+    setSearchDraft,
+    query,
+    worklist,
+    listState,
+    listError,
+    filterError,
+    refreshNumber,
+    items,
+    selectedDate,
+    groupedItems,
+    applyFilters,
+    refreshList: refreshWorklist,
+    changePage,
   } = worklistState;
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const successRef = useRef<HTMLParagraphElement>(null);
@@ -68,8 +89,14 @@ export function StaffFrontDeskPage({ queue, roomTypes = EMPTY_ROOM_TYPES, roomTy
     refreshNumber,
   });
   const {
-    selectedReference, detail, loading: detailLoading, error: detailError, editing: editingDetail,
-    isSaving: detailSaving, draft: amendDraft, canAmend: detailCanAmend,
+    selectedReference,
+    detail,
+    loading: detailLoading,
+    error: detailError,
+    editing: editingDetail,
+    isSaving: detailSaving,
+    draft: amendDraft,
+    canAmend: detailCanAmend,
   } = stayDetail;
   function refreshList() {
     refreshWorklist();
@@ -86,44 +113,80 @@ export function StaffFrontDeskPage({ queue, roomTypes = EMPTY_ROOM_TYPES, roomTy
     onSuccess: setSuccessMessage,
   });
   const {
-    dialog, reason: dialogReason, setReason: setDialogReason, error: dialogError,
-    roomRecovery: dialogRoomRecovery, busy: dialogBusy, moveRooms, moveRoomsLoading,
-    walkInDraft, walkInError, walkInFieldError, walkInRetry, headingRef: actionHeadingRef,
-    openDialog, closeDialog, submitAction, submitWalkIn, startNewWalkInRequest, updateWalkInDraft,
+    dialog,
+    reason: dialogReason,
+    setReason: setDialogReason,
+    error: dialogError,
+    roomRecovery: dialogRoomRecovery,
+    busy: dialogBusy,
+    moveRooms,
+    moveRoomsLoading,
+    walkInDraft,
+    walkInError,
+    walkInFieldError,
+    walkInRetry,
+    headingRef: actionHeadingRef,
+    openDialog,
+    closeDialog,
+    submitAction,
+    submitWalkIn,
+    startNewWalkInRequest,
+    updateWalkInDraft,
   } = actions;
 
   useEffect(() => {
     if (successMessage) successRef.current?.focus();
   }, [successMessage]);
 
-  const selectedDetail = selectedReference ? {
-    reference: selectedReference,
-    panelId: `stay-detail-${encodeURIComponent(selectedReference)}`,
-    panel: <StayDetail
-      id={`stay-detail-${encodeURIComponent(selectedReference)}`}
-      reference={selectedReference}
-      detail={detail}
-      loading={detailLoading}
-      error={detailError}
-      canAmend={Boolean(detailCanAmend)}
-      editing={editingDetail}
-      draft={amendDraft}
-      busy={detailSaving}
-      onClose={stayDetail.close}
-      onEdit={stayDetail.startEditing}
-      onCancelEdit={stayDetail.cancelEdit}
-      onDraftChange={stayDetail.updateDraft}
-      onSubmit={(event) => void stayDetail.submitAmendment(event, csrfToken, (reference) => {
-        setSuccessMessage(`تغییرات اقامت ${reference} ثبت شد؛ جزئیات تازه دریافت می‌شود.`);
-        refreshList();
-      })}
-    />,
-  } : null;
+  const selectedDetail = selectedReference
+    ? {
+        reference: selectedReference,
+        panelId: `stay-detail-${encodeURIComponent(selectedReference)}`,
+        panel: (
+          <StayDetail
+            id={`stay-detail-${encodeURIComponent(selectedReference)}`}
+            reference={selectedReference}
+            detail={detail}
+            loading={detailLoading}
+            error={detailError}
+            canAmend={Boolean(detailCanAmend)}
+            editing={editingDetail}
+            draft={amendDraft}
+            busy={detailSaving}
+            onClose={stayDetail.close}
+            onEdit={stayDetail.startEditing}
+            onCancelEdit={stayDetail.cancelEdit}
+            onDraftChange={stayDetail.updateDraft}
+            onSubmit={(event) =>
+              void stayDetail.submitAmendment(event, csrfToken, (reference) => {
+                setSuccessMessage(`تغییرات اقامت ${reference} ثبت شد؛ جزئیات تازه دریافت می‌شود.`);
+                refreshList();
+              })
+            }
+          />
+        ),
+      }
+    : null;
 
-  if (status === 'loading') return <p className={styles.status} role="status">در حال بررسی دسترسی…</p>;
-  if (status !== 'authenticated' || !staff) return <p className={styles.status} role="status">برای مشاهده این صفحه وارد پنل کارکنان شوید.</p>;
+  if (status === 'loading')
+    return (
+      <p className={styles.status} role="status">
+        در حال بررسی دسترسی…
+      </p>
+    );
+  if (status !== 'authenticated' || !staff)
+    return (
+      <p className={styles.status} role="status">
+        برای مشاهده این صفحه وارد پنل کارکنان شوید.
+      </p>
+    );
   if (!ALLOWED_ROLES.includes(staff.role)) {
-    return <section className={styles.accessDenied} role="alert"><h1>دسترسی به میز پذیرش ندارید</h1><p>این فهرست برای کارکنان پذیرش و مدیریت اقامتگاه در دسترس است.</p></section>;
+    return (
+      <section className={styles.accessDenied} role="alert">
+        <h1>دسترسی به میز پذیرش ندارید</h1>
+        <p>این فهرست برای کارکنان پذیرش و مدیریت اقامتگاه در دسترس است.</p>
+      </section>
+    );
   }
 
   return (
@@ -135,25 +198,62 @@ export function StaffFrontDeskPage({ queue, roomTypes = EMPTY_ROOM_TYPES, roomTy
           <p className={styles.lead}>{copy.lead}</p>
         </div>
         <nav className={styles.queueNav} aria-label="فهرست‌های پذیرش">
-          <Link aria-current={queue === 'arrivals' ? 'page' : undefined} href="/staff/front-desk/arrivals">ورودها</Link>
-          <Link aria-current={queue === 'in-house' ? 'page' : undefined} href="/staff/front-desk/in-house">مهمانان حاضر</Link>
-          <Link aria-current={queue === 'departures' ? 'page' : undefined} href="/staff/front-desk/departures">موعدهای خروج</Link>
+          <Link
+            aria-current={queue === 'arrivals' ? 'page' : undefined}
+            href="/staff/front-desk/arrivals"
+          >
+            ورودها
+          </Link>
+          <Link
+            aria-current={queue === 'in-house' ? 'page' : undefined}
+            href="/staff/front-desk/in-house"
+          >
+            مهمانان حاضر
+          </Link>
+          <Link
+            aria-current={queue === 'departures' ? 'page' : undefined}
+            href="/staff/front-desk/departures"
+          >
+            موعدهای خروج
+          </Link>
         </nav>
       </header>
 
-      {successMessage && <p className={styles.success} tabIndex={-1} ref={successRef} role="status">{successMessage}</p>}
+      {successMessage && (
+        <p className={styles.success} tabIndex={-1} ref={successRef} role="status">
+          {successMessage}
+        </p>
+      )}
 
       <form className={styles.filters} onSubmit={applyFilters}>
         <div className={styles.filterFields}>
-          <label>تاریخ کاری
-            <input aria-label="تاریخ کاری" inputMode="numeric" value={dateDraft} onChange={(event) => setDateDraft(event.target.value)} placeholder="۱۴۰۵/۰۸/۲۷" />
+          <label>
+            تاریخ کاری
+            <input
+              aria-label="تاریخ کاری"
+              inputMode="numeric"
+              value={dateDraft}
+              onChange={(event) => setDateDraft(event.target.value)}
+              placeholder="۱۴۰۵/۰۸/۲۷"
+            />
           </label>
-          <label>جست‌وجو در نام، کد یا اتاق
-            <input aria-label="جست‌وجو در نام، کد یا اتاق" value={searchDraft} onChange={(event) => setSearchDraft(event.target.value)} />
+          <label>
+            جست‌وجو در نام، کد یا اتاق
+            <input
+              aria-label="جست‌وجو در نام، کد یا اتاق"
+              value={searchDraft}
+              onChange={(event) => setSearchDraft(event.target.value)}
+            />
           </label>
         </div>
-        <button className={styles.primaryButton} type="submit">اعمال فیلترها</button>
-        {filterError && <p className={styles.error} role="alert">{filterError}</p>}
+        <button className={styles.primaryButton} type="submit">
+          اعمال فیلترها
+        </button>
+        {filterError && (
+          <p className={styles.error} role="alert">
+            {filterError}
+          </p>
+        )}
       </form>
 
       {queue === 'arrivals' && (
@@ -163,10 +263,14 @@ export function StaffFrontDeskPage({ queue, roomTypes = EMPTY_ROOM_TYPES, roomTy
             type="button"
             disabled={listState !== 'ready' || !worklist || query.date !== worklist.businessDate}
             onClick={(event) => openDialog({ kind: 'walk-in' }, event.currentTarget)}
-          >ثبت ورود بدون رزرو قبلی</button>
-          {listState === 'ready' && worklist && query.date !== worklist.businessDate
-            ? <span role="status">ثبت ورود حضوری فقط برای تاریخ کاری جاری در دسترس است.</span>
-            : <span>تاریخ ورود حضوری بر اساس تاریخ کاری سامانه ثبت می‌شود.</span>}
+          >
+            ثبت ورود بدون رزرو قبلی
+          </button>
+          {listState === 'ready' && worklist && query.date !== worklist.businessDate ? (
+            <span role="status">ثبت ورود حضوری فقط برای تاریخ کاری جاری در دسترس است.</span>
+          ) : (
+            <span>تاریخ ورود حضوری بر اساس تاریخ کاری سامانه ثبت می‌شود.</span>
+          )}
         </div>
       )}
 
@@ -236,7 +340,12 @@ export function StaffFrontDeskPage({ queue, roomTypes = EMPTY_ROOM_TYPES, roomTy
         <MoveDialog
           stay={dialog.stay}
           businessDate={worklist?.businessDate ?? query.date}
-          rooms={moveRooms.filter((room) => canMoveTo(room, dialog.stay.assignedRooms.map((assigned) => assigned.roomNumber)))}
+          rooms={moveRooms.filter((room) =>
+            canMoveTo(
+              room,
+              dialog.stay.assignedRooms.map((assigned) => assigned.roomNumber),
+            ),
+          )}
           loading={moveRoomsLoading}
           reason={dialogReason}
           error={dialogError}

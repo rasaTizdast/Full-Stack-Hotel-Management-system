@@ -22,7 +22,7 @@ export type BookingCreated = (reference?: string) => void;
 
 export type CleanupRegistrar = (cleanup: () => Promise<void>) => void;
 
-interface StaffWorkerFixtures {
+interface StaffTestFixtures {
   staffCookies: StaffBrowserCookie[];
 }
 
@@ -63,77 +63,73 @@ function parseStaffCookies(setCookieHeaders: string[]): StaffBrowserCookie[] {
   });
 }
 
-export const test = base.extend<object, StaffWorkerFixtures>({
-  staffCookies: [
-    async ({}, use) => {
-      const apiContext = await playwrightRequest.newContext();
-      let cookies: StaffBrowserCookie[] = [];
-      try {
-        const response = await apiContext.post(`${apiBaseUrl}/staff/auth/login`, {
-          headers: { Origin: webOrigin, Referer: `${webOrigin}/staff/login` },
-          data: adminCredentials(),
-        });
-        expect(
-          response.status(),
-          `The worker demo login returned HTTP ${response.status()}; expected an ADMIN session.`,
-        ).toBe(200);
-        const loginPayload: unknown = await response.json();
-        const loginStaff =
-          isRecord(loginPayload) && isRecord(loginPayload.staff) ? loginPayload.staff : null;
-        const loginRole = typeof loginStaff?.role === 'string' ? loginStaff.role : 'unknown';
-        expect(
-          loginRole,
-          `The worker demo login returned role ${loginRole}; expected ADMIN.`,
-        ).toBe('ADMIN');
-        expect(
-          loginStaff?.mustChangePassword,
-          'The worker demo ADMIN session must not require a forced password change.',
-        ).toBe(false);
-        const headers = await response.headersArray();
-        cookies = parseStaffCookies(
-          headers
-            .filter((header) => header.name.toLowerCase() === 'set-cookie')
-            .map((header) => header.value),
-        );
-        expect(cookies.map((cookie) => cookie.name)).toEqual(
-          expect.arrayContaining(['hotel_staff_session', 'hotel_staff_csrf']),
-        );
-      } catch (cause) {
-        await apiContext.dispose();
-        throw cause;
-      }
-      await withFailureSafeCleanup(async (registerCleanup) => {
-        registerCleanup(async () => apiContext.dispose());
-        registerCleanup(async () => {
-          const sessionResponse = await apiContext.get(`${apiBaseUrl}/staff/auth/me`, {
-            headers: { Origin: webOrigin, Referer: `${webOrigin}/staff` },
-          });
-          if (!sessionResponse.ok()) {
-            throw new Error(
-              `The staff test session refresh returned HTTP ${sessionResponse.status()}.`,
-            );
-          }
-          const session: unknown = await sessionResponse.json();
-          if (!isRecord(session) || typeof session.csrfToken !== 'string' || !session.csrfToken) {
-            throw new Error('The staff session refresh had no CSRF token for logout.');
-          }
-
-          const response = await apiContext.post(`${apiBaseUrl}/staff/auth/logout`, {
-            headers: {
-              Origin: webOrigin,
-              Referer: `${webOrigin}/staff`,
-              'X-CSRF-Token': session.csrfToken,
-            },
-          });
-          if (response.status() !== 204) {
-            throw new Error(`The staff test session logout returned HTTP ${response.status()}.`);
-          }
-        });
-        await use(cookies);
+export const test = base.extend<StaffTestFixtures>({
+  staffCookies: async ({}, use) => {
+    const apiContext = await playwrightRequest.newContext();
+    let cookies: StaffBrowserCookie[] = [];
+    try {
+      const response = await apiContext.post(`${apiBaseUrl}/staff/auth/login`, {
+        headers: { Origin: webOrigin, Referer: `${webOrigin}/staff/login` },
+        data: adminCredentials(),
       });
-    },
-    { scope: 'worker' },
-  ],
+      expect(
+        response.status(),
+        `The worker demo login returned HTTP ${response.status()}; expected an ADMIN session.`,
+      ).toBe(200);
+      const loginPayload: unknown = await response.json();
+      const loginStaff =
+        isRecord(loginPayload) && isRecord(loginPayload.staff) ? loginPayload.staff : null;
+      const loginRole = typeof loginStaff?.role === 'string' ? loginStaff.role : 'unknown';
+      expect(loginRole, `The worker demo login returned role ${loginRole}; expected ADMIN.`).toBe(
+        'ADMIN',
+      );
+      expect(
+        loginStaff?.mustChangePassword,
+        'The worker demo ADMIN session must not require a forced password change.',
+      ).toBe(false);
+      const headers = await response.headersArray();
+      cookies = parseStaffCookies(
+        headers
+          .filter((header) => header.name.toLowerCase() === 'set-cookie')
+          .map((header) => header.value),
+      );
+      expect(cookies.map((cookie) => cookie.name)).toEqual(
+        expect.arrayContaining(['hotel_staff_session', 'hotel_staff_csrf']),
+      );
+    } catch (cause) {
+      await apiContext.dispose();
+      throw cause;
+    }
+    await withFailureSafeCleanup(async (registerCleanup) => {
+      registerCleanup(async () => apiContext.dispose());
+      registerCleanup(async () => {
+        const sessionResponse = await apiContext.get(`${apiBaseUrl}/staff/auth/me`, {
+          headers: { Origin: webOrigin, Referer: `${webOrigin}/staff` },
+        });
+        if (!sessionResponse.ok()) {
+          throw new Error(
+            `The staff test session refresh returned HTTP ${sessionResponse.status()}.`,
+          );
+        }
+        const session: unknown = await sessionResponse.json();
+        if (!isRecord(session) || typeof session.csrfToken !== 'string' || !session.csrfToken) {
+          throw new Error('The staff session refresh had no CSRF token for logout.');
+        }
+
+        const response = await apiContext.post(`${apiBaseUrl}/staff/auth/logout`, {
+          headers: {
+            Origin: webOrigin,
+            Referer: `${webOrigin}/staff`,
+            'X-CSRF-Token': session.csrfToken,
+          },
+        });
+        if (response.status() !== 204) {
+          throw new Error(`The staff test session logout returned HTTP ${response.status()}.`);
+        }
+      });
+      await use(cookies);
+    });
+  },
 });
 
 function errorMessage(error: unknown): string {

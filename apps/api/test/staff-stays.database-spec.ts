@@ -245,24 +245,21 @@ describe('Front-desk mutations over HTTP and PostgreSQL', () => {
 
   it('rejects a missing key, non-business-date arrival and reuse across booking intents', async () => {
     const publicTimeZone = 'Asia/Tehran';
-    today = hotelBusinessDate(publicTimeZone).toISOString().slice(0, 10);
+    const persistedBusinessDate = await fixture.prisma.hotel.findUniqueOrThrow({
+      where: { id: property.hotel.id },
+      select: { businessDate: true },
+    });
+    const priorBusinessDate = persistedBusinessDate.businessDate.toISOString().slice(0, 10);
+    today = addDays(priorBusinessDate, 1);
     yesterday = addDays(today, -1);
     tomorrow = addDays(today, 1);
     dayAfter = addDays(today, 2);
-    const easternTimeZone = 'Pacific/Kiritimati';
-    const timezone =
-      hotelBusinessDate(easternTimeZone).toISOString().slice(0, 10) === today
-        ? 'Etc/GMT+12'
-        : easternTimeZone;
-    await fixture.prisma.hotel.update({ where: { id: property.hotel.id }, data: { timezone } });
-    const propertyDate = hotelBusinessDate(timezone).toISOString().slice(0, 10);
-    expect(propertyDate).not.toBe(today);
-    const wrongDate = await walkIn(randomUUID()).expect(400);
-    expect(wrongDate.body as unknown).toMatchObject({ code: 'WALK_IN_ARRIVAL_DATE_INVALID' });
     await fixture.prisma.hotel.update({
       where: { id: property.hotel.id },
-      data: { timezone: publicTimeZone },
+      data: { businessDate: parseDateOnly(today) },
     });
+    const wrongDate = await walkIn(randomUUID(), priorBusinessDate).expect(400);
+    expect(wrongDate.body as unknown).toMatchObject({ code: 'WALK_IN_ARRIVAL_DATE_INVALID' });
 
     await inventory(today);
     await walkIn().expect(400);
@@ -272,8 +269,11 @@ describe('Front-desk mutations over HTTP and PostgreSQL', () => {
     await walkIn(key, tomorrow).expect(409);
     await walkIn(key, today, '/api/v1/bookings').expect(409);
 
-    // An exact retry survives a change of the property's current business date.
-    await fixture.prisma.hotel.update({ where: { id: property.hotel.id }, data: { timezone } });
+    // An exact retry survives a change of the persisted property business date.
+    await fixture.prisma.hotel.update({
+      where: { id: property.hotel.id },
+      data: { timezone: publicTimeZone, businessDate: parseDateOnly(tomorrow) },
+    });
     await walkIn(key).expect(201);
   });
 

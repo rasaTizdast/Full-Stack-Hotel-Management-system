@@ -1,10 +1,6 @@
 import { randomUUID } from 'node:crypto';
 import { expect, type Page } from '@playwright/test';
-import {
-  test,
-  withFailureSafeCleanup,
-  type StaffBrowserCookie,
-} from './staff-fixtures';
+import { test, withFailureSafeCleanup, type StaffBrowserCookie } from './staff-fixtures';
 
 const apiPort = process.env.HBE_E2E_API_PORT ?? '4015';
 const apiBaseUrl = `http://127.0.0.1:${apiPort}/api/v1`;
@@ -69,12 +65,11 @@ test('admin manages physical rooms through filters, create, renumber, duplicate 
     });
 
     await page.goto('/staff/rooms/manage');
-    await expect(page.getByRole('heading', { level: 1, name: 'اتاق‌ها', exact: true })).toBeVisible();
+    await expect(
+      page.getByRole('heading', { level: 1, name: 'اتاق‌ها', exact: true }),
+    ).toBeVisible();
     const activeNavigationLink = page.getByRole('link', { name: /^اتاق‌های فیزیکی/ });
-    await expect(activeNavigationLink).toHaveAttribute(
-      'aria-current',
-      'page',
-    );
+    await expect(activeNavigationLink).toHaveAttribute('aria-current', 'page');
     if ((page.viewportSize()?.width ?? 0) <= 640) {
       await expect(page.locator('[data-staff-nav-overflow-cue]')).toBeVisible();
       const navBox = await page.getByRole('navigation', { name: 'منوی پنل کارکنان' }).boundingBox();
@@ -82,7 +77,9 @@ test('admin manages physical rooms through filters, create, renumber, duplicate 
       expect(navBox).not.toBeNull();
       expect(activeLinkBox).not.toBeNull();
       expect(activeLinkBox!.x).toBeGreaterThanOrEqual(navBox!.x);
-      expect(activeLinkBox!.x + activeLinkBox!.width).toBeLessThanOrEqual(navBox!.x + navBox!.width);
+      expect(activeLinkBox!.x + activeLinkBox!.width).toBeLessThanOrEqual(
+        navBox!.x + navBox!.width,
+      );
     }
 
     const addRoomButton = page.getByRole('button', { name: 'افزودن اتاق', exact: true });
@@ -92,7 +89,9 @@ test('admin manages physical rooms through filters, create, renumber, duplicate 
     await expect(createForm).toBeVisible();
     const resultsPrecedeEditor = await page.locator('.staff-rooms__list').evaluate((roomList) => {
       const editor = document.querySelector('.staff-rooms__editor');
-      return Boolean(editor && roomList.compareDocumentPosition(editor) & Node.DOCUMENT_POSITION_FOLLOWING);
+      return Boolean(
+        editor && roomList.compareDocumentPosition(editor) & Node.DOCUMENT_POSITION_FOLLOWING,
+      );
     });
     expect(resultsPrecedeEditor).toBe(true);
     const roomType = createForm.getByLabel('نوع اتاق');
@@ -119,7 +118,9 @@ test('admin manages physical rooms through filters, create, renumber, duplicate 
     const filterOrderIsLogical = await filters.evaluate((form) => {
       const search = form.querySelector('#staff-rooms-filter-search');
       const apply = form.querySelector('.staff-rooms__filter-button');
-      return Boolean(search && apply && search.compareDocumentPosition(apply) & Node.DOCUMENT_POSITION_FOLLOWING);
+      return Boolean(
+        search && apply && search.compareDocumentPosition(apply) & Node.DOCUMENT_POSITION_FOLLOWING,
+      );
     });
     expect(filterOrderIsLogical).toBe(true);
     await filters.getByLabel('نوع اتاق').selectOption(roomTypeId);
@@ -159,16 +160,22 @@ test('admin manages physical rooms through filters, create, renumber, duplicate 
     await expect(generatedCard.getByText('شمارهٔ پیشنهادی')).toBeVisible();
     await generatedCard.getByRole('button', { name: `ویرایش اتاق ${roomNumber}` }).click();
     const editForm = page.getByRole('form', { name: 'ویرایش اتاق' });
-    await expect(editForm.getByText('شماره‌های نمونه باید پیش از بهره‌برداری با شماره واقعی جایگزین شوند.')).toBeVisible();
+    await expect(
+      editForm.getByText('شماره‌های نمونه باید پیش از بهره‌برداری با شماره واقعی جایگزین شوند.'),
+    ).toBeVisible();
     await editForm.getByLabel('شماره اتاق').fill(replacementNumber);
     const updateResponsePromise = page.waitForResponse((response) => {
       const url = new URL(response.url());
-      return url.pathname === `/api/v1/staff/rooms/${roomId}` && response.request().method() === 'PATCH';
+      return (
+        url.pathname === `/api/v1/staff/rooms/${roomId}` && response.request().method() === 'PATCH'
+      );
     });
     await editForm.getByRole('button', { name: 'ذخیره تغییرات اتاق' }).click();
     const updateResponse = await updateResponsePromise;
     expect(updateResponse.status()).toBe(200);
-    await expect(page.getByRole('article', { name: replacementNumber }).getByText('شمارهٔ پیشنهادی')).toHaveCount(0);
+    await expect(
+      page.getByRole('article', { name: replacementNumber }).getByText('شمارهٔ پیشنهادی'),
+    ).toHaveCount(0);
     const updated: unknown = await updateResponse.json();
     expect(updated).toMatchObject({ roomNumber: replacementNumber, isGenerated: false });
 
@@ -195,7 +202,9 @@ test('admin manages physical rooms through filters, create, renumber, duplicate 
     await filtersAfterRenumber.getByRole('button', { name: 'اعمال فیلترها' }).click();
     const activeCard = page.getByRole('article', { name: replacementNumber });
     await expect(activeCard).toBeVisible();
-    await activeCard.getByRole('button', { name: `غیرفعال‌کردن اتاق ${replacementNumber}` }).click();
+    await activeCard
+      .getByRole('button', { name: `غیرفعال‌کردن اتاق ${replacementNumber}` })
+      .click();
     const deactivateDialog = page.getByRole('alertdialog', { name: 'غیرفعال‌کردن اتاق' });
     const deactivateResponsePromise = page.waitForResponse((response) =>
       response.url().endsWith(`/staff/rooms/${roomId}/deactivate`),

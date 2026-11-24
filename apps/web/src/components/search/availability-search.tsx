@@ -60,12 +60,7 @@ function AvailabilityRoomCard({
     >
       <div className={styles.roomImage}>
         {image.src ? (
-          <Image
-            src={image.src}
-            alt={image.alt}
-            fill
-            sizes="(max-width: 760px) 100vw, 50vw"
-          />
+          <Image src={image.src} alt={image.alt} fill sizes="(max-width: 760px) 100vw, 50vw" />
         ) : (
           <span className={styles.roomImageFallback} aria-hidden="true">
             اقامتگاه نارنج

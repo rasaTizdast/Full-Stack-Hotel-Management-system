@@ -106,7 +106,9 @@ describe('StaffAccountsPage', () => {
     const row = await screen.findByRole('row', { name: /reception-1/ });
     expect(within(row).getByText('۱۴۰۵/۰۸/۲۵')).toBeInTheDocument();
     expect(within(row).queryByText(/۱۰:۳۰/)).not.toBeInTheDocument();
-    const card = within(await screen.findByRole('list', { name: 'فهرست حساب‌های کارکنان' })).getByRole('listitem');
+    const card = within(
+      await screen.findByRole('list', { name: 'فهرست حساب‌های کارکنان' }),
+    ).getByRole('listitem');
     expect(within(card).getByText('۱۴۰۵/۰۸/۲۵')).toBeInTheDocument();
     expect(within(card).queryByText(/۱۰:۳۰/)).not.toBeInTheDocument();
   });
@@ -126,7 +128,9 @@ describe('StaffAccountsPage', () => {
 
     const row = await screen.findByRole('row', { name: /Staff@Example\.test/ });
     expect(within(row).queryByRole('link')).not.toBeInTheDocument();
-    const card = within(await screen.findByRole('list', { name: 'فهرست حساب‌های کارکنان' })).getByRole('listitem');
+    const card = within(
+      await screen.findByRole('list', { name: 'فهرست حساب‌های کارکنان' }),
+    ).getByRole('listitem');
     expect(within(card).queryByRole('link')).not.toBeInTheDocument();
   });
 
@@ -145,7 +149,10 @@ describe('StaffAccountsPage', () => {
 
     render(<StaffAccountsPage />);
     fireEvent.click(await screen.findByRole('button', { name: 'افزودن حساب' }));
-    expect(screen.getByLabelText('گذرواژه آغازین').closest('form')).toHaveAttribute('method', 'post');
+    expect(screen.getByLabelText('گذرواژه آغازین').closest('form')).toHaveAttribute(
+      'method',
+      'post',
+    );
     fireEvent.change(screen.getByLabelText('نام کاربری'), { target: { value: 'new-cashier' } });
     fireEvent.change(screen.getByLabelText('ایمیل کاری'), {
       target: { value: 'cashier@example.test' },
@@ -180,7 +187,9 @@ describe('StaffAccountsPage', () => {
     fireEvent.change(within(roleForm).getByLabelText('نقش تازه'), { target: { value: 'MANAGER' } });
     fireEvent.submit(roleForm);
 
-    expect(await within(roleForm).findByRole('alert')).toHaveTextContent('دلیل تغییر نقش را وارد کنید.');
+    expect(await within(roleForm).findByRole('alert')).toHaveTextContent(
+      'دلیل تغییر نقش را وارد کنید.',
+    );
     expect(accountApi.updateStaffAdminAccountRole).not.toHaveBeenCalled();
 
     fireEvent.change(within(roleForm).getByLabelText('دلیل تغییر نقش'), {
@@ -206,7 +215,9 @@ describe('StaffAccountsPage', () => {
     const deactivateForm = within(row).getByRole('form', { name: 'غیرفعال‌سازی حساب reception-1' });
     fireEvent.submit(deactivateForm);
 
-    expect(await within(deactivateForm).findByRole('alert')).toHaveTextContent('دلیل غیرفعال‌سازی را وارد کنید.');
+    expect(await within(deactivateForm).findByRole('alert')).toHaveTextContent(
+      'دلیل غیرفعال‌سازی را وارد کنید.',
+    );
     expect(accountApi.deactivateStaffAdminAccount).not.toHaveBeenCalled();
 
     fireEvent.change(within(deactivateForm).getByLabelText('دلیل غیرفعال‌سازی'), {

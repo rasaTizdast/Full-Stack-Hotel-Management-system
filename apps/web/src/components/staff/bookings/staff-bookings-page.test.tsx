@@ -150,7 +150,9 @@ describe('StaffBookingsPage', () => {
   it('denies roles without booking access before requesting the booking list', async () => {
     const { requests } = setupApi({ role: 'HOUSEKEEPER' });
 
-    expect(await screen.findByRole('heading', { name: 'دسترسی به درخواست‌های رزرو' })).toBeVisible();
+    expect(
+      await screen.findByRole('heading', { name: 'دسترسی به درخواست‌های رزرو' }),
+    ).toBeVisible();
     expect(requests.some(({ url }) => url.includes('/staff/bookings'))).toBe(false);
   });
 
@@ -350,8 +352,6 @@ describe('StaffBookingsPage', () => {
 
     fireEvent.click(screen.getByRole('button', { name: 'تلاش دوباره' }));
 
-    expect(
-      await screen.findByRole('button', { name: /HB-26-AB/ }),
-    ).toBeInTheDocument();
+    expect(await screen.findByRole('button', { name: /HB-26-AB/ })).toBeInTheDocument();
   });
 });

@@ -90,10 +90,7 @@ export function StaffInventoryPage() {
         setNightlyPriceToman(values.nightlyPriceToman);
       } catch (cause) {
         if (!active) return;
-        if (
-          rangeRequestIdForLoad !== null &&
-          rangeRequestId.current !== rangeRequestIdForLoad
-        ) {
+        if (rangeRequestIdForLoad !== null && rangeRequestId.current !== rangeRequestIdForLoad) {
           return;
         }
         setFormError(
@@ -102,10 +99,7 @@ export function StaffInventoryPage() {
       } finally {
         if (active) {
           setIsLoadingRoomTypes(false);
-          if (
-            rangeRequestIdForLoad === null ||
-            rangeRequestId.current === rangeRequestIdForLoad
-          ) {
+          if (rangeRequestIdForLoad === null || rangeRequestId.current === rangeRequestIdForLoad) {
             setIsLoadingRange(false);
           }
         }

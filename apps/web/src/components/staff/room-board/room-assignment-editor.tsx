@@ -1,9 +1,6 @@
 import { useEffect, useRef, type FormEvent } from 'react';
 import { formatPersianInteger } from '@/lib/jalali-date';
-import type {
-  StaffRoomBoardAssignableBooking,
-  StaffRoomBoardItem,
-} from '@/lib/staff-api';
+import type { StaffRoomBoardAssignableBooking, StaffRoomBoardItem } from '@/lib/staff-api';
 import { isDateWithinAssignmentInterval } from './room-board-date';
 import { displayRoomBoardDate } from './room-board-view';
 import styles from './room-board.module.css';
@@ -67,7 +64,10 @@ export function RoomAssignmentEditor({
     const reduceMotion =
       typeof window.matchMedia === 'function' &&
       window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-    heading.current?.scrollIntoView?.({ behavior: reduceMotion ? 'auto' : 'smooth', block: 'start' });
+    heading.current?.scrollIntoView?.({
+      behavior: reduceMotion ? 'auto' : 'smooth',
+      block: 'start',
+    });
   }, [booking.reference]);
 
   function roomOptionsFor(assignment: DraftAssignment) {
@@ -94,21 +94,36 @@ export function RoomAssignmentEditor({
           <h2 id="room-board-editor-title" ref={heading} tabIndex={-1}>
             رزرو {booking.reference} · {booking.guestName}
           </h2>
-          <p>{booking.roomTypeName} · {displayRoomBoardDate(booking.checkIn)} تا خروج {displayRoomBoardDate(booking.checkOut)}</p>
+          <p>
+            {booking.roomTypeName} · {displayRoomBoardDate(booking.checkIn)} تا خروج{' '}
+            {displayRoomBoardDate(booking.checkOut)}
+          </p>
         </div>
-        <button className="button button--quiet" type="button" onClick={onClose} disabled={isSaving}>
+        <button
+          className="button button--quiet"
+          type="button"
+          onClick={onClose}
+          disabled={isSaving}
+        >
           بستن و بازگشت
         </button>
       </div>
 
       <p className={styles.editorNote}>
-        همهٔ بازه‌های فعال این رزرو در پیش‌نویس هستند؛ بازه‌هایی که تاریخ تابلو را در بر نمی‌گیرند هنگام ذخیره حفظ می‌شوند، مگر اینکه خودتان آن‌ها را تغییر دهید یا حذف کنید.
+        همهٔ بازه‌های فعال این رزرو در پیش‌نویس هستند؛ بازه‌هایی که تاریخ تابلو را در بر نمی‌گیرند
+        هنگام ذخیره حفظ می‌شوند، مگر اینکه خودتان آن‌ها را تغییر دهید یا حذف کنید.
       </p>
-      {editorError ? <p className={`${styles.message} ${styles.messageError}`} role="alert">{editorError}</p> : null}
+      {editorError ? (
+        <p className={`${styles.message} ${styles.messageError}`} role="alert">
+          {editorError}
+        </p>
+      ) : null}
 
       {staleConflict ? (
         <div className={styles.conflict} aria-live="polite">
-          {staleConflict.state === 'loading' ? <p role="status">در حال دریافت آخرین تخصیص‌های این رزرو…</p> : null}
+          {staleConflict.state === 'loading' ? (
+            <p role="status">در حال دریافت آخرین تخصیص‌های این رزرو…</p>
+          ) : null}
           {staleConflict.state === 'error' ? (
             <div role="alert">
               <p>{staleConflict.message}</p>
@@ -121,16 +136,35 @@ export function RoomAssignmentEditor({
             <>
               <h3>آخرین تخصیص ثبت‌شده</h3>
               <p>پیش‌نویس فعلی شما جداگانه حفظ شده است. یکی از دو تصمیم را انتخاب کنید.</p>
-              <div className={styles.latestAssignments} role="region" aria-label="آخرین تخصیص‌های ثبت‌شده">
-                {staleConflict.booking.assignments.length ? staleConflict.booking.assignments.map((assignment) => (
-                  <span key={assignment.id}>{assignment.roomNumber} · {displayRoomBoardDate(assignment.startDate)} تا خروج {displayRoomBoardDate(assignment.endDate)}</span>
-                )) : <span>در نسخهٔ جدید تخصیصی ثبت نشده است.</span>}
+              <div
+                className={styles.latestAssignments}
+                role="region"
+                aria-label="آخرین تخصیص‌های ثبت‌شده"
+              >
+                {staleConflict.booking.assignments.length ? (
+                  staleConflict.booking.assignments.map((assignment) => (
+                    <span key={assignment.id}>
+                      {assignment.roomNumber} · {displayRoomBoardDate(assignment.startDate)} تا خروج{' '}
+                      {displayRoomBoardDate(assignment.endDate)}
+                    </span>
+                  ))
+                ) : (
+                  <span>در نسخهٔ جدید تخصیصی ثبت نشده است.</span>
+                )}
               </div>
               <div className={styles.editorActions}>
-                <button className="button button--quiet" type="button" onClick={() => onChooseLatest(staleConflict.booking)}>
+                <button
+                  className="button button--quiet"
+                  type="button"
+                  onClick={() => onChooseLatest(staleConflict.booking)}
+                >
                   بارگذاری آخرین تخصیص‌ها
                 </button>
-                <button className="button button--jade" type="button" onClick={() => onReapplyDraft(staleConflict.booking)}>
+                <button
+                  className="button button--jade"
+                  type="button"
+                  onClick={() => onReapplyDraft(staleConflict.booking)}
+                >
                   اعمال پیش‌نویس من با نسخهٔ جدید
                 </button>
               </div>
@@ -139,7 +173,11 @@ export function RoomAssignmentEditor({
         </div>
       ) : null}
 
-      <form className={styles.assignmentForm} onSubmit={onSave} aria-label={`ویرایش تخصیص رزرو ${booking.reference}`}>
+      <form
+        className={styles.assignmentForm}
+        onSubmit={onSave}
+        aria-label={`ویرایش تخصیص رزرو ${booking.reference}`}
+      >
         <div className={styles.assignmentList}>
           {assignments.map((assignment, index) => {
             const options = roomOptionsFor(assignment);
@@ -150,34 +188,56 @@ export function RoomAssignmentEditor({
             );
             const displayRoomNumber = assignment.roomNumber || String(index + 1);
             return (
-              <fieldset className={styles.assignment} key={assignment.key} aria-label={`تخصیص اتاق ${displayRoomNumber}`}>
+              <fieldset
+                className={styles.assignment}
+                key={assignment.key}
+                aria-label={`تخصیص اتاق ${displayRoomNumber}`}
+              >
                 <legend>تخصیص اتاق {displayRoomNumber}</legend>
-                {!boardDateIncluded ? <p className={styles.outsideDate}>این بازه شامل تاریخ تابلو نیست؛ در پیش‌نویس حفظ می‌شود.</p> : null}
+                {!boardDateIncluded ? (
+                  <p className={styles.outsideDate}>
+                    این بازه شامل تاریخ تابلو نیست؛ در پیش‌نویس حفظ می‌شود.
+                  </p>
+                ) : null}
                 <div className={styles.assignmentFields}>
                   <div className={styles.field}>
-                    <label htmlFor={`room-board-assignment-room-${assignment.key}`}>اتاق تخصیص {displayRoomNumber}</label>
+                    <label htmlFor={`room-board-assignment-room-${assignment.key}`}>
+                      اتاق تخصیص {displayRoomNumber}
+                    </label>
                     <select
                       id={`room-board-assignment-room-${assignment.key}`}
                       value={assignment.roomId}
                       onChange={(event) => onUpdate(assignment.key, 'roomId', event.target.value)}
                     >
                       <option value="">انتخاب اتاق آزاد</option>
-                      {options.map((room) => <option key={room.id} value={room.id}>اتاق {room.roomNumber} · طبقهٔ {room.floor || 'ثبت‌نشده'}</option>)}
+                      {options.map((room) => (
+                        <option key={room.id} value={room.id}>
+                          اتاق {room.roomNumber} · طبقهٔ {room.floor || 'ثبت‌نشده'}
+                        </option>
+                      ))}
                     </select>
-                    <span>آزادبودن اتاق در تمام بازهٔ انتخابی را سامانه هنگام ذخیره بررسی می‌کند.</span>
+                    <span>
+                      آزادبودن اتاق در تمام بازهٔ انتخابی را سامانه هنگام ذخیره بررسی می‌کند.
+                    </span>
                   </div>
                   <div className={styles.field}>
-                    <label htmlFor={`room-board-assignment-start-${assignment.key}`}>شروع تخصیص اتاق {displayRoomNumber}</label>
+                    <label htmlFor={`room-board-assignment-start-${assignment.key}`}>
+                      شروع تخصیص اتاق {displayRoomNumber}
+                    </label>
                     <input
                       id={`room-board-assignment-start-${assignment.key}`}
                       value={assignment.startDate}
-                      onChange={(event) => onUpdate(assignment.key, 'startDate', event.target.value)}
+                      onChange={(event) =>
+                        onUpdate(assignment.key, 'startDate', event.target.value)
+                      }
                       inputMode="numeric"
                       dir="ltr"
                     />
                   </div>
                   <div className={styles.field}>
-                    <label htmlFor={`room-board-assignment-end-${assignment.key}`}>پایان تخصیص اتاق {displayRoomNumber}</label>
+                    <label htmlFor={`room-board-assignment-end-${assignment.key}`}>
+                      پایان تخصیص اتاق {displayRoomNumber}
+                    </label>
                     <input
                       id={`room-board-assignment-end-${assignment.key}`}
                       value={assignment.endDate}
@@ -213,7 +273,10 @@ export function RoomAssignmentEditor({
               rows={3}
             />
           </div>
-          <p>{formatPersianInteger(booking.unassignedRoomQuantity)} واحد برای تاریخ تابلو بدون تخصیص است.</p>
+          <p>
+            {formatPersianInteger(booking.unassignedRoomQuantity)} واحد برای تاریخ تابلو بدون تخصیص
+            است.
+          </p>
           <div className={styles.editorActions}>
             <button
               className="button button--quiet"
@@ -223,7 +286,11 @@ export function RoomAssignmentEditor({
             >
               افزودن اتاق به تخصیص
             </button>
-            <button className="button button--jade" type="submit" disabled={isSaving || Boolean(staleConflict)}>
+            <button
+              className="button button--jade"
+              type="submit"
+              disabled={isSaving || Boolean(staleConflict)}
+            >
               {isSaving ? 'در حال ذخیره…' : 'ذخیره تخصیص‌ها'}
             </button>
           </div>

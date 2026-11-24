@@ -38,7 +38,8 @@ function createdDate(value: string): string {
     day: '2-digit',
     numberingSystem: 'latn',
   }).formatToParts(instant);
-  const part = (type: Intl.DateTimeFormatPartTypes) => parts.find((item) => item.type === type)?.value;
+  const part = (type: Intl.DateTimeFormatPartTypes) =>
+    parts.find((item) => item.type === type)?.value;
   const gregorianDate = [part('year'), part('month'), part('day')].join('-');
   const jalaliDate = formatGregorianAsJalali(gregorianDate);
   if (!jalaliDate) return value;
@@ -183,7 +184,10 @@ export function StaffAccountsPage() {
           : await deactivateStaffAdminAccount(action.account.id, trimmedReason, csrfToken);
       setResult((current) =>
         current
-          ? { ...current, items: current.items.map((item) => (item.id === updated.id ? updated : item)) }
+          ? {
+              ...current,
+              items: current.items.map((item) => (item.id === updated.id ? updated : item)),
+            }
           : current,
       );
       setSuccessMessage(
@@ -203,44 +207,86 @@ export function StaffAccountsPage() {
   function renderAccountActions(account: StaffAdminAccount) {
     return (
       <div className="staff-accounts__actions">
-        <button className="staff-accounts__secondary" type="button" onClick={() => beginAction(account, 'role')}>
+        <button
+          className="staff-accounts__secondary"
+          type="button"
+          onClick={() => beginAction(account, 'role')}
+        >
           تغییر نقش
         </button>
         {account.isActive && (
-          <button className="staff-accounts__danger" type="button" onClick={() => beginAction(account, 'deactivate')}>
+          <button
+            className="staff-accounts__danger"
+            type="button"
+            onClick={() => beginAction(account, 'deactivate')}
+          >
             غیرفعال‌سازی
           </button>
         )}
         {action?.account.id === account.id && (
-          <form className="staff-accounts__action-form" aria-label={`${action.kind === 'role' ? 'تغییر نقش' : 'غیرفعال‌سازی'} حساب ${account.username}`} onSubmit={handleAccountAction}>
+          <form
+            className="staff-accounts__action-form"
+            aria-label={`${action.kind === 'role' ? 'تغییر نقش' : 'غیرفعال‌سازی'} حساب ${account.username}`}
+            onSubmit={handleAccountAction}
+          >
             {action.kind === 'role' ? (
               <>
                 <label>
                   نقش تازه
-                  <select value={actionRole} onChange={(event) => setActionRole(event.target.value as StaffRole)}>
-                    {roles.map((role) => <option key={role} value={role}>{getStaffRoleLabel(role)}</option>)}
+                  <select
+                    value={actionRole}
+                    onChange={(event) => setActionRole(event.target.value as StaffRole)}
+                  >
+                    {roles.map((role) => (
+                      <option key={role} value={role}>
+                        {getStaffRoleLabel(role)}
+                      </option>
+                    ))}
                   </select>
                 </label>
                 <label>
                   دلیل تغییر نقش
-                  <textarea required value={reason} onChange={(event) => setReason(event.target.value)} rows={2} />
+                  <textarea
+                    required
+                    value={reason}
+                    onChange={(event) => setReason(event.target.value)}
+                    rows={2}
+                  />
                 </label>
-                <button className="staff-accounts__primary" type="submit" disabled={isSaving}>ذخیره نقش</button>
+                <button className="staff-accounts__primary" type="submit" disabled={isSaving}>
+                  ذخیره نقش
+                </button>
               </>
             ) : (
               <>
                 <p>نشست‌های فعال این همکار نیز با غیرفعال‌سازی از دسترس خارج می‌شوند.</p>
                 <label>
                   دلیل غیرفعال‌سازی
-                  <textarea required value={reason} onChange={(event) => setReason(event.target.value)} rows={2} />
+                  <textarea
+                    required
+                    value={reason}
+                    onChange={(event) => setReason(event.target.value)}
+                    rows={2}
+                  />
                 </label>
                 <button className="staff-accounts__danger" type="submit" disabled={isSaving}>
                   {isSaving ? 'در حال ثبت…' : 'تأیید غیرفعال‌سازی'}
                 </button>
               </>
             )}
-            {formError && <p className="staff-accounts__error" role="alert">{formError}</p>}
-            <button className="staff-accounts__text-button" type="button" onClick={() => { setAction(null); setFormError(null); }}>
+            {formError && (
+              <p className="staff-accounts__error" role="alert">
+                {formError}
+              </p>
+            )}
+            <button
+              className="staff-accounts__text-button"
+              type="button"
+              onClick={() => {
+                setAction(null);
+                setFormError(null);
+              }}
+            >
               انصراف
             </button>
           </form>
@@ -275,35 +321,77 @@ export function StaffAccountsPage() {
         </button>
       </header>
 
-      {successMessage && <p className="staff-accounts__notice" role="status">{successMessage}</p>}
+      {successMessage && (
+        <p className="staff-accounts__notice" role="status">
+          {successMessage}
+        </p>
+      )}
 
       {showCreate && (
-        <form id="staff-account-create" className="staff-accounts__form" method="post" onSubmit={handleCreate}>
+        <form
+          id="staff-account-create"
+          className="staff-accounts__form"
+          method="post"
+          onSubmit={handleCreate}
+        >
           <div className="staff-accounts__form-heading">
             <h2>حساب تازه</h2>
-            <p>گذرواژه آغازین را فقط به خود همکار تحویل دهید؛ پس از ثبت دوباره نمایش داده نمی‌شود.</p>
+            <p>
+              گذرواژه آغازین را فقط به خود همکار تحویل دهید؛ پس از ثبت دوباره نمایش داده نمی‌شود.
+            </p>
           </div>
           <div className="staff-accounts__fields">
             <label>
               نام کاربری
-              <input autoComplete="username" required maxLength={64} value={username} onChange={(event) => setUsername(event.target.value)} />
+              <input
+                autoComplete="username"
+                required
+                maxLength={64}
+                value={username}
+                onChange={(event) => setUsername(event.target.value)}
+              />
             </label>
             <label>
               ایمیل کاری
-              <input type="email" autoComplete="email" required maxLength={254} dir="ltr" value={email} onChange={(event) => setEmail(event.target.value)} />
+              <input
+                type="email"
+                autoComplete="email"
+                required
+                maxLength={254}
+                dir="ltr"
+                value={email}
+                onChange={(event) => setEmail(event.target.value)}
+              />
             </label>
             <label>
               گذرواژه آغازین
-              <input type="password" autoComplete="new-password" required value={initialPassword} onChange={(event) => setInitialPassword(event.target.value)} />
+              <input
+                type="password"
+                autoComplete="new-password"
+                required
+                value={initialPassword}
+                onChange={(event) => setInitialPassword(event.target.value)}
+              />
             </label>
             <label>
               نقش
-              <select value={newRole} onChange={(event) => setNewRole(event.target.value as StaffRole)}>
-                {roles.map((role) => <option key={role} value={role}>{getStaffRoleLabel(role)}</option>)}
+              <select
+                value={newRole}
+                onChange={(event) => setNewRole(event.target.value as StaffRole)}
+              >
+                {roles.map((role) => (
+                  <option key={role} value={role}>
+                    {getStaffRoleLabel(role)}
+                  </option>
+                ))}
               </select>
             </label>
           </div>
-          {formError && !action && <p className="staff-accounts__error" role="alert">{formError}</p>}
+          {formError && !action && (
+            <p className="staff-accounts__error" role="alert">
+              {formError}
+            </p>
+          )}
           <div className="staff-accounts__form-actions">
             <button className="staff-accounts__primary" type="submit" disabled={isSaving}>
               {isSaving ? 'در حال ایجاد…' : 'ایجاد حساب'}
@@ -318,37 +406,73 @@ export function StaffAccountsPage() {
             <h2 id="staff-accounts-list-title">حساب‌های ثبت‌شده</h2>
             {result && <p>{result.total.toLocaleString('fa-IR')} حساب</p>}
           </div>
-          <button className="staff-accounts__secondary" type="button" onClick={() => void loadAccounts(page)} disabled={isLoading}>
+          <button
+            className="staff-accounts__secondary"
+            type="button"
+            onClick={() => void loadAccounts(page)}
+            disabled={isLoading}
+          >
             {isLoading ? 'در حال دریافت…' : 'به‌روزرسانی فهرست'}
           </button>
         </div>
 
         {isLoading && !result ? (
-          <p className="staff-accounts__state" aria-live="polite" aria-busy="true">در حال دریافت حساب‌های کارکنان…</p>
+          <p className="staff-accounts__state" aria-live="polite" aria-busy="true">
+            در حال دریافت حساب‌های کارکنان…
+          </p>
         ) : loadError ? (
           <div className="staff-accounts__state staff-accounts__state--error">
             <p role="alert">{loadError}</p>
-            <button className="staff-accounts__secondary" type="button" onClick={() => void loadAccounts(page)}>تلاش دوباره</button>
+            <button
+              className="staff-accounts__secondary"
+              type="button"
+              onClick={() => void loadAccounts(page)}
+            >
+              تلاش دوباره
+            </button>
           </div>
         ) : accounts.length === 0 ? (
           <p className="staff-accounts__state">هنوز حسابی ثبت نشده است.</p>
         ) : (
           <div className="staff-accounts__table-wrap">
             <table className="staff-accounts__table">
-              <caption className="staff-accounts__visually-hidden">فهرست حساب‌های کارکنان و دسترسی آن‌ها</caption>
+              <caption className="staff-accounts__visually-hidden">
+                فهرست حساب‌های کارکنان و دسترسی آن‌ها
+              </caption>
               <thead>
-                <tr><th scope="col">کارمند</th><th scope="col">نقش</th><th scope="col">وضعیت</th><th scope="col">ورود اولیه</th><th scope="col">تاریخ ایجاد</th><th scope="col"><span className="staff-accounts__visually-hidden">عملیات</span></th></tr>
+                <tr>
+                  <th scope="col">کارمند</th>
+                  <th scope="col">نقش</th>
+                  <th scope="col">وضعیت</th>
+                  <th scope="col">ورود اولیه</th>
+                  <th scope="col">تاریخ ایجاد</th>
+                  <th scope="col">
+                    <span className="staff-accounts__visually-hidden">عملیات</span>
+                  </th>
+                </tr>
               </thead>
               <tbody>
                 {accounts.map((account) => (
                   <tr key={account.id}>
                     <th scope="row">
                       <strong>{account.username}</strong>
-                      {shouldShowAccountEmail(account) && <a href={`mailto:${account.email}`} dir="ltr">{account.email}</a>}
+                      {shouldShowAccountEmail(account) && (
+                        <a href={`mailto:${account.email}`} dir="ltr">
+                          {account.email}
+                        </a>
+                      )}
                     </th>
                     <td>{getStaffRoleLabel(account.role)}</td>
-                    <td><span className={`staff-accounts__status${account.isActive ? ' staff-accounts__status--active' : ''}`}>{account.isActive ? 'فعال' : 'غیرفعال'}</span></td>
-                    <td>{account.mustChangePassword ? 'گذرواژه آغازین تغییر نشده' : 'تکمیل‌شده'}</td>
+                    <td>
+                      <span
+                        className={`staff-accounts__status${account.isActive ? ' staff-accounts__status--active' : ''}`}
+                      >
+                        {account.isActive ? 'فعال' : 'غیرفعال'}
+                      </span>
+                    </td>
+                    <td>
+                      {account.mustChangePassword ? 'گذرواژه آغازین تغییر نشده' : 'تکمیل‌شده'}
+                    </td>
                     <td>{createdDate(account.createdAt)}</td>
                     <td>{renderAccountActions(account)}</td>
                   </tr>
@@ -364,19 +488,36 @@ export function StaffAccountsPage() {
               <li className="staff-accounts__mobile-card" key={account.id}>
                 <header>
                   <h3>{account.username}</h3>
-                  <span className={`staff-accounts__status${account.isActive ? ' staff-accounts__status--active' : ''}`}>
+                  <span
+                    className={`staff-accounts__status${account.isActive ? ' staff-accounts__status--active' : ''}`}
+                  >
                     {account.isActive ? 'فعال' : 'غیرفعال'}
                   </span>
                 </header>
                 {shouldShowAccountEmail(account) && (
-                  <a className="staff-accounts__mobile-email" href={`mailto:${account.email}`} dir="ltr">
+                  <a
+                    className="staff-accounts__mobile-email"
+                    href={`mailto:${account.email}`}
+                    dir="ltr"
+                  >
                     {account.email}
                   </a>
                 )}
                 <dl>
-                  <div><dt>نقش</dt><dd>{getStaffRoleLabel(account.role)}</dd></div>
-                  <div><dt>ورود اولیه</dt><dd>{account.mustChangePassword ? 'گذرواژه آغازین تغییر نشده' : 'تکمیل‌شده'}</dd></div>
-                  <div><dt>تاریخ ایجاد</dt><dd>{createdDate(account.createdAt)}</dd></div>
+                  <div>
+                    <dt>نقش</dt>
+                    <dd>{getStaffRoleLabel(account.role)}</dd>
+                  </div>
+                  <div>
+                    <dt>ورود اولیه</dt>
+                    <dd>
+                      {account.mustChangePassword ? 'گذرواژه آغازین تغییر نشده' : 'تکمیل‌شده'}
+                    </dd>
+                  </div>
+                  <div>
+                    <dt>تاریخ ایجاد</dt>
+                    <dd>{createdDate(account.createdAt)}</dd>
+                  </div>
                 </dl>
                 {renderAccountActions(account)}
               </li>
@@ -386,9 +527,25 @@ export function StaffAccountsPage() {
 
         {result && result.total > result.pageSize && (
           <nav className="staff-accounts__pagination" aria-label="صفحه‌های حساب کارکنان">
-            <button className="staff-accounts__secondary" type="button" disabled={page <= 1 || isLoading} onClick={() => setPage((current) => current - 1)}>صفحه قبل</button>
-            <span>صفحه {page.toLocaleString('fa-IR')} از {lastPage.toLocaleString('fa-IR')}</span>
-            <button className="staff-accounts__secondary" type="button" disabled={page >= lastPage || isLoading} onClick={() => setPage((current) => current + 1)}>صفحه بعد</button>
+            <button
+              className="staff-accounts__secondary"
+              type="button"
+              disabled={page <= 1 || isLoading}
+              onClick={() => setPage((current) => current - 1)}
+            >
+              صفحه قبل
+            </button>
+            <span>
+              صفحه {page.toLocaleString('fa-IR')} از {lastPage.toLocaleString('fa-IR')}
+            </span>
+            <button
+              className="staff-accounts__secondary"
+              type="button"
+              disabled={page >= lastPage || isLoading}
+              onClick={() => setPage((current) => current + 1)}
+            >
+              صفحه بعد
+            </button>
           </nav>
         )}
       </section>

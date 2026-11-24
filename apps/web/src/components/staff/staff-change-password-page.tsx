@@ -35,7 +35,9 @@ export function StaffChangePasswordPage() {
       setSuccess('گذرواژه تغییر کرد. در حال ورود به فضای کاری شما…');
       router.replace(getStaffHomePath(refreshed.staff.role));
     } catch (cause) {
-      setError(cause instanceof Error ? cause.message : 'تغییر گذرواژه انجام نشد. دوباره تلاش کنید.');
+      setError(
+        cause instanceof Error ? cause.message : 'تغییر گذرواژه انجام نشد. دوباره تلاش کنید.',
+      );
     } finally {
       setIsSaving(false);
     }
@@ -52,18 +54,44 @@ export function StaffChangePasswordPage() {
       <form className="staff-password__form" method="post" onSubmit={submit}>
         <label>
           گذرواژه فعلی
-          <input type="password" autoComplete="current-password" required value={currentPassword} onChange={(event) => setCurrentPassword(event.target.value)} />
+          <input
+            type="password"
+            autoComplete="current-password"
+            required
+            value={currentPassword}
+            onChange={(event) => setCurrentPassword(event.target.value)}
+          />
         </label>
         <label>
           گذرواژه تازه
-          <input type="password" autoComplete="new-password" required value={newPassword} onChange={(event) => setNewPassword(event.target.value)} />
+          <input
+            type="password"
+            autoComplete="new-password"
+            required
+            value={newPassword}
+            onChange={(event) => setNewPassword(event.target.value)}
+          />
         </label>
         <label>
           تکرار گذرواژه تازه
-          <input type="password" autoComplete="new-password" required value={confirmation} onChange={(event) => setConfirmation(event.target.value)} />
+          <input
+            type="password"
+            autoComplete="new-password"
+            required
+            value={confirmation}
+            onChange={(event) => setConfirmation(event.target.value)}
+          />
         </label>
-        {error && <p className="staff-password__error" role="alert">{error}</p>}
-        {success && <p className="staff-password__success" role="status">{success}</p>}
+        {error && (
+          <p className="staff-password__error" role="alert">
+            {error}
+          </p>
+        )}
+        {success && (
+          <p className="staff-password__success" role="status">
+            {success}
+          </p>
+        )}
         <button className="staff-accounts__primary" type="submit" disabled={isSaving}>
           {isSaving ? 'در حال ذخیره…' : 'تغییر گذرواژه'}
         </button>

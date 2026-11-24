@@ -54,16 +54,16 @@
 
 ## Ticket HPM-010 — Cross-role release QA and product documentation
 
-**Worktree:** `../Hotel Booking system-worktrees/HPM-010`
+**Worktree:** `../Hotel Booking system-hpm-010`
 
 **Dependencies:** HPM-001 through HPM-009
-**Files:** `apps/web/e2e/**`, `apps/api/test/**`, `docs/implementation-tickets.md`, `README.md`, `docs/operations/**`, final Hallmark artifacts.
+**Files:** `apps/web/e2e/**`, `apps/api/test/**`, `docs/implementation-tickets.md`, `README.md`, `docs/operations/**`, `docs/screenshots/pms-*`, final visual audit artifacts.
 
-- [ ] Add cross-role E2E for guest request and follow-up contact, staff confirmation, room assignment, dirty-room check-in denial, inspected-room check-in, service posting, duplicate charge/payment retry, unauthorized folio denial, payment, nonzero-balance checkout denial, print, housekeeping reset, on-account collection, and close rollback/retry. Assert public responses never expose guest or folio data.
-- [ ] Run the full frontend Playwright suite first. Only after it passes, have the tester agent review guest, reception, housekeeping, cashier, manager, and admin flows at desktop/mobile. After each defect fix, rerun the affected frontend E2E before tester recheck; failed E2E blocks manual approval.
-- [ ] Inspect `.hallmark` artifacts and search project/global executables for a reproducible Hallmark runner. If found, record exact command and run on current UI. If none exists, do not claim a pass: capture Playwright screenshots and obtain Designer review using the available design skill; record the missing runner and known baseline public-room-list failure (hero ends at 1747px at 1920px) separately from new regressions.
-- [ ] Run root `pnpm check`, verify fresh/upgrade migrations and seed behavior, inspect print output, and resolve applicable design findings before calling the ticket done.
-- [ ] Update README for the actual implemented version: setup, roles, workflows, limitations, test gates, invoice/legal boundary, backup/restore expectations, and screenshots. Do not claim integrations or fiscal compliance that are absent.
+- [x] Add cross-role E2E for guest request and follow-up contact, staff confirmation, room assignment, dirty-room check-in denial, inspected-room check-in, service posting, duplicate charge/payment retry, unauthorized folio denial, payment, nonzero-balance checkout denial, print, housekeeping reset, on-account collection, and close rollback/retry. Assert public responses never expose guest or folio data.
+- [ ] Run the full frontend Playwright suite first. After it passed, the tester reviewed the desktop/mobile screenshot set and E2E source for guest, reception, housekeeping, cashier, manager, and admin flows; a live interactive manual walkthrough remains outstanding. Screenshot-capture findings were fixed and the affected browser suite was rerun successfully. The CUA runtime stopped because it could not determine the current browser URL confidently enough to enforce policy.
+- [x] Inspect `.hallmark` artifacts and search project/global executables for a reproducible Hallmark runner. No runner is available, so no Hallmark pass is claimed. Playwright screenshots received Designer review; capture issues were fixed and rechecked. Record the missing runner and historical baseline public-room-list failure (hero ends at 1747px at 1920px) separately from new regressions.
+- [x] Run root `pnpm check`, verify fresh/upgrade migrations and seed behavior, inspect print output, and resolve applicable design findings. The successful run applied all 18 migrations to three fresh isolated test databases, validated repeatable fictional seed, and passed API/web tests, Playwright, API E2E, and builds. Existing final-check database migration status was up to date. A4 PDF output and narrow print screenshot were visually inspected.
+- [x] Update README for the actual implemented version: setup, roles, workflows, limitations, test gates, invoice/legal boundary, backup/restore expectations, and screenshots. Do not claim integrations or fiscal compliance that are absent.
 - [ ] Record exact checks, screenshots, known environment limits, commits, and merge state in the ticket register.
 
 ## Merge gate
