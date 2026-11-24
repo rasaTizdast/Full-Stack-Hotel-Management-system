@@ -47,13 +47,13 @@ export class RoomCapacityService {
     transaction: TransactionClient,
     roomTypeId: string,
   ): Promise<Date | null> {
-    const rows = await transaction.$queryRaw<Array<{ timeZone: string }>>`
-      SELECT hotel."timezone" AS "timeZone"
+    const rows = await transaction.$queryRaw<Array<{ businessDate: Date }>>`
+      SELECT hotel."business_date" AS "businessDate"
       FROM "room_types" AS room_type
       JOIN "hotels" AS hotel ON hotel."id" = room_type."hotel_id"
       WHERE room_type."id" = ${roomTypeId}::uuid
     `;
-    return rows[0] ? hotelBusinessDate(rows[0].timeZone) : null;
+    return rows[0]?.businessDate ?? null;
   }
 
   async lockRoomType(transaction: TransactionClient, roomTypeId: string): Promise<boolean> {

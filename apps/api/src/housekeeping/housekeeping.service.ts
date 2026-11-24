@@ -215,11 +215,11 @@ export class HousekeepingService {
       async (transaction) => {
         const hotel = await transaction.hotel.findFirst({
           orderBy: [{ createdAt: 'asc' }, { id: 'asc' }],
-          select: { id: true, timezone: true },
+          select: { id: true, businessDate: true },
         });
         const boardDate = query.businessDate
           ? parseDateOnly(query.businessDate)
-          : hotelBusinessDate(hotel?.timezone ?? HOTEL_TIME_ZONE);
+          : (hotel?.businessDate ?? hotelBusinessDate(HOTEL_TIME_ZONE));
         if (!hotel) {
           return {
             businessDate: dateOnly(boardDate),
@@ -598,11 +598,11 @@ export class HousekeepingService {
       async (transaction) => {
         const hotel = await transaction.hotel.findFirst({
           orderBy: [{ createdAt: 'asc' }, { id: 'asc' }],
-          select: { id: true, timezone: true },
+          select: { id: true, businessDate: true },
         });
         const businessDate = query.businessDate
           ? parseDateOnly(query.businessDate)
-          : hotelBusinessDate(hotel?.timezone ?? HOTEL_TIME_ZONE);
+          : (hotel?.businessDate ?? hotelBusinessDate(HOTEL_TIME_ZONE));
         if (!hotel) {
           return {
             businessDate: dateOnly(businessDate),
@@ -695,11 +695,11 @@ export class HousekeepingService {
       async (transaction) => {
         const hotel = await transaction.hotel.findFirst({
           orderBy: [{ createdAt: 'asc' }, { id: 'asc' }],
-          select: { id: true, timezone: true },
+          select: { id: true, businessDate: true },
         });
         const boardDate = query.businessDate
           ? parseDateOnly(query.businessDate)
-          : hotelBusinessDate(hotel?.timezone ?? HOTEL_TIME_ZONE);
+          : (hotel?.businessDate ?? hotelBusinessDate(HOTEL_TIME_ZONE));
         if (!hotel) {
           return {
             businessDate: dateOnly(boardDate),

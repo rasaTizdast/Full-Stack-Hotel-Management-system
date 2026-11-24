@@ -59,6 +59,13 @@ enum FolioEntryKind {
   @@map("folio_entry_kind")
 }
 
+enum NightCloseRunStatus {
+  RUNNING
+  COMPLETED
+
+  @@map("night_close_run_status")
+}
+
 enum PaymentMethod {
   CASH
   BANK_TERMINAL
@@ -153,22 +160,44 @@ enum MaintenanceRequestStatus {
 }
 
 model Hotel {
-  id           String     @id @default(uuid()) @db.Uuid
-  slug         String     @unique @db.VarChar(120)
-  name         String     @db.VarChar(160)
-  address      String     @db.VarChar(500)
-  description  String     @db.Text
-  timezone     String     @default("Asia/Tehran") @db.VarChar(64)
-  contactPhone String?    @map("contact_phone") @db.VarChar(32)
-  contactEmail String?    @map("contact_email") @db.VarChar(254)
-  checkInTime  String     @default("15:00") @map("check_in_time") @db.VarChar(5)
-  checkOutTime String     @default("11:00") @map("check_out_time") @db.VarChar(5)
-  createdAt    DateTime   @default(now()) @map("created_at") @db.Timestamptz(3)
-  updatedAt    DateTime   @updatedAt @map("updated_at") @db.Timestamptz(3)
-  roomTypes    RoomType[]
-  rooms        Room[]
+  id             String          @id @default(uuid()) @db.Uuid
+  slug           String          @unique @db.VarChar(120)
+  name           String          @db.VarChar(160)
+  address        String          @db.VarChar(500)
+  description    String          @db.Text
+  timezone       String          @default("Asia/Tehran") @db.VarChar(64)
+  contactPhone   String?         @map("contact_phone") @db.VarChar(32)
+  contactEmail   String?         @map("contact_email") @db.VarChar(254)
+  checkInTime    String          @default("15:00") @map("check_in_time") @db.VarChar(5)
+  checkOutTime   String          @default("11:00") @map("check_out_time") @db.VarChar(5)
+  businessDate   DateTime        @default(dbgenerated("CURRENT_DATE")) @map("business_date") @db.Date
+  createdAt      DateTime        @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt      DateTime        @updatedAt @map("updated_at") @db.Timestamptz(3)
+  roomTypes      RoomType[]
+  rooms          Room[]
+  nightCloseRuns NightCloseRun[]
 
   @@map("hotels")
+}
+
+model NightCloseRun {
+  id                       String              @id @default(uuid()) @db.Uuid
+  hotelId                  String              @map("hotel_id") @db.Uuid
+  businessDate             DateTime            @map("business_date") @db.Date
+  nextBusinessDate         DateTime            @map("next_business_date") @db.Date
+  status                   NightCloseRunStatus @default(RUNNING)
+  roomNightCount           Int                 @default(0) @map("room_night_count")
+  accommodationAmountToman BigInt              @default(0) @map("accommodation_amount_toman")
+  warningCount             Int                 @default(0) @map("warning_count")
+  startedAt                DateTime            @default(now()) @map("started_at") @db.Timestamptz(3)
+  completedAt              DateTime?           @map("completed_at") @db.Timestamptz(3)
+  actorStaffUserId         String              @map("actor_staff_user_id") @db.Uuid
+  hotel                    Hotel               @relation(fields: [hotelId], references: [id], onDelete: Restrict)
+  actor                    StaffUser           @relation(fields: [actorStaffUserId], references: [id], onDelete: Restrict)
+
+  @@unique([hotelId, businessDate])
+  @@index([hotelId, status, businessDate])
+  @@map("night_close_runs")
 }
 
 model RoomType {
@@ -539,6 +568,7 @@ model StaffUser {
   auditEvents                       AuditEvent[]
   closedFolios                      Folio[]              @relation("FolioCloser")
   createdFolioEntries               FolioEntry[]         @relation("FolioEntryActor")
+  nightCloseRuns                    NightCloseRun[]
 
   @@index([isActive, role])
   @@map("staff_users")

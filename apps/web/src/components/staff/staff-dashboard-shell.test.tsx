@@ -33,6 +33,34 @@ describe('StaffDashboardShell', () => {
     expect(screen.queryByRole('link', { name: /^فهرست خدمات/ })).not.toBeInTheDocument();
   });
 
+  it('exposes night close and reports to managers and admins only', () => {
+    const { rerender } = render(
+      <StaffDashboardShell
+        staff={{ ...receptionist, role: 'MANAGER' }}
+        onLogout={vi.fn()}
+        currentPath="/staff/operations/close"
+      >
+        <p>عملیات روزانه</p>
+      </StaffDashboardShell>,
+    );
+    expect(screen.getByRole('link', { name: /^بستن روز کاری/ })).toHaveAttribute(
+      'aria-current',
+      'page',
+    );
+    expect(screen.getByRole('link', { name: /^گزارش روزانه/ })).toHaveAttribute(
+      'href',
+      '/staff/reports',
+    );
+
+    rerender(
+      <StaffDashboardShell staff={receptionist} onLogout={vi.fn()} currentPath="/staff/reports">
+        <p>محدودیت نقش</p>
+      </StaffDashboardShell>,
+    );
+    expect(screen.queryByRole('link', { name: /^بستن روز کاری/ })).not.toBeInTheDocument();
+    expect(screen.queryByRole('link', { name: /^گزارش روزانه/ })).not.toBeInTheDocument();
+  });
+
   it('shows the maintenance workspace to operational staff but not cashiers', () => {
     const { rerender } = render(
       <StaffDashboardShell

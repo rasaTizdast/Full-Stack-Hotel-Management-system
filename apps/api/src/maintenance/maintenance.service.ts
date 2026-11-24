@@ -330,8 +330,11 @@ export class MaintenanceService {
   async listBlocks(query: RoomBlockQueryDto): Promise<RoomBlockListDto> {
     const page = query.page ?? 1;
     const pageSize = query.pageSize ?? 20;
-    const hotel = await this.prisma.hotel.findFirst({ select: { timezone: true } });
-    const businessDate = dateString(hotelBusinessDate(hotel?.timezone ?? 'Asia/Tehran'));
+    const hotel = await this.prisma.hotel.findFirst({
+      orderBy: [{ createdAt: 'asc' }, { id: 'asc' }],
+      select: { businessDate: true },
+    });
+    const businessDate = dateString(hotel?.businessDate ?? hotelBusinessDate('Asia/Tehran'));
     const where: Prisma.RoomBlockWhereInput = {
       ...(query.roomId ? { roomId: query.roomId } : {}),
       ...(query.floor ? { room: { floor: query.floor } } : {}),

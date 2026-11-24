@@ -11,7 +11,6 @@ import { Prisma } from '../generated/prisma/client';
 import { PrismaService } from '../database/prisma.service';
 import { AuditService } from '../audit/audit.service';
 import {
-  getHotelBusinessDate,
   MAX_STAY_NIGHTS,
   parseDateOnly,
   parseAvailabilityCriteria,
@@ -26,7 +25,7 @@ import {
   type InventoryEffect,
 } from './booking-lifecycle';
 import { RoomAssignmentService } from '../rooms/room-assignment.service';
-import { hotelBusinessDate, RoomCapacityService } from '../rooms/room-capacity.service';
+import { RoomCapacityService } from '../rooms/room-capacity.service';
 import type { StaffPrincipal } from '../staff-auth/staff-auth.types';
 import { requireBookingIdempotencyKey } from './booking-idempotency-key';
 import { lockBookingByReference, type LockedBooking } from './booking-row-lock';
@@ -170,10 +169,6 @@ export class BookingsService {
   }
 
   private async reserve(dto: CreateBookingDto, idempotencyKey: string, walkInActorId?: string) {
-    const criteria = parseAvailabilityCriteria(
-      { checkIn: dto.checkIn, checkOut: dto.checkOut, guests: dto.guestCount },
-      walkInActorId ? dto.checkIn : undefined,
-    );
     const requestHash = hashBookingRequest(dto, walkInActorId ? 'WALK_IN' : undefined);
     const replayQuery = {
       where: { idempotencyKey },
@@ -189,11 +184,20 @@ export class BookingsService {
 
         const roomType = await transaction.roomType.findFirst({
           where: { slug: dto.roomTypeSlug, isActive: true },
-          select: { id: true, maxGuestsPerRoom: true },
+          select: {
+            id: true,
+            maxGuestsPerRoom: true,
+            hotel: { select: { businessDate: true } },
+          },
         });
         if (!roomType) {
           throw this.roomTypeUnavailable();
         }
+
+        const criteria = parseAvailabilityCriteria(
+          { checkIn: dto.checkIn, checkOut: dto.checkOut, guests: dto.guestCount },
+          walkInActorId ? dto.checkIn : roomType.hotel.businessDate.toISOString().slice(0, 10),
+        );
 
         if (walkInActorId) await this.capacity.lockRoomType(transaction, roomType.id);
         else assertGuestCapacity(dto.guestCount, roomType.maxGuestsPerRoom, dto.roomQuantity);
@@ -225,12 +229,12 @@ export class BookingsService {
         if (walkInActorId) {
           const lockedType = await transaction.roomType.findUnique({
             where: { id: roomType.id, isActive: true },
-            select: { maxGuestsPerRoom: true, hotel: { select: { timezone: true } } },
+            select: { maxGuestsPerRoom: true, hotel: { select: { businessDate: true } } },
           });
           if (!lockedType) throw this.roomTypeUnavailable();
           assertGuestCapacity(dto.guestCount, lockedType.maxGuestsPerRoom, dto.roomQuantity);
           confirmedAt = await this.databaseNow(transaction);
-          const businessDate = hotelBusinessDate(lockedType.hotel.timezone, confirmedAt);
+          const businessDate = lockedType.hotel.businessDate;
           if (criteria.checkInDate.getTime() !== businessDate.getTime()) {
             throw new BadRequestException({
               code: 'WALK_IN_ARRIVAL_DATE_INVALID',
@@ -330,13 +334,12 @@ export class BookingsService {
           guestName: true,
           guestPhone: true,
           guestEmail: true,
-          roomType: { select: { maxGuestsPerRoom: true, hotel: { select: { timezone: true } } } },
+          roomType: {
+            select: { maxGuestsPerRoom: true, hotel: { select: { businessDate: true } } },
+          },
         },
       });
-      const businessDate = hotelBusinessDate(
-        stay.roomType.hotel.timezone,
-        await this.databaseNow(transaction),
-      );
+      const businessDate = stay.roomType.hotel.businessDate;
       if (stay.checkIn < businessDate || stay.checkOut <= businessDate) {
         throw new ConflictException({ code: 'STAY_AMENDMENT_WINDOW_CLOSED' });
       }
@@ -449,13 +452,10 @@ export class BookingsService {
           checkOut: true,
           roomQuantity: true,
           totalPriceToman: true,
-          roomType: { select: { hotel: { select: { timezone: true } } } },
+          roomType: { select: { hotel: { select: { businessDate: true } } } },
         },
       });
-      const businessDate = hotelBusinessDate(
-        booking.roomType.hotel.timezone,
-        await this.databaseNow(transaction),
-      );
+      const businessDate = booking.roomType.hotel.businessDate;
       if (newCheckOut <= booking.checkOut) {
         throw new ConflictException({ code: 'STAY_EXTENSION_NOT_LATER' });
       }
@@ -679,13 +679,10 @@ export class BookingsService {
         where: { id: booking.id },
         select: {
           ...stayMutationSelect,
-          roomType: { select: { hotel: { select: { timezone: true } } } },
+          roomType: { select: { hotel: { select: { businessDate: true } } } },
         },
       });
-      const businessDate = hotelBusinessDate(
-        stay.roomType.hotel.timezone,
-        await this.databaseNow(transaction),
-      );
+      const businessDate = stay.roomType.hotel.businessDate;
       if (businessDate < stay.checkIn || businessDate >= stay.checkOut) {
         throw new ConflictException({ code: 'STAY_OUTSIDE_ROOM_MOVE_WINDOW' });
       }
@@ -743,7 +740,11 @@ export class BookingsService {
         select: {
           ...stayMutationSelect,
           noShowReason: true,
-          roomType: { select: { hotel: { select: { timezone: true, checkInTime: true } } } },
+          roomType: {
+            select: {
+              hotel: { select: { timezone: true, checkInTime: true, businessDate: true } },
+            },
+          },
         },
       });
       if (decision.idempotent) {
@@ -848,18 +849,23 @@ export class BookingsService {
           message: 'The booking request has expired and can no longer be processed.',
         });
       }
-      if (
-        booking.status === 'CONFIRMED' &&
-        action === 'CANCEL' &&
-        !canCancelConfirmedBooking(
-          booking.checkIn.toISOString().slice(0, 10),
-          getHotelBusinessDate(now),
-        )
-      ) {
-        throw new ConflictException({
-          code: 'BOOKING_STAY_STARTED',
-          message: 'A confirmed booking cannot be cancelled after check-in begins.',
+      if (booking.status === 'CONFIRMED' && action === 'CANCEL') {
+        const roomType = await transaction.roomType.findUnique({
+          where: { id: booking.roomTypeId },
+          select: { hotel: { select: { businessDate: true } } },
         });
+        if (
+          roomType &&
+          !canCancelConfirmedBooking(
+            booking.checkIn.toISOString().slice(0, 10),
+            roomType.hotel.businessDate.toISOString().slice(0, 10),
+          )
+        ) {
+          throw new ConflictException({
+            code: 'BOOKING_STAY_STARTED',
+            message: 'A confirmed booking cannot be cancelled after check-in begins.',
+          });
+        }
       }
 
       const internalNote = this.normalizeOptionalText(

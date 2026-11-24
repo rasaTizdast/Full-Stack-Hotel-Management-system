@@ -4,10 +4,19 @@ import { AvailabilityCriteria } from './date-range';
 import { AvailabilityNightDto } from './dto/availability-night.dto';
 import { AvailabilityResponseDto } from './dto/availability-response.dto';
 import { AvailabilityRoomTypeDto } from './dto/availability-room-type.dto';
+import { getHotelBusinessDate } from './date-range';
 
 @Injectable()
 export class AvailabilityService {
   constructor(private readonly prisma: PrismaService) {}
+
+  async currentBusinessDate(): Promise<string> {
+    const hotel = await this.prisma.hotel.findFirst({
+      orderBy: [{ createdAt: 'asc' }, { id: 'asc' }],
+      select: { businessDate: true },
+    });
+    return hotel?.businessDate.toISOString().slice(0, 10) ?? getHotelBusinessDate();
+  }
 
   async search(criteria: AvailabilityCriteria): Promise<AvailabilityResponseDto> {
     const roomTypes = await this.prisma.roomType.findMany({

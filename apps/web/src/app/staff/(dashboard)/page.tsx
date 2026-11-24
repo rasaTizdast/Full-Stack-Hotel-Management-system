@@ -31,6 +31,16 @@ const operationalLinks = {
     title: 'مدیریت کارکنان',
     detail: 'حساب‌های کارکنان و سطح دسترسی آن‌ها را مدیریت کنید.',
   },
+  close: {
+    href: '/staff/operations/close',
+    title: 'بستن روز کاری',
+    detail: 'هزینه اقامت شب را ثبت و تاریخ کاری را منتقل کنید.',
+  },
+  reports: {
+    href: '/staff/reports',
+    title: 'گزارش روزانه',
+    detail: 'ورود و خروج، آمادگی اتاق‌ها و گردش مالی را مرور کنید.',
+  },
 };
 
 type OperationalLink = (typeof operationalLinks)[keyof typeof operationalLinks];
@@ -44,6 +54,8 @@ const roleWorkspace: Record<StaffRole, { heading: string; links: readonly Operat
       operationalLinks.bookings,
       operationalLinks.rooms,
       operationalLinks.inventory,
+      operationalLinks.close,
+      operationalLinks.reports,
     ],
   },
   MANAGER: {
@@ -53,6 +65,8 @@ const roleWorkspace: Record<StaffRole, { heading: string; links: readonly Operat
       operationalLinks.inventory,
       operationalLinks.rooms,
       operationalLinks.bookings,
+      operationalLinks.close,
+      operationalLinks.reports,
     ],
   },
   RECEPTIONIST: {

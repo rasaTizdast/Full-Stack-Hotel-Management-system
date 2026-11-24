@@ -78,12 +78,11 @@ export class StaffStaysService {
   }
 
   private async list(kind: WorklistKind, query: StaffStayQueryDto): Promise<StaffStayWorklistDto> {
-    const now = new Date();
     const hotel = await this.prisma.hotel.findFirst({
       orderBy: [{ createdAt: 'asc' }, { id: 'asc' }],
-      select: { id: true, timezone: true },
+      select: { id: true, businessDate: true },
     });
-    const businessDate = hotelBusinessDate(hotel?.timezone ?? HOTEL_TIME_ZONE, now);
+    const businessDate = hotel?.businessDate ?? hotelBusinessDate(HOTEL_TIME_ZONE);
     const selectedDate = query.date ? parseDateOnly(query.date) : businessDate;
     const page = query.page ?? 1;
     const pageSize = query.pageSize ?? 20;

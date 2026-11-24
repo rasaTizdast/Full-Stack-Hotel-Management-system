@@ -12,7 +12,6 @@ import { staffHasCapability } from '../staff-auth/staff-capabilities';
 import { AuditService } from '../audit/audit.service';
 import { PrismaService } from '../database/prisma.service';
 import { addDays, parseDateOnly } from '../availability/date-range';
-import { hotelBusinessDate } from '../rooms/room-capacity.service';
 import type {
   AdjustFolioDto,
   CheckoutFolioDto,
@@ -416,7 +415,7 @@ export class FoliosService {
       });
       if (!booking) throw new NotFoundException({ code: 'BOOKING_NOT_FOUND' });
       this.assertOpenInHouseStay(booking.status, booking.checkIn, booking.checkOut, serviceDate);
-      const businessDate = await this.currentBusinessDate(transaction);
+      const businessDate = await this.currentBusinessDate(transaction, bookingId);
       if (serviceDate > businessDate) {
         throw conflict('SERVICE_DATE_IN_FUTURE', 'Services cannot be posted for a future date.');
       }
@@ -660,7 +659,7 @@ export class FoliosService {
           'A payment cannot exceed the folio balance.',
         );
       }
-      const serviceDate = await this.currentBusinessDate(transaction);
+      const serviceDate = await this.currentBusinessDate(transaction, bookingId);
       const entry = await transaction.folioEntry.create({
         data: {
           folioId: locked.folioId,
@@ -765,7 +764,7 @@ export class FoliosService {
         );
       }
 
-      const serviceDate = await this.currentBusinessDate(transaction);
+      const serviceDate = await this.currentBusinessDate(transaction, bookingId);
       const refund = await transaction.folioEntry.create({
         data: {
           folioId: locked.folioId,
@@ -856,7 +855,7 @@ export class FoliosService {
           checkOut: true,
           roomQuantity: true,
           roomTypeId: true,
-          roomType: { select: { hotel: { select: { timezone: true } } } },
+          roomType: { select: { hotel: { select: { businessDate: true } } } },
         },
       });
       if (booking.status !== 'CHECKED_IN') {
@@ -864,9 +863,7 @@ export class FoliosService {
       }
 
       const now = await this.databaseNow(transaction);
-      const departureDate = parseDateOnly(
-        dateString(hotelBusinessDate(booking.roomType.hotel.timezone, now)),
-      );
+      const departureDate = booking.roomType.hotel.businessDate;
       if (departureDate < booking.checkIn) {
         throw conflict(
           'CHECKOUT_BEFORE_CHECK_IN',
@@ -1102,7 +1099,7 @@ export class FoliosService {
     });
     if (!booking) throw new NotFoundException({ code: 'BOOKING_NOT_FOUND' });
     this.assertOpenInHouseStay(booking.status, booking.checkIn, booking.checkOut, stayDate);
-    if (stayDate > (await this.currentBusinessDate(transaction))) {
+    if (stayDate > (await this.currentBusinessDate(transaction, input.bookingId))) {
       throw conflict(
         'SERVICE_DATE_IN_FUTURE',
         'Accommodation cannot be posted for a future night.',
@@ -1165,12 +1162,16 @@ export class FoliosService {
     return { id: created.id, amountToman: created.amountToman, idempotent: false };
   }
 
-  private async currentBusinessDate(transaction: Prisma.TransactionClient): Promise<Date> {
-    const hotel = await transaction.hotel.findFirst({
-      orderBy: [{ createdAt: 'asc' }, { id: 'asc' }],
-      select: { timezone: true },
+  private async currentBusinessDate(
+    transaction: Prisma.TransactionClient,
+    bookingId: string,
+  ): Promise<Date> {
+    const booking = await transaction.booking.findUnique({
+      where: { id: bookingId },
+      select: { roomType: { select: { hotel: { select: { businessDate: true } } } } },
     });
-    return hotelBusinessDate(hotel?.timezone ?? 'Asia/Tehran');
+    if (!booking) throw new NotFoundException({ code: 'BOOKING_NOT_FOUND' });
+    return booking.roomType.hotel.businessDate;
   }
 
   private assertOpenInHouseStay(

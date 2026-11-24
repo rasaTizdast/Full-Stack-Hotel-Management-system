@@ -36,7 +36,7 @@ export class RoomBoardService {
         const roomType = query.roomTypeId
           ? await transaction.roomType.findUnique({
               where: { id: query.roomTypeId },
-              select: { hotel: { select: { id: true, timezone: true } } },
+              select: { hotel: { select: { id: true, businessDate: true } } },
             })
           : undefined;
         if (query.roomTypeId && !roomType)
@@ -45,10 +45,10 @@ export class RoomBoardService {
           roomType?.hotel ??
           (await transaction.hotel.findFirst({
             orderBy: [{ createdAt: 'asc' }, { id: 'asc' }],
-            select: { id: true, timezone: true },
+            select: { id: true, businessDate: true },
           }));
 
-        const businessDate = hotelBusinessDate(hotel?.timezone ?? HOTEL_TIME_ZONE, now);
+        const businessDate = hotel?.businessDate ?? hotelBusinessDate(HOTEL_TIME_ZONE, now);
         const date = requestedDate ?? businessDate;
         const header = {
           date: dateOnly(date),

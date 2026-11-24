@@ -287,6 +287,41 @@ export function StaffDashboardShell({
                       </span>
                     </Link>
                   )}
+                  {['ADMIN', 'MANAGER'].includes(staff.role) && (
+                    <Link
+                      href="/staff/operations/close"
+                      aria-current={
+                        currentPath.startsWith('/staff/operations/close') ? 'page' : undefined
+                      }
+                    >
+                      <span className="staff-nav__glyph" aria-hidden="true">
+                        <svg viewBox="0 0 24 24" fill="none">
+                          <circle cx="12" cy="12" r="8" />
+                          <path d="M12 7v5l3 2M7 3.8 5.4 5.4M17 3.8l1.6 1.6" />
+                        </svg>
+                      </span>
+                      <span className="staff-nav__copy">
+                        <strong>بستن روز کاری</strong>
+                        <small>ثبت شب اقامت و انتقال تاریخ</small>
+                      </span>
+                    </Link>
+                  )}
+                  {['ADMIN', 'MANAGER'].includes(staff.role) && (
+                    <Link
+                      href="/staff/reports"
+                      aria-current={currentPath.startsWith('/staff/reports') ? 'page' : undefined}
+                    >
+                      <span className="staff-nav__glyph" aria-hidden="true">
+                        <svg viewBox="0 0 24 24" fill="none">
+                          <path d="M5 19V9m7 10V5m7 14v-7M3.5 19.5h17" />
+                        </svg>
+                      </span>
+                      <span className="staff-nav__copy">
+                        <strong>گزارش روزانه</strong>
+                        <small>عملیات و گردش مالی</small>
+                      </span>
+                    </Link>
+                  )}
                   {staff.role === 'ADMIN' && (
                     <Link
                       href="/staff/staff"

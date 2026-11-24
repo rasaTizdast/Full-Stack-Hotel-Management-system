@@ -4,11 +4,11 @@ type ArrivalWindow = 'OUTSIDE_STAY' | 'BEFORE_CHECK_IN_TIME' | 'OPEN';
 
 export function getStayArrivalWindow(
   now: Date,
-  hotel: { timezone: string; checkInTime: string },
+  hotel: { timezone: string; checkInTime: string; businessDate?: Date },
   checkIn: Date,
   checkOut: Date,
 ): { businessDate: Date; window: ArrivalWindow } {
-  const businessDate = hotelBusinessDate(hotel.timezone, now);
+  const businessDate = hotel.businessDate ?? hotelBusinessDate(hotel.timezone, now);
   if (businessDate < checkIn || businessDate >= checkOut) {
     return { businessDate, window: 'OUTSIDE_STAY' };
   }

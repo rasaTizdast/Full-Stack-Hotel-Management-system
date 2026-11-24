@@ -1,0 +1,478 @@
+.page {
+  display: grid;
+  min-width: 0;
+  gap: 1rem;
+  color: var(--foreground);
+}
+
+.header,
+.panelHeading,
+.dateForm,
+.actionPanel,
+.actionButtons,
+.dialogActions,
+.reportDate {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.header {
+  align-items: flex-end;
+}
+
+.header h1,
+.panel h2,
+.signalPanel h2,
+.actionPanel h2,
+.confirmDialog h2 {
+  margin: 0;
+  color: var(--primary-strong);
+}
+
+.header h1 {
+  font-size: clamp(1.8rem, 3vw, 2.5rem);
+  line-height: 1.25;
+}
+
+.eyebrow {
+  margin: 0 0 0.35rem;
+  color: var(--accent);
+  font-size: var(--text-caption);
+  font-weight: 750;
+}
+
+.lead,
+.actionPanel p,
+.confirmDialog > p:not(.eyebrow) {
+  max-width: 72ch;
+  margin: 0.45rem 0 0;
+  color: var(--muted-foreground);
+  font-size: var(--text-small);
+  line-height: 1.8;
+}
+
+.closeSummary,
+.metricGrid,
+.financeGrid,
+.signalGrid,
+.stayGrid {
+  display: grid;
+  min-width: 0;
+  gap: 0.85rem;
+}
+
+.closeSummary {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.closeSummary > div,
+.metric,
+.panel,
+.signalPanel,
+.actionPanel,
+.empty,
+.denied,
+.dateForm,
+.success {
+  min-width: 0;
+  border: 1px solid color-mix(in srgb, var(--border) 88%, transparent);
+  border-radius: var(--radius-card);
+  background: var(--surface);
+  padding: 1rem;
+  box-shadow: 0 8px 24px color-mix(in srgb, var(--foreground) 4%, transparent);
+}
+
+.closeSummary > div {
+  display: grid;
+  align-content: start;
+  gap: 0.35rem;
+}
+
+.closeSummary span,
+.metric > span {
+  color: var(--muted-foreground);
+  font-size: var(--text-caption);
+}
+
+.closeSummary strong {
+  color: var(--primary-strong);
+  font-size: clamp(1.1rem, 2vw, 1.45rem);
+  overflow-wrap: anywhere;
+}
+
+.closeSummary small,
+.metric small {
+  color: var(--muted-foreground);
+  line-height: 1.6;
+}
+
+.signalGrid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.signalPanel h2,
+.panel h2,
+.actionPanel h2 {
+  font-size: 1.08rem;
+}
+
+.signalPanel {
+  background: color-mix(in srgb, var(--warning-soft) 32%, var(--surface));
+}
+
+.signalPanel:first-child {
+  background: color-mix(in srgb, var(--destructive-soft) 34%, var(--surface));
+}
+
+.signalList,
+.stayList,
+.balanceList {
+  display: grid;
+  gap: 0.65rem;
+  margin: 0.85rem 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.signalList li,
+.balanceList li {
+  display: flex;
+  min-width: 0;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.75rem;
+  border-top: 1px solid color-mix(in srgb, var(--border) 72%, transparent);
+  padding-top: 0.65rem;
+}
+
+.signalList li > div,
+.balanceList li > div,
+.stayIdentity,
+.stayDetails {
+  display: grid;
+  min-width: 0;
+  gap: 0.2rem;
+}
+
+.signalList li strong,
+.balanceList li strong,
+.stayIdentity strong {
+  font-size: var(--text-small);
+}
+
+.references,
+.stayIdentity span {
+  color: var(--muted-foreground);
+  font-size: var(--text-caption);
+  overflow-wrap: anywhere;
+}
+
+.count {
+  flex: 0 0 auto;
+  border-radius: var(--radius-pill);
+  background: var(--surface);
+  padding: 0.1rem 0.55rem;
+  font-weight: 750;
+}
+
+.actionPanel {
+  align-items: center;
+}
+
+.actionButtons,
+.dialogActions {
+  flex-wrap: wrap;
+  justify-content: flex-start;
+}
+
+.primaryButton,
+.secondaryButton,
+.textButton {
+  display: inline-flex;
+  min-height: 2.75rem;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid transparent;
+  border-radius: var(--radius-control);
+  padding: 0.65rem 1rem;
+  font: inherit;
+  font-weight: 700;
+  text-align: center;
+  text-decoration: none;
+  cursor: pointer;
+  transition: background 160ms ease, border-color 160ms ease, transform 160ms ease;
+}
+
+.primaryButton {
+  background: var(--primary);
+  color: var(--primary-foreground);
+}
+
+.secondaryButton {
+  border-color: var(--border);
+  background: var(--surface);
+  color: var(--primary-strong);
+}
+
+.textButton {
+  min-height: 2rem;
+  background: transparent;
+  color: var(--primary-strong);
+  padding-inline: 0.4rem;
+}
+
+.primaryButton:hover:not(:disabled),
+.secondaryButton:hover:not(:disabled) {
+  transform: translateY(-1px);
+}
+
+.primaryButton:focus-visible,
+.secondaryButton:focus-visible,
+.textButton:focus-visible,
+.dateForm input:focus-visible {
+  outline: 3px solid color-mix(in srgb, var(--focus) 70%, transparent);
+  outline-offset: 2px;
+}
+
+.primaryButton:disabled,
+.secondaryButton:disabled {
+  cursor: not-allowed;
+  opacity: 0.58;
+}
+
+.dialogBackdrop {
+  position: fixed;
+  z-index: 100;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  overflow-y: auto;
+  background: color-mix(in srgb, #101916 60%, transparent);
+  padding: 1rem;
+}
+
+.confirmDialog {
+  width: min(100%, 34rem);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-feature);
+  background: var(--surface);
+  padding: clamp(1.1rem, 4vw, 2rem);
+  box-shadow: 0 24px 72px #10191640;
+}
+
+.confirmDialog h2 {
+  font-size: 1.45rem;
+}
+
+.dialogActions {
+  justify-content: flex-start;
+  margin-top: 1.35rem;
+}
+
+.dateForm {
+  justify-content: flex-start;
+  flex-wrap: wrap;
+}
+
+.dateForm label {
+  font-weight: 750;
+}
+
+.dateForm input {
+  min-height: 2.75rem;
+  border: 1px solid var(--field-border);
+  border-radius: var(--radius-control);
+  background: var(--surface);
+  color: var(--foreground);
+  padding: 0.5rem 0.75rem;
+  font: inherit;
+}
+
+.dateForm > span {
+  color: var(--muted-foreground);
+  font-size: var(--text-caption);
+}
+
+.dateForm .primaryButton {
+  margin-inline-start: auto;
+}
+
+.reportDate {
+  justify-content: flex-start;
+  color: var(--primary-strong);
+}
+
+.reportDate span {
+  color: var(--muted-foreground);
+  font-size: var(--text-caption);
+}
+
+.metricGrid {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.financeGrid {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.metric {
+  display: grid;
+  align-content: start;
+  gap: 0.4rem;
+}
+
+.metric strong {
+  color: var(--primary-strong);
+  font-size: clamp(1.15rem, 2vw, 1.65rem);
+  overflow-wrap: anywhere;
+}
+
+.dataNote,
+.quiet,
+.loading {
+  margin: 0;
+  color: var(--muted-foreground);
+  font-size: var(--text-caption);
+  line-height: 1.75;
+}
+
+.dataNote {
+  border-inline-start: 3px solid var(--highlight);
+  padding: 0.15rem 0.75rem;
+}
+
+.stayGrid {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  align-items: start;
+}
+
+.panelHeading span {
+  color: var(--muted-foreground);
+  font-size: var(--text-caption);
+}
+
+.stayList li {
+  display: grid;
+  gap: 0.45rem;
+  border-top: 1px solid color-mix(in srgb, var(--border) 72%, transparent);
+  padding-top: 0.7rem;
+}
+
+.stayDetails {
+  color: var(--muted-foreground);
+  font-size: var(--text-caption);
+  line-height: 1.65;
+}
+
+.balanceList li {
+  align-items: center;
+}
+
+.balanceList bdi {
+  color: var(--warning);
+  font-weight: 750;
+  text-align: end;
+}
+
+.success,
+.error,
+.empty,
+.denied {
+  line-height: 1.75;
+}
+
+.success {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+  border-color: color-mix(in srgb, var(--success) 36%, var(--border));
+  background: var(--success-soft);
+}
+
+.success p {
+  margin: 0.35rem 0 0;
+  color: var(--muted-foreground);
+}
+
+.error {
+  margin: 0;
+  border: 1px solid color-mix(in srgb, var(--destructive) 35%, var(--border));
+  border-radius: var(--radius-control);
+  background: var(--destructive-soft);
+  color: var(--destructive);
+  padding: 0.75rem 1rem;
+}
+
+.empty,
+.denied {
+  display: grid;
+  justify-items: start;
+  gap: 0.8rem;
+}
+
+.empty p,
+.denied p {
+  margin: 0;
+}
+
+@media (max-width: 1050px) {
+  .metricGrid,
+  .closeSummary {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .stayGrid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 700px) {
+  .header,
+  .actionPanel,
+  .success {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .signalGrid,
+  .financeGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .closeSummary,
+  .metricGrid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .actionButtons,
+  .dialogActions {
+    width: 100%;
+  }
+
+  .actionButtons > *,
+  .dialogActions > * {
+    flex: 1 1 10rem;
+  }
+
+  .dateForm {
+    align-items: stretch;
+  }
+
+  .dateForm label,
+  .dateForm input,
+  .dateForm .primaryButton {
+    width: 100%;
+    margin-inline-start: 0;
+  }
+}
+
+@media (max-width: 420px) {
+  .closeSummary,
+  .metricGrid {
+    grid-template-columns: 1fr;
+  }
+}

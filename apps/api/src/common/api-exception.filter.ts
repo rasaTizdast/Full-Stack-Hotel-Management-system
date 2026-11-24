@@ -282,6 +282,22 @@ const SAFE_DOMAIN_ERRORS: Record<string, { statusCode: number; message: string }
     statusCode: 409,
     message: 'Future booked inventory could not be released.',
   },
+  BUSINESS_DATE_CHANGED: {
+    statusCode: 409,
+    message: 'The hotel business date changed. Refresh the operations preview.',
+  },
+  PREVIOUS_CLOSE_INCOMPLETE: {
+    statusCode: 409,
+    message: 'A previous night-close run is unfinished.',
+  },
+  NIGHT_CLOSE_BLOCKED: {
+    statusCode: 409,
+    message: 'Resolve the listed close blockers before continuing.',
+  },
+  NIGHT_CLOSE_CONFIRMATION_STALE: {
+    statusCode: 409,
+    message: 'The close preview changed. Review the current date, charges, advance, and warnings.',
+  },
 };
 
 @Catch()

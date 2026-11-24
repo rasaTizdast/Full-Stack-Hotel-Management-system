@@ -6,6 +6,11 @@ describe('availability date range', () => {
     expect(getHotelBusinessDate(new Date('2026-03-09T20:30:00.000Z'))).toBe('2026-03-10');
   });
 
+  it('changes the Tehran date at local midnight rather than UTC midnight', () => {
+    expect(getHotelBusinessDate(new Date('2026-03-09T20:29:59.999Z'))).toBe('2026-03-09');
+    expect(getHotelBusinessDate(new Date('2026-03-09T20:30:00.000Z'))).toBe('2026-03-10');
+  });
+
   it('treats checkout as exclusive and builds Gregorian stay dates', () => {
     const criteria = parseAvailabilityCriteria(
       { checkIn: '2026-03-10', checkOut: '2026-03-12', guests: 2 },

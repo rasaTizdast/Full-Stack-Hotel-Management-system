@@ -133,7 +133,7 @@ The following tickets extend the original booking engine into the single-propert
 - **Priority:** P1
 - **Depends on:** HPM-004, HPM-005, HPM-006, HPM-007, HPM-008
 - **Owner:** Backend senior + Front-end design master
-- **Status:** Not started
+- **Status:** In progress
 - **Branch/worktree:** `codex/hpm-009-night-close-reports` — `../Hotel Booking system-worktrees/HPM-009`
 - **Plan:** `docs/superpowers/plans/2026-11-15-hotel-pms-staff-controls-and-daily-operations.md`
 - **Acceptance criteria:** Managers preview blockers separately from warnings, confirm a named business date/effects, run an all-or-nothing manual close, post at most one accommodation charge per assignment/date through the shared checkout service, advance business date once, retry safely after rollback, and view role-filtered summaries.

@@ -22,7 +22,8 @@ export class AvailabilityController {
     type: ApiErrorResponseDto,
     description: 'The date range or guest count is invalid.',
   })
-  search(@Query() query: AvailabilityQueryDto): Promise<AvailabilityResponseDto> {
-    return this.availabilityService.search(parseAvailabilityCriteria(query));
+  async search(@Query() query: AvailabilityQueryDto): Promise<AvailabilityResponseDto> {
+    const currentDate = await this.availabilityService.currentBusinessDate();
+    return this.availabilityService.search(parseAvailabilityCriteria(query, currentDate));
   }
 }
