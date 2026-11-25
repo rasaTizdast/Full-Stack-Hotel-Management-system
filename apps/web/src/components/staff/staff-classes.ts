@@ -1,3 +1,10 @@
+import { cn } from '@/lib/utils';
+import { buttonVariants } from '@/components/ui/button-variants';
+
+const primaryButton = buttonVariants({ variant: 'default' });
+const secondaryButton = buttonVariants({ variant: 'outline' });
+const dangerButton = buttonVariants({ variant: 'destructive' });
+
 const styles: Record<string, string> = {
   'staff-shell': 'min-h-dvh bg-background text-foreground',
   'skip-link': 'sr-only focus:not-sr-only focus:fixed focus:start-4 focus:top-4 focus:z-[100] focus:rounded-lg focus:bg-card focus:px-4 focus:py-3 focus:text-primary focus:shadow-lg',
@@ -12,7 +19,7 @@ const styles: Record<string, string> = {
   'staff-identity__copy': 'grid max-w-48 text-xs [&_strong]:truncate [&_small]:text-muted-foreground',
   'staff-identity__email': 'hidden text-xs text-muted-foreground xl:block',
   'staff-identity__role': 'text-xs text-muted-foreground',
-  'staff-logout': 'inline-flex min-h-10 items-center gap-2 rounded-lg border border-border bg-surface px-3 text-sm font-semibold text-primary-strong transition hover:bg-accent focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-ring disabled:opacity-50 active:scale-[.985]',
+  'staff-logout': cn(secondaryButton, 'gap-2 px-3 text-sm active:scale-[.985]'),
   'staff-layout': 'mx-auto grid min-h-[calc(100dvh-5.25rem)] max-w-[100rem] grid-cols-1 lg:grid-cols-[17.5rem_minmax(0,1fr)]',
   'staff-sidebar': 'flex min-w-0 flex-col gap-4 border-b border-border bg-card p-4 lg:border-b-0 lg:border-e lg:p-5',
   'staff-sidebar__heading': 'grid gap-1',
@@ -48,12 +55,12 @@ const styles: Record<string, string> = {
   'staff-bookings-denied': 'mx-auto grid max-w-3xl gap-4 rounded-xl border border-destructive/25 bg-card p-6',
   'staff-accounts__header': 'flex items-end justify-between gap-4 max-md:flex-col max-md:items-start',
   'staff-accounts__eyebrow': 'text-xs font-bold text-accent-brand',
-  'staff-accounts__primary': 'inline-flex min-h-10 items-center justify-center rounded-lg bg-primary px-4 py-2 font-semibold text-primary-foreground hover:bg-primary-strong disabled:opacity-50',
-  'staff-accounts__secondary': 'inline-flex min-h-10 items-center justify-center rounded-lg border border-input bg-surface px-4 py-2 font-semibold text-primary-strong hover:bg-accent disabled:opacity-50',
-  'staff-accounts__danger': 'inline-flex min-h-10 items-center justify-center rounded-lg bg-destructive px-4 py-2 font-semibold text-white hover:bg-destructive/90 disabled:opacity-50',
+  'staff-accounts__primary': primaryButton,
+  'staff-accounts__secondary': secondaryButton,
+  'staff-accounts__danger': dangerButton,
   'staff-accounts__actions': 'flex flex-wrap gap-2', 'staff-accounts__action-form': 'inline-flex',
   'staff-accounts__error': 'rounded-lg bg-destructive-soft p-3 text-sm text-destructive',
-  'staff-accounts__text-button': 'min-h-8 text-sm font-semibold text-primary underline underline-offset-4',
+  'staff-accounts__text-button': 'inline-flex min-h-11 items-center px-2 text-sm font-semibold text-primary underline underline-offset-4',
   'staff-accounts__notice': 'rounded-lg bg-warning-soft p-3 text-sm text-warning',
   'staff-accounts__form': 'grid gap-4 rounded-xl border border-border bg-card p-5 shadow-sm',
   'staff-accounts__form-heading': 'border-b border-border pb-3 font-bold text-primary-strong',
@@ -86,8 +93,8 @@ const styles: Record<string, string> = {
   'staff-inventory__field': 'grid min-w-0 gap-1.5 text-sm font-semibold',
   'staff-inventory__field--room': 'sm:col-span-2', 'staff-inventory__input': '',
   'staff-inventory__hint': 'text-xs font-normal text-muted-foreground', 'staff-inventory__field-error': 'text-xs text-destructive',
-  'staff-inventory__load': 'inline-flex min-h-10 items-center justify-center rounded-lg border border-input bg-surface px-4 py-2 font-semibold text-primary-strong',
-  'staff-inventory__save': 'inline-flex min-h-10 items-center justify-center rounded-lg bg-primary px-4 py-2 font-semibold text-primary-foreground',
+  'staff-inventory__load': secondaryButton,
+  'staff-inventory__save': primaryButton,
   'staff-inventory__message': 'rounded-lg bg-surface-soft p-3 text-sm text-muted-foreground', 'staff-inventory__message--error': '!bg-destructive-soft !text-destructive',
   'staff-inventory__loading': 'animate-pulse rounded-lg bg-surface-soft p-4 text-sm text-muted-foreground', 'staff-inventory__empty': 'rounded-lg border border-dashed border-border p-5 text-sm text-muted-foreground',
   'staff-inventory__overview': 'grid gap-4 rounded-xl border border-border bg-card p-5 shadow-sm', 'staff-inventory__overview-heading': 'flex items-center justify-between gap-3',
@@ -104,12 +111,12 @@ const styles: Record<string, string> = {
   'staff-rooms': 'mx-auto grid max-w-7xl gap-5', 'staff-rooms-denied': 'mx-auto grid max-w-3xl gap-4 rounded-xl border border-destructive/25 bg-card p-6',
   'staff-rooms__header': 'flex items-end justify-between gap-4 max-md:flex-col max-md:items-start', 'staff-rooms__eyebrow': 'text-xs font-bold text-accent-brand',
   'staff-rooms__header-actions': 'flex flex-wrap items-center gap-3', 'staff-rooms__summary': 'flex flex-wrap gap-2 text-sm font-semibold text-muted-foreground',
-  'staff-rooms__add-toggle': 'inline-flex min-h-10 items-center justify-center rounded-lg bg-primary px-4 py-2 font-semibold text-primary-foreground',
+  'staff-rooms__add-toggle': primaryButton,
   'staff-rooms__message': 'rounded-lg bg-surface-soft p-3 text-sm text-muted-foreground', 'staff-rooms__message--error': '!bg-destructive-soft !text-destructive', 'staff-rooms__message--success': '!bg-success-soft !text-success',
   'staff-rooms__filters': 'grid gap-4 rounded-xl border border-border bg-card p-5 shadow-sm', 'staff-rooms__filters-heading': 'font-bold text-primary-strong',
   'staff-rooms__filter-fields': 'grid gap-3 sm:grid-cols-2 xl:grid-cols-4', 'staff-rooms__field': 'grid min-w-0 gap-1.5 text-sm font-semibold',
   'staff-rooms__field--search': 'sm:col-span-2', 'staff-rooms__field--read-only': 'rounded-lg bg-surface-soft p-3', 'staff-rooms__field--features': 'sm:col-span-2',
-  'staff-rooms__filter-actions': 'flex flex-wrap gap-3', 'staff-rooms__filter-button': 'inline-flex min-h-10 items-center justify-center rounded-lg bg-primary px-4 py-2 font-semibold text-primary-foreground',
+  'staff-rooms__filter-actions': 'flex flex-wrap gap-3', 'staff-rooms__filter-button': primaryButton,
   'staff-rooms__list': 'grid gap-4', 'staff-rooms__list-heading': 'flex items-center justify-between gap-3', 'staff-rooms__state': 'rounded-lg bg-surface-soft p-4 text-sm text-muted-foreground',
   'staff-rooms__empty': 'rounded-xl border border-dashed border-border p-8 text-center text-muted-foreground', 'staff-rooms__grid': 'grid gap-4 sm:grid-cols-2 xl:grid-cols-3',
   'staff-rooms__card': 'grid content-start gap-4 rounded-xl border border-border bg-card p-4 shadow-sm', 'staff-rooms__card-heading': 'flex items-start justify-between gap-3',
@@ -122,11 +129,11 @@ const styles: Record<string, string> = {
   'staff-rooms__status': 'inline-flex rounded-full bg-surface-soft px-3 py-1 text-xs font-bold text-muted-foreground',
   'staff-rooms__status--active': 'bg-success-soft text-success',
   'staff-rooms__filter-button:hover': 'hover:bg-primary-strong',
-  button: 'font-semibold transition-colors focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-ring disabled:pointer-events-none disabled:opacity-50',
-  'button--jade': 'bg-primary text-primary-foreground hover:bg-primary-strong',
-  'button--quiet': 'border border-input bg-surface text-primary-strong hover:bg-accent',
-  'button--danger': 'bg-destructive text-white hover:bg-destructive/90',
-  'button--danger-quiet': 'border border-destructive/30 bg-destructive-soft text-destructive hover:bg-destructive/10',
+  button: buttonVariants({ variant: 'default' }),
+  'button--jade': buttonVariants({ variant: 'default' }),
+  'button--quiet': buttonVariants({ variant: 'outline' }),
+  'button--danger': buttonVariants({ variant: 'destructive' }),
+  'button--danger-quiet': buttonVariants({ variant: 'destructiveOutline' }),
 };
 
 export function staffClass(names: string): string {
@@ -136,5 +143,5 @@ export function staffClass(names: string): string {
     .map((name) => styles[name] ?? '')
     .filter(Boolean)
     .join(' ');
-  return `${names} ${utilities}`.trim();
+  return cn(names, utilities);
 }

@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import type { PublicHotel } from '@/lib/public-api';
 import { HotelLogo } from '@/components/brand/hotel-logo';
+import { ButtonLink } from '@/components/ui/button-link';
 
 export function SiteHeader({ hotel }: { hotel: PublicHotel }) {
   return (
@@ -35,14 +36,14 @@ export function SiteHeader({ hotel }: { hotel: PublicHotel }) {
           <Link href="/#location">نشانی و تماس</Link>
         </nav>
 
-        <Link
-          className={
-            'col-start-2 row-start-1 inline-flex min-h-11 items-center justify-self-end rounded-full bg-surface-soft px-4 text-sm font-bold text-primary-strong no-underline transition-colors hover:bg-primary hover:text-primary-foreground md:col-start-3'
-          }
+        <ButtonLink
+          className="col-start-2 row-start-1 justify-self-end px-4 md:col-start-3"
           href="/#stay-search"
+          size="default"
+          variant="secondary"
         >
           جستجوی اقامت
-        </Link>
+        </ButtonLink>
       </div>
     </header>
   );

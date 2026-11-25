@@ -51,6 +51,7 @@ Tailwind v4 exposes these through the `@theme inline` mappings in `globals.css`.
 ## Components and interaction
 
 - Use the shared shadcn components in `components/ui` for buttons, fields, inputs, selects, cards, alerts, badges, and overlays. Extend them through variants or `className`, not one-off global selectors.
+- Use `ButtonLink` for navigation that should look like an action button, and `Button` for form or in-place actions. Keep staff utility classes tied to the same `buttonVariants` so older compositions retain the shared size, contrast, focus, and disabled states.
 - Use `Field`, `FieldLabel`, `FieldDescription`, and `FieldError` from `components/ui/field` to keep label, hint, and validation structure consistent. Connect labels with `htmlFor` and controls with stable `id` values.
 - Use `Input` for text, numeric, date, search, and other single-line entry; use `Textarea` for multi-line text; use `Checkbox` for independent boolean choices; and use `RadioGroup` with `RadioGroupItem` for mutually exclusive choices.
 - Use the shared shadcn `Select` composition for searchable or custom popover selection. Use `NativeSelect` for simple option lists that benefit from native keyboard, mobile, and form behavior. Do not add raw form controls in feature pages; extend the shared primitive when a new control style is needed.
@@ -88,3 +89,5 @@ Tailwind v4 exposes these through the `@theme inline` mappings in `globals.css`.
 ## CSS policy
 
 Use CSS only for the Tailwind import, theme tokens, font loading, and global document defaults such as box sizing and baseline focus behavior. Keep page and component presentation in Tailwind utilities and shared shadcn components. When migrating an older page, remove its CSS module import and file in the same change.
+
+Radius utilities map to the design tokens: `rounded-xl` for controls, `rounded-2xl` for cards, and `rounded-3xl` for featured surfaces. Keep these mappings in `@theme inline` so Tailwind classes match the documented scale.

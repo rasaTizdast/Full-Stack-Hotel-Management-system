@@ -1,6 +1,7 @@
 import Image from 'next/image';
 import Link from 'next/link';
 import type { PublicHotel } from '@/lib/public-api';
+import { ButtonLink } from '@/components/ui/button-link';
 
 type HotelHeroProps = {
   hotel: PublicHotel;
@@ -29,14 +30,9 @@ export function HotelHero({ hotel }: HotelHeroProps) {
           {hotel.description}
         </p>
         <div className={'flex flex-wrap items-center gap-4 sm:gap-8'}>
-          <Link
-            className={
-              'inline-flex min-h-14 items-center justify-center rounded-full bg-primary px-5 py-3 font-bold text-primary-foreground no-underline transition-transform hover:-translate-y-0.5 hover:bg-primary-strong focus-visible:outline-3 focus-visible:outline-ring'
-            }
-            href="/#stay-search"
-          >
+          <ButtonLink className="px-6" href="/#stay-search" size="lg">
             بررسی ظرفیت اقامت
-          </Link>
+          </ButtonLink>
           <Link
             className={
               'font-bold text-foreground decoration-highlight decoration-2 underline-offset-8 transition-colors hover:text-accent-brand'
@@ -66,9 +62,13 @@ export function HotelHero({ hotel }: HotelHeroProps) {
             sizes="(max-width: 760px) 100vw, 56vw"
             className={'z-0 object-cover object-center'}
           />
+          <div
+            className="absolute inset-0 z-0 bg-gradient-to-t from-primary-strong/90 via-primary-strong/15 to-transparent"
+            aria-hidden="true"
+          />
           <p
             className={
-              'absolute inset-x-5 bottom-6 z-10 m-0 flex items-end justify-between gap-4 text-sm text-primary-foreground sm:inset-x-8 sm:bottom-8'
+              'absolute inset-x-5 bottom-6 z-10 m-0 flex items-end justify-between gap-4 text-sm font-medium text-primary-foreground drop-shadow-sm sm:inset-x-8 sm:bottom-8'
             }
           >
             <span>تصویرسازی مفهومی از حیاطی در شیراز</span>

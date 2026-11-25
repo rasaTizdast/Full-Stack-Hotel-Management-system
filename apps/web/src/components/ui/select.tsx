@@ -15,7 +15,7 @@ const NativeSelect = React.forwardRef<HTMLSelectElement, React.ComponentProps<'s
         ref={ref}
         data-slot="native-select"
         className={cn(
-          'flex h-12 w-full min-w-0 appearance-none rounded-lg border border-input bg-surface py-2 ps-4 pe-10 text-start text-base text-foreground shadow-sm focus-visible:border-ring focus-visible:outline-3 focus-visible:outline-solid focus-visible:outline-offset-2 focus-visible:outline-ring aria-invalid:border-destructive aria-invalid:bg-destructive-soft aria-invalid:focus-visible:outline-destructive disabled:cursor-not-allowed disabled:opacity-60',
+          'flex h-12 w-full min-w-0 appearance-none rounded-xl border border-input bg-surface py-2 ps-4 pe-10 text-start text-base text-foreground shadow-sm focus-visible:border-ring focus-visible:outline-3 focus-visible:outline-solid focus-visible:outline-offset-2 focus-visible:outline-ring aria-invalid:border-destructive aria-invalid:bg-destructive-soft aria-invalid:focus-visible:outline-destructive disabled:cursor-not-allowed disabled:opacity-60',
           className,
         )}
         {...props}
@@ -39,7 +39,7 @@ const SelectTrigger = React.forwardRef<
     ref={ref}
     data-slot="select-trigger"
     className={cn(
-      'flex h-12 w-full min-w-0 items-center justify-between gap-3 rounded-lg border border-input bg-surface px-4 py-2 text-start text-base text-foreground shadow-sm focus-visible:border-ring focus-visible:outline-3 focus-visible:outline-solid focus-visible:outline-offset-2 focus-visible:outline-ring aria-invalid:border-destructive aria-invalid:bg-destructive-soft aria-invalid:focus-visible:outline-destructive disabled:cursor-not-allowed disabled:opacity-60',
+      'flex h-12 w-full min-w-0 items-center justify-between gap-3 rounded-xl border border-input bg-surface px-4 py-2 text-start text-base text-foreground shadow-sm focus-visible:border-ring focus-visible:outline-3 focus-visible:outline-solid focus-visible:outline-offset-2 focus-visible:outline-ring aria-invalid:border-destructive aria-invalid:bg-destructive-soft aria-invalid:focus-visible:outline-destructive disabled:cursor-not-allowed disabled:opacity-60',
       className,
     )}
     {...props}
@@ -91,7 +91,7 @@ function SelectItem({
     <SelectPrimitive.Item
       data-slot="select-item"
       className={cn(
-        'relative flex min-h-10 w-full cursor-default select-none items-center rounded-lg py-2 ps-3 pe-9 text-sm outline-none data-[highlighted]:bg-primary data-[highlighted]:text-primary-foreground data-[disabled]:pointer-events-none data-[disabled]:opacity-45',
+        'relative flex min-h-11 w-full cursor-default select-none items-center rounded-xl py-2 ps-3 pe-9 text-sm outline-none data-[highlighted]:bg-primary data-[highlighted]:text-primary-foreground data-[disabled]:pointer-events-none data-[disabled]:opacity-45',
         className,
       )}
       {...props}

@@ -1,6 +1,6 @@
-import Link from 'next/link';
 import { BookingFlow } from '@/components/booking/booking-flow';
 import { PublicSiteFrame } from '@/components/public/public-site-frame';
+import { ButtonLink } from '@/components/ui/button-link';
 import {
   getPublicAvailability,
   getPublicHotel,
@@ -70,12 +70,9 @@ function BookingMessage({ kind }: { kind: 'invalid' | 'unavailable' | 'server-er
         {content.title}
       </h1>
       <p className="mt-3 max-w-prose text-base leading-8 text-muted-foreground">{content.body}</p>
-      <Link
-        className="mt-5 inline-flex min-h-11 items-center justify-center rounded-full bg-primary px-5 text-sm font-bold text-primary-foreground transition-colors hover:bg-primary-strong focus-visible:outline-3 focus-visible:outline-ring"
-        href="/#stay-search"
-      >
+      <ButtonLink className="mt-5" href="/#stay-search" size="default">
         جستجوی دوباره
-      </Link>
+      </ButtonLink>
     </section>
   );
 }

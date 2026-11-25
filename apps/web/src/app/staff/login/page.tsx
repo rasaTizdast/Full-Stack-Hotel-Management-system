@@ -42,7 +42,7 @@ export default function StaffLoginPage() {
           >
             بازگشت به وب‌سایت
           </Link>
-          <div className="my-auto py-12">
+          <div className="my-auto py-4 sm:py-6">
             <h1
               id="staff-login-title"
               className="text-3xl font-bold leading-tight text-primary-strong sm:text-4xl"

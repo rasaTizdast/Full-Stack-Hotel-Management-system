@@ -1,10 +1,13 @@
+import { buttonVariants } from '@/components/ui/button-variants';
+
 const card = 'min-w-0 rounded-xl border border-border bg-card p-4 shadow-sm';
 const heading = 'flex min-w-0 items-end justify-between gap-4 max-md:items-start max-md:flex-col';
 const form = 'grid min-w-0 gap-3';
 const actions = 'flex flex-wrap items-center gap-3';
 const field = 'grid min-w-0 gap-1.5 text-sm font-semibold text-foreground';
-const buttonPrimary = 'inline-flex min-h-10 items-center justify-center rounded-lg bg-primary px-5 py-2 font-semibold text-primary-foreground hover:bg-primary-strong disabled:opacity-55';
-const buttonSecondary = 'inline-flex min-h-10 items-center justify-center rounded-lg border border-input bg-surface px-4 py-2 font-semibold text-primary-strong hover:bg-accent disabled:opacity-55';
+const buttonPrimary = buttonVariants({ variant: 'default' });
+const buttonSecondary = buttonVariants({ variant: 'outline' });
+const buttonDanger = buttonVariants({ variant: 'destructive' });
 const status = 'm-0 rounded-lg bg-surface-soft px-4 py-3 text-sm leading-7 text-muted-foreground';
 const error = 'm-0 rounded-lg bg-destructive-soft px-4 py-3 text-sm leading-7 text-destructive';
 const success = 'm-0 rounded-lg bg-success-soft px-4 py-3 text-sm leading-7 text-success';
@@ -22,7 +25,7 @@ export const operationClasses: Record<string, string> = {
   dateForm: 'grid gap-3 sm:grid-cols-[1fr_auto]', reportDate: field, closeSummary: 'grid gap-2 rounded-lg bg-surface-soft p-4',
   actionButtons: actions, dialogActions: actions, dialogBackdrop: 'fixed inset-0 z-50 grid place-items-center bg-foreground/50 p-4',
   confirmDialog: 'grid w-full max-w-lg gap-4 rounded-xl border border-border bg-card p-6 shadow-xl',
-  primaryButton: buttonPrimary, secondaryButton: buttonSecondary, quiet: buttonSecondary, textButton: 'text-sm font-semibold text-primary underline underline-offset-4',
+  primaryButton: buttonPrimary, secondaryButton: buttonSecondary, quiet: buttonSecondary, textButton: 'inline-flex min-h-11 items-center text-sm font-semibold text-primary underline underline-offset-4',
   count: pill, dataNote: status, references: 'break-all text-sm text-muted-foreground', loading: status, denied: error,
   empty: status, error, success,
 };
@@ -59,18 +62,18 @@ export const housekeepingClasses: Record<string, string> = {
   filterHeader: panelHeading, filterHeaderActions: actions, filterActions: actions, appliedFilter: pill, appliedSummary: 'flex flex-wrap gap-2', mobileFilterToggle: buttonSecondary,
   taskGrid: 'grid gap-3 sm:grid-cols-2 xl:grid-cols-3', taskCard: 'grid gap-3 rounded-xl border border-border bg-card p-4 shadow-sm', taskCardUrgent: 'border-destructive/40',
   taskFacts: 'grid gap-2 sm:grid-cols-2', cardTopline: panelHeading, cardActions: actions, field, assigneeField: field,
-  fieldHelp: 'text-xs font-normal text-muted-foreground', priority: pill, priorityLOW: 'bg-surface-soft text-muted-foreground', priorityNORMAL: 'bg-primary/10 text-primary', priorityHIGH: 'bg-warning-soft text-warning', priorityURGENT: 'bg-destructive-soft text-destructive', statusTag: pill, statusOpen: 'bg-warning-soft text-warning', dangerButton: 'inline-flex min-h-10 items-center rounded-lg bg-destructive px-4 py-2 font-semibold text-white',
+  fieldHelp: 'text-xs font-normal text-muted-foreground', priority: pill, priorityLOW: 'bg-surface-soft text-muted-foreground', priorityNORMAL: 'bg-primary/10 text-primary', priorityHIGH: 'bg-warning-soft text-warning', priorityURGENT: 'bg-destructive-soft text-destructive', statusTag: pill, statusOpen: 'bg-warning-soft text-warning', dangerButton: buttonDanger,
   dateMark: pill, dueContext: 'text-xs text-muted-foreground', overdueContext: 'text-xs font-semibold text-destructive', roomMeta: 'text-sm text-muted-foreground', roomReadinessFacts: 'grid gap-2 sm:grid-cols-2',
   readinessGrid: 'grid gap-3 sm:grid-cols-2 xl:grid-cols-3', readinessCard: 'grid gap-3 rounded-xl border border-border bg-card p-4 shadow-sm', discrepancyList: 'grid gap-3', discrepancyCard: card, discrepancyFacts: 'grid gap-2 sm:grid-cols-2',
   resolutionNote: 'rounded-lg bg-surface-soft p-3 text-sm', freshness: status, emptyState: status, inlineError: error, error, alert: 'rounded-lg bg-warning-soft p-3 text-sm text-warning', success,
-  actionBar: actions, pageStatus: status, denied: error, reportHint: lead, primaryButton: buttonPrimary, secondaryButton: buttonSecondary, textButton: 'text-sm font-semibold text-primary underline underline-offset-4',
+  actionBar: actions, pageStatus: status, denied: error, reportHint: lead, primaryButton: buttonPrimary, secondaryButton: buttonSecondary, textButton: 'inline-flex min-h-11 items-center text-sm font-semibold text-primary underline underline-offset-4',
   dialogActions: actions, dialogField: field, dialogForm: form, dialogLead: lead, radioGroup: 'grid gap-2', radioOption: 'flex items-center gap-2 rounded-lg border border-border p-3',
   pagination: panelHeading, sectionHeading: panelHeading, empty: status, errorPanel: error, retryNote: status, wideField: 'sm:col-span-2',
 };
 
 export const frontDeskClasses: Record<string, string> = {
   page: 'grid min-w-0 gap-5 text-foreground', header: heading, eyebrow, lead, filters: card, filterFields: 'grid gap-3 sm:grid-cols-2 xl:grid-cols-4',
-  queueNav: 'flex flex-wrap gap-2', actionBar: actions, primaryButton: buttonPrimary, secondaryButton: buttonSecondary, textButton: 'text-sm font-semibold text-primary underline underline-offset-4',
+  queueNav: 'flex flex-wrap gap-2', actionBar: actions, primaryButton: buttonPrimary, secondaryButton: buttonSecondary, textButton: 'inline-flex min-h-11 items-center text-sm font-semibold text-primary underline underline-offset-4',
   status: pill, statusDue: 'bg-warning-soft text-warning', statusNeutral: 'bg-surface-soft text-muted-foreground', success, error, accessDenied: error,
   dialog: 'relative z-50 grid w-full max-w-2xl gap-4 rounded-xl border border-border bg-card p-5 shadow-xl', dialogBackdrop: 'fixed inset-0 z-40 grid place-items-center bg-foreground/50 p-4',
   dialogActions: actions, detailFacts: 'grid gap-3 sm:grid-cols-2', detailPanel: card, formGrid: 'grid gap-3 sm:grid-cols-2', preview: 'rounded-lg bg-surface-soft p-4',

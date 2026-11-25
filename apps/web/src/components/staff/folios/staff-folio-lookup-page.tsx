@@ -1,10 +1,10 @@
 'use client';
 
 import { useState, type FormEvent } from 'react';
-import Link from 'next/link';
 import { lookupStaffFolio, type StaffFolioLookup } from '@/lib/staff-folios-api';
 import { formatGregorianAsJalali } from '@/lib/jalali-date';
 import { Button } from '@/components/ui/button';
+import { ButtonLink } from '@/components/ui/button-link';
 import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 
@@ -118,12 +118,9 @@ export function StaffFolioLookupPage() {
             <strong>{formatToman(folio.balanceToman)}</strong>
           </div>
           <div className={folioStyles.formActions}>
-            <Link
-              className="inline-flex min-h-10 items-center justify-center rounded-lg bg-primary px-5 py-2 font-semibold text-primary-foreground hover:bg-primary-strong"
-              href={`/staff/folios/${folio.bookingId}`}
-            >
+            <ButtonLink href={`/staff/folios/${folio.bookingId}`}>
               باز کردن صورتحساب
-            </Link>
+            </ButtonLink>
           </div>
         </section>
       ) : null}

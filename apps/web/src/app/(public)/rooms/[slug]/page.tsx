@@ -3,6 +3,7 @@ import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { PublicSiteFrame } from '@/components/public/public-site-frame';
 import { getRoomImage } from '@/components/public/room-imagery';
+import { ButtonLink } from '@/components/ui/button-link';
 import { ScrollReveal } from '@/components/ui/scroll-reveal';
 import { getPublicRoomTypes } from '@/lib/public-api';
 import { requirePublicHotel } from '@/lib/public-page-data';
@@ -128,14 +129,9 @@ export default async function RoomDetailPage({ params }: { params: Promise<{ slu
             ) : null}
 
             <div className={'mt-7 [&_p]:mt-3 [&_p]:text-xs [&_p]:text-muted-foreground'}>
-              <Link
-                className={
-                  'inline-flex min-h-14 items-center justify-center rounded-full bg-primary px-5 font-bold text-primary-foreground no-underline transition-colors hover:bg-primary-strong focus-visible:outline-3 focus-visible:outline-ring'
-                }
-                href="/#stay-search"
-              >
+              <ButtonLink className="px-6" href="/#stay-search" size="lg">
                 بررسی تاریخ و ظرفیت
-              </Link>
+              </ButtonLink>
               <p>تأیید نهایی درخواست پس از بررسی کارکنان انجام می‌شود.</p>
             </div>
 

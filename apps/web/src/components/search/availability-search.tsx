@@ -1,9 +1,9 @@
 'use client';
 
-import Link from 'next/link';
 import Image from 'next/image';
 import { useState, type FormEvent } from 'react';
 import { Button } from '@/components/ui/button';
+import { ButtonLink } from '@/components/ui/button-link';
 import { Field, FieldDescription, FieldError, FieldLabel } from '@/components/ui/field';
 import { Input } from '@/components/ui/input';
 import {
@@ -139,23 +139,22 @@ function AvailabilityRoomCard({
           </p>
         )}
         <div className={'mt-auto flex flex-wrap items-center gap-2 pt-4'}>
-          <Link
-            className={
-              'inline-flex min-h-11 items-center justify-center rounded-full px-3 text-sm font-semibold text-primary hover:bg-muted focus-visible:outline-3 focus-visible:outline-ring'
-            }
+          <ButtonLink
+            className="px-3"
             href={`/rooms/${encodeURIComponent(room.slug)}`}
+            size="default"
+            variant="ghost"
           >
             جزئیات اتاق
-          </Link>
+          </ButtonLink>
           {room.isAvailable && room.totalPriceToman !== null ? (
-            <Link
-              className={
-                'ms-auto inline-flex min-h-11 items-center justify-center rounded-full bg-primary px-4 text-sm font-semibold text-primary-foreground hover:bg-primary-strong focus-visible:outline-3 focus-visible:outline-ring'
-              }
+            <ButtonLink
+              className="ms-auto px-4"
               href={`/booking?${bookingQuery.toString()}`}
+              size="default"
             >
               درخواست اقامت
-            </Link>
+            </ButtonLink>
           ) : null}
         </div>
       </div>

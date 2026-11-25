@@ -7,6 +7,7 @@ import { Controller, useForm, useWatch } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { AlertTriangle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { ButtonLink } from '@/components/ui/button-link';
 import { Alert } from '@/components/ui/alert';
 import { Card } from '@/components/ui/card';
 import {
@@ -248,14 +249,9 @@ function Confirmation({
           </a>
         ) : null}
       </div>
-      <Link
-        href="/"
-        className={
-          'mt-3 inline-flex min-h-11 items-center justify-center rounded-full bg-primary px-5 py-2 text-sm font-bold text-primary-foreground transition-colors hover:bg-primary-strong focus-visible:outline-3 focus-visible:outline-ring'
-        }
-      >
+      <ButtonLink className="mt-3" href="/" size="default">
         بازگشت به اقامتگاه
-      </Link>
+      </ButtonLink>
     </section>
   );
 }

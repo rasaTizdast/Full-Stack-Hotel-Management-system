@@ -22,6 +22,7 @@ import { extendStaffStay } from '@/lib/staff-front-desk-api';
 import { useStaffSession } from '../staff-session-provider';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { buttonVariants } from '@/components/ui/button-variants';
 import { Input } from '@/components/ui/input';
 
 const folioStyles = {
@@ -41,9 +42,9 @@ const folioStyles = {
   balanceCard: 'grid content-center justify-items-start gap-1 rounded-lg border-s-4 border-highlight bg-surface-soft p-4 max-md:border-s-0 max-md:border-t-4 [&_span]:text-xs [&_span]:text-muted-foreground [&_small]:text-xs [&_small]:text-muted-foreground [&_strong]:text-2xl [&_strong]:font-bold [&_strong]:text-primary-strong [&_strong]:tabular-nums',
   formGrid: 'mt-3 grid grid-cols-1 items-end gap-3 md:grid-cols-3',
   field: 'grid min-w-0 gap-1.5 text-sm font-semibold text-foreground [&_small]:text-xs [&_small]:font-normal [&_small]:text-muted-foreground',
-  primaryButton: 'inline-flex min-h-10 items-center justify-center rounded-lg bg-primary px-5 py-2 font-semibold text-primary-foreground hover:bg-primary-strong',
-  secondaryButton: 'inline-flex min-h-10 items-center justify-center rounded-lg border border-input bg-surface px-4 py-2 font-semibold text-primary-strong hover:bg-accent',
-  textButton: 'min-h-8 px-2 text-primary underline underline-offset-4',
+  primaryButton: buttonVariants({ variant: 'default' }),
+  secondaryButton: buttonVariants({ variant: 'outline' }),
+  textButton: 'inline-flex min-h-11 items-center px-2 text-primary underline underline-offset-4',
   tableWrap: 'mt-3 max-w-full overflow-x-auto rounded-lg border border-border',
   ledger: 'w-full min-w-[930px] border-separate border-spacing-0 text-start text-sm [&_th]:sticky [&_th]:top-0 [&_th]:bg-surface-soft [&_th]:font-extrabold [&_th]:text-primary-strong [&_th]:text-start [&_th]:px-3 [&_th]:py-2.5 [&_td]:border-t [&_td]:border-border [&_td]:px-3 [&_td]:py-2.5 [&_td]:align-top [&_td_small]:mt-1 [&_td_small]:block [&_td_small]:leading-6 [&_td_small]:text-muted-foreground [&_tbody_tr:last-child_td]:border-b-0',
   runningBalance: 'whitespace-nowrap font-extrabold text-primary-strong',
