@@ -160,9 +160,13 @@ try {
   await publicPage.getByRole('heading', { name: 'درخواست اقامت' }).waitFor();
   await publicPage.evaluate(() => document.fonts.ready);
   await revealPage(publicPage);
+  await publicPage
+    .locator('img[src*="garden-double"]')
+    .first()
+    .evaluate((image) => image.decode());
   await publicPage.screenshot({
     path: resolve(outputDirectory, 'public-booking.png'),
-    fullPage: true,
+    fullPage: false,
   });
   await publicPage.setViewportSize({ width: 390, height: 844 });
   await publicPage.getByRole('form', { name: 'فرم درخواست اقامت' }).evaluate((element) => {
