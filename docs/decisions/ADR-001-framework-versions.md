@@ -9,7 +9,7 @@ The local environment runs Node.js 22.19.0 and pnpm 10.26.2. The PRD requires Ne
 
 ## Decision
 
-Use Next.js 16.4.6, React 19.3.1, Tailwind CSS 4.3.5, NestJS 11.2.10, and Nest CLI 11.0.24. Pin pnpm 10.26.2 through the root `packageManager` field. Keep the project Node engine floor at 22.12.0. Use ESLint 9 in the web app because the current Next.js React and accessibility plugins declare peer support through ESLint 9; use ESLint 10 in the Nest app, whose flat-config toolchain supports it.
+Use Next.js 16.4.6, React 19.3.1, Tailwind CSS 4.3.5, NestJS 11.2.10, and Nest CLI 11.0.24. Pin pnpm 10.26.2 through the root `packageManager` field. Set the project Node engine floor to 22.19.0, which satisfies the locked `undici` 8.12.4 dependency. Use ESLint 9 in the web app because the current Next.js React and accessibility plugins declare peer support through ESLint 9; use ESLint 10 in the Nest app, whose flat-config toolchain supports it.
 
 ## Consequences
 

@@ -66,7 +66,7 @@ The service catalog, private folios, staff reports, and business-day close are s
 
 ## Requirements
 
-- Node.js 22.12 or newer
+- Node.js 22.19 or newer
 - Corepack and pnpm 10.26.2
 - Docker Desktop with Docker Compose for the local PostgreSQL service
 
