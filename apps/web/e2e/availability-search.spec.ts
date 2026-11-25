@@ -43,7 +43,7 @@ test('guests search Persian dates and see API-priced available rooms', async ({
     has: page.getByRole('heading', { name: 'اتاق‌های مناسب شما' }),
   });
   const gardenRoom = results.locator(
-    `article:has(a[href="/rooms/${encodeURIComponent(stay.roomTypeSlug)}"])`,
+    `[data-slot="card"]:has(a[href="/rooms/${encodeURIComponent(stay.roomTypeSlug)}"])`,
   );
   await expect(gardenRoom).toBeVisible();
   await expect(gardenRoom).toContainText('حداکثر');

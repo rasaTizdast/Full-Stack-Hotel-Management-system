@@ -4,7 +4,6 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { staffClass } from '@/components/staff/staff-classes';
 
-
 import { useCallback, useEffect, useRef, useState, type FormEvent } from 'react';
 import Link from 'next/link';
 import {
@@ -113,7 +112,10 @@ export function StaffAccountsPage() {
   if (status !== 'authenticated' || !staff) return null;
   if (!isAdmin) {
     return (
-      <section className={staffClass('staff-accounts-denied')} aria-labelledby="staff-accounts-denied-title">
+      <section
+        className={staffClass('staff-accounts-denied')}
+        aria-labelledby="staff-accounts-denied-title"
+      >
         <h1 id="staff-accounts-denied-title">دسترسی به مدیریت کارکنان</h1>
         <p role="alert">این بخش فقط برای مدیر اقامتگاه در دسترس است.</p>
         <Link href="/staff">بازگشت به نمای کلی</Link>
@@ -258,7 +260,11 @@ export function StaffAccountsPage() {
                     rows={2}
                   />
                 </label>
-                <button className={staffClass('staff-accounts__primary')} type="submit" disabled={isSaving}>
+                <button
+                  className={staffClass('staff-accounts__primary')}
+                  type="submit"
+                  disabled={isSaving}
+                >
                   ذخیره نقش
                 </button>
               </>
@@ -274,7 +280,11 @@ export function StaffAccountsPage() {
                     rows={2}
                   />
                 </label>
-                <button className={staffClass('staff-accounts__danger')} type="submit" disabled={isSaving}>
+                <button
+                  className={staffClass('staff-accounts__danger')}
+                  type="submit"
+                  disabled={isSaving}
+                >
                   {isSaving ? 'در حال ثبت…' : 'تأیید غیرفعال‌سازی'}
                 </button>
               </>
@@ -398,14 +408,21 @@ export function StaffAccountsPage() {
             </p>
           )}
           <div className={staffClass('staff-accounts__form-actions')}>
-            <button className={staffClass('staff-accounts__primary')} type="submit" disabled={isSaving}>
+            <button
+              className={staffClass('staff-accounts__primary')}
+              type="submit"
+              disabled={isSaving}
+            >
               {isSaving ? 'در حال ایجاد…' : 'ایجاد حساب'}
             </button>
           </div>
         </form>
       )}
 
-      <section className={staffClass('staff-accounts__list')} aria-labelledby="staff-accounts-list-title">
+      <section
+        className={staffClass('staff-accounts__list')}
+        aria-labelledby="staff-accounts-list-title"
+      >
         <div className={staffClass('staff-accounts__list-heading')}>
           <div>
             <h2 id="staff-accounts-list-title">حساب‌های ثبت‌شده</h2>
@@ -470,7 +487,9 @@ export function StaffAccountsPage() {
                     <td>{getStaffRoleLabel(account.role)}</td>
                     <td>
                       <span
-                        className={staffClass(`staff-accounts__status${account.isActive ? ' staff-accounts__status--active' : ''}`)}
+                        className={staffClass(
+                          `staff-accounts__status${account.isActive ? ' staff-accounts__status--active' : ''}`,
+                        )}
                       >
                         {account.isActive ? 'فعال' : 'غیرفعال'}
                       </span>
@@ -488,13 +507,18 @@ export function StaffAccountsPage() {
         )}
 
         {!isLoading && !loadError && accounts.length > 0 && (
-          <ul className={staffClass('staff-accounts__mobile-cards')} aria-label="فهرست حساب‌های کارکنان">
+          <ul
+            className={staffClass('staff-accounts__mobile-cards')}
+            aria-label="فهرست حساب‌های کارکنان"
+          >
             {accounts.map((account) => (
               <li className={staffClass('staff-accounts__mobile-card')} key={account.id}>
                 <header>
                   <h3>{account.username}</h3>
                   <span
-                    className={staffClass(`staff-accounts__status${account.isActive ? ' staff-accounts__status--active' : ''}`)}
+                    className={staffClass(
+                      `staff-accounts__status${account.isActive ? ' staff-accounts__status--active' : ''}`,
+                    )}
                   >
                     {account.isActive ? 'فعال' : 'غیرفعال'}
                   </span>
@@ -531,7 +555,10 @@ export function StaffAccountsPage() {
         )}
 
         {result && result.total > result.pageSize && (
-          <nav className={staffClass('staff-accounts__pagination')} aria-label="صفحه‌های حساب کارکنان">
+          <nav
+            className={staffClass('staff-accounts__pagination')}
+            aria-label="صفحه‌های حساب کارکنان"
+          >
             <button
               className={staffClass('staff-accounts__secondary')}
               type="button"

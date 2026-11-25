@@ -1,7 +1,6 @@
 'use client';
 import { staffClass } from '@/components/staff/staff-classes';
 
-
 import { useEffect, useRef, useState, type FormEvent } from 'react';
 import Link from 'next/link';
 import { toast } from 'sonner';
@@ -118,7 +117,10 @@ export function StaffInventoryPage() {
 
   if (!canManageInventory) {
     return (
-      <section className={staffClass('staff-inventory-denied')} aria-labelledby="staff-inventory-denied-title">
+      <section
+        className={staffClass('staff-inventory-denied')}
+        aria-labelledby="staff-inventory-denied-title"
+      >
         <h1 id="staff-inventory-denied-title">دسترسی به مدیریت موجودی</h1>
         <p role="alert">این بخش برای مدیر اقامتگاه و مدیر شیفت در دسترس است.</p>
       </section>

@@ -1,7 +1,6 @@
 'use client';
 import { staffClass } from '@/components/staff/staff-classes';
 
-
 import Link from 'next/link';
 import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { HotelLogo } from '@/components/brand/hotel-logo';
@@ -90,7 +89,9 @@ export function StaffDashboardShell({
             </span>
             <span className={staffClass('staff-identity__copy')}>
               <strong>{staff.username}</strong>
-              <small className={staffClass('staff-identity__role')}>{getStaffRoleLabel(staff.role)}</small>
+              <small className={staffClass('staff-identity__role')}>
+                {getStaffRoleLabel(staff.role)}
+              </small>
             </span>
             {staff.email.toLowerCase() !== staff.username.trim().toLowerCase() && (
               <span className={staffClass('staff-identity__email')} dir="ltr">
@@ -120,9 +121,15 @@ export function StaffDashboardShell({
             <span>شیراز، ایران</span>
           </div>
           <div
-            className={staffClass(`staff-nav-viewport${hasNavOverflow ? ' staff-nav-viewport--overflow' : ''}`)}
+            className={staffClass(
+              `staff-nav-viewport${hasNavOverflow ? ' staff-nav-viewport--overflow' : ''}`,
+            )}
           >
-            <nav ref={staffNavRef} aria-label="منوی پنل کارکنان" className={staffClass('staff-nav')}>
+            <nav
+              ref={staffNavRef}
+              aria-label="منوی پنل کارکنان"
+              className={staffClass('staff-nav')}
+            >
               {staff.mustChangePassword ? (
                 <Link
                   href="/staff/change-password"
@@ -343,7 +350,11 @@ export function StaffDashboardShell({
                 </>
               )}
             </nav>
-            <span className={staffClass('staff-nav-overflow-cue')} data-staff-nav-overflow-cue aria-hidden="true">
+            <span
+              className={staffClass('staff-nav-overflow-cue')}
+              data-staff-nav-overflow-cue
+              aria-hidden="true"
+            >
               <svg viewBox="0 0 16 16" fill="none">
                 <path d="m10 3-5 5 5 5" />
               </svg>

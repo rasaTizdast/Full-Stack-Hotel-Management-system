@@ -1,7 +1,6 @@
 'use client';
 import { staffClass } from '@/components/staff/staff-classes';
 
-
 import Link from 'next/link';
 import { useStaffSession } from '@/components/staff/staff-session-provider';
 import { getStaffRoleLabel } from '@/lib/staff-navigation';
@@ -146,7 +145,10 @@ export default function StaffDashboardPage() {
           </div>
         </>
       ) : (
-        <section className={staffClass('staff-overview__quiet-state')} aria-label="وضعیت کارهای امروز">
+        <section
+          className={staffClass('staff-overview__quiet-state')}
+          aria-label="وضعیت کارهای امروز"
+        >
           <span aria-hidden="true">✓</span>
           <div>
             <h2>هیچ کاری برای انجام در این لحظه ثبت نشده است.</h2>

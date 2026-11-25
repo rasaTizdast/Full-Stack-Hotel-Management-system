@@ -81,7 +81,9 @@ describe('ServiceCatalogPage', () => {
     expect(api.updateStaffServiceItem).not.toHaveBeenCalled();
 
     fireEvent.change(priceFields[1]!, { target: { value: '150000' } });
-    fireEvent.click(screen.getByLabelText('برای ثبت‌های جدید فعال باشد'));
+    fireEvent.click(
+      screen.getByRole('checkbox', { name: 'برای ثبت‌های جدید فعال باشد · صبحانه ایرانی' }),
+    );
     fireEvent.click(screen.getByRole('button', { name: 'ذخیره تغییرات' }));
     await waitFor(() =>
       expect(api.updateStaffServiceItem).toHaveBeenCalledWith(

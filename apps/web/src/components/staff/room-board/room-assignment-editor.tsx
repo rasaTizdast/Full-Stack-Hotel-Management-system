@@ -131,7 +131,11 @@ export function RoomAssignmentEditor({
           {staleConflict.state === 'error' ? (
             <div role="alert">
               <p>{staleConflict.message}</p>
-              <button className={staffClass('button button--quiet')} type="button" onClick={onLoadLatest}>
+              <button
+                className={staffClass('button button--quiet')}
+                type="button"
+                onClick={onLoadLatest}
+              >
                 دریافت دوبارهٔ آخرین تخصیص‌ها
               </button>
             </div>

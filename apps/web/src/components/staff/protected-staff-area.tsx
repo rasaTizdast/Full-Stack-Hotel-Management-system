@@ -1,7 +1,6 @@
 'use client';
 import { staffClass } from '@/components/staff/staff-classes';
 
-
 import type { ReactNode } from 'react';
 import { useEffect } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
@@ -44,7 +43,10 @@ function SessionGate({ children }: Readonly<{ children: ReactNode }>) {
       <main className={staffClass('staff-session-state')} aria-live="polite">
         <h1>پنل کارکنان در دسترس نیست</h1>
         <p role="alert">{error}</p>
-        <button className={staffClass('button button--jade')} onClick={() => window.location.reload()}>
+        <button
+          className={staffClass('button button--jade')}
+          onClick={() => window.location.reload()}
+        >
           تلاش دوباره
         </button>
       </main>

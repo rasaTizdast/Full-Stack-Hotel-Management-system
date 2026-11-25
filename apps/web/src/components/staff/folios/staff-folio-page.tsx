@@ -29,24 +29,30 @@ const folioStyles = {
   page: 'grid min-w-0 gap-4 text-foreground',
   header: 'flex min-w-0 items-end justify-between gap-4 max-md:items-start max-md:flex-col',
   headerActions: 'flex min-w-0 flex-wrap justify-end gap-3 max-md:justify-start',
-  sectionHeading: 'flex min-w-0 items-center justify-between gap-4 max-md:items-start max-md:flex-col',
+  sectionHeading:
+    'flex min-w-0 items-center justify-between gap-4 max-md:items-start max-md:flex-col',
   formActions: 'col-span-full flex flex-wrap items-center justify-start gap-3',
   eyebrow: 'mb-1 text-[length:var(--text-caption)] font-bold text-accent-brand',
   lead: 'mt-2 max-w-[70ch] text-sm leading-7 text-muted-foreground',
   roleHint: 'mt-2 max-w-[70ch] text-sm leading-7 text-muted-foreground',
   panelHint: 'mt-3 max-w-[70ch] text-sm leading-7 text-muted-foreground',
-  summary: 'grid min-w-0 grid-cols-1 items-stretch gap-4 rounded-xl border border-border bg-card p-4 shadow-sm sm:p-5 md:grid-cols-[minmax(0,1fr)_minmax(14rem,0.5fr)]',
+  summary:
+    'grid min-w-0 grid-cols-1 items-stretch gap-4 rounded-xl border border-border bg-card p-4 shadow-sm sm:p-5 md:grid-cols-[minmax(0,1fr)_minmax(14rem,0.5fr)]',
   panel: 'min-w-0 rounded-xl border border-border bg-card p-4 shadow-sm sm:p-5',
   emptyState: 'm-0 rounded-lg bg-surface-soft px-4 py-3 text-sm leading-7 text-muted-foreground',
-  guestBlock: 'grid content-start gap-1 text-sm text-muted-foreground [&_h2]:m-0 [&_h2]:text-xl [&_h2]:font-bold [&_h2]:text-primary-strong [&_p:not(:first-child)]:my-1',
-  balanceCard: 'grid content-center justify-items-start gap-1 rounded-lg border-s-4 border-highlight bg-surface-soft p-4 max-md:border-s-0 max-md:border-t-4 [&_span]:text-xs [&_span]:text-muted-foreground [&_small]:text-xs [&_small]:text-muted-foreground [&_strong]:text-2xl [&_strong]:font-bold [&_strong]:text-primary-strong [&_strong]:tabular-nums',
+  guestBlock:
+    'grid content-start gap-1 text-sm text-muted-foreground [&_h2]:m-0 [&_h2]:text-xl [&_h2]:font-bold [&_h2]:text-primary-strong [&_p:not(:first-child)]:my-1',
+  balanceCard:
+    'grid content-center justify-items-start gap-1 rounded-lg border-s-4 border-highlight bg-surface-soft p-4 max-md:border-s-0 max-md:border-t-4 [&_span]:text-xs [&_span]:text-muted-foreground [&_small]:text-xs [&_small]:text-muted-foreground [&_strong]:text-2xl [&_strong]:font-bold [&_strong]:text-primary-strong [&_strong]:tabular-nums',
   formGrid: 'mt-3 grid grid-cols-1 items-end gap-3 md:grid-cols-3',
-  field: 'grid min-w-0 gap-1.5 text-sm font-semibold text-foreground [&_small]:text-xs [&_small]:font-normal [&_small]:text-muted-foreground',
+  field:
+    'grid min-w-0 gap-1.5 text-sm font-semibold text-foreground [&_small]:text-xs [&_small]:font-normal [&_small]:text-muted-foreground',
   primaryButton: buttonVariants({ variant: 'default' }),
   secondaryButton: buttonVariants({ variant: 'outline' }),
   textButton: 'inline-flex min-h-11 items-center px-2 text-primary underline underline-offset-4',
   tableWrap: 'mt-3 max-w-full overflow-x-auto rounded-lg border border-border',
-  ledger: 'w-full min-w-[930px] border-separate border-spacing-0 text-start text-sm [&_th]:sticky [&_th]:top-0 [&_th]:bg-surface-soft [&_th]:font-extrabold [&_th]:text-primary-strong [&_th]:text-start [&_th]:px-3 [&_th]:py-2.5 [&_td]:border-t [&_td]:border-border [&_td]:px-3 [&_td]:py-2.5 [&_td]:align-top [&_td_small]:mt-1 [&_td_small]:block [&_td_small]:leading-6 [&_td_small]:text-muted-foreground [&_tbody_tr:last-child_td]:border-b-0',
+  ledger:
+    'w-full min-w-[930px] border-separate border-spacing-0 text-start text-sm [&_th]:sticky [&_th]:top-0 [&_th]:bg-surface-soft [&_th]:font-extrabold [&_th]:text-primary-strong [&_th]:text-start [&_th]:px-3 [&_th]:py-2.5 [&_td]:border-t [&_td]:border-border [&_td]:px-3 [&_td]:py-2.5 [&_td]:align-top [&_td_small]:mt-1 [&_td_small]:block [&_td_small]:leading-6 [&_td_small]:text-muted-foreground [&_tbody_tr:last-child_td]:border-b-0',
   runningBalance: 'whitespace-nowrap font-extrabold text-primary-strong',
   debitBadge: 'border-0 bg-destructive-soft text-destructive',
   creditBadge: 'border-0 bg-success-soft text-success',
@@ -159,6 +165,7 @@ function serviceDateInput(isoDate: string, value: string, onChange: (value: stri
         placeholder="۱۴۰۵/۰۹/۰۲"
         value={value}
         onChange={(event) => onChange(event.target.value)}
+        aria-label="تاریخ خدمت · شمسی"
         aria-describedby="folio-service-date-help"
       />
       <small id="folio-service-date-help">
@@ -610,7 +617,10 @@ export function StaffFolioPage({ bookingId }: { bookingId: string }) {
               تمدید با ظرفیت اتاق و نرخ هر شب بررسی و ثبت می‌شود.
             </span>
           </div>
-          <form className={folioStyles.formGrid} onSubmit={(event) => void submitStayExtension(event)}>
+          <form
+            className={folioStyles.formGrid}
+            onSubmit={(event) => void submitStayExtension(event)}
+          >
             {stayExtensionDateInput(extensionDate, setExtensionDate)}
             <label className={folioStyles.field}>
               <span>دلیل تمدید</span>
@@ -622,7 +632,11 @@ export function StaffFolioPage({ bookingId }: { bookingId: string }) {
               />
             </label>
             <div className={folioStyles.formActions}>
-              <Button className={folioStyles.primaryButton} type="submit" disabled={busy || !csrfToken}>
+              <Button
+                className={folioStyles.primaryButton}
+                type="submit"
+                disabled={busy || !csrfToken}
+              >
                 {busy ? 'در حال ثبت…' : 'ثبت تمدید اقامت'}
               </Button>
             </div>
@@ -666,7 +680,10 @@ export function StaffFolioPage({ bookingId }: { bookingId: string }) {
               اعتبار مهمان باید پیش از خروج نهایی با استرداد مجاز تسویه شود.
             </p>
           )}
-          <form className={folioStyles.formActions} onSubmit={(event) => void submitCheckout(event)}>
+          <form
+            className={folioStyles.formActions}
+            onSubmit={(event) => void submitCheckout(event)}
+          >
             <Button
               className={folioStyles.primaryButton}
               type="submit"
@@ -685,7 +702,9 @@ export function StaffFolioPage({ bookingId }: { bookingId: string }) {
               <p className={folioStyles.eyebrow}>دریافت آفلاین</p>
               <h2 id="folio-payment-heading">ثبت پرداخت</h2>
             </div>
-            <span className={folioStyles.roleHint}>مبلغ باید مثبت و حداکثر برابر با مانده باشد.</span>
+            <span className={folioStyles.roleHint}>
+              مبلغ باید مثبت و حداکثر برابر با مانده باشد.
+            </span>
           </div>
           <form className={folioStyles.formGrid} onSubmit={(event) => void submitPayment(event)}>
             <label className={folioStyles.field}>
@@ -700,7 +719,8 @@ export function StaffFolioPage({ bookingId }: { bookingId: string }) {
             </label>
             <label className={folioStyles.field}>
               <span>روش پرداخت</span>
-              <NativeSelect className="h-12 w-full min-w-0 rounded-lg border border-input bg-surface px-4 py-2 text-foreground shadow-sm focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-ring"
+              <NativeSelect
+                className="h-12 w-full min-w-0 rounded-lg border border-input bg-surface px-4 py-2 text-foreground shadow-sm focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-ring"
                 value={paymentMethod}
                 onChange={(event) =>
                   setPaymentMethod(event.target.value as StaffFolioPaymentInput['method'])
@@ -722,7 +742,11 @@ export function StaffFolioPage({ bookingId }: { bookingId: string }) {
               />
             </label>
             <div className={folioStyles.formActions}>
-              <Button className={folioStyles.primaryButton} type="submit" disabled={busy || !csrfToken}>
+              <Button
+                className={folioStyles.primaryButton}
+                type="submit"
+                disabled={busy || !csrfToken}
+              >
                 {busy ? 'در حال ثبت…' : 'ثبت پرداخت'}
               </Button>
             </div>
@@ -750,7 +774,8 @@ export function StaffFolioPage({ bookingId }: { bookingId: string }) {
             <form className={folioStyles.formGrid} onSubmit={(event) => void postService(event)}>
               <label className={folioStyles.field}>
                 <span>خدمت</span>
-                <NativeSelect className="h-12 w-full min-w-0 rounded-lg border border-input bg-surface px-4 py-2 text-foreground shadow-sm focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-ring"
+                <NativeSelect
+                  className="h-12 w-full min-w-0 rounded-lg border border-input bg-surface px-4 py-2 text-foreground shadow-sm focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-ring"
                   value={serviceItemId}
                   onChange={(event) => setServiceItemId(event.target.value)}
                   required
@@ -780,7 +805,8 @@ export function StaffFolioPage({ bookingId }: { bookingId: string }) {
               {serviceDateInput(getHotelTodayIso(), serviceDate, setServiceDate)}
               <label className={folioStyles.field}>
                 <span>اتاق مرتبط · اختیاری</span>
-                <NativeSelect className="h-12 w-full min-w-0 rounded-lg border border-input bg-surface px-4 py-2 text-foreground shadow-sm focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-ring"
+                <NativeSelect
+                  className="h-12 w-full min-w-0 rounded-lg border border-input bg-surface px-4 py-2 text-foreground shadow-sm focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-ring"
                   value={roomAssignmentId}
                   onChange={(event) => setRoomAssignmentId(event.target.value)}
                 >
@@ -821,11 +847,15 @@ export function StaffFolioPage({ bookingId }: { bookingId: string }) {
           </span>
         </div>
         {folio.entries.length === 0 ? (
-          <p className={folioStyles.emptyState}>هنوز هزینه یا پرداختی در این صورتحساب ثبت نشده است.</p>
+          <p className={folioStyles.emptyState}>
+            هنوز هزینه یا پرداختی در این صورتحساب ثبت نشده است.
+          </p>
         ) : (
           <div className={folioStyles.tableWrap}>
             <table className={folioStyles.ledger}>
-              <caption className={folioStyles.srOnly}>ردیف‌های صورتحساب با مانده پس از هر ثبت</caption>
+              <caption className={folioStyles.srOnly}>
+                ردیف‌های صورتحساب با مانده پس از هر ثبت
+              </caption>
               <thead>
                 <tr>
                   <th scope="col">تاریخ</th>
@@ -870,7 +900,9 @@ export function StaffFolioPage({ bookingId }: { bookingId: string }) {
                       <Badge
                         variant="outline"
                         className={
-                          entry.direction === 'DEBIT' ? folioStyles.debitBadge : folioStyles.creditBadge
+                          entry.direction === 'DEBIT'
+                            ? folioStyles.debitBadge
+                            : folioStyles.creditBadge
                         }
                       >
                         {entry.direction === 'DEBIT' ? 'بدهکار' : 'بستانکار'}
@@ -976,7 +1008,11 @@ export function StaffFolioPage({ bookingId }: { bookingId: string }) {
               />
             </label>
             <div className={folioStyles.formActions}>
-              <Button className={folioStyles.primaryButton} type="submit" disabled={busy || !csrfToken}>
+              <Button
+                className={folioStyles.primaryButton}
+                type="submit"
+                disabled={busy || !csrfToken}
+              >
                 {busy ? 'در حال ثبت…' : 'ثبت اصلاح'}
               </Button>
             </div>
@@ -1033,7 +1069,11 @@ export function StaffFolioPage({ bookingId }: { bookingId: string }) {
               />
             </label>
             <div className={folioStyles.formActions}>
-              <Button className={folioStyles.primaryButton} type="submit" disabled={busy || !csrfToken}>
+              <Button
+                className={folioStyles.primaryButton}
+                type="submit"
+                disabled={busy || !csrfToken}
+              >
                 {busy ? 'در حال ثبت…' : 'تأیید استرداد'}
               </Button>
             </div>

@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import {
   createStaffServiceItem,
   getStaffServiceItems,
@@ -367,10 +368,10 @@ export function ServiceCatalogPage() {
                           }
                         />
                       </label>
-                      <label
-                        className="col-span-full flex items-center gap-2 text-sm text-foreground"
-                      >
+                      <div className="col-span-full flex items-center gap-2 text-sm text-foreground">
                         <Checkbox
+                          id={`service-${item.id}-active`}
+                          aria-labelledby={`service-${item.id}-active-label`}
                           checked={draft.isActive}
                           onCheckedChange={(checked) =>
                             setDrafts((current) => ({
@@ -379,8 +380,14 @@ export function ServiceCatalogPage() {
                             }))
                           }
                         />
-                        <span>برای ثبت‌های جدید فعال باشد</span>
-                      </label>
+                        <Label
+                          id={`service-${item.id}-active-label`}
+                          htmlFor={`service-${item.id}-active`}
+                          className="cursor-pointer"
+                        >
+                          برای ثبت‌های جدید فعال باشد · {item.name}
+                        </Label>
+                      </div>
                     </div>
                     <div
                       className={'col-span-full flex flex-wrap items-center justify-start gap-3'}

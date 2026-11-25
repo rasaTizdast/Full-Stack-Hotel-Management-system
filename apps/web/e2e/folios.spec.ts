@@ -140,7 +140,9 @@ test('admin manages the service catalog and opens a private interim folio', asyn
     }
     const serviceRow = page.locator(`[aria-label="ویرایش خدمت ${serviceName}"]`);
     await expect(serviceRow).toBeVisible();
-    const activeToggle = serviceRow.getByLabel('برای ثبت‌های جدید فعال باشد');
+    const activeToggle = serviceRow.getByRole('checkbox', {
+      name: `برای ثبت‌های جدید فعال باشد · ${serviceName}`,
+    });
     if (!(await activeToggle.isChecked())) {
       await activeToggle.check();
       const activateResponse = page.waitForResponse((response) => {

@@ -1,5 +1,6 @@
 'use client';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import { Label } from '@/components/ui/label';
 import { NativeSelect } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 
@@ -132,12 +133,32 @@ export function CompleteHousekeepingDialog({
             onValueChange={(value) => setOutcome(value as 'DONE' | 'NEEDS_REWORK')}
           >
             <div className={styles.radioOption}>
-              <RadioGroupItem value="DONE" />
-              <span>بازرسی تأیید شد؛ اتاق آماده است</span>
+              <RadioGroupItem
+                id="housekeeping-inspection-done"
+                value="DONE"
+                aria-labelledby="housekeeping-inspection-done-label"
+              />
+              <Label
+                id="housekeeping-inspection-done-label"
+                htmlFor="housekeeping-inspection-done"
+                className="cursor-pointer"
+              >
+                بازرسی تأیید شد؛ اتاق آماده است
+              </Label>
             </div>
             <div className={styles.radioOption}>
-              <RadioGroupItem value="NEEDS_REWORK" />
-              <span>نیازمند نظافت دوباره</span>
+              <RadioGroupItem
+                id="housekeeping-inspection-rework"
+                value="NEEDS_REWORK"
+                aria-labelledby="housekeeping-inspection-rework-label"
+              />
+              <Label
+                id="housekeeping-inspection-rework-label"
+                htmlFor="housekeeping-inspection-rework"
+                className="cursor-pointer"
+              >
+                نیازمند نظافت دوباره
+              </Label>
             </div>
           </RadioGroup>
         ) : (

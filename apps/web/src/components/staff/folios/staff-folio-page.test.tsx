@@ -1,6 +1,6 @@
 import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { formatGregorianAsJalali, getHotelTodayIso } from '@/lib/jalali-date';
+import { formatGregorianAsJalali } from '@/lib/jalali-date';
 import { StaffFolioPage } from './staff-folio-page';
 
 const session = vi.hoisted(() => ({
@@ -115,6 +115,9 @@ describe('StaffFolioPage', () => {
     );
 
     fireEvent.change(screen.getByLabelText('تعداد'), { target: { value: '3' } });
+    fireEvent.change(screen.getByLabelText('تاریخ خدمت · شمسی'), {
+      target: { value: formatGregorianAsJalali('2026-11-24') ?? '' },
+    });
     fireEvent.change(screen.getByLabelText('اتاق مرتبط · اختیاری'), {
       target: { value: 'assignment-1' },
     });
@@ -126,7 +129,7 @@ describe('StaffFolioPage', () => {
         expect.objectContaining({
           serviceItemId: service.id,
           quantity: 3,
-          serviceDate: getHotelTodayIso(),
+          serviceDate: '2026-11-24',
           roomAssignmentId: 'assignment-1',
         }),
         expect.stringMatching(/^service-/),

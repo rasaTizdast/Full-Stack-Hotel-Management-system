@@ -1,7 +1,6 @@
 'use client';
 import { staffClass } from '@/components/staff/staff-classes';
 
-
 import type { FormEvent } from 'react';
 import { Button } from '@/components/ui/button';
 import { Field, FieldDescription, FieldError, FieldLabel } from '@/components/ui/field';
@@ -87,7 +86,9 @@ function NightRow({ night }: { night: StaffInventoryNight }) {
     <tr>
       <th scope="row">
         <time dateTime={night.stayDate}>{formatNightDate(night.stayDate)}</time>
-        <span className={staffClass('staff-inventory__capacity-source')}>{capacitySourceLabel(night)}</span>
+        <span className={staffClass('staff-inventory__capacity-source')}>
+          {capacitySourceLabel(night)}
+        </span>
       </th>
       <td>{formatActiveRoomCount(night)}</td>
       <td>{formatNightValue(night, night.blockedRooms)}</td>
@@ -95,7 +96,9 @@ function NightRow({ night }: { night: StaffInventoryNight }) {
       <td>{formatNightValue(night, night.bookedRooms)}</td>
       <td>{formatNightValue(night, night.availableRooms)}</td>
       <td
-        className={night.nightlyPriceToman === null ? staffClass('staff-inventory__missing-rate') : undefined}
+        className={
+          night.nightlyPriceToman === null ? staffClass('staff-inventory__missing-rate') : undefined
+        }
       >
         <bdi>{formatTomanValue(night.nightlyPriceToman, night.capacitySource)}</bdi>
       </td>
@@ -285,7 +288,10 @@ function EditorMessages({
   return (
     <>
       {formError ? (
-        <p className={staffClass('staff-inventory__message staff-inventory__message--error')} role="alert">
+        <p
+          className={staffClass('staff-inventory__message staff-inventory__message--error')}
+          role="alert"
+        >
           {formError}
         </p>
       ) : null}
@@ -311,7 +317,10 @@ function InventoryOverview({
   roomTypeName: string;
 }) {
   return (
-    <section className={staffClass('staff-inventory__overview')} aria-labelledby="staff-inventory-overview-title">
+    <section
+      className={staffClass('staff-inventory__overview')}
+      aria-labelledby="staff-inventory-overview-title"
+    >
       <div className={staffClass('staff-inventory__overview-heading')}>
         <div>
           <h2 id="staff-inventory-overview-title">{roomTypeName}</h2>
@@ -347,7 +356,9 @@ function InventoryOverview({
           <article className={staffClass('staff-inventory__night-card')} key={night.stayDate}>
             <h3>
               <time dateTime={night.stayDate}>{formatNightDate(night.stayDate)}</time>
-              <span className={staffClass('staff-inventory__capacity-source')}>{capacitySourceLabel(night)}</span>
+              <span className={staffClass('staff-inventory__capacity-source')}>
+                {capacitySourceLabel(night)}
+              </span>
             </h3>
             <dl>
               <div>

@@ -197,7 +197,7 @@ export function HousekeepingFilterBar({
       </div>
       <div
         id="housekeeping-filter-controls"
-        className={`${styles.filterControls} ${mobileExpanded ? styles.filterControlsExpanded : ''}`}
+        className={`${styles.filterControls} ${mobileExpanded ? '' : styles.filterControlsCollapsed}`}
       >
         <div className={styles.filterFields}>
           <label className={styles.field}>

@@ -2,7 +2,6 @@
 import { Input } from '@/components/ui/input';
 import { staffClass } from '@/components/staff/staff-classes';
 
-
 import { useState, type FormEvent } from 'react';
 import { useRouter } from 'next/navigation';
 import { changeStaffPassword } from '@/lib/staff-api';

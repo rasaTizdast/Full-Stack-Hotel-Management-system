@@ -3,7 +3,6 @@ import { NativeSelect } from '@/components/ui/select';
 import { Input } from '@/components/ui/input';
 import { staffClass } from '@/components/staff/staff-classes';
 
-
 import {
   useEffect,
   useRef,
@@ -237,7 +236,10 @@ export function StaffRoomsPage() {
 
   if (!canManageRooms) {
     return (
-      <section className={staffClass('staff-rooms-denied')} aria-labelledby="staff-rooms-denied-title">
+      <section
+        className={staffClass('staff-rooms-denied')}
+        aria-labelledby="staff-rooms-denied-title"
+      >
         <h1 id="staff-rooms-denied-title">دسترسی به مدیریت اتاق‌ها</h1>
         <p role="alert">این بخش برای مدیر اقامتگاه و مدیر شیفت در دسترس است.</p>
       </section>
@@ -482,7 +484,10 @@ export function StaffRoomsPage() {
       </header>
 
       {loadError ? (
-        <div className={staffClass('staff-rooms__message staff-rooms__message--error')} role="alert">
+        <div
+          className={staffClass('staff-rooms__message staff-rooms__message--error')}
+          role="alert"
+        >
           <p>{loadError}</p>
           <button type="button" onClick={() => void loadRooms(toQuery(filters), filters)}>
             تلاش دوباره
@@ -495,7 +500,10 @@ export function StaffRoomsPage() {
         </p>
       ) : null}
       {successMessage ? (
-        <div className={staffClass('staff-rooms__message staff-rooms__message--success')} role="status">
+        <div
+          className={staffClass('staff-rooms__message staff-rooms__message--success')}
+          role="status"
+        >
           <p>{successMessage}</p>
           {hiddenRoomNumber ? (
             <button type="button" onClick={showHiddenRoom} disabled={isLoading || isSaving}>
@@ -505,7 +513,11 @@ export function StaffRoomsPage() {
         </div>
       ) : null}
 
-      <form className={staffClass('staff-rooms__filters')} onSubmit={applyFilters} aria-label="فیلتر اتاق‌ها">
+      <form
+        className={staffClass('staff-rooms__filters')}
+        onSubmit={applyFilters}
+        aria-label="فیلتر اتاق‌ها"
+      >
         <div className={staffClass('staff-rooms__filters-heading')}>
           <div>
             <h2>پیدا کردن اتاق</h2>
@@ -743,7 +755,11 @@ export function StaffRoomsPage() {
               شماره باید در کل اقامتگاه یکتا باشد.
             </span>
             {fieldError ? (
-              <span id="staff-room-number-error" className={staffClass('staff-rooms__field-error')} role="alert">
+              <span
+                id="staff-room-number-error"
+                className={staffClass('staff-rooms__field-error')}
+                role="alert"
+              >
                 {fieldError}
               </span>
             ) : null}
