@@ -15,7 +15,7 @@ This is a booking-request workflow, not instant booking: staff confirmation is r
 
 ## Interface
 
-The Persian RTL interface uses a warm stone palette, deep garden-green accents, one Vazirmatn Variable font family, shared responsive typography and spacing tokens, and clear focus states across guest and staff pages. A generated courtyard-and-orange-blossom emblem is shared by the guest site, staff workspace, footer, favicon, and Apple touch icon.
+The Persian RTL interface uses a warm stone palette, deep garden-green accents, one Vazirmatn Variable font family, shared responsive typography and spacing tokens, and clear focus states across guest and staff pages. Tailwind theme tokens and shared shadcn components form the implementation standard; see the [design system](design.md) before changing page styling. A generated courtyard-and-orange-blossom emblem is shared by the guest site, staff workspace, footer, favicon, and Apple touch icon.
 
 - **Guests** can explore the property, search by dates and party size, compare available rooms and prices, review a room, and submit a stay request. The request page explains that reception must confirm it and that no payment is taken online.
 - **Staff** use a separate sign-in and role-protected operational workspace. Reception handles bookings and arrivals; housekeeping works assigned tasks; cashiers post folio charges and offline payments; managers oversee operations, maintenance, service catalog, folios, and night close; administrators also manage staff accounts and all capabilities. Authorization is enforced by the API.
@@ -168,7 +168,7 @@ The local Compose named volume persists PostgreSQL data when the container stops
 
 ## Screenshots
 
-These screenshots show the Persian RTL guest request and staff journeys using fictional test data and generated conceptual hotel imagery. The PMS screenshots below were captured by the successful HPM release Playwright run and are tracked here for review.
+The guest and staff screenshots below were regenerated from the current Tailwind and shadcn interface. They use fictional demo data and conceptual hotel imagery. The PMS workflow screenshots show additional staff journeys captured by the release Playwright run.
 
 ### Guest experience
 
