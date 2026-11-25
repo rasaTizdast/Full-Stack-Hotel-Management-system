@@ -10,7 +10,7 @@ const styles: Record<string, string> = {
   'skip-link':
     'sr-only focus:not-sr-only focus:fixed focus:start-4 focus:top-4 focus:z-[100] focus:rounded-lg focus:bg-card focus:px-4 focus:py-3 focus:text-primary focus:shadow-lg',
   'staff-topbar':
-    'sticky top-0 z-20 flex min-h-[5.25rem] items-center justify-between gap-6 border-b border-border/80 bg-card/95 px-5 backdrop-blur-xl lg:px-12',
+    'sticky top-0 z-20 flex min-h-[5.25rem] items-center justify-between gap-6 border-b border-border/80 bg-card/95 px-5 backdrop-blur-xl print:hidden lg:px-12',
   'staff-brand': 'inline-flex min-w-0 items-center gap-3 text-primary-strong no-underline',
   'staff-brand__mark': 'h-auto w-11 shrink-0 object-contain',
   'staff-brand__copy':
@@ -29,7 +29,7 @@ const styles: Record<string, string> = {
   'staff-layout':
     'mx-auto grid min-h-[calc(100dvh-5.25rem)] max-w-[100rem] grid-cols-1 lg:grid-cols-[17.5rem_minmax(0,1fr)]',
   'staff-sidebar':
-    'flex min-w-0 flex-col gap-4 border-b border-border bg-card p-4 lg:border-b-0 lg:border-e lg:p-5',
+    'flex min-w-0 flex-col gap-4 border-b border-border bg-card p-4 print:hidden lg:border-b-0 lg:border-e lg:p-5',
   'staff-sidebar__heading': 'grid gap-1',
   'staff-sidebar__label': 'm-0 text-xs font-bold text-muted-foreground',
   'staff-nav-viewport': 'relative max-h-[40vh] overflow-y-auto lg:max-h-[calc(100dvh-15rem)]',
@@ -100,12 +100,12 @@ const styles: Record<string, string> = {
   'staff-accounts__state--error': '!bg-destructive-soft !text-destructive',
   'staff-accounts__table-wrap': 'max-w-full overflow-x-auto rounded-lg border border-border',
   'staff-accounts__table':
-    'w-full min-w-[46rem] border-collapse text-start text-sm [&_th]:bg-surface-soft [&_th]:font-bold [&_th]:text-primary-strong [&_th]:text-start [&_th]:p-3 [&_td]:border-t [&_td]:border-border [&_td]:p-3',
+    'hidden w-full min-w-[46rem] border-collapse text-start text-sm md:table [&_th]:bg-surface-soft [&_th]:font-bold [&_th]:text-primary-strong [&_th]:text-start [&_th]:p-3 [&_td]:border-t [&_td]:border-border [&_td]:p-3',
   'staff-accounts__visually-hidden': 'sr-only',
   'staff-accounts__status':
     'inline-flex rounded-full bg-surface-soft px-3 py-1 text-xs font-bold text-muted-foreground',
   'staff-accounts__status--active': '!bg-success-soft !text-success',
-  'staff-accounts__mobile-cards': 'grid gap-3 sm:hidden',
+  'staff-accounts__mobile-cards': 'grid gap-3 md:hidden',
   'staff-accounts__mobile-card': 'grid gap-2 rounded-lg border border-border p-4',
   'staff-accounts__mobile-email': 'break-all text-xs text-muted-foreground',
   'staff-accounts__pagination': 'flex items-center justify-between gap-3',
@@ -145,8 +145,8 @@ const styles: Record<string, string> = {
   'staff-inventory__overview-heading': 'flex items-center justify-between gap-3',
   'staff-inventory__night-count': 'rounded-full bg-surface-soft px-3 py-1 text-xs font-bold',
   'staff-inventory__table-scroll':
-    'max-w-full overflow-x-auto rounded-lg border border-border [&_table]:w-full [&_table]:min-w-[48rem] [&_table]:text-sm [&_th]:bg-surface-soft [&_th]:p-3 [&_td]:border-t [&_td]:border-border [&_td]:p-3',
-  'staff-inventory__night-cards': 'grid gap-3 sm:grid-cols-2 xl:grid-cols-3',
+    'hidden max-w-full overflow-x-auto rounded-lg border border-border md:block [&_table]:w-full [&_table]:min-w-[48rem] [&_table]:text-sm [&_th]:bg-surface-soft [&_th]:p-3 [&_td]:border-t [&_td]:border-border [&_td]:p-3',
+  'staff-inventory__night-cards': 'grid gap-3 md:hidden sm:grid-cols-2 xl:grid-cols-3',
   'staff-inventory__night-card': 'grid gap-2 rounded-lg border border-border bg-surface p-4',
   'staff-inventory__capacity-source': 'text-xs text-muted-foreground',
   'staff-inventory__edit-form': 'grid gap-4 rounded-xl border border-border bg-card p-5 shadow-sm',
