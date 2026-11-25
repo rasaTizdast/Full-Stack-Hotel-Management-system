@@ -15,6 +15,7 @@
     "start:dev": "nest start --watch",
     "start:debug": "nest start --debug --watch",
     "start:prod": "node dist/src/main.js",
+    "prelint": "pnpm prisma:generate",
     "lint": "eslint \"{src,apps,libs,test}/**/*.ts\"",
     "test": "jest",
     "pretest:e2e": "pnpm prisma:generate",
