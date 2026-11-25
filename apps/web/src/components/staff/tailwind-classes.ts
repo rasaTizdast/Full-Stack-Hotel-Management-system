@@ -246,7 +246,7 @@ export const frontDeskClasses: Record<string, string> = {
   error,
   accessDenied: error,
   dialog:
-    'relative z-50 grid w-full max-w-2xl gap-4 rounded-xl border border-border bg-card p-5 shadow-xl',
+    'relative z-50 grid max-h-[calc(100dvh-2rem)] w-full max-w-2xl gap-4 overflow-y-auto rounded-xl border border-border bg-card p-5 shadow-xl',
   dialogBackdrop: 'fixed inset-0 z-40 grid place-items-center bg-foreground/50 p-4',
   dialogActions: actions,
   detailFacts: 'grid gap-3 sm:grid-cols-2',

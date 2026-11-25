@@ -40,7 +40,7 @@ const styles: Record<string, string> = {
   'staff-nav__glyph':
     'grid size-9 shrink-0 place-items-center rounded-lg bg-surface-soft text-primary transition-colors group-hover:bg-card group-hover:text-primary-strong group-aria-[current=page]:bg-card',
   'staff-nav__copy':
-    'grid min-w-0 flex-1 text-start [&_strong]:truncate [&_strong]:text-sm [&_small]:text-xs [&_small]:text-muted-foreground',
+    'grid min-w-0 flex-1 text-start [&_strong]:truncate [&_strong]:text-sm [&_small]:text-xs',
   'staff-nav-overflow-cue':
     'pointer-events-none sticky bottom-0 block h-8 bg-gradient-to-t from-card to-transparent',
   'staff-nav__error': 'rounded-lg bg-destructive-soft p-3 text-sm text-destructive',
