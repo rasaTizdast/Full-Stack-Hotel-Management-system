@@ -439,6 +439,7 @@ export function StaffBookingsPage() {
           </div>
           <Button
             className={styles.refreshButton}
+            variant="outline"
             type="button"
             onClick={refreshList}
             disabled={listState === 'loading'}
@@ -561,7 +562,12 @@ export function StaffBookingsPage() {
               <p className={styles.errorText} role="alert">
                 {listError}
               </p>
-              <Button className={styles.secondaryButton} type="button" onClick={refreshList}>
+              <Button
+                variant="outline"
+                className={styles.secondaryButton}
+                type="button"
+                onClick={refreshList}
+              >
                 تلاش دوباره
               </Button>
             </div>
@@ -573,7 +579,12 @@ export function StaffBookingsPage() {
               </span>
               <h3>رزروی پیدا نشد.</h3>
               <p>فیلترها را تغییر دهید یا فهرست را دوباره بررسی کنید.</p>
-              <Button className={styles.clearButton} type="button" onClick={clearFilters}>
+              <Button
+                variant="outline"
+                className={styles.clearButton}
+                type="button"
+                onClick={clearFilters}
+              >
                 پاک‌کردن فیلترها
               </Button>
             </div>
@@ -677,7 +688,12 @@ export function StaffBookingsPage() {
                 <p className={styles.errorText} role="alert">
                   {detailError}
                 </p>
-                <Button className={styles.secondaryButton} type="button" onClick={retryDetail}>
+                <Button
+                  variant="outline"
+                  className={styles.secondaryButton}
+                  type="button"
+                  onClick={retryDetail}
+                >
                   تلاش دوباره
                 </Button>
               </div>
@@ -792,6 +808,7 @@ export function StaffBookingsPage() {
                             تأیید رزرو
                           </Button>
                           <Button
+                            variant="destructive"
                             className={styles.rejectButton}
                             type="button"
                             onClick={(event) => openAction('reject', event.currentTarget)}
@@ -801,6 +818,7 @@ export function StaffBookingsPage() {
                         </>
                       ) : (
                         <Button
+                          variant="destructive"
                           className={styles.rejectButton}
                           type="button"
                           onClick={(event) => openAction('cancel', event.currentTarget)}

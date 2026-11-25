@@ -161,7 +161,9 @@ const styles: Record<string, string> = {
   'staff-inventory__money-amount': 'font-bold text-primary-strong',
   'staff-inventory__money-unit': 'text-xs text-muted-foreground',
   'staff-inventory__equation-token': 'text-sm font-bold text-muted-foreground',
-  'staff-inventory__rate-disclosure': 'rounded-lg border border-border p-4',
+  'staff-inventory__rate-disclosure': 'group rounded-lg border border-border p-4',
+  'staff-inventory__rate-summary':
+    'flex cursor-pointer list-none items-center justify-between gap-3 rounded-lg px-2 py-1 font-semibold text-primary-strong marker:hidden focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-ring',
   'staff-inventory__missing-rate': 'text-warning',
   'staff-rooms': 'mx-auto grid max-w-7xl gap-5',
   'staff-rooms-denied':

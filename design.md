@@ -51,6 +51,7 @@ Tailwind v4 exposes these through the `@theme inline` mappings in `globals.css`.
 ## Components and interaction
 
 - Use the shared shadcn components in `components/ui` for buttons, fields, inputs, selects, cards, alerts, badges, and overlays. Extend them through variants or `className`, not one-off global selectors.
+- Choose the shadcn `Button` or `ButtonLink` `variant` prop for its visual role (`default`, `outline`, `secondary`, `ghost`, or `destructive`). Use `className` for layout and sizing; do not add another `buttonVariants()` string on top of the component's default variant.
 - Use `ButtonLink` for navigation that should look like an action button, and `Button` for form or in-place actions. Keep staff utility classes tied to the same `buttonVariants` so older compositions retain the shared size, contrast, focus, and disabled states.
 - Use `Field`, `FieldLabel`, `FieldDescription`, and `FieldError` from `components/ui/field` to keep label, hint, and validation structure consistent. Connect labels with `htmlFor` and controls with stable `id` values.
 - Use `Input` for text, numeric, date, search, and other single-line entry; use `Textarea` for multi-line text; use `Checkbox` for independent boolean choices; and use `RadioGroup` with `RadioGroupItem` for mutually exclusive choices.

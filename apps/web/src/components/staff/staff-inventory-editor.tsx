@@ -269,6 +269,7 @@ function RangePicker({
 
         <Button
           className={staffClass('staff-inventory__load')}
+          variant="outline"
           size="lg"
           type="submit"
           disabled={isLoadingRoomTypes || isLoadingRange || !selectedRoomTypeId}
@@ -509,9 +510,21 @@ export function StaffInventoryEditor(props: StaffInventoryEditorProps) {
       {props.inventory ? (
         <>
           <details className={staffClass('staff-inventory__rate-disclosure')}>
-            <summary aria-controls="staff-inventory-rate-form">
+            <summary
+              className={staffClass('staff-inventory__rate-summary')}
+              aria-controls="staff-inventory-rate-form"
+            >
               <span>تنظیم نرخ شبانه</span>
-              <svg viewBox="0 0 20 20" fill="none" aria-hidden="true">
+              <svg
+                className="size-4 shrink-0 -rotate-90 transition-transform group-open:rotate-0"
+                viewBox="0 0 20 20"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="1.8"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                aria-hidden="true"
+              >
                 <path d="m5 7.5 5 5 5-5" />
               </svg>
             </summary>
