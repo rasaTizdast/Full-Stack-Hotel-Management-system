@@ -58,7 +58,7 @@ const styles = {
   count: 'rounded-full bg-surface-soft px-3 py-1 text-xs font-bold text-muted-foreground',
   bookingList: 'mt-3 grid gap-3',
   bookingCard:
-    'grid gap-3 rounded-lg border border-border bg-surface p-4 text-start transition-colors hover:bg-accent focus-visible:outline-3 focus-visible:outline-ring',
+    'grid h-auto min-h-11 w-full min-w-0 whitespace-normal gap-3 rounded-lg border border-border bg-surface p-4 text-start transition-colors hover:bg-accent focus-visible:outline-3 focus-visible:outline-ring',
   bookingCardSelected: 'border-primary bg-accent',
   cardTopline: 'flex items-center justify-between gap-2',
   reference: 'font-bold text-primary-strong',

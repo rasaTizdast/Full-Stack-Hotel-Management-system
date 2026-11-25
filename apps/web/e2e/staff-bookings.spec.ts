@@ -122,6 +122,10 @@ test('staff filters a pending request, inspects details, and confirms it from th
     const reference = await createPendingBooking(request, testInfo, guestPhone, markBookingCreated);
     await openBookings(page);
     await findBooking(page, reference);
+    const bookingCard = page.getByRole('button', { name: new RegExp(reference) });
+    await expect
+      .poll(() => bookingCard.evaluate((element) => element.getBoundingClientRect().height))
+      .toBeGreaterThan(60);
     await expect(page.getByText('اطلاعات مهمان')).toBeVisible();
     await expectAxeClean(page);
 
