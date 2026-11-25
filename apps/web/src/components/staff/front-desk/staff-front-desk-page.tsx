@@ -1,6 +1,5 @@
 'use client';
-
-'use client';
+import { Input } from '@/components/ui/input';
 
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
@@ -17,7 +16,7 @@ import { WalkInDialog } from './walk-in-dialog';
 import { useFrontDeskActions } from './use-front-desk-actions';
 import { useFrontDeskStayDetail } from './use-front-desk-stay-detail';
 import { useFrontDeskWorklist } from './use-front-desk-worklist';
-import styles from './staff-front-desk.module.css';
+import { frontDeskClasses as styles } from '../tailwind-classes';
 
 const ALLOWED_ROLES: StaffRole[] = ['ADMIN', 'MANAGER', 'RECEPTIONIST'];
 const EMPTY_ROOM_TYPES: PublicRoomType[] = [];
@@ -229,7 +228,7 @@ export function StaffFrontDeskPage({
         <div className={styles.filterFields}>
           <label>
             تاریخ کاری
-            <input
+            <Input
               aria-label="تاریخ کاری"
               inputMode="numeric"
               value={dateDraft}
@@ -239,7 +238,7 @@ export function StaffFrontDeskPage({
           </label>
           <label>
             جست‌وجو در نام، کد یا اتاق
-            <input
+            <Input
               aria-label="جست‌وجو در نام، کد یا اتاق"
               value={searchDraft}
               onChange={(event) => setSearchDraft(event.target.value)}

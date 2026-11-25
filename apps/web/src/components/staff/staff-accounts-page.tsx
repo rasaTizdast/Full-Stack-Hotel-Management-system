@@ -1,4 +1,9 @@
 'use client';
+import { NativeSelect } from '@/components/ui/select';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
+import { staffClass } from '@/components/staff/staff-classes';
+
 
 import { useCallback, useEffect, useRef, useState, type FormEvent } from 'react';
 import Link from 'next/link';
@@ -108,7 +113,7 @@ export function StaffAccountsPage() {
   if (status !== 'authenticated' || !staff) return null;
   if (!isAdmin) {
     return (
-      <section className="staff-accounts-denied" aria-labelledby="staff-accounts-denied-title">
+      <section className={staffClass('staff-accounts-denied')} aria-labelledby="staff-accounts-denied-title">
         <h1 id="staff-accounts-denied-title">دسترسی به مدیریت کارکنان</h1>
         <p role="alert">این بخش فقط برای مدیر اقامتگاه در دسترس است.</p>
         <Link href="/staff">بازگشت به نمای کلی</Link>
@@ -206,9 +211,9 @@ export function StaffAccountsPage() {
 
   function renderAccountActions(account: StaffAdminAccount) {
     return (
-      <div className="staff-accounts__actions">
+      <div className={staffClass('staff-accounts__actions')}>
         <button
-          className="staff-accounts__secondary"
+          className={staffClass('staff-accounts__secondary')}
           type="button"
           onClick={() => beginAction(account, 'role')}
         >
@@ -216,7 +221,7 @@ export function StaffAccountsPage() {
         </button>
         {account.isActive && (
           <button
-            className="staff-accounts__danger"
+            className={staffClass('staff-accounts__danger')}
             type="button"
             onClick={() => beginAction(account, 'deactivate')}
           >
@@ -225,7 +230,7 @@ export function StaffAccountsPage() {
         )}
         {action?.account.id === account.id && (
           <form
-            className="staff-accounts__action-form"
+            className={staffClass('staff-accounts__action-form')}
             aria-label={`${action.kind === 'role' ? 'تغییر نقش' : 'غیرفعال‌سازی'} حساب ${account.username}`}
             onSubmit={handleAccountAction}
           >
@@ -233,7 +238,7 @@ export function StaffAccountsPage() {
               <>
                 <label>
                   نقش تازه
-                  <select
+                  <NativeSelect
                     value={actionRole}
                     onChange={(event) => setActionRole(event.target.value as StaffRole)}
                   >
@@ -242,18 +247,18 @@ export function StaffAccountsPage() {
                         {getStaffRoleLabel(role)}
                       </option>
                     ))}
-                  </select>
+                  </NativeSelect>
                 </label>
                 <label>
                   دلیل تغییر نقش
-                  <textarea
+                  <Textarea
                     required
                     value={reason}
                     onChange={(event) => setReason(event.target.value)}
                     rows={2}
                   />
                 </label>
-                <button className="staff-accounts__primary" type="submit" disabled={isSaving}>
+                <button className={staffClass('staff-accounts__primary')} type="submit" disabled={isSaving}>
                   ذخیره نقش
                 </button>
               </>
@@ -262,25 +267,25 @@ export function StaffAccountsPage() {
                 <p>نشست‌های فعال این همکار نیز با غیرفعال‌سازی از دسترس خارج می‌شوند.</p>
                 <label>
                   دلیل غیرفعال‌سازی
-                  <textarea
+                  <Textarea
                     required
                     value={reason}
                     onChange={(event) => setReason(event.target.value)}
                     rows={2}
                   />
                 </label>
-                <button className="staff-accounts__danger" type="submit" disabled={isSaving}>
+                <button className={staffClass('staff-accounts__danger')} type="submit" disabled={isSaving}>
                   {isSaving ? 'در حال ثبت…' : 'تأیید غیرفعال‌سازی'}
                 </button>
               </>
             )}
             {formError && (
-              <p className="staff-accounts__error" role="alert">
+              <p className={staffClass('staff-accounts__error')} role="alert">
                 {formError}
               </p>
             )}
             <button
-              className="staff-accounts__text-button"
+              className={staffClass('staff-accounts__text-button')}
               type="button"
               onClick={() => {
                 setAction(null);
@@ -299,15 +304,15 @@ export function StaffAccountsPage() {
   const lastPage = result ? Math.max(1, Math.ceil(result.total / result.pageSize)) : 1;
 
   return (
-    <section className="staff-accounts" aria-labelledby="staff-accounts-title">
-      <header className="staff-accounts__header">
+    <section className={staffClass('staff-accounts')} aria-labelledby="staff-accounts-title">
+      <header className={staffClass('staff-accounts__header')}>
         <div>
-          <p className="staff-accounts__eyebrow">مدیریت دسترسی</p>
+          <p className={staffClass('staff-accounts__eyebrow')}>مدیریت دسترسی</p>
           <h1 id="staff-accounts-title">مدیریت کارکنان</h1>
           <p>حساب‌های پنل، نقش‌ها و وضعیت ورود اولیه را در یک‌جا پیگیری کنید.</p>
         </div>
         <button
-          className="staff-accounts__primary"
+          className={staffClass('staff-accounts__primary')}
           type="button"
           aria-expanded={showCreate}
           aria-controls="staff-account-create"
@@ -322,7 +327,7 @@ export function StaffAccountsPage() {
       </header>
 
       {successMessage && (
-        <p className="staff-accounts__notice" role="status">
+        <p className={staffClass('staff-accounts__notice')} role="status">
           {successMessage}
         </p>
       )}
@@ -330,20 +335,20 @@ export function StaffAccountsPage() {
       {showCreate && (
         <form
           id="staff-account-create"
-          className="staff-accounts__form"
+          className={staffClass('staff-accounts__form')}
           method="post"
           onSubmit={handleCreate}
         >
-          <div className="staff-accounts__form-heading">
+          <div className={staffClass('staff-accounts__form-heading')}>
             <h2>حساب تازه</h2>
             <p>
               گذرواژه آغازین را فقط به خود همکار تحویل دهید؛ پس از ثبت دوباره نمایش داده نمی‌شود.
             </p>
           </div>
-          <div className="staff-accounts__fields">
+          <div className={staffClass('staff-accounts__fields')}>
             <label>
               نام کاربری
-              <input
+              <Input
                 autoComplete="username"
                 required
                 maxLength={64}
@@ -353,7 +358,7 @@ export function StaffAccountsPage() {
             </label>
             <label>
               ایمیل کاری
-              <input
+              <Input
                 type="email"
                 autoComplete="email"
                 required
@@ -365,7 +370,7 @@ export function StaffAccountsPage() {
             </label>
             <label>
               گذرواژه آغازین
-              <input
+              <Input
                 type="password"
                 autoComplete="new-password"
                 required
@@ -375,7 +380,7 @@ export function StaffAccountsPage() {
             </label>
             <label>
               نقش
-              <select
+              <NativeSelect
                 value={newRole}
                 onChange={(event) => setNewRole(event.target.value as StaffRole)}
               >
@@ -384,30 +389,30 @@ export function StaffAccountsPage() {
                     {getStaffRoleLabel(role)}
                   </option>
                 ))}
-              </select>
+              </NativeSelect>
             </label>
           </div>
           {formError && !action && (
-            <p className="staff-accounts__error" role="alert">
+            <p className={staffClass('staff-accounts__error')} role="alert">
               {formError}
             </p>
           )}
-          <div className="staff-accounts__form-actions">
-            <button className="staff-accounts__primary" type="submit" disabled={isSaving}>
+          <div className={staffClass('staff-accounts__form-actions')}>
+            <button className={staffClass('staff-accounts__primary')} type="submit" disabled={isSaving}>
               {isSaving ? 'در حال ایجاد…' : 'ایجاد حساب'}
             </button>
           </div>
         </form>
       )}
 
-      <section className="staff-accounts__list" aria-labelledby="staff-accounts-list-title">
-        <div className="staff-accounts__list-heading">
+      <section className={staffClass('staff-accounts__list')} aria-labelledby="staff-accounts-list-title">
+        <div className={staffClass('staff-accounts__list-heading')}>
           <div>
             <h2 id="staff-accounts-list-title">حساب‌های ثبت‌شده</h2>
             {result && <p>{result.total.toLocaleString('fa-IR')} حساب</p>}
           </div>
           <button
-            className="staff-accounts__secondary"
+            className={staffClass('staff-accounts__secondary')}
             type="button"
             onClick={() => void loadAccounts(page)}
             disabled={isLoading}
@@ -417,14 +422,14 @@ export function StaffAccountsPage() {
         </div>
 
         {isLoading && !result ? (
-          <p className="staff-accounts__state" aria-live="polite" aria-busy="true">
+          <p className={staffClass('staff-accounts__state')} aria-live="polite" aria-busy="true">
             در حال دریافت حساب‌های کارکنان…
           </p>
         ) : loadError ? (
-          <div className="staff-accounts__state staff-accounts__state--error">
+          <div className={staffClass('staff-accounts__state staff-accounts__state--error')}>
             <p role="alert">{loadError}</p>
             <button
-              className="staff-accounts__secondary"
+              className={staffClass('staff-accounts__secondary')}
               type="button"
               onClick={() => void loadAccounts(page)}
             >
@@ -432,11 +437,11 @@ export function StaffAccountsPage() {
             </button>
           </div>
         ) : accounts.length === 0 ? (
-          <p className="staff-accounts__state">هنوز حسابی ثبت نشده است.</p>
+          <p className={staffClass('staff-accounts__state')}>هنوز حسابی ثبت نشده است.</p>
         ) : (
-          <div className="staff-accounts__table-wrap">
-            <table className="staff-accounts__table">
-              <caption className="staff-accounts__visually-hidden">
+          <div className={staffClass('staff-accounts__table-wrap')}>
+            <table className={staffClass('staff-accounts__table')}>
+              <caption className={staffClass('staff-accounts__visually-hidden')}>
                 فهرست حساب‌های کارکنان و دسترسی آن‌ها
               </caption>
               <thead>
@@ -447,7 +452,7 @@ export function StaffAccountsPage() {
                   <th scope="col">ورود اولیه</th>
                   <th scope="col">تاریخ ایجاد</th>
                   <th scope="col">
-                    <span className="staff-accounts__visually-hidden">عملیات</span>
+                    <span className={staffClass('staff-accounts__visually-hidden')}>عملیات</span>
                   </th>
                 </tr>
               </thead>
@@ -465,7 +470,7 @@ export function StaffAccountsPage() {
                     <td>{getStaffRoleLabel(account.role)}</td>
                     <td>
                       <span
-                        className={`staff-accounts__status${account.isActive ? ' staff-accounts__status--active' : ''}`}
+                        className={staffClass(`staff-accounts__status${account.isActive ? ' staff-accounts__status--active' : ''}`)}
                       >
                         {account.isActive ? 'فعال' : 'غیرفعال'}
                       </span>
@@ -483,20 +488,20 @@ export function StaffAccountsPage() {
         )}
 
         {!isLoading && !loadError && accounts.length > 0 && (
-          <ul className="staff-accounts__mobile-cards" aria-label="فهرست حساب‌های کارکنان">
+          <ul className={staffClass('staff-accounts__mobile-cards')} aria-label="فهرست حساب‌های کارکنان">
             {accounts.map((account) => (
-              <li className="staff-accounts__mobile-card" key={account.id}>
+              <li className={staffClass('staff-accounts__mobile-card')} key={account.id}>
                 <header>
                   <h3>{account.username}</h3>
                   <span
-                    className={`staff-accounts__status${account.isActive ? ' staff-accounts__status--active' : ''}`}
+                    className={staffClass(`staff-accounts__status${account.isActive ? ' staff-accounts__status--active' : ''}`)}
                   >
                     {account.isActive ? 'فعال' : 'غیرفعال'}
                   </span>
                 </header>
                 {shouldShowAccountEmail(account) && (
                   <a
-                    className="staff-accounts__mobile-email"
+                    className={staffClass('staff-accounts__mobile-email')}
                     href={`mailto:${account.email}`}
                     dir="ltr"
                   >
@@ -526,9 +531,9 @@ export function StaffAccountsPage() {
         )}
 
         {result && result.total > result.pageSize && (
-          <nav className="staff-accounts__pagination" aria-label="صفحه‌های حساب کارکنان">
+          <nav className={staffClass('staff-accounts__pagination')} aria-label="صفحه‌های حساب کارکنان">
             <button
-              className="staff-accounts__secondary"
+              className={staffClass('staff-accounts__secondary')}
               type="button"
               disabled={page <= 1 || isLoading}
               onClick={() => setPage((current) => current - 1)}
@@ -539,7 +544,7 @@ export function StaffAccountsPage() {
               صفحه {page.toLocaleString('fa-IR')} از {lastPage.toLocaleString('fa-IR')}
             </span>
             <button
-              className="staff-accounts__secondary"
+              className={staffClass('staff-accounts__secondary')}
               type="button"
               disabled={page >= lastPage || isLoading}
               onClick={() => setPage((current) => current + 1)}

@@ -1,5 +1,5 @@
 import type { KeyboardEvent, ReactNode } from 'react';
-import styles from './staff-front-desk.module.css';
+import { frontDeskClasses as styles } from '../tailwind-classes';
 
 interface StaffDialogSurfaceProps {
   labelledBy: string;

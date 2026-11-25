@@ -1,4 +1,5 @@
 'use client';
+import { Input } from '@/components/ui/input';
 
 import Link from 'next/link';
 import { useCallback, useEffect, useRef, useState, type FormEvent } from 'react';
@@ -15,7 +16,7 @@ import {
 } from '@/lib/staff-operations-api';
 import { formatGregorianAsJalali, formatPersianInteger, toGregorianIso } from '@/lib/jalali-date';
 import { useStaffSession } from '../staff-session-provider';
-import styles from './staff-operations.module.css';
+import { operationClasses as styles } from '../tailwind-classes';
 
 const canRunOperations = (staff: StaffMember | null) =>
   Boolean(staff && ['ADMIN', 'MANAGER'].includes(staff.role));
@@ -465,7 +466,7 @@ export function StaffOperationsReportPage() {
 
       <form className={styles.dateForm} onSubmit={submitDate}>
         <label htmlFor="report-date">تاریخ کاری</label>
-        <input
+        <Input
           id="report-date"
           type="text"
           inputMode="numeric"

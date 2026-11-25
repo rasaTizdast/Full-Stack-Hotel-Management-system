@@ -1,5 +1,7 @@
 'use client';
 
+import { staffClass } from '@/components/staff/staff-classes';
+
 import { useCallback, useEffect, useMemo, useRef, useState, type FormEvent } from 'react';
 import {
   StaffApiError,
@@ -27,7 +29,7 @@ import {
   roomFilterMatches,
   type RoomBoardFilters,
 } from './room-board-view';
-import styles from './room-board.module.css';
+import { roomBoardClasses as styles } from '../tailwind-classes';
 
 const ROOM_BOARD_REFRESH_MS = 30_000;
 
@@ -409,7 +411,7 @@ export function StaffRoomBoardPage() {
         <div className={`${styles.message} ${styles.messageError}`} role="alert">
           <p>{refreshError}</p>
           <button
-            className="button button--quiet"
+            className={staffClass('button button--quiet')}
             type="button"
             onClick={() => void loadBoard(appliedDate)}
             disabled={isRefreshing}

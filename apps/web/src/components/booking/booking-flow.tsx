@@ -5,7 +5,10 @@ import Image from 'next/image';
 import { useEffect, useRef, useState, type FormEvent } from 'react';
 import { Controller, useForm, useWatch } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
+import { AlertTriangle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { Alert } from '@/components/ui/alert';
+import { Card } from '@/components/ui/card';
 import {
   Field,
   FieldDescription,
@@ -39,7 +42,6 @@ import { formatGregorianAsJalali, formatPersianInteger } from '@/lib/jalali-date
 import type { AvailabilityRoomType } from '@/lib/availability';
 import type { PublicRoomType } from '@/lib/public-api';
 import { getRoomImage } from '@/components/public/room-imagery';
-import styles from './booking-flow.module.css';
 
 export type BookingFlowProps = {
   room: PublicRoomType;
@@ -55,7 +57,7 @@ function RoomImage({ slug }: { slug: string }) {
   const image = getRoomImage({ slug });
 
   return (
-    <div className={styles.roomImage}>
+    <div className={'relative aspect-[1.75] overflow-hidden rounded-xl bg-surface-soft'}>
       <Image
         src={image.src}
         alt={image.alt}
@@ -63,7 +65,13 @@ function RoomImage({ slug }: { slug: string }) {
         loading="eager"
         sizes="(max-width: 760px) 100vw, 38vw"
       />
-      <span className={styles.imageCaption}>خانه‌باغ نارنج، شیراز</span>
+      <span
+        className={
+          'absolute bottom-3 start-3 rounded-full bg-primary-strong/85 px-3 py-1 text-sm text-primary-foreground'
+        }
+      >
+        خانه‌باغ نارنج، شیراز
+      </span>
     </div>
   );
 }
@@ -104,7 +112,7 @@ function StaySummary({
   total: string;
 }) {
   return (
-    <dl className={styles.summary}>
+    <dl className="my-0 grid gap-y-1 [&>div]:flex [&>div]:items-baseline [&>div]:justify-between [&>div]:gap-3 [&>div]:py-2 [&_dt]:text-sm [&_dt]:text-muted-foreground [&_dd]:m-0 [&_dd]:text-end [&_dd]:text-sm [&_dd]:font-semibold [&_dd]:text-foreground">
       {roomName ? (
         <div>
           <dt>اتاق</dt>
@@ -131,7 +139,7 @@ function StaySummary({
         <dt>تعداد اتاق</dt>
         <dd>{formatPersianInteger(roomQuantity)} اتاق</dd>
       </div>
-      <div className={styles.summaryTotal}>
+      <div className="!my-2 !grid !gap-1 border-t border-border pt-3 [&_dt]:font-bold [&_dt]:text-primary [&_dd]:text-xl [&_dd]:font-bold [&_dd]:text-primary-strong">
         <dt>برآورد مبلغ کل</dt>
         <dd>
           <bdi>{formatTomanTotal(total)}</bdi>
@@ -159,21 +167,46 @@ function Confirmation({
   }, []);
 
   return (
-    <section className={styles.confirmation} aria-labelledby="booking-confirmation-title">
-      <span className={styles.confirmationMark} aria-hidden="true">
+    <section
+      className={
+        'mx-auto my-10 w-[min(calc(100%-2rem),70rem)] max-w-4xl rounded-3xl bg-surface p-5 sm:my-16 sm:p-10'
+      }
+      aria-labelledby="booking-confirmation-title"
+    >
+      <span
+        className={
+          'mb-4 grid size-12 place-items-center rounded-full bg-success text-primary-foreground'
+        }
+        aria-hidden="true"
+      >
         <svg viewBox="0 0 20 20" fill="none">
           <path d="m4.5 10.5 3.6 3.6 7.4-8.1" />
         </svg>
       </span>
       <RoomImage slug={booking.roomType.slug} />
-      <p className={styles.confirmationStatus}>درخواست شما دریافت شد</p>
-      <h1 ref={headingRef} id="booking-confirmation-title" tabIndex={-1}>
+      <p
+        className={
+          'mb-2 inline-flex rounded-full bg-success-soft px-3 py-1 text-xs font-bold text-success'
+        }
+      >
+        درخواست شما دریافت شد
+      </p>
+      <h1
+        ref={headingRef}
+        id="booking-confirmation-title"
+        tabIndex={-1}
+        className="text-3xl font-bold leading-tight text-primary-strong sm:text-4xl"
+      >
         درخواست اقامت شما ثبت شد
       </h1>
-      <p className={styles.confirmationLead}>
+      <p className={'mb-5 mt-3 max-w-prose text-base leading-8 text-muted-foreground'}>
         پذیرش ظرفیت و مبلغ را بررسی می‌کند و نتیجهٔ درخواست را به شما اطلاع می‌دهد.
       </p>
-      <div className={styles.reference}>
+      <div
+        className={
+          'my-5 flex flex-col gap-1 rounded-xl border border-border bg-surface-soft px-4 py-3 sm:flex-row sm:items-baseline sm:justify-between'
+        }
+      >
         <span>کد پیگیری</span>
         <strong>
           <bdi>{booking.reference}</bdi>
@@ -187,21 +220,40 @@ function Confirmation({
         roomQuantity={booking.roomQuantity}
         total={booking.priceSummary.totalPriceToman}
       />
-      <p className={styles.pendingNote}>
+      <p
+        className={
+          'my-4 flex flex-wrap gap-1 rounded-xl bg-warning-soft px-4 py-3 text-sm text-muted-foreground'
+        }
+      >
         وضعیت درخواست: <strong>در انتظار تأیید پذیرش</strong>
       </p>
-      <div className={styles.followUp}>
+      <div
+        className={
+          'my-4 grid justify-items-start gap-2 rounded-xl border border-border bg-surface-soft px-4 py-3 text-sm leading-7'
+        }
+      >
         <p>پذیرش برای پیگیری درخواست با این شماره تماس می‌گیرد:</p>
-        <bdi className={styles.followUpPhone} dir="ltr">
+        <bdi className={'font-bold text-primary-strong'} dir="ltr">
           {submittedPhone}
         </bdi>
         {propertyPhoneHref ? (
-          <a className={styles.contactLink} href={propertyPhoneHref} dir="rtl">
+          <a
+            className={
+              'inline-flex min-h-11 items-center font-bold text-primary-strong underline-offset-4 hover:underline focus-visible:outline-3 focus-visible:outline-ring'
+            }
+            href={propertyPhoneHref}
+            dir="rtl"
+          >
             تماس با اقامتگاه: <bdi dir="ltr">{hotelContactPhone}</bdi>
           </a>
         ) : null}
       </div>
-      <Link href="/" className={styles.backLink}>
+      <Link
+        href="/"
+        className={
+          'mt-3 inline-flex min-h-11 items-center justify-center rounded-full bg-primary px-5 py-2 text-sm font-bold text-primary-foreground transition-colors hover:bg-primary-strong focus-visible:outline-3 focus-visible:outline-ring'
+        }
+      >
         بازگشت به اقامتگاه
       </Link>
     </section>
@@ -326,27 +378,42 @@ export function BookingFlow({
     errors[field]?.message as string | undefined;
 
   return (
-    <section className={styles.booking} aria-labelledby="booking-title">
-      <div className={styles.intro}>
-        <h1 id="booking-title">درخواست اقامت</h1>
-        <p>اطلاعات تماس را برای پیگیری درخواست وارد کنید.</p>
+    <section
+      className={'mx-auto my-10 w-[min(calc(100%-2rem),70rem)] sm:my-16'}
+      aria-labelledby="booking-title"
+    >
+      <div className={'mb-6 max-w-3xl sm:mb-8'}>
+        <h1
+          id="booking-title"
+          className="text-3xl font-bold leading-tight text-primary-strong sm:text-4xl"
+        >
+          درخواست اقامت
+        </h1>
+        <p className="mt-2 text-base leading-8 text-muted-foreground">
+          اطلاعات تماس را برای پیگیری درخواست وارد کنید.
+        </p>
       </div>
-      <div className={styles.layout}>
+      <div className={'grid items-start gap-5 md:grid-cols-[minmax(0,1.15fr)_minmax(17rem,.85fr)]'}>
         <form
-          className={styles.form}
+          className={'rounded-3xl bg-surface p-5 sm:p-8'}
           noValidate
           onSubmit={handleFormSubmit}
           aria-label="فرم درخواست اقامت"
         >
-          <FieldSet disabled={form.formState.isSubmitting} className={styles.fields}>
-            <FieldLegend className={styles.fieldsLegend}>مشخصات درخواست</FieldLegend>
-            <FieldGroup className={styles.fieldGrid}>
+          <FieldSet
+            disabled={form.formState.isSubmitting}
+            className={'grid min-w-0 gap-0 border-0 p-0'}
+          >
+            <FieldLegend className={'mb-4 text-xl font-bold text-primary-strong'}>
+              مشخصات درخواست
+            </FieldLegend>
+            <FieldGroup className={'grid-cols-1 gap-x-4 gap-y-5 sm:grid-cols-2'}>
               <Controller
                 control={form.control}
                 name="roomQuantity"
                 render={({ field }) => (
                   <Field
-                    className={`${styles.field} ${styles.roomQuantityField}`}
+                    className={`${'min-w-0 gap-2'} ${'sm:col-span-1'}`}
                     data-invalid={Boolean(fieldMessage('roomQuantity'))}
                   >
                     <FieldLabel htmlFor="booking-quantity">تعداد اتاق</FieldLabel>
@@ -378,24 +445,30 @@ export function BookingFlow({
                         ))}
                       </SelectContent>
                     </Select>
-                    <FieldDescription id="booking-quantity-help" className={styles.hint}>
+                    <FieldDescription
+                      id="booking-quantity-help"
+                      className={'text-sm leading-relaxed text-muted-foreground'}
+                    >
                       ظرفیت هر اتاق حداکثر {formatPersianInteger(room.maxGuestsPerRoom)} نفر است؛
                       برای {formatPersianInteger(context.guestCount)} مهمان، حداقل{' '}
                       {formatPersianInteger(minimumRooms)} اتاق لازم است.
                     </FieldDescription>
-                    <FieldError id="booking-quantity-error" className={styles.fieldError}>
+                    <FieldError
+                      id="booking-quantity-error"
+                      className={'text-sm font-semibold text-destructive'}
+                    >
                       {fieldMessage('roomQuantity')}
                     </FieldError>
                   </Field>
                 )}
               />
               <Field
-                className={`${styles.field} ${styles.nameField}`}
+                className={`${'min-w-0 gap-2'} ${'sm:col-span-1'}`}
                 data-invalid={Boolean(fieldMessage('guestName'))}
               >
                 <FieldLabel htmlFor="booking-name">نام و نام خانوادگی</FieldLabel>
                 <Input
-                  className={styles.control}
+                  className={'w-full min-w-0'}
                   id="booking-name"
                   autoComplete="name"
                   maxLength={160}
@@ -404,14 +477,17 @@ export function BookingFlow({
                   aria-invalid={Boolean(fieldMessage('guestName'))}
                   aria-describedby={fieldMessage('guestName') ? 'booking-name-error' : undefined}
                 />
-                <FieldError id="booking-name-error" className={styles.fieldError}>
+                <FieldError
+                  id="booking-name-error"
+                  className={'text-sm font-semibold text-destructive'}
+                >
                   {fieldMessage('guestName')}
                 </FieldError>
               </Field>
-              <Field className={styles.field} data-invalid={Boolean(fieldMessage('guestPhone'))}>
+              <Field className={'min-w-0 gap-2'} data-invalid={Boolean(fieldMessage('guestPhone'))}>
                 <FieldLabel htmlFor="booking-phone">شماره موبایل</FieldLabel>
                 <Input
-                  className={styles.control}
+                  className={'w-full min-w-0'}
                   id="booking-phone"
                   type="tel"
                   inputMode="tel"
@@ -425,19 +501,26 @@ export function BookingFlow({
                     fieldMessage('guestPhone') ? 'booking-phone-error' : 'booking-phone-help'
                   }
                 />
-                <FieldDescription id="booking-phone-help" className={styles.hint}>
+                <FieldDescription
+                  id="booking-phone-help"
+                  className={'text-sm leading-relaxed text-muted-foreground'}
+                >
                   شمارهٔ همراه ایران را با هر شکل نوشتاری وارد کنید.
                 </FieldDescription>
-                <FieldError id="booking-phone-error" className={styles.fieldError}>
+                <FieldError
+                  id="booking-phone-error"
+                  className={'text-sm font-semibold text-destructive'}
+                >
                   {fieldMessage('guestPhone')}
                 </FieldError>
               </Field>
-              <Field className={styles.field} data-invalid={Boolean(fieldMessage('guestEmail'))}>
+              <Field className={'min-w-0 gap-2'} data-invalid={Boolean(fieldMessage('guestEmail'))}>
                 <FieldLabel htmlFor="booking-email">
-                  ایمیل <span className={styles.optional}>(اختیاری)</span>
+                  ایمیل{' '}
+                  <span className={'text-sm font-normal text-muted-foreground'}>(اختیاری)</span>
                 </FieldLabel>
                 <Input
-                  className={styles.control}
+                  className={'w-full min-w-0'}
                   id="booking-email"
                   type="email"
                   inputMode="email"
@@ -449,38 +532,50 @@ export function BookingFlow({
                   aria-invalid={Boolean(fieldMessage('guestEmail'))}
                   aria-describedby={fieldMessage('guestEmail') ? 'booking-email-error' : undefined}
                 />
-                <FieldError id="booking-email-error" className={styles.fieldError}>
+                <FieldError
+                  id="booking-email-error"
+                  className={'text-sm font-semibold text-destructive'}
+                >
                   {fieldMessage('guestEmail')}
                 </FieldError>
               </Field>
             </FieldGroup>
           </FieldSet>
-          <div className={styles.notice}>
-            <span aria-hidden="true">
-              <svg viewBox="0 0 20 20" fill="none">
-                <path d="M10 2.75 18 17H2l8-14.25Z" />
-                <path d="M10 7v4.5M10 14.25v.1" />
-              </svg>
-            </span>
-            <p>
+          <Alert
+            role="note"
+            variant="warning"
+            className="mt-6 grid-cols-[auto_1fr] items-start gap-3 border-warning/20 bg-warning-soft text-warning"
+          >
+            <AlertTriangle aria-hidden="true" className="mt-1 size-5" />
+            <p className="m-0 text-sm leading-7 text-foreground">
               درخواست پس از ثبت، <strong>منتظر تأیید پذیرش</strong> می‌ماند. ثبت این فرم به معنی
               تأیید نهایی نیست.
             </p>
-          </div>
+          </Alert>
           {failure === 'availability-changed' ? (
-            <p className={styles.error} role="alert">
+            <p
+              className={
+                'mt-4 rounded-xl border border-destructive/25 bg-destructive-soft px-4 py-3 text-sm font-semibold leading-7 text-destructive'
+              }
+              role="alert"
+            >
               این اتاق دیگر برای تمام شب‌های انتخاب‌شده در دسترس نیست.{' '}
               <Link href="/#stay-search">جستجوی دوباره</Link> و انتخاب ظرفیت تازه.
             </p>
           ) : null}
           {failure === 'server-error' ? (
-            <p className={styles.error} role="alert">
+            <p
+              className={
+                'mt-4 rounded-xl border border-destructive/25 bg-destructive-soft px-4 py-3 text-sm font-semibold leading-7 text-destructive'
+              }
+              role="alert"
+            >
               خطا در ثبت درخواست. اطلاعات حفظ شده است؛ دوباره تلاش کنید.
             </p>
           ) : null}
           {failure !== 'availability-changed' ? (
             <Button
-              className={styles.submit}
+              className={'mt-5 min-h-12 w-full sm:w-auto'}
               size="lg"
               type="submit"
               disabled={form.formState.isSubmitting}
@@ -493,22 +588,24 @@ export function BookingFlow({
             </Button>
           ) : null}
         </form>
-        <aside className={styles.aside} aria-label="خلاصهٔ اقامت">
-          <div className={styles.roomHeading}>
-            <h2>{room.name}</h2>
-          </div>
-          <RoomImage slug={room.slug} />
-          <StaySummary
-            checkIn={context.checkIn}
-            checkOut={context.checkOut}
-            guestCount={context.guestCount}
-            roomQuantity={quantity}
-            total={estimated}
-          />
-          <p className={styles.estimateNote}>
-            این مبلغ، برآورد بر اساس نرخ فعلی است. مبلغ قطعی را سامانه هنگام ثبت درخواست محاسبه
-            می‌کند.
-          </p>
+        <aside className="row-start-1 md:sticky md:top-4 md:row-auto" aria-label="خلاصهٔ اقامت">
+          <Card className="overflow-hidden rounded-3xl border-border p-4 sm:p-6">
+            <div className={'mb-4'}>
+              <h2>{room.name}</h2>
+            </div>
+            <RoomImage slug={room.slug} />
+            <StaySummary
+              checkIn={context.checkIn}
+              checkOut={context.checkOut}
+              guestCount={context.guestCount}
+              roomQuantity={quantity}
+              total={estimated}
+            />
+            <p className={'mt-3 text-sm leading-7 text-muted-foreground'}>
+              این مبلغ، برآورد بر اساس نرخ فعلی است. مبلغ قطعی را سامانه هنگام ثبت درخواست محاسبه
+              می‌کند.
+            </p>
+          </Card>
         </aside>
       </div>
     </section>

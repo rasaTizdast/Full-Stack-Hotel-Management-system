@@ -15,8 +15,8 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: Readonly<{ children: ReactNode }>) {
   return (
-    <html lang="fa" dir="rtl" data-scroll-behavior="smooth">
-      <body>
+    <html lang="fa" dir="rtl" data-scroll-behavior="smooth" className="print:bg-white">
+      <body className="selection:bg-highlight/40 selection:text-foreground print:m-0 print:bg-white print:text-neutral-950">
         {children}
         <Toaster />
       </body>

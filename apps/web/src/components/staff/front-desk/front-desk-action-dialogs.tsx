@@ -1,10 +1,12 @@
+import { NativeSelect } from '@/components/ui/select';
+import { Textarea } from '@/components/ui/textarea';
 import type { FormEvent, RefObject } from 'react';
 import Link from 'next/link';
 import type { StaffRoomBoardItem } from '@/lib/staff-api';
 import type { StaffStayWorklistItem } from '@/lib/staff-front-desk-api';
 import { assignmentsOnDate } from './front-desk-domain';
 import { StaffDialogSurface } from './staff-dialog-surface';
-import styles from './staff-front-desk.module.css';
+import { frontDeskClasses as styles } from '../tailwind-classes';
 
 interface ActionDialogProps {
   kind: 'check-in' | 'no-show';
@@ -48,7 +50,7 @@ export function ActionDialog({
       {checkIn && manager && (
         <label>
           دلیل ورود زودهنگام <span>در صورت نیاز؛ سامانه مجازبودن زمان را بررسی می‌کند.</span>
-          <textarea
+          <Textarea
             aria-label="دلیل ورود زودهنگام"
             value={reason}
             maxLength={500}
@@ -59,7 +61,7 @@ export function ActionDialog({
       {!checkIn && (
         <label>
           دلیل عدم مراجعه <span>این توضیح در سابقه عملیات ثبت می‌شود.</span>
-          <textarea
+          <Textarea
             aria-label="دلیل عدم مراجعه"
             value={reason}
             maxLength={500}
@@ -132,7 +134,7 @@ export function MoveDialog({
       <form onSubmit={onSubmit}>
         <label>
           اتاق فعلی
-          <select
+          <NativeSelect
             aria-label="اتاق فعلی"
             name="sourceAssignmentId"
             required
@@ -148,7 +150,7 @@ export function MoveDialog({
                 </option>
               ))
             )}
-          </select>
+          </NativeSelect>
         </label>
         {activeAssignments.length === 0 && (
           <p className={styles.notice} role="status">
@@ -157,14 +159,14 @@ export function MoveDialog({
         )}
         <label>
           اتاق مقصد
-          <select aria-label="اتاق مقصد" name="targetRoomId" required defaultValue="">
+          <NativeSelect aria-label="اتاق مقصد" name="targetRoomId" required defaultValue="">
             <option value="">انتخاب اتاق بازرسی‌شده</option>
             {rooms.map((room) => (
               <option key={room.id} value={room.id}>
                 اتاق {room.roomNumber}
               </option>
             ))}
-          </select>
+          </NativeSelect>
         </label>
         {loading && <p role="status">در حال بررسی اتاق‌های پیشنهادی…</p>}
         {!loading && rooms.length === 0 && (
@@ -174,7 +176,7 @@ export function MoveDialog({
         )}
         <label>
           دلیل انتقال
-          <textarea
+          <Textarea
             aria-label="دلیل انتقال"
             required
             maxLength={500}

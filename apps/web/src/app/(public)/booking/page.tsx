@@ -1,6 +1,5 @@
 import Link from 'next/link';
 import { BookingFlow } from '@/components/booking/booking-flow';
-import styles from '@/components/booking/booking-flow.module.css';
 import { PublicSiteFrame } from '@/components/public/public-site-frame';
 import {
   getPublicAvailability,
@@ -59,10 +58,22 @@ function BookingMessage({ kind }: { kind: 'invalid' | 'unavailable' | 'server-er
   }[kind];
 
   return (
-    <section className={styles.pageMessage} aria-labelledby="booking-message-title" role="status">
-      <h1 id="booking-message-title">{content.title}</h1>
-      <p>{content.body}</p>
-      <Link className={styles.pageMessageLink} href="/#stay-search">
+    <section
+      className="mx-auto my-12 w-[min(calc(100%-2rem),48rem)] rounded-3xl border border-border bg-surface p-6 sm:p-10"
+      aria-labelledby="booking-message-title"
+      role="status"
+    >
+      <h1
+        id="booking-message-title"
+        className="text-3xl font-bold leading-tight text-primary-strong"
+      >
+        {content.title}
+      </h1>
+      <p className="mt-3 max-w-prose text-base leading-8 text-muted-foreground">{content.body}</p>
+      <Link
+        className="mt-5 inline-flex min-h-11 items-center justify-center rounded-full bg-primary px-5 text-sm font-bold text-primary-foreground transition-colors hover:bg-primary-strong focus-visible:outline-3 focus-visible:outline-ring"
+        href="/#stay-search"
+      >
         جستجوی دوباره
       </Link>
     </section>

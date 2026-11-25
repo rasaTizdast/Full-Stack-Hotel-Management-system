@@ -1,4 +1,7 @@
 'use client';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import { NativeSelect } from '@/components/ui/select';
+import { Textarea } from '@/components/ui/textarea';
 
 import { useEffect, useState, type FormEvent, type ReactNode, type RefObject } from 'react';
 import { StaffDialogSurface } from '../front-desk/staff-dialog-surface';
@@ -13,7 +16,7 @@ import type {
   ReportHousekeepingDiscrepancyInput,
 } from '@/lib/staff-housekeeping-api';
 import { PRIORITY_LABELS, TASK_TYPE_LABELS } from './housekeeping-copy';
-import styles from './housekeeping.module.css';
+import { housekeepingClasses as styles } from '../tailwind-classes';
 
 export type HousekeepingDialogState =
   | { kind: 'create' }
@@ -121,35 +124,29 @@ export function CompleteHousekeepingDialog({
       <p className={styles.dialogLead}>نتیجه پس از ثبت در وضعیت اتاق و کارهای بعدی اعمال می‌شود.</p>
       <form className={styles.dialogForm} onSubmit={submit}>
         {isInspection ? (
-          <div className={styles.radioGroup} role="radiogroup" aria-label="نتیجهٔ بازرسی">
-            <label className={styles.radioOption}>
-              <input
-                type="radio"
-                name="inspection-outcome"
-                value="DONE"
-                checked={outcome === 'DONE'}
-                onChange={() => setOutcome('DONE')}
-              />
+          <RadioGroup
+            className={styles.radioGroup}
+            aria-label="نتیجهٔ بازرسی"
+            name="inspection-outcome"
+            value={outcome}
+            onValueChange={(value) => setOutcome(value as 'DONE' | 'NEEDS_REWORK')}
+          >
+            <div className={styles.radioOption}>
+              <RadioGroupItem value="DONE" />
               <span>بازرسی تأیید شد؛ اتاق آماده است</span>
-            </label>
-            <label className={styles.radioOption}>
-              <input
-                type="radio"
-                name="inspection-outcome"
-                value="NEEDS_REWORK"
-                checked={outcome === 'NEEDS_REWORK'}
-                onChange={() => setOutcome('NEEDS_REWORK')}
-              />
+            </div>
+            <div className={styles.radioOption}>
+              <RadioGroupItem value="NEEDS_REWORK" />
               <span>نیازمند نظافت دوباره</span>
-            </label>
-          </div>
+            </div>
+          </RadioGroup>
         ) : (
           <p className={styles.dialogLead}>این کار پس از تأیید به‌عنوان انجام‌شده ثبت می‌شود.</p>
         )}
         {outcome === 'NEEDS_REWORK' && (
           <label className={styles.dialogField}>
             دلیل نیاز به نظافت دوباره
-            <textarea
+            <Textarea
               value={reason}
               onChange={(event) => setReason(event.target.value)}
               maxLength={300}
@@ -229,7 +226,7 @@ export function CreateHousekeepingTaskDialog({
           <>
             <label className={styles.dialogField}>
               اتاق
-              <select
+              <NativeSelect
                 aria-label="اتاق"
                 value={roomId}
                 onChange={(event) => setRoomId(event.target.value)}
@@ -246,11 +243,11 @@ export function CreateHousekeepingTaskDialog({
                         : 'نیازمند نظافت'}
                   </option>
                 ))}
-              </select>
+              </NativeSelect>
             </label>
             <label className={styles.dialogField}>
               نوع کار
-              <select
+              <NativeSelect
                 aria-label="نوع کار"
                 value={taskType}
                 onChange={(event) => setTaskType(event.target.value as HousekeepingTaskType)}
@@ -260,11 +257,11 @@ export function CreateHousekeepingTaskDialog({
                     {label}
                   </option>
                 ))}
-              </select>
+              </NativeSelect>
             </label>
             <label className={styles.dialogField}>
               اولویت
-              <select
+              <NativeSelect
                 aria-label="اولویت"
                 value={priority}
                 onChange={(event) => setPriority(event.target.value as HousekeepingPriority)}
@@ -274,11 +271,11 @@ export function CreateHousekeepingTaskDialog({
                     {label}
                   </option>
                 ))}
-              </select>
+              </NativeSelect>
             </label>
             <label className={styles.dialogField}>
               یادداشت عملیاتی (اختیاری)
-              <textarea
+              <Textarea
                 value={note}
                 onChange={(event) => setNote(event.target.value)}
                 maxLength={300}
@@ -348,7 +345,7 @@ export function AssignHousekeepingTaskDialog({
           <>
             <label className={styles.dialogField}>
               خانه‌دار مسئول
-              <select
+              <NativeSelect
                 aria-label="خانه‌دار مسئول"
                 value={assigneeStaffUserId}
                 onChange={(event) => setAssigneeStaffUserId(event.target.value)}
@@ -360,11 +357,11 @@ export function AssignHousekeepingTaskDialog({
                     {person.username}
                   </option>
                 ))}
-              </select>
+              </NativeSelect>
             </label>
             <label className={styles.dialogField}>
               تغییر اولویت (اختیاری)
-              <select
+              <NativeSelect
                 aria-label="تغییر اولویت"
                 value={priority}
                 onChange={(event) => setPriority(event.target.value as HousekeepingPriority | '')}
@@ -375,7 +372,7 @@ export function AssignHousekeepingTaskDialog({
                     {label}
                   </option>
                 ))}
-              </select>
+              </NativeSelect>
             </label>
           </>
         )}
@@ -416,7 +413,7 @@ export function CancelHousekeepingTaskDialog({
       >
         <label className={styles.dialogField}>
           دلیل لغو
-          <textarea
+          <Textarea
             value={reason}
             onChange={(event) => setReason(event.target.value)}
             maxLength={300}
@@ -491,7 +488,7 @@ export function ReportHousekeepingDiscrepancyDialog({
           <>
             <label className={styles.dialogField}>
               اتاق
-              <select
+              <NativeSelect
                 aria-label="اتاق"
                 value={roomId}
                 onChange={(event) => setRoomId(event.target.value)}
@@ -504,7 +501,7 @@ export function ReportHousekeepingDiscrepancyDialog({
                     {room.occupancy === 'OCCUPIED' ? 'اشغال' : 'خالی'}
                   </option>
                 ))}
-              </select>
+              </NativeSelect>
             </label>
             {selectedRoom && (
               <p className={styles.dialogLead}>
@@ -515,7 +512,7 @@ export function ReportHousekeepingDiscrepancyDialog({
             )}
             <label className={styles.dialogField}>
               حضور مشاهده‌شده
-              <select
+              <NativeSelect
                 aria-label="حضور مشاهده‌شده"
                 value={observedOccupied}
                 onChange={(event) => setObservedOccupied(event.target.value)}
@@ -524,11 +521,11 @@ export function ReportHousekeepingDiscrepancyDialog({
                 <option value="">انتخاب وضعیت</option>
                 <option value="true">اشغال</option>
                 <option value="false">خالی</option>
-              </select>
+              </NativeSelect>
             </label>
             <label className={styles.dialogField}>
               یادداشت عملیاتی
-              <textarea
+              <Textarea
                 value={note}
                 onChange={(event) => setNote(event.target.value)}
                 maxLength={300}
@@ -576,7 +573,7 @@ export function DismissHousekeepingDiscrepancyDialog({
       >
         <label className={styles.dialogField}>
           دلیل رد
-          <textarea
+          <Textarea
             value={reason}
             onChange={(event) => setReason(event.target.value)}
             maxLength={300}

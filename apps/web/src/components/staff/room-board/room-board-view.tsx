@@ -1,3 +1,6 @@
+import { NativeSelect } from '@/components/ui/select';
+import { Input } from '@/components/ui/input';
+import { staffClass } from '@/components/staff/staff-classes';
 import type { FormEvent } from 'react';
 import { formatGregorianAsJalali, formatPersianInteger } from '@/lib/jalali-date';
 import type {
@@ -7,7 +10,7 @@ import type {
   StaffRoomStayContext,
 } from '@/lib/staff-api';
 import { isDateWithinAssignmentInterval } from './room-board-date';
-import styles from './room-board.module.css';
+import { roomBoardClasses as styles } from '../tailwind-classes';
 
 export type RoomBoardFilters = {
   date: string;
@@ -151,7 +154,7 @@ export function RoomBoardHeader({
           <strong>{board ? displayTimestamp(board.updatedAt) : '—'}</strong>
         </div>
         <button
-          className="button button--quiet"
+          className={staffClass('button button--quiet')}
           type="button"
           onClick={onRefresh}
           disabled={isLoading || isRefreshing}
@@ -233,7 +236,7 @@ export function RoomBoardFiltersForm({
       <div className={styles.filterFields}>
         <div className={styles.field}>
           <label htmlFor="room-board-date">تاریخ تابلو</label>
-          <input
+          <Input
             id="room-board-date"
             value={filters.date}
             onChange={(event) => onChange('date', event.target.value)}
@@ -252,7 +255,7 @@ export function RoomBoardFiltersForm({
         </div>
         <div className={styles.field}>
           <label htmlFor="room-board-type">نوع اتاق</label>
-          <select
+          <NativeSelect
             id="room-board-type"
             value={filters.roomTypeId}
             onChange={(event) => onChange('roomTypeId', event.target.value)}
@@ -263,11 +266,11 @@ export function RoomBoardFiltersForm({
                 {roomType.name}
               </option>
             ))}
-          </select>
+          </NativeSelect>
         </div>
         <div className={styles.field}>
           <label htmlFor="room-board-floor">طبقه</label>
-          <select
+          <NativeSelect
             id="room-board-floor"
             value={filters.floor}
             onChange={(event) => onChange('floor', event.target.value)}
@@ -278,11 +281,11 @@ export function RoomBoardFiltersForm({
                 طبقهٔ {floor}
               </option>
             ))}
-          </select>
+          </NativeSelect>
         </div>
         <div className={styles.field}>
           <label htmlFor="room-board-occupancy">وضعیت حضور</label>
-          <select
+          <NativeSelect
             id="room-board-occupancy"
             value={filters.occupancy}
             onChange={(event) => onChange('occupancy', event.target.value)}
@@ -291,11 +294,11 @@ export function RoomBoardFiltersForm({
             <option value="VACANT">خالی</option>
             <option value="UNKNOWN">رزرو دارد؛ حضور ثبت نشده</option>
             <option value="OCCUPIED">اشغال؛ پذیرش انجام شده</option>
-          </select>
+          </NativeSelect>
         </div>
         <div className={styles.field}>
           <label htmlFor="room-board-housekeeping">نظافت</label>
-          <select
+          <NativeSelect
             id="room-board-housekeeping"
             value={filters.housekeepingStatus}
             onChange={(event) => onChange('housekeepingStatus', event.target.value)}
@@ -304,11 +307,11 @@ export function RoomBoardFiltersForm({
             <option value="DIRTY">نیازمند نظافت</option>
             <option value="CLEAN">نظافت‌شده</option>
             <option value="INSPECTED">بازرسی‌شده</option>
-          </select>
+          </NativeSelect>
         </div>
         <div className={styles.field}>
           <label htmlFor="room-board-stay">وضعیت رزرو</label>
-          <select
+          <NativeSelect
             id="room-board-stay"
             value={filters.stayContext}
             onChange={(event) => onChange('stayContext', event.target.value)}
@@ -319,11 +322,11 @@ export function RoomBoardFiltersForm({
             <option value="RESERVED">رزرو در جریان</option>
             <option value="IN_HOUSE">اقامت در جریان</option>
             <option value="DEPARTING">خروج امروز</option>
-          </select>
+          </NativeSelect>
         </div>
         <div className={styles.field}>
           <label htmlFor="room-board-block">مسدودی</label>
-          <select
+          <NativeSelect
             id="room-board-block"
             value={filters.blockKind}
             onChange={(event) => onChange('blockKind', event.target.value)}
@@ -332,14 +335,14 @@ export function RoomBoardFiltersForm({
             <option value="NONE">بدون مسدودی</option>
             <option value="OUT_OF_ORDER">خارج از سرویس</option>
             <option value="CAPACITY_CLOSED">ظرفیت بسته</option>
-          </select>
+          </NativeSelect>
         </div>
       </div>
       <div className={styles.actions}>
-        <button className="button button--jade" type="submit" disabled={disabled}>
+        <button className={staffClass('button button--jade')} type="submit" disabled={disabled}>
           اعمال فیلترها
         </button>
-        <button className="button button--quiet" type="button" onClick={onClear}>
+        <button className={staffClass('button button--quiet')} type="button" onClick={onClear}>
           پاک‌کردن فیلترها
         </button>
       </div>
@@ -486,7 +489,7 @@ export function AssignableBookings({ board, onEdit }: AssignableBookingsProps) {
                 </span>
               </div>
               <button
-                className="button button--quiet"
+                className={staffClass('button button--quiet')}
                 type="button"
                 onClick={(event) => onEdit(booking.reference, event.currentTarget)}
               >

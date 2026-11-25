@@ -1,4 +1,6 @@
 'use client';
+import { staffClass } from '@/components/staff/staff-classes';
+
 
 import type { ReactNode } from 'react';
 import { useEffect } from 'react';
@@ -30,8 +32,8 @@ function SessionGate({ children }: Readonly<{ children: ReactNode }>) {
 
   if (status === 'loading') {
     return (
-      <main className="staff-session-state" aria-live="polite" aria-busy="true">
-        <span className="staff-session-state__mark" aria-hidden="true" />
+      <main className={staffClass('staff-session-state')} aria-live="polite" aria-busy="true">
+        <span className={staffClass('staff-session-state__mark')} aria-hidden="true" />
         <p>در حال بررسی دسترسی کارکنان…</p>
       </main>
     );
@@ -39,10 +41,10 @@ function SessionGate({ children }: Readonly<{ children: ReactNode }>) {
 
   if (status === 'error') {
     return (
-      <main className="staff-session-state" aria-live="polite">
+      <main className={staffClass('staff-session-state')} aria-live="polite">
         <h1>پنل کارکنان در دسترس نیست</h1>
         <p role="alert">{error}</p>
-        <button className="button button--jade" onClick={() => window.location.reload()}>
+        <button className={staffClass('button button--jade')} onClick={() => window.location.reload()}>
           تلاش دوباره
         </button>
       </main>
@@ -53,8 +55,8 @@ function SessionGate({ children }: Readonly<{ children: ReactNode }>) {
 
   if (redirectForCredentialChange || redirectToRoleHome) {
     return (
-      <main className="staff-session-state" aria-live="polite" aria-busy="true">
-        <span className="staff-session-state__mark" aria-hidden="true" />
+      <main className={staffClass('staff-session-state')} aria-live="polite" aria-busy="true">
+        <span className={staffClass('staff-session-state__mark')} aria-hidden="true" />
         <p>
           {redirectForCredentialChange
             ? 'برای ادامه، گذرواژه آغازین را تغییر دهید…'

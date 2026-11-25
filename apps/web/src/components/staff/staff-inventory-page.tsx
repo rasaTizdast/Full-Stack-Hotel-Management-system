@@ -1,4 +1,6 @@
 'use client';
+import { staffClass } from '@/components/staff/staff-classes';
+
 
 import { useEffect, useRef, useState, type FormEvent } from 'react';
 import Link from 'next/link';
@@ -116,7 +118,7 @@ export function StaffInventoryPage() {
 
   if (!canManageInventory) {
     return (
-      <section className="staff-inventory-denied" aria-labelledby="staff-inventory-denied-title">
+      <section className={staffClass('staff-inventory-denied')} aria-labelledby="staff-inventory-denied-title">
         <h1 id="staff-inventory-denied-title">دسترسی به مدیریت موجودی</h1>
         <p role="alert">این بخش برای مدیر اقامتگاه و مدیر شیفت در دسترس است.</p>
       </section>
@@ -246,21 +248,21 @@ export function StaffInventoryPage() {
   }
 
   return (
-    <section className="staff-inventory" aria-labelledby="staff-inventory-title">
-      <header className="staff-inventory__header">
+    <section className={staffClass('staff-inventory')} aria-labelledby="staff-inventory-title">
+      <header className={staffClass('staff-inventory__header')}>
         <h1 id="staff-inventory-title">ظرفیت و نرخ‌ها</h1>
         <p>ظرفیت فیزیکی را در بازهٔ اقامت ببینید و نرخ شبانه را برای چند شب یک‌جا تنظیم کنید.</p>
       </header>
 
-      <aside className="staff-inventory__snapshot-note">
-        <span className="staff-inventory__note-mark" aria-hidden="true">
+      <aside className={staffClass('staff-inventory__snapshot-note')}>
+        <span className={staffClass('staff-inventory__note-mark')} aria-hidden="true">
           ◇
         </span>
         <div>
           <p>قیمت ثبت‌شده برای رزروهای موجود تغییر نمی‌کند.</p>
           <p>ظرفیت از اتاق‌های فعال و مسدودی‌های هر شب به‌صورت خودکار محاسبه می‌شود.</p>
         </div>
-        <Link className="staff-inventory__rooms-link" href="/staff/rooms/manage">
+        <Link className={staffClass('staff-inventory__rooms-link')} href="/staff/rooms/manage">
           مدیریت اتاق‌های فیزیکی
         </Link>
       </aside>

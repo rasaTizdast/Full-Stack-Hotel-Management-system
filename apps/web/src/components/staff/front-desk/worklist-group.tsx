@@ -11,7 +11,7 @@ import {
   isStayActiveOn,
   ROOM_STATUS,
 } from './front-desk-domain';
-import styles from './staff-front-desk.module.css';
+import { frontDeskClasses as styles } from '../tailwind-classes';
 
 interface WorklistGroupProps {
   queue: StaffStayQueue;

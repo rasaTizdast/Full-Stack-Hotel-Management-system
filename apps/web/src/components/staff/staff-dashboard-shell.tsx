@@ -1,4 +1,6 @@
 'use client';
+import { staffClass } from '@/components/staff/staff-classes';
+
 
 import Link from 'next/link';
 import { useEffect, useRef, useState, type ReactNode } from 'react';
@@ -59,46 +61,46 @@ export function StaffDashboardShell({
 
   return (
     <div
-      className="staff-shell"
+      className={staffClass('staff-shell')}
       data-folio-print={
         currentPath.startsWith('/staff/folios/') && currentPath.endsWith('/print')
           ? 'true'
           : undefined
       }
     >
-      <a className="skip-link" href="#staff-main">
+      <a className={staffClass('skip-link')} href="#staff-main">
         رفتن به محتوای اصلی
       </a>
-      <header className="staff-topbar">
+      <header className={staffClass('staff-topbar')}>
         <Link
-          className="staff-brand"
+          className={staffClass('staff-brand')}
           href={staff.mustChangePassword ? '/staff/change-password' : getStaffHomePath(staff.role)}
         >
-          <HotelLogo size={44} className="staff-brand__mark" />
-          <span className="staff-brand__copy">
+          <HotelLogo size={44} className={staffClass('staff-brand__mark')} />
+          <span className={staffClass('staff-brand__copy')}>
             <strong>خانه‌باغ نارنج</strong>
             <small>پنل کارکنان</small>
           </span>
         </Link>
-        <div className="staff-topbar__right">
-          <span className="staff-property-label">شیراز، خانه‌باغ نارنج</span>
-          <div className="staff-identity">
-            <span className="staff-identity__avatar" aria-hidden="true">
+        <div className={staffClass('staff-topbar__right')}>
+          <span className={staffClass('staff-property-label')}>شیراز، خانه‌باغ نارنج</span>
+          <div className={staffClass('staff-identity')}>
+            <span className={staffClass('staff-identity__avatar')} aria-hidden="true">
               {staff.username.slice(0, 1)}
             </span>
-            <span className="staff-identity__copy">
+            <span className={staffClass('staff-identity__copy')}>
               <strong>{staff.username}</strong>
-              <small className="staff-identity__role">{getStaffRoleLabel(staff.role)}</small>
+              <small className={staffClass('staff-identity__role')}>{getStaffRoleLabel(staff.role)}</small>
             </span>
             {staff.email.toLowerCase() !== staff.username.trim().toLowerCase() && (
-              <span className="staff-identity__email" dir="ltr">
+              <span className={staffClass('staff-identity__email')} dir="ltr">
                 {staff.email}
               </span>
             )}
           </div>
           <button
             aria-label="خروج از پنل"
-            className="staff-logout"
+            className={staffClass('staff-logout')}
             type="button"
             onClick={onLogout}
             disabled={isLoggingOut}
@@ -111,40 +113,40 @@ export function StaffDashboardShell({
         </div>
       </header>
 
-      <div className="staff-layout">
-        <aside className="staff-sidebar">
-          <div className="staff-sidebar__heading">
-            <p className="staff-sidebar__label">فضای کاری</p>
+      <div className={staffClass('staff-layout')}>
+        <aside className={staffClass('staff-sidebar')}>
+          <div className={staffClass('staff-sidebar__heading')}>
+            <p className={staffClass('staff-sidebar__label')}>فضای کاری</p>
             <span>شیراز، ایران</span>
           </div>
           <div
-            className={`staff-nav-viewport${hasNavOverflow ? ' staff-nav-viewport--overflow' : ''}`}
+            className={staffClass(`staff-nav-viewport${hasNavOverflow ? ' staff-nav-viewport--overflow' : ''}`)}
           >
-            <nav ref={staffNavRef} aria-label="منوی پنل کارکنان" className="staff-nav">
+            <nav ref={staffNavRef} aria-label="منوی پنل کارکنان" className={staffClass('staff-nav')}>
               {staff.mustChangePassword ? (
                 <Link
                   href="/staff/change-password"
                   aria-current={currentPath === '/staff/change-password' ? 'page' : undefined}
                 >
-                  <span className="staff-nav__glyph" aria-hidden="true">
+                  <span className={staffClass('staff-nav__glyph')} aria-hidden="true">
                     <svg viewBox="0 0 24 24" fill="none">
                       <rect x="5" y="10" width="14" height="10" rx="2" />
                       <path d="M8 10V7.5a4 4 0 0 1 8 0V10M12 14v2" />
                     </svg>
                   </span>
-                  <span className="staff-nav__copy">
+                  <span className={staffClass('staff-nav__copy')}>
                     <strong>تغییر گذرواژه</strong> <small>الزامی برای ادامه کار</small>
                   </span>
                 </Link>
               ) : (
                 <>
                   <Link href="/staff" aria-current={currentPath === '/staff' ? 'page' : undefined}>
-                    <span className="staff-nav__glyph" aria-hidden="true">
+                    <span className={staffClass('staff-nav__glyph')} aria-hidden="true">
                       <svg viewBox="0 0 24 24" fill="none">
                         <path d="M4 11.5 12 5l8 6.5M6.5 10v9h11v-9M9.5 19v-5.5h5V19" />
                       </svg>
                     </span>
-                    <span className="staff-nav__copy">
+                    <span className={staffClass('staff-nav__copy')}>
                       <strong>نمای کلی</strong>
                       <small>شروع و دسترسی سریع</small>
                     </span>
@@ -156,12 +158,12 @@ export function StaffDashboardShell({
                         currentPath.startsWith('/staff/front-desk') ? 'page' : undefined
                       }
                     >
-                      <span className="staff-nav__glyph" aria-hidden="true">
+                      <span className={staffClass('staff-nav__glyph')} aria-hidden="true">
                         <svg viewBox="0 0 24 24" fill="none">
                           <path d="M4 19.5h16M6 19V6.5h12V19M9 9h6M9 12h6M9 15h3" />
                         </svg>
                       </span>
-                      <span className="staff-nav__copy">
+                      <span className={staffClass('staff-nav__copy')}>
                         <strong>میز پذیرش</strong>
                         <small>ورودها و اقامت‌های جاری</small>
                       </span>
@@ -174,13 +176,13 @@ export function StaffDashboardShell({
                         currentPath.startsWith('/staff/housekeeping') ? 'page' : undefined
                       }
                     >
-                      <span className="staff-nav__glyph" aria-hidden="true">
+                      <span className={staffClass('staff-nav__glyph')} aria-hidden="true">
                         <svg viewBox="0 0 24 24" fill="none">
                           <path d="M4.5 12h15M7 8h10M7 16h10M5 4.5h14v15H5z" />
                           <path d="m8 12 2 2 5-5" />
                         </svg>
                       </span>
-                      <span className="staff-nav__copy">
+                      <span className={staffClass('staff-nav__copy')}>
                         <strong>خانه‌داری</strong>
                         <small>کارها و وضعیت نظافت</small>
                       </span>
@@ -193,13 +195,13 @@ export function StaffDashboardShell({
                         currentPath.startsWith('/staff/maintenance') ? 'page' : undefined
                       }
                     >
-                      <span className="staff-nav__glyph" aria-hidden="true">
+                      <span className={staffClass('staff-nav__glyph')} aria-hidden="true">
                         <svg viewBox="0 0 24 24" fill="none">
                           <path d="M14.5 6.5a4 4 0 0 0-5.7 5.6l-5.3 5.4a2 2 0 0 0 2.8 2.8l5.4-5.3a4 4 0 0 0 5.6-5.7l-2.4 2.4-2.8-2.8 2.4-2.4Z" />
                           <path d="m5.1 18.9 1.4-1.4" />
                         </svg>
                       </span>
-                      <span className="staff-nav__copy">
+                      <span className={staffClass('staff-nav__copy')}>
                         <strong>تعمیرات</strong>
                         <small>درخواست‌ها و انسداد اتاق</small>
                       </span>
@@ -210,13 +212,13 @@ export function StaffDashboardShell({
                       href="/staff/bookings"
                       aria-current={currentPath.startsWith('/staff/bookings') ? 'page' : undefined}
                     >
-                      <span className="staff-nav__glyph" aria-hidden="true">
+                      <span className={staffClass('staff-nav__glyph')} aria-hidden="true">
                         <svg viewBox="0 0 24 24" fill="none">
                           <rect x="4.5" y="5" width="15" height="14" rx="2" />
                           <path d="M8 9h8M8 12h8M8 15h5" />
                         </svg>
                       </span>
-                      <span className="staff-nav__copy">
+                      <span className={staffClass('staff-nav__copy')}>
                         <strong>درخواست‌های رزرو</strong>
                         <small>بررسی و پاسخ به مهمانان</small>
                       </span>
@@ -227,12 +229,12 @@ export function StaffDashboardShell({
                       href="/staff/rooms"
                       aria-current={currentPath === '/staff/rooms' ? 'page' : undefined}
                     >
-                      <span className="staff-nav__glyph" aria-hidden="true">
+                      <span className={staffClass('staff-nav__glyph')} aria-hidden="true">
                         <svg viewBox="0 0 24 24" fill="none">
                           <path d="M4 19.5h16M5.5 19V7.5h13V19M8 10h3v3H8zM13 10h3v3h-3zM8 15h3v4H8zM13 15h3v2h-3z" />
                         </svg>
                       </span>
-                      <span className="staff-nav__copy">
+                      <span className={staffClass('staff-nav__copy')}>
                         <strong>وضعیت اتاق‌ها</strong> <small>تخصیص و وضعیت روزانه</small>
                       </span>
                     </Link>
@@ -244,12 +246,12 @@ export function StaffDashboardShell({
                         currentPath.startsWith('/staff/rooms/manage') ? 'page' : undefined
                       }
                     >
-                      <span className="staff-nav__glyph" aria-hidden="true">
+                      <span className={staffClass('staff-nav__glyph')} aria-hidden="true">
                         <svg viewBox="0 0 24 24" fill="none">
                           <path d="M4 19.5h16M5.5 19V7.5h13V19M8 10h3v3H8zM13 10h3v3h-3zM8 15h3v4H8zM13 15h3v2h-3z" />
                         </svg>
                       </span>
-                      <span className="staff-nav__copy">
+                      <span className={staffClass('staff-nav__copy')}>
                         <strong>اتاق‌های فیزیکی</strong> <small>شماره و وضعیت اتاق‌ها</small>
                       </span>
                     </Link>
@@ -259,13 +261,13 @@ export function StaffDashboardShell({
                       href="/staff/inventory"
                       aria-current={currentPath.startsWith('/staff/inventory') ? 'page' : undefined}
                     >
-                      <span className="staff-nav__glyph" aria-hidden="true">
+                      <span className={staffClass('staff-nav__glyph')} aria-hidden="true">
                         <svg viewBox="0 0 24 24" fill="none">
                           <path d="M4.5 7.5 12 4l7.5 3.5L12 11 4.5 7.5Z" />
                           <path d="M4.5 12 12 15.5 19.5 12M4.5 16.5 12 20l7.5-3.5" />
                         </svg>
                       </span>
-                      <span className="staff-nav__copy">
+                      <span className={staffClass('staff-nav__copy')}>
                         <strong>ظرفیت و نرخ‌ها</strong> <small>تنظیم برنامه اتاق‌ها</small>
                       </span>
                     </Link>
@@ -275,13 +277,13 @@ export function StaffDashboardShell({
                       href="/staff/services"
                       aria-current={currentPath.startsWith('/staff/services') ? 'page' : undefined}
                     >
-                      <span className="staff-nav__glyph" aria-hidden="true">
+                      <span className={staffClass('staff-nav__glyph')} aria-hidden="true">
                         <svg viewBox="0 0 24 24" fill="none">
                           <path d="M4 8.5h16l-1.3 11H5.3L4 8.5Z" />
                           <path d="M8 9V6.5a4 4 0 0 1 8 0V9M9 13h6M12 10v6" />
                         </svg>
                       </span>
-                      <span className="staff-nav__copy">
+                      <span className={staffClass('staff-nav__copy')}>
                         <strong>فهرست خدمات</strong>
                         <small>خدمت و قیمت ثبت‌ها</small>
                       </span>
@@ -294,13 +296,13 @@ export function StaffDashboardShell({
                         currentPath.startsWith('/staff/operations/close') ? 'page' : undefined
                       }
                     >
-                      <span className="staff-nav__glyph" aria-hidden="true">
+                      <span className={staffClass('staff-nav__glyph')} aria-hidden="true">
                         <svg viewBox="0 0 24 24" fill="none">
                           <circle cx="12" cy="12" r="8" />
                           <path d="M12 7v5l3 2M7 3.8 5.4 5.4M17 3.8l1.6 1.6" />
                         </svg>
                       </span>
-                      <span className="staff-nav__copy">
+                      <span className={staffClass('staff-nav__copy')}>
                         <strong>بستن روز کاری</strong>
                         <small>ثبت شب اقامت و انتقال تاریخ</small>
                       </span>
@@ -311,12 +313,12 @@ export function StaffDashboardShell({
                       href="/staff/reports"
                       aria-current={currentPath.startsWith('/staff/reports') ? 'page' : undefined}
                     >
-                      <span className="staff-nav__glyph" aria-hidden="true">
+                      <span className={staffClass('staff-nav__glyph')} aria-hidden="true">
                         <svg viewBox="0 0 24 24" fill="none">
                           <path d="M5 19V9m7 10V5m7 14v-7M3.5 19.5h17" />
                         </svg>
                       </span>
-                      <span className="staff-nav__copy">
+                      <span className={staffClass('staff-nav__copy')}>
                         <strong>گزارش روزانه</strong>
                         <small>عملیات و گردش مالی</small>
                       </span>
@@ -327,13 +329,13 @@ export function StaffDashboardShell({
                       href="/staff/staff"
                       aria-current={currentPath.startsWith('/staff/staff') ? 'page' : undefined}
                     >
-                      <span className="staff-nav__glyph" aria-hidden="true">
+                      <span className={staffClass('staff-nav__glyph')} aria-hidden="true">
                         <svg viewBox="0 0 24 24" fill="none">
                           <circle cx="9" cy="8" r="3" />
                           <path d="M3.5 19a5.5 5.5 0 0 1 11 0M16 6.5a2.5 2.5 0 0 1 0 5M17 14a4 4 0 0 1 3.5 4" />
                         </svg>
                       </span>
-                      <span className="staff-nav__copy">
+                      <span className={staffClass('staff-nav__copy')}>
                         <strong>حساب‌های کارکنان</strong> <small>مدیریت نقش‌ها و دسترسی</small>
                       </span>
                     </Link>
@@ -341,19 +343,19 @@ export function StaffDashboardShell({
                 </>
               )}
             </nav>
-            <span className="staff-nav-overflow-cue" data-staff-nav-overflow-cue aria-hidden="true">
+            <span className={staffClass('staff-nav-overflow-cue')} data-staff-nav-overflow-cue aria-hidden="true">
               <svg viewBox="0 0 16 16" fill="none">
                 <path d="m10 3-5 5 5 5" />
               </svg>
             </span>
           </div>
           {logoutError && (
-            <p className="staff-nav__error" role="alert">
+            <p className={staffClass('staff-nav__error')} role="alert">
               {logoutError}
             </p>
           )}
-          <div className="staff-sidebar__note">
-            <HotelLogo size={38} className="staff-sidebar__note-mark" />
+          <div className={staffClass('staff-sidebar__note')}>
+            <HotelLogo size={38} className={staffClass('staff-sidebar__note-mark')} />
             <div>
               <strong>خانه‌باغ نارنج</strong>
               <span>پنل مدیریت اقامتگاه نمونه</span>
@@ -361,7 +363,7 @@ export function StaffDashboardShell({
           </div>
         </aside>
 
-        <main className="staff-main" id="staff-main" tabIndex={-1}>
+        <main className={staffClass('staff-main')} id="staff-main" tabIndex={-1}>
           {children}
         </main>
       </div>

@@ -10,7 +10,7 @@ import {
 import { dateLabel } from './front-desk-domain';
 import type { ListState } from './front-desk-types';
 import { WorklistGroup } from './worklist-group';
-import styles from './staff-front-desk.module.css';
+import { frontDeskClasses as styles } from '../tailwind-classes';
 
 export interface StaffFrontDeskQueueCopy {
   title: string;

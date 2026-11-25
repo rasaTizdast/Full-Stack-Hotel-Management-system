@@ -1,4 +1,6 @@
 'use client';
+import { staffClass } from '@/components/staff/staff-classes';
+
 
 import Link from 'next/link';
 import { useStaffSession } from '@/components/staff/staff-session-provider';
@@ -88,15 +90,15 @@ function WorkspaceLink({
   link: (typeof operationalLinks)[keyof typeof operationalLinks];
 }) {
   return (
-    <Link className="staff-overview__action" href={link.href}>
-      <span className="staff-overview__action-icon" aria-hidden="true">
+    <Link className={staffClass('staff-overview__action')} href={link.href}>
+      <span className={staffClass('staff-overview__action-icon')} aria-hidden="true">
         <svg viewBox="0 0 24 24" fill="none">
           <path d="M4 19.5h16M5.5 19V7.5h13V19M8 10h3v3H8zM13 10h3v3h-3z" />
         </svg>
       </span>
       <strong>{link.title}</strong>
-      <span className="staff-overview__action-description">{link.detail}</span>
-      <span className="staff-overview__action-link">
+      <span className={staffClass('staff-overview__action-description')}>{link.detail}</span>
+      <span className={staffClass('staff-overview__action-link')}>
         رفتن به بخش <span aria-hidden="true">←</span>
       </span>
     </Link>
@@ -111,19 +113,19 @@ export default function StaffDashboardPage() {
   const { heading, links } = workspace;
 
   return (
-    <section className="staff-overview" aria-labelledby="staff-home-title">
-      <header className="staff-overview__hero">
-        <div className="staff-overview__hero-copy">
-          <p className="staff-overview__note-index">خانه‌باغ نارنج · شیراز</p>
+    <section className={staffClass('staff-overview')} aria-labelledby="staff-home-title">
+      <header className={staffClass('staff-overview__hero')}>
+        <div className={staffClass('staff-overview__hero-copy')}>
+          <p className={staffClass('staff-overview__note-index')}>خانه‌باغ نارنج · شیراز</p>
           <h1 id="staff-home-title">{heading}</h1>
-          <p className="staff-overview__intro">
+          <p className={staffClass('staff-overview__intro')}>
             {staff.role === 'ADMIN'
               ? 'حساب‌های همکاران و دسترسی‌های پنل را از اینجا مدیریت کنید.'
               : `خوش آمدید، ${staff.username}. فضای کاری ${getStaffRoleLabel(staff.role)} در دسترس شماست.`}
           </p>
         </div>
-        <aside className="staff-overview__hero-note" aria-label="وضعیت فضای کاری">
-          <span className="staff-overview__note-mark" aria-hidden="true">
+        <aside className={staffClass('staff-overview__hero-note')} aria-label="وضعیت فضای کاری">
+          <span className={staffClass('staff-overview__note-mark')} aria-hidden="true">
             ✦
           </span>
           <strong>{getStaffRoleLabel(staff.role)}</strong>
@@ -133,18 +135,18 @@ export default function StaffDashboardPage() {
 
       {links.length > 0 ? (
         <>
-          <div className="staff-overview__section-heading">
+          <div className={staffClass('staff-overview__section-heading')}>
             <h2>دسترسی‌های کاری</h2>
             <p>بخش‌های قابل استفاده برای نقش شما</p>
           </div>
-          <div className="staff-overview__actions">
+          <div className={staffClass('staff-overview__actions')}>
             {links.map((link) => (
               <WorkspaceLink key={link.href} link={link} />
             ))}
           </div>
         </>
       ) : (
-        <section className="staff-overview__quiet-state" aria-label="وضعیت کارهای امروز">
+        <section className={staffClass('staff-overview__quiet-state')} aria-label="وضعیت کارهای امروز">
           <span aria-hidden="true">✓</span>
           <div>
             <h2>هیچ کاری برای انجام در این لحظه ثبت نشده است.</h2>

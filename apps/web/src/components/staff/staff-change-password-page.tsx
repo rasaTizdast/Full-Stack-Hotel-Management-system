@@ -1,4 +1,7 @@
 'use client';
+import { Input } from '@/components/ui/input';
+import { staffClass } from '@/components/staff/staff-classes';
+
 
 import { useState, type FormEvent } from 'react';
 import { useRouter } from 'next/navigation';
@@ -44,17 +47,17 @@ export function StaffChangePasswordPage() {
   }
 
   return (
-    <section className="staff-password" aria-labelledby="staff-password-title">
-      <div className="staff-password__intro">
-        <p className="staff-password__eyebrow">اقدام امنیتی لازم</p>
+    <section className={staffClass('staff-password')} aria-labelledby="staff-password-title">
+      <div className={staffClass('staff-password__intro')}>
+        <p className={staffClass('staff-password__eyebrow')}>اقدام امنیتی لازم</p>
         <h1 id="staff-password-title">تغییر گذرواژه</h1>
         <p>برای ادامه کار، گذرواژه موقت حساب خود را با یک گذرواژه تازه جایگزین کنید.</p>
         {staff && <span>حساب {staff.username}</span>}
       </div>
-      <form className="staff-password__form" method="post" onSubmit={submit}>
+      <form className={staffClass('staff-password__form')} method="post" onSubmit={submit}>
         <label>
           گذرواژه فعلی
-          <input
+          <Input
             type="password"
             autoComplete="current-password"
             required
@@ -64,7 +67,7 @@ export function StaffChangePasswordPage() {
         </label>
         <label>
           گذرواژه تازه
-          <input
+          <Input
             type="password"
             autoComplete="new-password"
             required
@@ -74,7 +77,7 @@ export function StaffChangePasswordPage() {
         </label>
         <label>
           تکرار گذرواژه تازه
-          <input
+          <Input
             type="password"
             autoComplete="new-password"
             required
@@ -83,16 +86,16 @@ export function StaffChangePasswordPage() {
           />
         </label>
         {error && (
-          <p className="staff-password__error" role="alert">
+          <p className={staffClass('staff-password__error')} role="alert">
             {error}
           </p>
         )}
         {success && (
-          <p className="staff-password__success" role="status">
+          <p className={staffClass('staff-password__success')} role="status">
             {success}
           </p>
         )}
-        <button className="staff-accounts__primary" type="submit" disabled={isSaving}>
+        <button className={staffClass('staff-accounts__primary')} type="submit" disabled={isSaving}>
           {isSaving ? 'در حال ذخیره…' : 'تغییر گذرواژه'}
         </button>
       </form>

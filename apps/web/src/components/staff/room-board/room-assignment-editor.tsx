@@ -1,9 +1,13 @@
+import { NativeSelect } from '@/components/ui/select';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
+import { staffClass } from '@/components/staff/staff-classes';
 import { useEffect, useRef, type FormEvent } from 'react';
 import { formatPersianInteger } from '@/lib/jalali-date';
 import type { StaffRoomBoardAssignableBooking, StaffRoomBoardItem } from '@/lib/staff-api';
 import { isDateWithinAssignmentInterval } from './room-board-date';
 import { displayRoomBoardDate } from './room-board-view';
-import styles from './room-board.module.css';
+import { roomBoardClasses as styles } from '../tailwind-classes';
 
 export interface DraftAssignment {
   key: number;
@@ -100,7 +104,7 @@ export function RoomAssignmentEditor({
           </p>
         </div>
         <button
-          className="button button--quiet"
+          className={staffClass('button button--quiet')}
           type="button"
           onClick={onClose}
           disabled={isSaving}
@@ -127,7 +131,7 @@ export function RoomAssignmentEditor({
           {staleConflict.state === 'error' ? (
             <div role="alert">
               <p>{staleConflict.message}</p>
-              <button className="button button--quiet" type="button" onClick={onLoadLatest}>
+              <button className={staffClass('button button--quiet')} type="button" onClick={onLoadLatest}>
                 دریافت دوبارهٔ آخرین تخصیص‌ها
               </button>
             </div>
@@ -154,14 +158,14 @@ export function RoomAssignmentEditor({
               </div>
               <div className={styles.editorActions}>
                 <button
-                  className="button button--quiet"
+                  className={staffClass('button button--quiet')}
                   type="button"
                   onClick={() => onChooseLatest(staleConflict.booking)}
                 >
                   بارگذاری آخرین تخصیص‌ها
                 </button>
                 <button
-                  className="button button--jade"
+                  className={staffClass('button button--jade')}
                   type="button"
                   onClick={() => onReapplyDraft(staleConflict.booking)}
                 >
@@ -204,7 +208,7 @@ export function RoomAssignmentEditor({
                     <label htmlFor={`room-board-assignment-room-${assignment.key}`}>
                       اتاق تخصیص {displayRoomNumber}
                     </label>
-                    <select
+                    <NativeSelect
                       id={`room-board-assignment-room-${assignment.key}`}
                       value={assignment.roomId}
                       onChange={(event) => onUpdate(assignment.key, 'roomId', event.target.value)}
@@ -215,7 +219,7 @@ export function RoomAssignmentEditor({
                           اتاق {room.roomNumber} · طبقهٔ {room.floor || 'ثبت‌نشده'}
                         </option>
                       ))}
-                    </select>
+                    </NativeSelect>
                     <span>
                       آزادبودن اتاق در تمام بازهٔ انتخابی را سامانه هنگام ذخیره بررسی می‌کند.
                     </span>
@@ -224,7 +228,7 @@ export function RoomAssignmentEditor({
                     <label htmlFor={`room-board-assignment-start-${assignment.key}`}>
                       شروع تخصیص اتاق {displayRoomNumber}
                     </label>
-                    <input
+                    <Input
                       id={`room-board-assignment-start-${assignment.key}`}
                       value={assignment.startDate}
                       onChange={(event) =>
@@ -238,7 +242,7 @@ export function RoomAssignmentEditor({
                     <label htmlFor={`room-board-assignment-end-${assignment.key}`}>
                       پایان تخصیص اتاق {displayRoomNumber}
                     </label>
-                    <input
+                    <Input
                       id={`room-board-assignment-end-${assignment.key}`}
                       value={assignment.endDate}
                       onChange={(event) => onUpdate(assignment.key, 'endDate', event.target.value)}
@@ -249,7 +253,7 @@ export function RoomAssignmentEditor({
                   </div>
                 </div>
                 <button
-                  className="button button--danger-quiet"
+                  className={staffClass('button button--danger-quiet')}
                   type="button"
                   onClick={() => onRemove(assignment.key)}
                   disabled={isSaving}
@@ -264,7 +268,7 @@ export function RoomAssignmentEditor({
         <div className={styles.editorFooter}>
           <div className={styles.field}>
             <label htmlFor="room-board-assignment-reason">دلیل تغییر تخصیص</label>
-            <textarea
+            <Textarea
               id="room-board-assignment-reason"
               value={reason}
               maxLength={500}
@@ -279,7 +283,7 @@ export function RoomAssignmentEditor({
           </p>
           <div className={styles.editorActions}>
             <button
-              className="button button--quiet"
+              className={staffClass('button button--quiet')}
               type="button"
               onClick={onAdd}
               disabled={isSaving || assignments.length >= booking.roomQuantity}
@@ -287,7 +291,7 @@ export function RoomAssignmentEditor({
               افزودن اتاق به تخصیص
             </button>
             <button
-              className="button button--jade"
+              className={staffClass('button button--jade')}
               type="submit"
               disabled={isSaving || Boolean(staleConflict)}
             >

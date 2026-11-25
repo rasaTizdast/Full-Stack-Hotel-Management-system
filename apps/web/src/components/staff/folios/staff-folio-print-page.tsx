@@ -10,7 +10,8 @@ import {
 } from '@/lib/staff-folios-api';
 import { StaffApiError } from '@/lib/staff-api';
 import { useStaffSession } from '../staff-session-provider';
-import styles from './folio-print.module.css';
+import { Button } from '@/components/ui/button';
+import { Card } from '@/components/ui/card';
 
 function amountText(value: string): string {
   try {
@@ -106,28 +107,37 @@ export function StaffFolioPrintPage({ bookingId }: { bookingId: string }) {
 
   if (status === 'loading' || (canView && loading)) {
     return (
-      <p className={styles.status} role="status">
+      <p
+        className="m-0 rounded-xl bg-surface-soft px-4 py-3 text-sm leading-7 text-muted-foreground print:hidden"
+        role="status"
+      >
         در حال دریافت نسخه چاپی صورتحساب…
       </p>
     );
   }
   if (!canView) {
     return (
-      <p className={styles.error} role="alert">
+      <p
+        className="m-0 rounded-xl bg-destructive-soft px-4 py-3 text-sm leading-7 text-destructive print:hidden"
+        role="alert"
+      >
         نمایش صورتحساب برای نقش شما فعال نیست.
       </p>
     );
   }
   if (!statement) {
     return (
-      <main className={styles.page}>
+      <main className="mx-auto grid w-full max-w-6xl gap-4 p-3 text-foreground sm:p-6 print:block print:max-w-none print:p-0">
         {error && (
-          <p className={styles.error} role="alert">
+          <p
+            className="m-0 rounded-xl bg-destructive-soft px-4 py-3 text-sm leading-7 text-destructive print:hidden"
+            role="alert"
+          >
             {error}
           </p>
         )}
         <Link
-          className={styles.screenButton}
+          className="inline-flex min-h-11 items-center justify-center rounded-xl border border-border bg-surface px-4 text-sm font-semibold text-primary-strong no-underline hover:bg-muted print:hidden"
           href={`/staff/folios/${encodeURIComponent(bookingId)}`}
         >
           بازگشت به صورتحساب
@@ -147,136 +157,156 @@ export function StaffFolioPrintPage({ bookingId }: { bookingId: string }) {
     .toString();
 
   return (
-    <main className={styles.page}>
-      <nav className={styles.toolbar} aria-label="اقدام‌های چاپ">
+    <main className="mx-auto grid w-full max-w-6xl gap-4 p-3 text-foreground sm:p-6 print:block print:max-w-none print:p-0">
+      <nav className="flex justify-end gap-3 print:hidden" aria-label="اقدام‌های چاپ">
         <Link
-          className={styles.screenButton}
+          className="inline-flex min-h-11 items-center justify-center rounded-xl border border-border bg-surface px-4 text-sm font-semibold text-primary-strong no-underline hover:bg-muted"
           href={`/staff/folios/${encodeURIComponent(bookingId)}`}
         >
           بازگشت به صورتحساب
         </Link>
-        <button className={styles.printButton} type="button" onClick={() => window.print()}>
+        <Button type="button" onClick={() => window.print()}>
           چاپ
-        </button>
+        </Button>
       </nav>
 
-      <article className={styles.paper} aria-labelledby="folio-print-title">
-        <header className={styles.documentHeader}>
-          <div>
-            <p className={styles.eyebrow}>صورتحساب اقامت · سند عملیاتی</p>
-            <h1 id="folio-print-title">
-              {statement.label === 'Final folio' ? 'صورتحساب نهایی' : 'صورتحساب موقت'}
-            </h1>
-            <p className={styles.taxNote}>صورتحساب عملیاتی؛ فاکتور مالیاتی نیست.</p>
-          </div>
-          <div className={styles.printTime}>
-            <span>زمان تهیه</span>
-            <bdi dir="auto">{localTimestamp(statement.printedAt, statement.hotelTimezone)}</bdi>
-          </div>
-        </header>
+      <Card
+        className="min-w-0 rounded-2xl border-border bg-surface p-4 shadow-sm sm:p-8 print:rounded-none print:border-0 print:bg-white print:px-[8mm] print:py-0 print:shadow-none max-[680px]:print:px-[2mm]"
+        aria-labelledby="folio-print-title"
+      >
+        <article aria-labelledby="folio-print-title">
+          <header className="flex min-w-0 flex-col items-start justify-between gap-5 border-b-2 border-primary-strong pb-4 sm:flex-row">
+            <div>
+              <p className="mb-1 text-xs font-bold text-muted-foreground">
+                صورتحساب اقامت · سند عملیاتی
+              </p>
+              <h1
+                id="folio-print-title"
+                className="text-2xl font-bold leading-tight text-primary-strong sm:text-4xl"
+              >
+                {statement.label === 'Final folio' ? 'صورتحساب نهایی' : 'صورتحساب موقت'}
+              </h1>
+              <p className="mt-2 text-sm text-muted-foreground">
+                صورتحساب عملیاتی؛ فاکتور مالیاتی نیست.
+              </p>
+            </div>
+            <div className="grid min-w-40 gap-1 text-end text-sm max-[680px]:text-start">
+              <span className="text-xs text-muted-foreground">زمان تهیه</span>
+              <bdi dir="auto">{localTimestamp(statement.printedAt, statement.hotelTimezone)}</bdi>
+            </div>
+          </header>
 
-        <section className={styles.staySummary} aria-label="مشخصات اقامت">
-          <div>
-            <span className={styles.fieldLabel}>نام مهمان</span>
-            <strong className={styles.guestName}>{folio.booking.guestName}</strong>
-          </div>
-          <div>
-            <span className={styles.fieldLabel}>شناسه رزرو</span>
-            <bdi dir="ltr">{folio.booking.reference}</bdi>
-          </div>
-          <div>
-            <span className={styles.fieldLabel}>ورود</span>
-            <span>{jalaliDate(folio.booking.checkIn)}</span>
-          </div>
-          <div>
-            <span className={styles.fieldLabel}>خروج</span>
-            <span>{jalaliDate(folio.booking.actualDepartureDate ?? folio.booking.checkOut)}</span>
-          </div>
-          <div>
-            <span className={styles.fieldLabel}>اتاق‌ها</span>
-            <span>
-              {folio.booking.assignments.length
-                ? folio.booking.assignments
-                    .map((assignment) => assignment.roomNumber ?? 'تخصیص‌یافته')
-                    .join('، ')
-                : 'بدون تخصیص اتاق'}
-            </span>
-          </div>
-        </section>
+          <section
+            className="grid grid-cols-2 gap-x-5 gap-y-4 py-5 sm:grid-cols-3"
+            aria-label="مشخصات اقامت"
+          >
+            <div>
+              <span className="mb-1 block text-xs font-bold text-muted-foreground">نام مهمان</span>
+              <strong className="block break-words text-lg leading-relaxed">
+                {folio.booking.guestName}
+              </strong>
+            </div>
+            <div>
+              <span className="mb-1 block text-xs font-bold text-muted-foreground">شناسه رزرو</span>
+              <bdi dir="ltr">{folio.booking.reference}</bdi>
+            </div>
+            <div>
+              <span className="mb-1 block text-xs font-bold text-muted-foreground">ورود</span>
+              <span>{jalaliDate(folio.booking.checkIn)}</span>
+            </div>
+            <div>
+              <span className="mb-1 block text-xs font-bold text-muted-foreground">خروج</span>
+              <span>{jalaliDate(folio.booking.actualDepartureDate ?? folio.booking.checkOut)}</span>
+            </div>
+            <div>
+              <span className="mb-1 block text-xs font-bold text-muted-foreground">اتاق‌ها</span>
+              <span>
+                {folio.booking.assignments.length
+                  ? folio.booking.assignments
+                      .map((assignment) => assignment.roomNumber ?? 'تخصیص‌یافته')
+                      .join('، ')
+                  : 'بدون تخصیص اتاق'}
+              </span>
+            </div>
+          </section>
 
-        <div className={styles.ledgerWrap}>
-          <table className={styles.ledger}>
-            <caption>ردیف‌های صورتحساب عملیاتی اقامت</caption>
-            <colgroup>
-              <col className={styles.dateColumn} />
-              <col className={styles.descriptionColumn} />
-              <col className={styles.roomColumn} />
-              <col className={styles.methodColumn} />
-              <col className={styles.amountColumn} />
-              <col className={styles.amountColumn} />
-            </colgroup>
-            <thead>
-              <tr>
-                <th scope="col">تاریخ</th>
-                <th scope="col">شرح</th>
-                <th scope="col">اتاق</th>
-                <th scope="col">روش</th>
-                <th scope="col">بدهکار</th>
-                <th scope="col">بستانکار</th>
-              </tr>
-            </thead>
-            <tbody>
-              {folio.entries.map((entry) => (
-                <tr key={entry.id}>
-                  <td>{jalaliDate(entry.serviceDate)}</td>
-                  <td className={styles.description}>
-                    <strong>{entry.description}</strong>
-                    {entry.quantity !== null && entry.unitAmountToman !== null && (
-                      <small>
-                        {entry.quantity} × {amountText(entry.unitAmountToman)}
-                      </small>
-                    )}
-                    {entry.paymentReference && (
-                      <small>
-                        شناسه رسید: <bdi dir="ltr">{entry.paymentReference}</bdi>
-                      </small>
-                    )}
-                    {entry.correctionReason && <small>دلیل: {entry.correctionReason}</small>}
-                  </td>
-                  <td>{entry.roomNumber ? `اتاق ${entry.roomNumber}` : '—'}</td>
-                  <td>{paymentMethodLabel(entry.paymentMethod) || entryKindLabel(entry.kind)}</td>
-                  <td dir="ltr">
-                    {entry.direction === 'DEBIT' ? amountText(entry.amountToman) : '—'}
-                  </td>
-                  <td dir="ltr">
-                    {entry.direction === 'CREDIT' ? amountText(entry.amountToman) : '—'}
-                  </td>
+          <div className="max-w-full overflow-x-auto rounded-xl border border-border print:overflow-visible print:border-0">
+            <table className="w-full min-w-[42rem] border-collapse text-start text-sm print:min-w-0 print:table-fixed print:text-[9pt] max-[680px]:print:text-[8pt] [&_caption]:p-3 [&_caption]:text-start [&_caption]:text-xs [&_caption]:text-muted-foreground [&_th]:border-t [&_th]:border-border [&_th]:bg-surface-soft [&_th]:p-3 [&_th]:font-extrabold [&_th]:text-primary-strong [&_td]:border-t [&_td]:border-border [&_td]:break-normal [&_td]:p-3 [&_td]:align-top print:[&_thead]:[display:table-header-group] print:[&_tr]:break-inside-avoid print:[&_tr]:[page-break-inside:avoid] print:[&_th]:bg-neutral-200 print:[&_th]:text-neutral-950 print:[&_th]:[print-color-adjust:exact] print:[&_th]:p-1 print:[&_td]:p-1">
+              <caption className="print:table-caption">ردیف‌های صورتحساب عملیاتی اقامت</caption>
+              <colgroup>
+                <col className="w-[17%]" />
+                <col className="w-[26%]" />
+                <col className="w-[9%]" />
+                <col className="w-[10%]" />
+                <col className="w-[19%]" />
+                <col className="w-[19%]" />
+              </colgroup>
+              <thead>
+                <tr>
+                  <th scope="col">تاریخ</th>
+                  <th scope="col">شرح</th>
+                  <th scope="col">اتاق</th>
+                  <th scope="col">روش</th>
+                  <th scope="col">بدهکار</th>
+                  <th scope="col">بستانکار</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+              </thead>
+              <tbody>
+                {folio.entries.map((entry) => (
+                  <tr key={entry.id}>
+                    <td>{jalaliDate(entry.serviceDate)}</td>
+                    <td className="[&_strong]:block [&_small]:mt-1 [&_small]:block [&_small]:leading-relaxed [&_small]:text-muted-foreground">
+                      <strong>{entry.description}</strong>
+                      {entry.quantity !== null && entry.unitAmountToman !== null && (
+                        <small>
+                          {entry.quantity} × {amountText(entry.unitAmountToman)}
+                        </small>
+                      )}
+                      {entry.paymentReference && (
+                        <small>
+                          شناسه رسید: <bdi dir="ltr">{entry.paymentReference}</bdi>
+                        </small>
+                      )}
+                      {entry.correctionReason && <small>دلیل: {entry.correctionReason}</small>}
+                    </td>
+                    <td>{entry.roomNumber ? `اتاق ${entry.roomNumber}` : '—'}</td>
+                    <td>{paymentMethodLabel(entry.paymentMethod) || entryKindLabel(entry.kind)}</td>
+                    <td dir="ltr">
+                      {entry.direction === 'DEBIT' ? amountText(entry.amountToman) : '—'}
+                    </td>
+                    <td dir="ltr">
+                      {entry.direction === 'CREDIT' ? amountText(entry.amountToman) : '—'}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
 
-        <section className={styles.totals} aria-label="جمع صورتحساب">
-          <div>
-            <span>جمع بدهکار</span>
-            <strong dir="ltr">{amountText(debits)}</strong>
-          </div>
-          <div>
-            <span>جمع بستانکار</span>
-            <strong dir="ltr">{amountText(credits)}</strong>
-          </div>
-          <div className={styles.balanceTotal}>
-            <span>مانده صورتحساب</span>
-            <strong dir="ltr">{amountText(folio.balanceToman)}</strong>
-          </div>
-        </section>
+          <section
+            className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-3 [&>div]:grid [&>div]:gap-1 [&>div]:rounded-xl [&>div]:border [&>div]:border-border [&>div]:p-3 [&_span]:text-xs [&_span]:text-muted-foreground [&_strong]:text-sm [&_strong]:font-bold [&_strong]:text-primary-strong [&_strong]:tabular-nums print:[&>div]:break-inside-avoid print:[&>div]:[page-break-inside:avoid]"
+            aria-label="جمع صورتحساب"
+          >
+            <div>
+              <span>جمع بدهکار</span>
+              <strong dir="ltr">{amountText(debits)}</strong>
+            </div>
+            <div>
+              <span>جمع بستانکار</span>
+              <strong dir="ltr">{amountText(credits)}</strong>
+            </div>
+            <div className="grid gap-1 rounded-xl border border-highlight bg-surface-soft p-3">
+              <span>مانده صورتحساب</span>
+              <strong dir="ltr">{amountText(folio.balanceToman)}</strong>
+            </div>
+          </section>
 
-        <footer className={styles.footer}>
-          <span>مبالغ با تومان ثبت شده‌اند.</span>
-          <span>این نسخه برای استفاده عملیاتی هتل تهیه شده است.</span>
-        </footer>
-      </article>
+          <footer className="mt-4 flex flex-col justify-between gap-3 border-t border-border pt-3 text-xs text-muted-foreground sm:flex-row">
+            <span>مبالغ با تومان ثبت شده‌اند.</span>
+            <span>این نسخه برای استفاده عملیاتی هتل تهیه شده است.</span>
+          </footer>
+        </article>
+      </Card>
     </main>
   );
 }

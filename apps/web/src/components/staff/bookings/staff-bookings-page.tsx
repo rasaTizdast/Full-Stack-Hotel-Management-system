@@ -1,4 +1,6 @@
 'use client';
+import { staffClass } from '@/components/staff/staff-classes';
+
 
 import { useEffect, useRef, useState, type FormEvent } from 'react';
 import { toast } from 'sonner';
@@ -32,7 +34,32 @@ import {
   type StaffBookingListItem,
   type StaffBookingStatus,
 } from '@/lib/staff-bookings-api';
-import styles from './staff-bookings.module.css';
+
+const styles = {
+  page: 'grid min-w-0 gap-5 text-foreground', pageHeader: 'grid gap-4',
+  headingRow: 'flex items-end justify-between gap-4 max-md:flex-col max-md:items-start',
+  refreshButton: 'shrink-0', primaryButton: 'shrink-0', secondaryButton: 'shrink-0',
+  rejectButton: 'shrink-0', clearButton: 'shrink-0', filters: 'grid gap-4 rounded-xl border border-border bg-card p-4 shadow-sm md:grid-cols-4',
+  filterField: 'grid min-w-0 gap-2 text-sm font-semibold', actionField: 'grid min-w-0 gap-2 text-sm font-semibold',
+  control: 'min-w-0', actionControl: 'min-w-0', fieldError: 'text-sm text-destructive',
+  filterActions: 'flex flex-wrap items-center gap-3 md:col-span-full', workspace: 'grid min-w-0 gap-4 xl:grid-cols-[minmax(19rem,0.8fr)_minmax(0,1.2fr)]',
+  workspaceSingle: 'grid min-w-0 gap-4', listPanel: 'min-w-0 rounded-xl border border-border bg-card p-4 shadow-sm',
+  detailPanel: 'min-w-0 rounded-xl border border-border bg-card p-4 shadow-sm', panelHeading: 'flex items-center justify-between gap-3',
+  count: 'rounded-full bg-surface-soft px-3 py-1 text-xs font-bold text-muted-foreground', bookingList: 'mt-3 grid gap-3',
+  bookingCard: 'grid gap-3 rounded-lg border border-border bg-surface p-4 text-start transition-colors hover:bg-accent focus-visible:outline-3 focus-visible:outline-ring',
+  bookingCardSelected: 'border-primary bg-accent', cardTopline: 'flex items-center justify-between gap-2', reference: 'font-bold text-primary-strong',
+  visuallyHidden: 'sr-only', status: 'inline-flex rounded-full bg-surface-soft px-2.5 py-1 text-xs font-bold',
+  status_PENDING_CONFIRMATION: 'bg-warning-soft text-warning', status_CONFIRMED: 'bg-success-soft text-success',
+  status_REJECTED: 'bg-destructive-soft text-destructive', status_CANCELLED: 'bg-destructive-soft text-destructive', status_EXPIRED: 'bg-surface-soft text-muted-foreground',
+  cardGuest: 'font-semibold text-foreground', cardMeta: 'flex flex-wrap gap-x-4 gap-y-1 text-sm text-muted-foreground', cardFooter: 'flex flex-wrap gap-x-4 gap-y-1 text-sm text-muted-foreground',
+  pagination: 'mt-4 flex items-center justify-between gap-3', statePanel: 'grid place-items-center gap-2 rounded-xl border border-border bg-card p-8 text-center',
+  detailPlaceholder: 'grid min-h-48 place-items-center gap-2 rounded-xl border border-dashed border-border p-8 text-center text-muted-foreground', loader: 'animate-pulse rounded-lg bg-surface-soft',
+  emptyMark: 'grid size-12 place-items-center rounded-full bg-surface-soft text-primary', detailGlyph: 'grid size-12 place-items-center rounded-full bg-surface-soft text-primary',
+  detailContent: 'grid gap-5', detailHeading: 'flex items-start justify-between gap-4', guestSection: 'grid gap-3', staySection: 'grid gap-3', noteSection: 'grid gap-2 rounded-lg bg-surface-soft p-4',
+  guestDetails: 'grid gap-3 sm:grid-cols-2', stayDetails: 'grid gap-3 sm:grid-cols-2', nightList: 'grid gap-2', totalRow: 'flex justify-between gap-3 border-t border-border pt-3 font-bold',
+  bookingActions: 'grid gap-4', actionPanel: 'grid gap-3 rounded-lg border border-border p-4', actionForm: 'grid gap-3', actionControls: 'flex flex-wrap gap-3',
+  errorText: 'text-sm text-destructive', successMessage: 'rounded-lg bg-success-soft p-3 text-sm text-success', searchField: 'grid min-w-0 gap-2', statusField: 'grid min-w-0 gap-2',
+};
 
 type ListState = 'loading' | 'ready' | 'error';
 type DetailState = 'idle' | 'loading' | 'ready' | 'error';
@@ -240,7 +267,7 @@ export function StaffBookingsPage() {
   if (status !== 'authenticated' || !staff) return null;
   if (!canViewBookings) {
     return (
-      <section className="staff-bookings-denied" aria-labelledby="staff-bookings-denied-title">
+      <section className={staffClass('staff-bookings-denied')} aria-labelledby="staff-bookings-denied-title">
         <h1 id="staff-bookings-denied-title">دسترسی به درخواست‌های رزرو</h1>
         <p role="alert">این بخش برای مدیر اقامتگاه، مدیر شیفت و پذیرش در دسترس است.</p>
       </section>
@@ -369,14 +396,14 @@ export function StaffBookingsPage() {
             <h1 id="staff-bookings-title">درخواست‌های اقامت</h1>
             <p>وضعیت درخواست‌ها را بررسی و پاسخ هر مهمان را ثبت کنید.</p>
           </div>
-          <button
+          <Button
             className={styles.refreshButton}
             type="button"
             onClick={refreshList}
             disabled={listState === 'loading'}
           >
             تازه‌سازی فهرست
-          </button>
+          </Button>
         </div>
       </header>
 
@@ -493,9 +520,9 @@ export function StaffBookingsPage() {
               <p className={styles.errorText} role="alert">
                 {listError}
               </p>
-              <button className={styles.secondaryButton} type="button" onClick={refreshList}>
+              <Button className={styles.secondaryButton} type="button" onClick={refreshList}>
                 تلاش دوباره
-              </button>
+              </Button>
             </div>
           )}
           {listState === 'ready' && items.length === 0 && (
@@ -505,16 +532,16 @@ export function StaffBookingsPage() {
               </span>
               <h3>رزروی پیدا نشد.</h3>
               <p>فیلترها را تغییر دهید یا فهرست را دوباره بررسی کنید.</p>
-              <button className={styles.clearButton} type="button" onClick={clearFilters}>
+              <Button className={styles.clearButton} type="button" onClick={clearFilters}>
                 پاک‌کردن فیلترها
-              </button>
+              </Button>
             </div>
           )}
           {listState === 'ready' && items.length > 0 && (
             <ul className={styles.bookingList}>
               {items.map((item) => (
                 <li key={item.reference}>
-                  <button
+                  <Button
                     className={`${styles.bookingCard} ${selectedReference === item.reference ? styles.bookingCardSelected : ''}`}
                     type="button"
                     aria-pressed={selectedReference === item.reference}
@@ -556,7 +583,7 @@ export function StaffBookingsPage() {
                         {formatPersianInteger(item.guestCount)}
                       </span>
                     </span>
-                  </button>
+                  </Button>
                 </li>
               ))}
             </ul>
@@ -564,24 +591,24 @@ export function StaffBookingsPage() {
 
           {listState === 'ready' && pagination.totalPages > 1 && (
             <nav className={styles.pagination} aria-label="صفحه‌های رزرو">
-              <button
+              <Button
                 type="button"
                 onClick={() => changePage(pagination.page - 1)}
                 disabled={pagination.page <= 1}
               >
                 صفحهٔ قبل
-              </button>
+              </Button>
               <span>
                 صفحهٔ {formatPersianInteger(pagination.page)} از{' '}
                 {formatPersianInteger(pagination.totalPages)}
               </span>
-              <button
+              <Button
                 type="button"
                 onClick={() => changePage(pagination.page + 1)}
                 disabled={pagination.page >= pagination.totalPages}
               >
                 صفحهٔ بعد
-              </button>
+              </Button>
             </nav>
           )}
         </section>
@@ -609,9 +636,9 @@ export function StaffBookingsPage() {
                 <p className={styles.errorText} role="alert">
                   {detailError}
                 </p>
-                <button className={styles.secondaryButton} type="button" onClick={retryDetail}>
+                <Button className={styles.secondaryButton} type="button" onClick={retryDetail}>
                   تلاش دوباره
-                </button>
+                </Button>
               </div>
             )}
             {detail && detailState === 'ready' && (
@@ -716,29 +743,29 @@ export function StaffBookingsPage() {
                     <div className={styles.bookingActions} aria-label="اقدام‌های رزرو">
                       {detail.status === 'PENDING_CONFIRMATION' ? (
                         <>
-                          <button
+                          <Button
                             className={styles.primaryButton}
                             type="button"
                             onClick={(event) => openAction('confirm', event.currentTarget)}
                           >
                             تأیید رزرو
-                          </button>
-                          <button
+                          </Button>
+                          <Button
                             className={styles.rejectButton}
                             type="button"
                             onClick={(event) => openAction('reject', event.currentTarget)}
                           >
                             رد درخواست
-                          </button>
+                          </Button>
                         </>
                       ) : (
-                        <button
+                        <Button
                           className={styles.rejectButton}
                           type="button"
                           onClick={(event) => openAction('cancel', event.currentTarget)}
                         >
                           لغو رزرو
-                        </button>
+                        </Button>
                       )}
                     </div>
                   )}

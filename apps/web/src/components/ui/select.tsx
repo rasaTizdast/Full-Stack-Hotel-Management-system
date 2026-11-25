@@ -8,6 +8,29 @@ import { cn } from '@/lib/utils';
 const Select = SelectPrimitive.Root;
 const SelectValue = SelectPrimitive.Value;
 
+const NativeSelect = React.forwardRef<HTMLSelectElement, React.ComponentProps<'select'>>(
+  ({ className, children, ...props }, ref) => (
+    <div className="relative w-full min-w-0">
+      <select
+        ref={ref}
+        data-slot="native-select"
+        className={cn(
+          'flex h-12 w-full min-w-0 appearance-none rounded-lg border border-input bg-surface py-2 ps-4 pe-10 text-start text-base text-foreground shadow-sm focus-visible:border-ring focus-visible:outline-3 focus-visible:outline-solid focus-visible:outline-offset-2 focus-visible:outline-ring aria-invalid:border-destructive aria-invalid:bg-destructive-soft aria-invalid:focus-visible:outline-destructive disabled:cursor-not-allowed disabled:opacity-60',
+          className,
+        )}
+        {...props}
+      >
+        {children}
+      </select>
+      <ChevronDown
+        aria-hidden="true"
+        className="pointer-events-none absolute end-4 top-1/2 size-4 -translate-y-1/2 text-muted-foreground"
+      />
+    </div>
+  ),
+);
+NativeSelect.displayName = 'NativeSelect';
+
 const SelectTrigger = React.forwardRef<
   HTMLButtonElement,
   React.ComponentProps<typeof SelectPrimitive.Trigger>
@@ -83,4 +106,4 @@ function SelectItem({
   );
 }
 
-export { Select, SelectContent, SelectItem, SelectTrigger, SelectValue };
+export { NativeSelect, Select, SelectContent, SelectItem, SelectTrigger, SelectValue };

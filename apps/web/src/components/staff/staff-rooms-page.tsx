@@ -1,4 +1,8 @@
 'use client';
+import { NativeSelect } from '@/components/ui/select';
+import { Input } from '@/components/ui/input';
+import { staffClass } from '@/components/staff/staff-classes';
+
 
 import {
   useEffect,
@@ -233,7 +237,7 @@ export function StaffRoomsPage() {
 
   if (!canManageRooms) {
     return (
-      <section className="staff-rooms-denied" aria-labelledby="staff-rooms-denied-title">
+      <section className={staffClass('staff-rooms-denied')} aria-labelledby="staff-rooms-denied-title">
         <h1 id="staff-rooms-denied-title">دسترسی به مدیریت اتاق‌ها</h1>
         <p role="alert">این بخش برای مدیر اقامتگاه و مدیر شیفت در دسترس است.</p>
       </section>
@@ -448,20 +452,20 @@ export function StaffRoomsPage() {
   const activeRoomTypes = roomTypes.filter((roomType) => roomType.isActive);
 
   return (
-    <section className="staff-rooms" aria-labelledby="staff-rooms-title">
-      <header className="staff-rooms__header">
+    <section className={staffClass('staff-rooms')} aria-labelledby="staff-rooms-title">
+      <header className={staffClass('staff-rooms__header')}>
         <div>
-          <p className="staff-rooms__eyebrow">مدیریت فیزیکی اقامتگاه</p>
+          <p className={staffClass('staff-rooms__eyebrow')}>مدیریت فیزیکی اقامتگاه</p>
           <h1 id="staff-rooms-title">اتاق‌ها</h1>
           <p>فهرست اتاق‌های واقعی، شماره‌ها و وضعیت فعال‌بودن را مدیریت کنید.</p>
         </div>
-        <div className="staff-rooms__header-actions">
-          <div className="staff-rooms__summary" aria-live="polite">
+        <div className={staffClass('staff-rooms__header-actions')}>
+          <div className={staffClass('staff-rooms__summary')} aria-live="polite">
             <strong>{formatPersianInteger(rooms.length)}</strong>
             <span>اتاق در فهرست فعلی</span>
           </div>
           <button
-            className="button button--jade staff-rooms__add-toggle"
+            className={staffClass('button button--jade staff-rooms__add-toggle')}
             type="button"
             aria-controls="staff-rooms-editor"
             aria-expanded={isEditorOpen}
@@ -478,7 +482,7 @@ export function StaffRoomsPage() {
       </header>
 
       {loadError ? (
-        <div className="staff-rooms__message staff-rooms__message--error" role="alert">
+        <div className={staffClass('staff-rooms__message staff-rooms__message--error')} role="alert">
           <p>{loadError}</p>
           <button type="button" onClick={() => void loadRooms(toQuery(filters), filters)}>
             تلاش دوباره
@@ -486,12 +490,12 @@ export function StaffRoomsPage() {
         </div>
       ) : null}
       {formError ? (
-        <p className="staff-rooms__message staff-rooms__message--error" role="alert">
+        <p className={staffClass('staff-rooms__message staff-rooms__message--error')} role="alert">
           {formError}
         </p>
       ) : null}
       {successMessage ? (
-        <div className="staff-rooms__message staff-rooms__message--success" role="status">
+        <div className={staffClass('staff-rooms__message staff-rooms__message--success')} role="status">
           <p>{successMessage}</p>
           {hiddenRoomNumber ? (
             <button type="button" onClick={showHiddenRoom} disabled={isLoading || isSaving}>
@@ -501,17 +505,17 @@ export function StaffRoomsPage() {
         </div>
       ) : null}
 
-      <form className="staff-rooms__filters" onSubmit={applyFilters} aria-label="فیلتر اتاق‌ها">
-        <div className="staff-rooms__filters-heading">
+      <form className={staffClass('staff-rooms__filters')} onSubmit={applyFilters} aria-label="فیلتر اتاق‌ها">
+        <div className={staffClass('staff-rooms__filters-heading')}>
           <div>
             <h2>پیدا کردن اتاق</h2>
             <p>با نوع، طبقه، وضعیت یا شماره اتاق فهرست را محدود کنید.</p>
           </div>
         </div>
-        <div className="staff-rooms__filter-fields">
-          <div className="staff-rooms__field">
+        <div className={staffClass('staff-rooms__filter-fields')}>
+          <div className={staffClass('staff-rooms__field')}>
             <label htmlFor="staff-rooms-filter-type">نوع اتاق</label>
-            <select
+            <NativeSelect
               id="staff-rooms-filter-type"
               value={filters.roomTypeId}
               disabled={isSaving}
@@ -524,20 +528,20 @@ export function StaffRoomsPage() {
                   {roomType.isActive ? '' : ' (غیرفعال)'}
                 </option>
               ))}
-            </select>
+            </NativeSelect>
           </div>
-          <div className="staff-rooms__field">
+          <div className={staffClass('staff-rooms__field')}>
             <label htmlFor="staff-rooms-filter-floor">طبقه</label>
-            <input
+            <Input
               id="staff-rooms-filter-floor"
               value={filters.floor}
               disabled={isSaving}
               onChange={(event) => updateFilter('floor', event.target.value)}
             />
           </div>
-          <div className="staff-rooms__field">
+          <div className={staffClass('staff-rooms__field')}>
             <label htmlFor="staff-rooms-filter-status">وضعیت اتاق</label>
-            <select
+            <NativeSelect
               id="staff-rooms-filter-status"
               value={filters.activeState}
               disabled={isSaving}
@@ -548,11 +552,11 @@ export function StaffRoomsPage() {
               <option value="">فعال و غیرفعال</option>
               <option value="true">فعال</option>
               <option value="false">غیرفعال</option>
-            </select>
+            </NativeSelect>
           </div>
-          <div className="staff-rooms__field staff-rooms__field--search">
+          <div className={staffClass('staff-rooms__field staff-rooms__field--search')}>
             <label htmlFor="staff-rooms-filter-search">جست‌وجوی شماره اتاق</label>
-            <input
+            <Input
               id="staff-rooms-filter-search"
               type="search"
               value={filters.search}
@@ -561,9 +565,9 @@ export function StaffRoomsPage() {
             />
           </div>
         </div>
-        <div className="staff-rooms__filter-actions">
+        <div className={staffClass('staff-rooms__filter-actions')}>
           <button
-            className="button button--jade staff-rooms__filter-button"
+            className={staffClass('button button--jade staff-rooms__filter-button')}
             type="submit"
             disabled={isLoading}
           >
@@ -573,11 +577,11 @@ export function StaffRoomsPage() {
       </form>
 
       <section
-        className="staff-rooms__list"
+        className={staffClass('staff-rooms__list')}
         aria-labelledby="staff-rooms-list-title"
         aria-busy={isLoading}
       >
-        <div className="staff-rooms__list-heading">
+        <div className={staffClass('staff-rooms__list-heading')}>
           <div>
             <h2 id="staff-rooms-list-title" ref={roomListHeading} tabIndex={-1}>
               فهرست اتاق‌ها
@@ -587,25 +591,25 @@ export function StaffRoomsPage() {
           <span>{formatPersianInteger(rooms.length)} مورد</span>
         </div>
         {isLoading ? (
-          <p className="staff-rooms__state" role="status" aria-live="polite">
+          <p className={staffClass('staff-rooms__state')} role="status" aria-live="polite">
             در حال دریافت اتاق‌ها…
           </p>
         ) : null}
         {!isLoading && !loadError && rooms.length === 0 ? (
-          <div className="staff-rooms__empty" role="status">
+          <div className={staffClass('staff-rooms__empty')} role="status">
             <h3>اتاقی برای این فیلتر پیدا نشد</h3>
             <p>فیلترها را تغییر دهید یا مشخصات اتاق واقعی را ثبت کنید.</p>
           </div>
         ) : null}
         {!isLoading && rooms.length > 0 ? (
-          <div className="staff-rooms__grid">
+          <div className={staffClass('staff-rooms__grid')}>
             {rooms.map((room) => (
               <article
-                className="staff-rooms__card"
+                className={staffClass('staff-rooms__card')}
                 key={room.id}
                 aria-labelledby={`staff-room-${room.id}`}
               >
-                <div className="staff-rooms__card-heading">
+                <div className={staffClass('staff-rooms__card-heading')}>
                   <div>
                     <p>{room.roomType.name}</p>
                     <h3 id={`staff-room-${room.id}`}>{room.roomNumber}</h3>
@@ -621,9 +625,9 @@ export function StaffRoomsPage() {
                   </span>
                 </div>
                 {room.isGenerated ? (
-                  <p className="staff-rooms__generated-badge">شمارهٔ پیشنهادی</p>
+                  <p className={staffClass('staff-rooms__generated-badge')}>شمارهٔ پیشنهادی</p>
                 ) : null}
-                <dl className="staff-rooms__details">
+                <dl className={staffClass('staff-rooms__details')}>
                   <div>
                     <dt>طبقه</dt>
                     <dd>{room.floor || 'ثبت نشده'}</dd>
@@ -633,17 +637,17 @@ export function StaffRoomsPage() {
                     <dd>{housekeepingLabel(room.housekeepingStatus)}</dd>
                   </div>
                 </dl>
-                <div className="staff-rooms__features" aria-label="امکانات اتاق">
+                <div className={staffClass('staff-rooms__features')} aria-label="امکانات اتاق">
                   {room.features.length ? (
                     room.features.map((feature) => <span key={feature}>{feature}</span>)
                   ) : (
                     <span>امکانات ثبت نشده</span>
                   )}
                 </div>
-                <div className="staff-rooms__card-actions">
+                <div className={staffClass('staff-rooms__card-actions')}>
                   <button
                     type="button"
-                    className="button button--quiet"
+                    className={staffClass('button button--quiet')}
                     onClick={() => startEdit(room)}
                     disabled={isSaving}
                     aria-label={`ویرایش اتاق ${room.roomNumber}`}
@@ -653,7 +657,7 @@ export function StaffRoomsPage() {
                   {room.isActive ? (
                     <button
                       type="button"
-                      className="button button--danger-quiet"
+                      className={staffClass('button button--danger-quiet')}
                       onClick={(event) => requestRoomAction(room, 'deactivate', event)}
                       disabled={isSaving}
                       aria-label={`غیرفعال‌کردن اتاق ${room.roomNumber}`}
@@ -663,7 +667,7 @@ export function StaffRoomsPage() {
                   ) : (
                     <button
                       type="button"
-                      className="button button--quiet"
+                      className={staffClass('button button--quiet')}
                       onClick={(event) => requestRoomAction(room, 'reactivate', event)}
                       disabled={isSaving}
                       aria-label={`فعال‌کردن اتاق ${room.roomNumber}`}
@@ -680,14 +684,14 @@ export function StaffRoomsPage() {
 
       <form
         id="staff-rooms-editor"
-        className="staff-rooms__editor"
+        className={staffClass('staff-rooms__editor')}
         onSubmit={saveRoom}
         aria-label={editingRoom ? 'ویرایش اتاق' : 'افزودن اتاق'}
         hidden={!isEditorOpen}
       >
-        <div className="staff-rooms__editor-heading">
+        <div className={staffClass('staff-rooms__editor-heading')}>
           <div>
-            <p className="staff-rooms__eyebrow">
+            <p className={staffClass('staff-rooms__eyebrow')}>
               {editingRoom ? 'ویرایش اطلاعات' : 'ثبت اتاق واقعی'}
             </p>
             <h2 ref={editorHeading} tabIndex={-1}>
@@ -695,16 +699,16 @@ export function StaffRoomsPage() {
             </h2>
           </div>
           {editingRoom?.isGenerated ? (
-            <p className="staff-rooms__generated-note" role="note">
+            <p className={staffClass('staff-rooms__generated-note')} role="note">
               شماره‌های نمونه باید پیش از بهره‌برداری با شماره واقعی جایگزین شوند.
             </p>
           ) : null}
         </div>
-        <div className="staff-rooms__editor-fields">
+        <div className={staffClass('staff-rooms__editor-fields')}>
           {!editingRoom ? (
-            <div className="staff-rooms__field">
+            <div className={staffClass('staff-rooms__field')}>
               <label htmlFor="staff-room-type">نوع اتاق</label>
-              <select
+              <NativeSelect
                 id="staff-room-type"
                 value={draft.roomTypeId}
                 onChange={(event) => updateDraft('roomTypeId', event.target.value)}
@@ -716,17 +720,17 @@ export function StaffRoomsPage() {
                     {roomType.name}
                   </option>
                 ))}
-              </select>
+              </NativeSelect>
             </div>
           ) : (
-            <div className="staff-rooms__field staff-rooms__field--read-only">
+            <div className={staffClass('staff-rooms__field staff-rooms__field--read-only')}>
               <span>نوع اتاق</span>
               <strong>{editingRoom.roomType.name}</strong>
             </div>
           )}
-          <div className="staff-rooms__field">
+          <div className={staffClass('staff-rooms__field')}>
             <label htmlFor="staff-room-number">شماره اتاق</label>
-            <input
+            <Input
               id="staff-room-number"
               value={draft.roomNumber}
               maxLength={32}
@@ -735,18 +739,18 @@ export function StaffRoomsPage() {
               aria-invalid={Boolean(fieldError)}
               aria-describedby={fieldError ? 'staff-room-number-error' : 'staff-room-number-help'}
             />
-            <span id="staff-room-number-help" className="staff-rooms__hint">
+            <span id="staff-room-number-help" className={staffClass('staff-rooms__hint')}>
               شماره باید در کل اقامتگاه یکتا باشد.
             </span>
             {fieldError ? (
-              <span id="staff-room-number-error" className="staff-rooms__field-error" role="alert">
+              <span id="staff-room-number-error" className={staffClass('staff-rooms__field-error')} role="alert">
                 {fieldError}
               </span>
             ) : null}
           </div>
-          <div className="staff-rooms__field">
+          <div className={staffClass('staff-rooms__field')}>
             <label htmlFor="staff-room-floor">طبقه</label>
-            <input
+            <Input
               id="staff-room-floor"
               value={draft.floor}
               maxLength={32}
@@ -754,28 +758,28 @@ export function StaffRoomsPage() {
               onChange={(event) => updateDraft('floor', event.target.value)}
             />
           </div>
-          <div className="staff-rooms__field staff-rooms__field--features">
+          <div className={staffClass('staff-rooms__field staff-rooms__field--features')}>
             <label htmlFor="staff-room-features">امکانات</label>
-            <input
+            <Input
               id="staff-room-features"
               value={draft.features}
               disabled={isSaving}
               onChange={(event) => updateDraft('features', event.target.value)}
               aria-describedby="staff-room-features-help"
             />
-            <span id="staff-room-features-help" className="staff-rooms__hint">
+            <span id="staff-room-features-help" className={staffClass('staff-rooms__hint')}>
               امکانات را با ویرگول جدا کنید؛ مانند بالکن، نمای باغ.
             </span>
           </div>
         </div>
         {!editingRoom && activeRoomTypes.length === 0 && !isLoading ? (
-          <p className="staff-rooms__message" role="status">
+          <p className={staffClass('staff-rooms__message')} role="status">
             برای ثبت اتاق، ابتدا دست‌کم یک نوع اتاق فعال ایجاد یا فعال کنید.
           </p>
         ) : null}
-        <div className="staff-rooms__editor-actions">
+        <div className={staffClass('staff-rooms__editor-actions')}>
           <button
-            className="button button--quiet"
+            className={staffClass('button button--quiet')}
             type="button"
             onClick={editingRoom ? cancelEdit : () => setIsEditorOpen(false)}
             disabled={isSaving}
@@ -783,7 +787,7 @@ export function StaffRoomsPage() {
             {editingRoom ? 'لغو ویرایش' : 'بستن فرم'}
           </button>
           <button
-            className="button button--jade"
+            className={staffClass('button button--jade')}
             type="submit"
             disabled={isSaving || (!editingRoom && activeRoomTypes.length === 0)}
           >
@@ -793,16 +797,16 @@ export function StaffRoomsPage() {
       </form>
 
       {pendingAction ? (
-        <div className="staff-rooms__dialog-backdrop">
+        <div className={staffClass('staff-rooms__dialog-backdrop')}>
           <div
-            className="staff-rooms__confirm"
+            className={staffClass('staff-rooms__confirm')}
             role="alertdialog"
             aria-modal="true"
             aria-labelledby="staff-rooms-confirm-title"
             aria-describedby="staff-rooms-confirm-description"
             onKeyDown={handleDialogKeyDown}
           >
-            <p className="staff-rooms__eyebrow">تأیید تغییر وضعیت</p>
+            <p className={staffClass('staff-rooms__eyebrow')}>تأیید تغییر وضعیت</p>
             <h2 id="staff-rooms-confirm-title">
               {pendingAction.action === 'deactivate'
                 ? 'غیرفعال‌کردن اتاق'
@@ -813,10 +817,10 @@ export function StaffRoomsPage() {
                 ? `اتاق ${pendingAction.room.roomNumber} از ظرفیت قابل عرضه خارج می‌شود. اگر انتساب جاری یا آینده داشته باشد، سامانه تغییر را نمی‌پذیرد.`
                 : `اتاق ${pendingAction.room.roomNumber} دوباره به ظرفیت قابل عرضه اضافه می‌شود.`}
             </p>
-            <div className="staff-rooms__confirm-actions">
+            <div className={staffClass('staff-rooms__confirm-actions')}>
               <button
                 type="button"
-                className="button button--quiet"
+                className={staffClass('button button--quiet')}
                 onClick={() => setPendingAction(null)}
               >
                 بازگشت

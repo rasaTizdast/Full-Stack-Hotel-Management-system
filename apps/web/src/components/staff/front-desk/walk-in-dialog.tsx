@@ -1,8 +1,10 @@
+import { NativeSelect } from '@/components/ui/select';
+import { Input } from '@/components/ui/input';
 import type { FormEvent, RefObject } from 'react';
 import type { PublicRoomType } from '@/lib/public-api';
 import type { WalkInDraft } from './front-desk-types';
 import { StaffDialogSurface } from './staff-dialog-surface';
-import styles from './staff-front-desk.module.css';
+import { frontDeskClasses as styles } from '../tailwind-classes';
 
 interface WalkInDialogProps {
   roomTypes: PublicRoomType[];
@@ -56,7 +58,7 @@ function WalkInFields({ roomTypes, draft, disabled, onDraftChange }: WalkInField
     <>
       <label>
         نام مهمان
-        <input
+        <Input
           aria-label="نام مهمان"
           name="guestName"
           autoComplete="name"
@@ -70,7 +72,7 @@ function WalkInFields({ roomTypes, draft, disabled, onDraftChange }: WalkInField
       </label>
       <label>
         شماره تماس
-        <input
+        <Input
           aria-label="شماره تماس"
           name="guestPhone"
           type="tel"
@@ -85,7 +87,7 @@ function WalkInFields({ roomTypes, draft, disabled, onDraftChange }: WalkInField
       </label>
       <label>
         نوع اتاق
-        <select
+        <NativeSelect
           aria-label="نوع اتاق"
           required
           value={draft.roomTypeSlug}
@@ -98,11 +100,11 @@ function WalkInFields({ roomTypes, draft, disabled, onDraftChange }: WalkInField
               {roomType.name}
             </option>
           ))}
-        </select>
+        </NativeSelect>
       </label>
       <label>
         تاریخ خروج
-        <input
+        <Input
           aria-label="تاریخ خروج"
           required
           inputMode="numeric"
@@ -114,7 +116,7 @@ function WalkInFields({ roomTypes, draft, disabled, onDraftChange }: WalkInField
       </label>
       <label>
         تعداد مهمانان
-        <input
+        <Input
           aria-label="تعداد مهمانان"
           type="number"
           min="1"
@@ -127,7 +129,7 @@ function WalkInFields({ roomTypes, draft, disabled, onDraftChange }: WalkInField
       </label>
       <label>
         تعداد اتاق
-        <input
+        <Input
           aria-label="تعداد اتاق"
           type="number"
           min="1"
@@ -140,7 +142,7 @@ function WalkInFields({ roomTypes, draft, disabled, onDraftChange }: WalkInField
       </label>
       <label className={styles.wideField}>
         رایانامه، در صورت تمایل
-        <input
+        <Input
           aria-label="رایانامه"
           name="guestEmail"
           type="email"

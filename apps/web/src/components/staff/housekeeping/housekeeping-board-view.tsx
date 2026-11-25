@@ -1,3 +1,5 @@
+import { NativeSelect } from '@/components/ui/select';
+import { Input } from '@/components/ui/input';
 import type { FormEvent } from 'react';
 import { useMemo, useState } from 'react';
 import { formatGregorianAsJalali } from '@/lib/jalali-date';
@@ -17,7 +19,7 @@ import {
   TASK_STATUS_LABELS,
   TASK_TYPE_LABELS,
 } from './housekeeping-copy';
-import styles from './housekeeping.module.css';
+import { housekeepingClasses as styles } from '../tailwind-classes';
 
 const HEADER_TIME_FORMATTER = new Intl.DateTimeFormat('fa-IR', {
   hour: '2-digit',
@@ -200,7 +202,7 @@ export function HousekeepingFilterBar({
         <div className={styles.filterFields}>
           <label className={styles.field}>
             <span>موعد انجام کار</span>
-            <input
+            <Input
               aria-label="موعد انجام کار"
               inputMode="numeric"
               value={filters.dueDate}
@@ -220,7 +222,7 @@ export function HousekeepingFilterBar({
           </label>
           <label className={styles.field}>
             <span>اتاق</span>
-            <select
+            <NativeSelect
               aria-label="اتاق"
               value={filters.roomId}
               onChange={(event) => onChange('roomId', event.target.value)}
@@ -231,11 +233,11 @@ export function HousekeepingFilterBar({
                   اتاق {room.roomNumber}
                 </option>
               ))}
-            </select>
+            </NativeSelect>
           </label>
           <label className={styles.field}>
             <span>طبقه</span>
-            <select
+            <NativeSelect
               aria-label="طبقه"
               value={filters.floor}
               onChange={(event) => onChange('floor', event.target.value)}
@@ -246,11 +248,11 @@ export function HousekeepingFilterBar({
                   {floor}
                 </option>
               ))}
-            </select>
+            </NativeSelect>
           </label>
           <label className={styles.field}>
             <span>نوع کار</span>
-            <select
+            <NativeSelect
               aria-label="نوع کار"
               value={filters.taskType}
               onChange={(event) => onChange('taskType', event.target.value)}
@@ -261,13 +263,13 @@ export function HousekeepingFilterBar({
                   {label}
                 </option>
               ))}
-            </select>
+            </NativeSelect>
           </label>
           {canFilterAssignee && (
             <div className={styles.assigneeField}>
               <label className={styles.field}>
                 <span>مسئول کار</span>
-                <select
+                <NativeSelect
                   aria-label="مسئول کار"
                   value={filters.assigneeStaffUserId}
                   disabled={assigneesLoading && assignees.length === 0}
@@ -282,7 +284,7 @@ export function HousekeepingFilterBar({
                       {assignee.username}
                     </option>
                   ))}
-                </select>
+                </NativeSelect>
                 {assigneesLoading && (
                   <small className={styles.fieldHelp} role="status">
                     در حال دریافت خانه‌دارهای فعال…
@@ -307,7 +309,7 @@ export function HousekeepingFilterBar({
           )}
           <label className={styles.field}>
             <span>وضعیت کار</span>
-            <select
+            <NativeSelect
               aria-label="وضعیت کار"
               value={filters.status}
               onChange={(event) => onChange('status', event.target.value)}
@@ -318,11 +320,11 @@ export function HousekeepingFilterBar({
                   {label}
                 </option>
               ))}
-            </select>
+            </NativeSelect>
           </label>
           <label className={styles.field}>
             <span>اولویت</span>
-            <select
+            <NativeSelect
               aria-label="اولویت"
               value={filters.priority}
               onChange={(event) => onChange('priority', event.target.value)}
@@ -333,7 +335,7 @@ export function HousekeepingFilterBar({
                   {label}
                 </option>
               ))}
-            </select>
+            </NativeSelect>
           </label>
         </div>
         <div className={styles.filterActions}>
@@ -584,7 +586,7 @@ export function HousekeepingRoomReadiness({
       <div className={styles.readinessFilters}>
         <label className={styles.field}>
           <span>فیلتر حضور اتاق‌ها</span>
-          <select
+          <NativeSelect
             aria-label="فیلتر حضور اتاق‌ها"
             value={occupancyFilter}
             onChange={(event) => {
@@ -595,11 +597,11 @@ export function HousekeepingRoomReadiness({
             <option value="">همهٔ وضعیت‌های حضور</option>
             <option value="OCCUPIED">اشغال</option>
             <option value="VACANT">خالی</option>
-          </select>
+          </NativeSelect>
         </label>
         <label className={styles.field}>
           <span>فیلتر وضعیت نظافت</span>
-          <select
+          <NativeSelect
             aria-label="فیلتر وضعیت نظافت"
             value={conditionFilter}
             onChange={(event) => {
@@ -613,7 +615,7 @@ export function HousekeepingRoomReadiness({
                 {label}
               </option>
             ))}
-          </select>
+          </NativeSelect>
         </label>
       </div>
       {error && (
@@ -724,7 +726,7 @@ export function HousekeepingDiscrepancyQueue({
         </div>
         <label className={styles.field}>
           <span>وضعیت گزارش</span>
-          <select
+          <NativeSelect
             aria-label="وضعیت گزارش‌ها"
             value={status}
             onChange={(event) =>
@@ -734,7 +736,7 @@ export function HousekeepingDiscrepancyQueue({
             <option value="OPEN">نیازمند بررسی</option>
             <option value="RESOLVED">اصلاح‌شده</option>
             <option value="DISMISSED">ردشده با توضیح</option>
-          </select>
+          </NativeSelect>
         </label>
         <span>{discrepancies.length} مورد در این صفحه</span>
       </div>

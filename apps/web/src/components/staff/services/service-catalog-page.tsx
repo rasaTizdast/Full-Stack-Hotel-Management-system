@@ -2,6 +2,11 @@
 
 import { useCallback, useEffect, useState, type FormEvent } from 'react';
 import { StaffApiError } from '@/lib/staff-api';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Card } from '@/components/ui/card';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Input } from '@/components/ui/input';
 import {
   createStaffServiceItem,
   getStaffServiceItems,
@@ -10,7 +15,6 @@ import {
   type StaffServiceItemInput,
 } from '@/lib/staff-folios-api';
 import { useStaffSession } from '../staff-session-provider';
-import styles from './services.module.css';
 
 interface ServiceDraft extends StaffServiceItemInput {
   isActive: boolean;
@@ -131,16 +135,24 @@ export function ServiceCatalogPage() {
 
   if (status === 'loading' || isLoading) {
     return (
-      <p className={styles.status} role="status">
+      <p
+        className={'m-0 rounded-xl bg-muted px-4 py-3 text-sm leading-7 text-muted-foreground'}
+        role="status"
+      >
         در حال دریافت فهرست خدمات…
       </p>
     );
   }
   if (!canManage) {
     return (
-      <main className={styles.page}>
-        <h1>فهرست خدمات</h1>
-        <p className={styles.error} role="alert">
+      <main className={'grid min-w-0 gap-4 text-foreground'}>
+        <h1 className="text-3xl font-bold text-primary-strong">فهرست خدمات</h1>
+        <p
+          className={
+            'm-0 rounded-xl bg-destructive-soft px-4 py-3 text-sm leading-7 text-destructive'
+          }
+          role="alert"
+        >
           مدیریت خدمات برای نقش شما فعال نیست.
         </p>
       </main>
@@ -148,18 +160,20 @@ export function ServiceCatalogPage() {
   }
 
   return (
-    <main className={styles.page}>
-      <header className={styles.header}>
+    <main className={'grid min-w-0 gap-4 text-foreground'}>
+      <header
+        className={'flex flex-col items-start justify-between gap-4 pb-2 sm:flex-row sm:items-end'}
+      >
         <div>
-          <p className={styles.eyebrow}>خدمات اقامتگاه</p>
-          <h1>فهرست خدمات</h1>
-          <p className={styles.lead}>
+          <p className={'mb-1 text-xs font-bold text-accent-brand'}>خدمات اقامتگاه</p>
+          <h1 className="text-3xl font-bold text-primary-strong">فهرست خدمات</h1>
+          <p className={'mt-2 max-w-prose text-sm leading-7 text-muted-foreground'}>
             قیمت هر خدمت هنگام ثبت در صورتحساب ذخیره می‌شود و تغییر امروز، ثبت‌های قبلی را عوض
             نمی‌کند.
           </p>
         </div>
-        <button
-          className={styles.secondaryButton}
+        <Button
+          variant="outline"
           type="button"
           onClick={() => {
             setIsLoading(true);
@@ -167,178 +181,224 @@ export function ServiceCatalogPage() {
           }}
         >
           تازه‌سازی فهرست
-        </button>
+        </Button>
       </header>
 
       {error && (
-        <p className={styles.error} role="alert">
+        <p
+          className={
+            'm-0 rounded-xl bg-destructive-soft px-4 py-3 text-sm leading-7 text-destructive'
+          }
+          role="alert"
+        >
           {error}
         </p>
       )}
       {success && (
-        <p className={styles.success} role="status">
+        <p
+          className={'m-0 rounded-xl bg-success-soft px-4 py-3 text-sm leading-7 text-success'}
+          role="status"
+        >
           {success}
         </p>
       )}
 
-      <section className={styles.panel} aria-labelledby="service-create-heading">
-        <div className={styles.sectionHeading}>
-          <div>
-            <p className={styles.eyebrow}>ثبت خدمت جدید</p>
-            <h2 id="service-create-heading">افزودن به فهرست</h2>
-          </div>
-          <span className={styles.count}>{items.length} خدمت</span>
-        </div>
-        <form className={styles.formGrid} onSubmit={(event) => void createItem(event)}>
-          <label className={styles.field}>
-            <span>نام خدمت</span>
-            <input
-              value={form.name}
-              maxLength={120}
-              required
-              onChange={(event) => setForm((current) => ({ ...current, name: event.target.value }))}
-            />
-          </label>
-          <label className={styles.field}>
-            <span>دسته‌بندی</span>
-            <input
-              value={form.category}
-              maxLength={80}
-              required
-              onChange={(event) =>
-                setForm((current) => ({ ...current, category: event.target.value }))
+      <section aria-labelledby="service-create-heading">
+        <Card className="rounded-2xl border-border p-4 sm:p-5">
+          <div
+            className={
+              'flex flex-col items-start justify-between gap-3 sm:flex-row sm:items-center'
+            }
+          >
+            <div>
+              <p className={'mb-1 text-xs font-bold text-accent-brand'}>ثبت خدمت جدید</p>
+              <h2 id="service-create-heading" className="text-lg font-bold text-primary-strong">
+                افزودن به فهرست
+              </h2>
+            </div>
+            <span
+              className={
+                'inline-flex shrink-0 items-center rounded-full bg-muted px-3 py-1 text-xs font-bold text-muted-foreground'
               }
-            />
-          </label>
-          <label className={styles.field}>
-            <span>قیمت فعلی · تومان</span>
-            <input
-              dir="ltr"
-              inputMode="numeric"
-              pattern="[0-9]+"
-              value={form.currentPriceToman}
-              required
-              onChange={(event) =>
-                setForm((current) => ({ ...current, currentPriceToman: event.target.value }))
-              }
-            />
-          </label>
-          <div className={styles.formActions}>
-            <button
-              className={styles.primaryButton}
-              type="submit"
-              disabled={isCreating || !csrfToken}
             >
-              {isCreating ? 'در حال ذخیره…' : 'افزودن خدمت'}
-            </button>
+              {items.length} خدمت
+            </span>
           </div>
-        </form>
+          <form
+            className={'mt-4 grid grid-cols-1 items-end gap-3 lg:grid-cols-3'}
+            onSubmit={(event) => void createItem(event)}
+          >
+            <label className="grid min-w-0 gap-2 text-sm font-semibold text-foreground">
+              <span>نام خدمت</span>
+              <Input
+                value={form.name}
+                maxLength={120}
+                required
+                onChange={(event) =>
+                  setForm((current) => ({ ...current, name: event.target.value }))
+                }
+              />
+            </label>
+            <label className="grid min-w-0 gap-2 text-sm font-semibold text-foreground">
+              <span>دسته‌بندی</span>
+              <Input
+                value={form.category}
+                maxLength={80}
+                required
+                onChange={(event) =>
+                  setForm((current) => ({ ...current, category: event.target.value }))
+                }
+              />
+            </label>
+            <label className="grid min-w-0 gap-2 text-sm font-semibold text-foreground">
+              <span>قیمت فعلی · تومان</span>
+              <Input
+                dir="ltr"
+                inputMode="numeric"
+                pattern="[0-9]+"
+                value={form.currentPriceToman}
+                required
+                onChange={(event) =>
+                  setForm((current) => ({ ...current, currentPriceToman: event.target.value }))
+                }
+              />
+            </label>
+            <div className={'col-span-full flex flex-wrap items-center justify-start gap-3'}>
+              <Button type="submit" disabled={isCreating || !csrfToken}>
+                {isCreating ? 'در حال ذخیره…' : 'افزودن خدمت'}
+              </Button>
+            </div>
+          </form>
+        </Card>
       </section>
 
-      <section className={styles.panel} aria-labelledby="service-list-heading">
-        <div className={styles.sectionHeading}>
-          <div>
-            <p className={styles.eyebrow}>قیمت‌های قابل استفاده</p>
-            <h2 id="service-list-heading">خدمات ثبت‌شده</h2>
+      <section aria-labelledby="service-list-heading">
+        <Card className="rounded-2xl border-border p-4 sm:p-5">
+          <div
+            className={
+              'flex flex-col items-start justify-between gap-3 sm:flex-row sm:items-center'
+            }
+          >
+            <div>
+              <p className={'mb-1 text-xs font-bold text-accent-brand'}>قیمت‌های قابل استفاده</p>
+              <h2 id="service-list-heading" className="text-lg font-bold text-primary-strong">
+                خدمات ثبت‌شده
+              </h2>
+            </div>
+            <span className={'mt-2 max-w-prose text-sm leading-7 text-muted-foreground'}>
+              غیرفعال‌سازی، ردیف‌های پیشین را نگه می‌دارد.
+            </span>
           </div>
-          <span className={styles.panelHint}>غیرفعال‌سازی، ردیف‌های پیشین را نگه می‌دارد.</span>
-        </div>
-        {items.length === 0 ? (
-          <p className={styles.emptyState}>هنوز خدمتی ثبت نشده است.</p>
-        ) : (
-          <div className={styles.serviceList}>
-            {items.map((item) => {
-              const draft = drafts[item.id];
-              if (!draft) return null;
-              return (
-                <article
-                  className={styles.serviceRow}
-                  key={item.id}
-                  aria-label={`ویرایش خدمت ${item.name}`}
-                >
-                  <div className={styles.serviceSummary}>
-                    <div>
-                      <h3>{item.name}</h3>
-                      <p>
-                        {item.category} ·{' '}
-                        <span dir="ltr">{formatToman(item.currentPriceToman)}</span> تومان
-                      </p>
-                    </div>
-                    <span className={item.isActive ? styles.activeBadge : styles.inactiveBadge}>
-                      {item.isActive ? 'فعال' : 'غیرفعال'}
-                    </span>
-                  </div>
-                  <div className={styles.formGrid}>
-                    <label className={styles.field}>
-                      <span>نام خدمت</span>
-                      <input
-                        value={draft.name}
-                        maxLength={120}
-                        onChange={(event) =>
-                          setDrafts((current) => ({
-                            ...current,
-                            [item.id]: { ...draft, name: event.target.value },
-                          }))
-                        }
-                      />
-                    </label>
-                    <label className={styles.field}>
-                      <span>دسته‌بندی</span>
-                      <input
-                        value={draft.category}
-                        maxLength={80}
-                        onChange={(event) =>
-                          setDrafts((current) => ({
-                            ...current,
-                            [item.id]: { ...draft, category: event.target.value },
-                          }))
-                        }
-                      />
-                    </label>
-                    <label className={styles.field}>
-                      <span>قیمت فعلی · تومان</span>
-                      <input
-                        dir="ltr"
-                        inputMode="numeric"
-                        pattern="[0-9]+"
-                        value={draft.currentPriceToman}
-                        onChange={(event) =>
-                          setDrafts((current) => ({
-                            ...current,
-                            [item.id]: { ...draft, currentPriceToman: event.target.value },
-                          }))
-                        }
-                      />
-                    </label>
-                    <label className={styles.checkField}>
-                      <input
-                        type="checkbox"
-                        checked={draft.isActive}
-                        onChange={(event) =>
-                          setDrafts((current) => ({
-                            ...current,
-                            [item.id]: { ...draft, isActive: event.target.checked },
-                          }))
-                        }
-                      />
-                      <span>برای ثبت‌های جدید فعال باشد</span>
-                    </label>
-                  </div>
-                  <div className={styles.formActions}>
-                    <button
-                      className={styles.primaryButton}
-                      type="button"
-                      disabled={busyId === item.id || !csrfToken}
-                      onClick={() => void saveItem(item)}
+          {items.length === 0 ? (
+            <p
+              className={
+                'm-0 rounded-xl bg-surface-soft px-4 py-3 text-sm leading-7 text-muted-foreground'
+              }
+            >
+              هنوز خدمتی ثبت نشده است.
+            </p>
+          ) : (
+            <div className={'mt-4 grid gap-3'}>
+              {items.map((item) => {
+                const draft = drafts[item.id];
+                if (!draft) return null;
+                return (
+                  <Card
+                    role="article"
+                    className="grid gap-3 rounded-2xl border-border bg-surface-soft p-4"
+                    key={item.id}
+                    aria-label={`ویرایش خدمت ${item.name}`}
+                  >
+                    <div
+                      className={
+                        'flex flex-col items-start justify-between gap-3 sm:flex-row sm:items-center'
+                      }
                     >
-                      {busyId === item.id ? 'در حال ذخیره…' : 'ذخیره تغییرات'}
-                    </button>
-                  </div>
-                </article>
-              );
-            })}
-          </div>
-        )}
+                      <div>
+                        <h3 className="text-base font-bold text-primary-strong">{item.name}</h3>
+                        <p className="mt-1 text-sm text-muted-foreground">
+                          {item.category} ·{' '}
+                          <span dir="ltr">{formatToman(item.currentPriceToman)}</span> تومان
+                        </p>
+                      </div>
+                      <Badge variant={item.isActive ? 'success' : 'secondary'}>
+                        {item.isActive ? 'فعال' : 'غیرفعال'}
+                      </Badge>
+                    </div>
+                    <div className={'mt-4 grid grid-cols-1 items-end gap-3 lg:grid-cols-3'}>
+                      <label className="grid min-w-0 gap-2 text-sm font-semibold text-foreground">
+                        <span>نام خدمت</span>
+                        <Input
+                          value={draft.name}
+                          maxLength={120}
+                          onChange={(event) =>
+                            setDrafts((current) => ({
+                              ...current,
+                              [item.id]: { ...draft, name: event.target.value },
+                            }))
+                          }
+                        />
+                      </label>
+                      <label className="grid min-w-0 gap-2 text-sm font-semibold text-foreground">
+                        <span>دسته‌بندی</span>
+                        <Input
+                          value={draft.category}
+                          maxLength={80}
+                          onChange={(event) =>
+                            setDrafts((current) => ({
+                              ...current,
+                              [item.id]: { ...draft, category: event.target.value },
+                            }))
+                          }
+                        />
+                      </label>
+                      <label className="grid min-w-0 gap-2 text-sm font-semibold text-foreground">
+                        <span>قیمت فعلی · تومان</span>
+                        <Input
+                          dir="ltr"
+                          inputMode="numeric"
+                          pattern="[0-9]+"
+                          value={draft.currentPriceToman}
+                          onChange={(event) =>
+                            setDrafts((current) => ({
+                              ...current,
+                              [item.id]: { ...draft, currentPriceToman: event.target.value },
+                            }))
+                          }
+                        />
+                      </label>
+                      <label
+                        className="col-span-full flex items-center gap-2 text-sm text-foreground"
+                      >
+                        <Checkbox
+                          checked={draft.isActive}
+                          onCheckedChange={(checked) =>
+                            setDrafts((current) => ({
+                              ...current,
+                              [item.id]: { ...draft, isActive: checked },
+                            }))
+                          }
+                        />
+                        <span>برای ثبت‌های جدید فعال باشد</span>
+                      </label>
+                    </div>
+                    <div
+                      className={'col-span-full flex flex-wrap items-center justify-start gap-3'}
+                    >
+                      <Button
+                        type="button"
+                        disabled={busyId === item.id || !csrfToken}
+                        onClick={() => void saveItem(item)}
+                      >
+                        {busyId === item.id ? 'در حال ذخیره…' : 'ذخیره تغییرات'}
+                      </Button>
+                    </div>
+                  </Card>
+                );
+              })}
+            </div>
+          )}
+        </Card>
       </section>
     </main>
   );

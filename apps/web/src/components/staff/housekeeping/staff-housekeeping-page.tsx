@@ -51,7 +51,7 @@ import {
   hasHousekeepingFilters,
   sortHousekeepingTasksByUrgency,
 } from './housekeeping-copy';
-import styles from './housekeeping.module.css';
+import { housekeepingClasses as styles } from '../tailwind-classes';
 
 const PAGE_SIZE = 20;
 const ROOM_OPTIONS_PAGE_SIZE = 100;

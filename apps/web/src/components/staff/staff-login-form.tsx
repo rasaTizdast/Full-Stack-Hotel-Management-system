@@ -46,11 +46,10 @@ export function StaffLoginForm() {
   }
 
   return (
-    <form className="staff-login-form" method="post" onSubmit={handleSubmit}>
-      <Field className="staff-login-form__field">
+    <form className="grid gap-5" method="post" onSubmit={handleSubmit}>
+      <Field className="min-w-0 gap-2">
         <FieldLabel htmlFor="staff-email">ایمیل کاری</FieldLabel>
         <Input
-          className="staff-login-form__input"
           autoComplete="username"
           placeholder="name@hotel.com"
           dir="ltr"
@@ -63,10 +62,9 @@ export function StaffLoginForm() {
           value={email}
         />
       </Field>
-      <Field className="staff-login-form__field">
+      <Field className="min-w-0 gap-2">
         <FieldLabel htmlFor="staff-password">گذرواژه</FieldLabel>
         <Input
-          className="staff-login-form__input"
           autoComplete="current-password"
           placeholder="گذرواژهٔ حساب کاری"
           id="staff-password"
@@ -78,19 +76,22 @@ export function StaffLoginForm() {
         />
       </Field>
       {error && (
-        <p className="staff-login-form__error" role="alert">
+        <p
+          className="rounded-xl border border-destructive/25 bg-destructive-soft px-4 py-3 text-sm leading-7 text-destructive"
+          role="alert"
+        >
           {error}
         </p>
       )}
       <Button
-        className="staff-login-form__submit h-12 w-full rounded-lg px-5 text-base"
+        className="h-12 w-full rounded-xl px-5 text-base"
         size="lg"
         disabled={submitting}
         type="submit"
       >
         {submitting ? 'در حال ورود…' : 'ورود به پنل'}
       </Button>
-      <p className="staff-login-form__privacy">
+      <p className="text-sm leading-7 text-muted-foreground">
         دسترسی کارکنان با حساب کاری انجام می‌شود. اطلاعات ورود را با دیگران به اشتراک نگذارید.
       </p>
     </form>

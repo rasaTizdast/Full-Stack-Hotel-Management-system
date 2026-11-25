@@ -28,7 +28,9 @@ import {
 } from '@/lib/jalali-date';
 import type { PublicRoomType } from '@/lib/public-api';
 import { getRoomImage } from '@/components/public/room-imagery';
-import styles from './availability-search.module.css';
+import { Badge } from '@/components/ui/badge';
+import { Card } from '@/components/ui/card';
+import { cn } from '@/lib/utils';
 
 type AvailabilitySearchProps = {
   roomTypes: PublicRoomType[];
@@ -40,7 +42,7 @@ type SearchState = 'idle' | 'loading' | 'results' | 'unavailable' | 'server-erro
 function SearchFieldError({ id, message }: { id: string; message?: string }) {
   if (!message) return null;
   return (
-    <FieldError id={id} className={styles.fieldError}>
+    <FieldError id={id} className="text-sm font-semibold text-destructive">
       {message}
     </FieldError>
   );
@@ -65,68 +67,99 @@ function AvailabilityRoomCard({
     guestCount: String(stay.guests),
   });
   return (
-    <article
-      className={`${styles.roomCard}${room.isAvailable ? '' : ` ${styles.roomCardUnavailable}`}`}
+    <Card
+      className={cn(
+        'grid min-w-0 grid-rows-[auto_1fr] overflow-hidden rounded-2xl border-border p-0 transition-colors duration-200 hover:border-primary/35',
+        !room.isAvailable && 'bg-surface-soft/70',
+      )}
     >
-      <div className={styles.roomImage}>
+      <div className={'relative isolate min-h-52 overflow-hidden bg-surface-soft'}>
         {image.src ? (
           <Image src={image.src} alt={image.alt} fill sizes="(max-width: 760px) 100vw, 50vw" />
         ) : (
-          <span className={styles.roomImageFallback} aria-hidden="true">
+          <span
+            className={
+              'grid min-h-52 place-items-center bg-primary-strong font-display text-xl text-primary-foreground'
+            }
+            aria-hidden="true"
+          >
             اقامتگاه نارنج
           </span>
         )}
-        <span
-          className={`${styles.availabilityBadge}${room.isAvailable ? '' : ` ${styles.unavailableBadge}`}`}
-        >
-          {room.isAvailable ? 'آمادهٔ پذیرش' : 'ظرفیت تکمیل است'}
+        <span className="absolute start-3 top-3 z-10">
+          <Badge variant={room.isAvailable ? 'success' : 'destructive'}>
+            {room.isAvailable ? 'آمادهٔ پذیرش' : 'ظرفیت تکمیل است'}
+          </Badge>
         </span>
       </div>
-      <div className={styles.roomBody}>
-        <div className={styles.roomHeading}>
+      <div className={'flex min-w-0 flex-col items-stretch p-4 sm:p-5'}>
+        <div className={'flex items-start justify-between gap-3'}>
           <div>
-            <h3 className={styles.roomTitle}>{room.name}</h3>
+            <h3 className={'text-xl font-bold leading-snug text-primary-strong'}>{room.name}</h3>
           </div>
-          <span className={styles.capacity}>
+          <span
+            className={'shrink-0 rounded-full bg-muted px-2.5 py-1 text-xs text-muted-foreground'}
+          >
             حداکثر {formatPersianInteger(room.maxGuestsPerRoom)} نفر
           </span>
         </div>
         {details?.description ? (
-          <p className={styles.roomDescription}>{details.description}</p>
+          <p className={'mt-2 text-sm leading-7 text-muted-foreground'}>{details.description}</p>
         ) : null}
         {details && details.amenities.length > 0 ? (
-          <ul className={styles.amenities} aria-label={`امکانات ${room.name}`}>
+          <ul className={'mt-3 flex flex-wrap gap-2'} aria-label={`امکانات ${room.name}`}>
             {details.amenities.map((amenity) => (
-              <li key={amenity}>{amenity}</li>
+              <li
+                key={amenity}
+                className="rounded-full border border-border px-2.5 py-1 text-xs text-muted-foreground"
+              >
+                {amenity}
+              </li>
             ))}
           </ul>
         ) : null}
         {room.isAvailable && room.totalPriceToman !== null ? (
-          <div className={styles.priceBlock}>
+          <div className="mt-4 grid gap-1 border-t border-border pt-3 text-sm text-muted-foreground">
             <span>قیمت کل برای {formatPersianInteger(numberOfNights)} شب</span>
-            <strong className={styles.price}>
+            <strong
+              className={
+                'flex flex-wrap items-baseline gap-1 text-xl leading-relaxed text-primary-strong tabular-nums'
+              }
+            >
               <bdi>{formatTomanTotal(room.totalPriceToman)}</bdi>
               <span>تومان</span>
             </strong>
-            <span className={styles.stock}>
+            <span className={'text-xs font-semibold text-success'}>
               {formatPersianInteger(room.availableRooms)} اتاق در دسترس
             </span>
           </div>
         ) : (
-          <p className={styles.unavailableCopy}>برای تاریخ‌های انتخاب‌شده موجود نیست.</p>
+          <p className={'mt-auto border-t border-border pt-3 text-sm text-destructive'}>
+            برای تاریخ‌های انتخاب‌شده موجود نیست.
+          </p>
         )}
-        <div className={styles.roomActions}>
-          <Link className={styles.detailsLink} href={`/rooms/${encodeURIComponent(room.slug)}`}>
+        <div className={'mt-auto flex flex-wrap items-center gap-2 pt-4'}>
+          <Link
+            className={
+              'inline-flex min-h-11 items-center justify-center rounded-full px-3 text-sm font-semibold text-primary hover:bg-muted focus-visible:outline-3 focus-visible:outline-ring'
+            }
+            href={`/rooms/${encodeURIComponent(room.slug)}`}
+          >
             جزئیات اتاق
           </Link>
           {room.isAvailable && room.totalPriceToman !== null ? (
-            <Link className={styles.bookingLink} href={`/booking?${bookingQuery.toString()}`}>
+            <Link
+              className={
+                'ms-auto inline-flex min-h-11 items-center justify-center rounded-full bg-primary px-4 text-sm font-semibold text-primary-foreground hover:bg-primary-strong focus-visible:outline-3 focus-visible:outline-ring'
+              }
+              href={`/booking?${bookingQuery.toString()}`}
+            >
               درخواست اقامت
             </Link>
           ) : null}
         </div>
       </div>
-    </article>
+    </Card>
   );
 }
 
@@ -194,17 +227,37 @@ export function AvailabilitySearch({ roomTypes, initialStay }: AvailabilitySearc
   }));
 
   return (
-    <section className={styles.search} id="stay-search" aria-labelledby="stay-search-title">
-      <div className={styles.intro}>
-        <h2 id="stay-search-title">قرارِ اقامتتان را پیدا کنید</h2>
-        <p>تاریخ و تعداد مهمان‌ها را انتخاب کنید تا ظرفیت و مبلغ نهایی اتاق‌ها را ببینید.</p>
+    <section
+      className={
+        'mx-auto my-16 w-[min(calc(100%-2rem),84rem)] scroll-mt-8 rounded-3xl bg-surface p-5 sm:p-8 lg:p-12'
+      }
+      id="stay-search"
+      aria-labelledby="stay-search-title"
+    >
+      <div className={'mb-6 max-w-3xl sm:mb-8'}>
+        <h2
+          id="stay-search-title"
+          className="text-3xl font-bold leading-tight text-primary-strong sm:text-4xl"
+        >
+          قرارِ اقامتتان را پیدا کنید
+        </h2>
+        <p className="mt-3 max-w-prose text-base leading-8 text-muted-foreground">
+          تاریخ و تعداد مهمان‌ها را انتخاب کنید تا ظرفیت و مبلغ نهایی اتاق‌ها را ببینید.
+        </p>
       </div>
 
-      <form className={styles.form} onSubmit={handleSubmit} noValidate aria-label="جستجوی اقامت">
-        <Field className={styles.field} data-invalid={Boolean(fieldErrors.checkIn)}>
+      <form
+        className={
+          'grid grid-cols-1 items-end gap-4 rounded-2xl border border-border bg-surface-soft p-4 md:grid-cols-2 xl:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_minmax(10rem,.8fr)_auto]'
+        }
+        onSubmit={handleSubmit}
+        noValidate
+        aria-label="جستجوی اقامت"
+      >
+        <Field className={'min-w-0 gap-2'} data-invalid={Boolean(fieldErrors.checkIn)}>
           <FieldLabel htmlFor="search-check-in">تاریخ ورود</FieldLabel>
           <Input
-            className={styles.control}
+            className={'w-full min-w-0'}
             id="search-check-in"
             name="checkIn"
             type="text"
@@ -218,15 +271,15 @@ export function AvailabilitySearch({ roomTypes, initialStay }: AvailabilitySearc
             aria-describedby={`search-check-in-help${fieldErrors.checkIn ? ' search-check-in-error' : ''}`}
             aria-errormessage={fieldErrors.checkIn ? 'search-check-in-error' : undefined}
           />
-          <FieldDescription id="search-check-in-help" className={styles.hint}>
+          <FieldDescription id="search-check-in-help" className={'min-h-5 text-xs leading-relaxed'}>
             سال، ماه و روز شمسی؛ وارد کردن / اختیاری است
           </FieldDescription>
           <SearchFieldError id="search-check-in-error" message={fieldErrors.checkIn} />
         </Field>
-        <Field className={styles.field} data-invalid={Boolean(fieldErrors.checkOut)}>
+        <Field className={'min-w-0 gap-2'} data-invalid={Boolean(fieldErrors.checkOut)}>
           <FieldLabel htmlFor="search-check-out">تاریخ خروج</FieldLabel>
           <Input
-            className={styles.control}
+            className={'w-full min-w-0'}
             id="search-check-out"
             name="checkOut"
             type="text"
@@ -240,12 +293,15 @@ export function AvailabilitySearch({ roomTypes, initialStay }: AvailabilitySearc
             aria-describedby={`search-check-out-help${fieldErrors.checkOut ? ' search-check-out-error' : ''}`}
             aria-errormessage={fieldErrors.checkOut ? 'search-check-out-error' : undefined}
           />
-          <FieldDescription id="search-check-out-help" className={styles.hint}>
+          <FieldDescription
+            id="search-check-out-help"
+            className={'min-h-5 text-xs leading-relaxed'}
+          >
             روز خروج، شب اقامت محسوب نمی‌شود
           </FieldDescription>
           <SearchFieldError id="search-check-out-error" message={fieldErrors.checkOut} />
         </Field>
-        <Field className={styles.field} data-invalid={Boolean(fieldErrors.guests)}>
+        <Field className={'min-w-0 gap-2'} data-invalid={Boolean(fieldErrors.guests)}>
           <FieldLabel htmlFor="search-guests">تعداد مهمان</FieldLabel>
           <Select
             items={guestOptions}
@@ -272,53 +328,87 @@ export function AvailabilitySearch({ roomTypes, initialStay }: AvailabilitySearc
           </Select>
           <SearchFieldError id="search-guests-error" message={fieldErrors.guests} />
         </Field>
-        <Button className={styles.submit} size="lg" type="submit" disabled={state === 'loading'}>
+        <Button
+          className={'min-h-12 w-full whitespace-normal xl:w-auto'}
+          size="lg"
+          type="submit"
+          disabled={state === 'loading'}
+        >
           {state === 'loading' ? 'در حال بررسی…' : 'بررسی اتاق‌های موجود'}
         </Button>
       </form>
 
-      <div className={styles.results} aria-live="polite" aria-busy={state === 'loading'}>
+      <div className={'mt-5 min-h-14'} aria-live="polite" aria-busy={state === 'loading'}>
         {state === 'idle' ? (
-          <p className={`${styles.message} ${styles.messageQuiet}`} role="status">
+          <p
+            className="flex min-h-12 items-center gap-3 rounded-xl border border-border bg-surface-soft px-4 py-3 text-sm leading-7 text-muted-foreground"
+            role="status"
+          >
             بازهٔ اقامت خود را بررسی کنید؛ قیمت‌ها برای همهٔ شب‌های انتخاب‌شده از سامانه دریافت
             می‌شوند.
           </p>
         ) : null}
         {state === 'loading' ? (
-          <p className={`${styles.message} ${styles.messageLoading}`} role="status">
-            <span className={styles.loadingMark} aria-hidden="true" />
+          <p
+            className="flex min-h-12 items-center gap-3 rounded-xl border border-primary/30 bg-surface-soft px-4 py-3 text-sm leading-7 text-primary-strong"
+            role="status"
+          >
+            <span
+              className={
+                'size-4 shrink-0 animate-spin rounded-full border-2 border-primary/25 border-t-primary'
+              }
+              aria-hidden="true"
+            />
             در حال بارگذاری و بررسی ظرفیت اتاق‌ها…
           </p>
         ) : null}
         {state === 'unavailable' ? (
-          <p className={`${styles.message} ${styles.messageUnavailable}`} role="status">
+          <p
+            className="flex min-h-12 items-center gap-3 rounded-xl border border-destructive/30 bg-destructive-soft px-4 py-3 text-sm leading-7 text-destructive"
+            role="status"
+          >
             تاریخ‌های انتخاب‌شده دیگر قابل بررسی نیستند. بازهٔ اقامت را دوباره انتخاب کنید.
           </p>
         ) : null}
         {state === 'server-error' ? (
-          <p className={`${styles.message} ${styles.messageError}`} role="alert">
+          <p
+            className="flex min-h-12 items-center gap-3 rounded-xl border border-destructive/30 bg-destructive-soft px-4 py-3 text-sm leading-7 text-destructive"
+            role="alert"
+          >
             خطا در بررسی اتاق‌ها: سرویس موقتاً در دسترس نیست. کمی بعد دوباره تلاش کنید.
           </p>
         ) : null}
         {resultState === 'empty' ? (
-          <p className={styles.message} role="status">
+          <p
+            className={
+              'flex min-h-12 items-center gap-3 rounded-xl border border-border bg-surface-soft px-4 py-3 text-sm leading-7'
+            }
+            role="status"
+          >
             هنوز اتاقی برای نمایش آماده نیست.
           </p>
         ) : null}
         {resultState === 'unavailable' ? (
-          <p className={`${styles.message} ${styles.messageUnavailable}`} role="status">
+          <p
+            className="flex min-h-12 items-center gap-3 rounded-xl border border-destructive/30 bg-destructive-soft px-4 py-3 text-sm leading-7 text-destructive"
+            role="status"
+          >
             برای این بازهٔ اقامت اتاق آزادی پیدا نشد.
           </p>
         ) : null}
         {resultState === 'available' && result ? (
-          <div className={styles.cards}>
-            <div className={styles.resultHeading}>
+          <div className={'grid gap-5'}>
+            <div
+              className={'flex flex-col items-start justify-between gap-2 sm:flex-row sm:items-end'}
+            >
               <div>
-                <h2>اتاق‌های مناسب شما</h2>
+                <h2 className="text-2xl font-bold text-primary-strong">اتاق‌های مناسب شما</h2>
               </div>
-              <p>قیمت هر اتاق برای {formatPersianInteger(result.numberOfNights)} شب اقامت است.</p>
+              <p className="text-sm text-muted-foreground">
+                قیمت هر اتاق برای {formatPersianInteger(result.numberOfNights)} شب اقامت است.
+              </p>
             </div>
-            <div className={styles.cardGrid}>
+            <div className={'grid grid-cols-1 gap-4 lg:grid-cols-2'}>
               {result.roomTypes.map((room) => (
                 <AvailabilityRoomCard
                   key={room.slug}
@@ -332,7 +422,7 @@ export function AvailabilitySearch({ roomTypes, initialStay }: AvailabilitySearc
           </div>
         ) : null}
         {resultState === 'unavailable' && result ? (
-          <div className={`${styles.cardGrid} ${styles.unavailableGrid}`}>
+          <div className="mt-4 grid grid-cols-1 gap-4 lg:grid-cols-2">
             {result.roomTypes.map((room) => (
               <AvailabilityRoomCard
                 key={room.slug}

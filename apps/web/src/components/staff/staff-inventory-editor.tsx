@@ -1,4 +1,6 @@
 'use client';
+import { staffClass } from '@/components/staff/staff-classes';
+
 
 import type { FormEvent } from 'react';
 import { Button } from '@/components/ui/button';
@@ -85,7 +87,7 @@ function NightRow({ night }: { night: StaffInventoryNight }) {
     <tr>
       <th scope="row">
         <time dateTime={night.stayDate}>{formatNightDate(night.stayDate)}</time>
-        <span className="staff-inventory__capacity-source">{capacitySourceLabel(night)}</span>
+        <span className={staffClass('staff-inventory__capacity-source')}>{capacitySourceLabel(night)}</span>
       </th>
       <td>{formatActiveRoomCount(night)}</td>
       <td>{formatNightValue(night, night.blockedRooms)}</td>
@@ -93,7 +95,7 @@ function NightRow({ night }: { night: StaffInventoryNight }) {
       <td>{formatNightValue(night, night.bookedRooms)}</td>
       <td>{formatNightValue(night, night.availableRooms)}</td>
       <td
-        className={night.nightlyPriceToman === null ? 'staff-inventory__missing-rate' : undefined}
+        className={night.nightlyPriceToman === null ? staffClass('staff-inventory__missing-rate') : undefined}
       >
         <bdi>{formatTomanValue(night.nightlyPriceToman, night.capacitySource)}</bdi>
       </td>
@@ -120,10 +122,10 @@ function DateField({
   const errorId = `${id}-error`;
 
   return (
-    <Field className="staff-inventory__field" data-invalid={Boolean(error)}>
+    <Field className={staffClass('staff-inventory__field')} data-invalid={Boolean(error)}>
       <FieldLabel htmlFor={id}>{label}</FieldLabel>
       <Input
-        className="staff-inventory__input"
+        className={staffClass('staff-inventory__input')}
         id={id}
         inputMode="numeric"
         autoComplete="off"
@@ -133,10 +135,10 @@ function DateField({
         aria-invalid={Boolean(error)}
         aria-describedby={error ? errorId : helpId}
       />
-      <FieldDescription id={helpId} className="staff-inventory__hint">
+      <FieldDescription id={helpId} className={staffClass('staff-inventory__hint')}>
         {help}
       </FieldDescription>
-      <FieldError id={errorId} className="staff-inventory__field-error">
+      <FieldError id={errorId} className={staffClass('staff-inventory__field-error')}>
         {error}
       </FieldError>
     </Field>
@@ -162,10 +164,10 @@ function NumericField({
   const errorId = `${id}-error`;
 
   return (
-    <Field className="staff-inventory__field" data-invalid={Boolean(error)}>
+    <Field className={staffClass('staff-inventory__field')} data-invalid={Boolean(error)}>
       <FieldLabel htmlFor={id}>{label}</FieldLabel>
       <Input
-        className="staff-inventory__input"
+        className={staffClass('staff-inventory__input')}
         id={id}
         inputMode="numeric"
         dir="ltr"
@@ -174,10 +176,10 @@ function NumericField({
         aria-invalid={Boolean(error)}
         aria-describedby={error ? errorId : helpId}
       />
-      <FieldDescription id={helpId} className="staff-inventory__hint">
+      <FieldDescription id={helpId} className={staffClass('staff-inventory__hint')}>
         {help}
       </FieldDescription>
-      <FieldError id={errorId} className="staff-inventory__field-error">
+      <FieldError id={errorId} className={staffClass('staff-inventory__field-error')}>
         {error}
       </FieldError>
     </Field>
@@ -210,16 +212,16 @@ function RangePicker({
 }: RangePickerProps) {
   return (
     <form
-      className="staff-inventory__range-form"
+      className={staffClass('staff-inventory__range-form')}
       onSubmit={onLoadRange}
       aria-label="انتخاب بازه ظرفیت"
     >
-      <div className="staff-inventory__range-heading">
+      <div className={staffClass('staff-inventory__range-heading')}>
         <h2>یک بازه را برای بررسی انتخاب کنید</h2>
       </div>
 
-      <div className="staff-inventory__range-fields">
-        <Field className="staff-inventory__field staff-inventory__field--room">
+      <div className={staffClass('staff-inventory__range-fields')}>
+        <Field className={staffClass('staff-inventory__field staff-inventory__field--room')}>
           <FieldLabel htmlFor="staff-inventory-room-type">نوع اتاق</FieldLabel>
           <Select
             items={roomTypes.map((roomType) => ({
@@ -263,7 +265,7 @@ function RangePicker({
         />
 
         <Button
-          className="staff-inventory__load"
+          className={staffClass('staff-inventory__load')}
           size="lg"
           type="submit"
           disabled={isLoadingRoomTypes || isLoadingRange || !selectedRoomTypeId}
@@ -283,17 +285,17 @@ function EditorMessages({
   return (
     <>
       {formError ? (
-        <p className="staff-inventory__message staff-inventory__message--error" role="alert">
+        <p className={staffClass('staff-inventory__message staff-inventory__message--error')} role="alert">
           {formError}
         </p>
       ) : null}
       {isLoadingRoomTypes && !formError ? (
-        <p className="staff-inventory__loading" role="status" aria-live="polite">
+        <p className={staffClass('staff-inventory__loading')} role="status" aria-live="polite">
           در حال دریافت نوع اتاق‌ها…
         </p>
       ) : null}
       {!isLoadingRoomTypes && roomTypes.length === 0 && !formError ? (
-        <p className="staff-inventory__empty" role="status">
+        <p className={staffClass('staff-inventory__empty')} role="status">
           هنوز نوع اتاقی برای تنظیم ظرفیت ثبت نشده است.
         </p>
       ) : null}
@@ -309,17 +311,17 @@ function InventoryOverview({
   roomTypeName: string;
 }) {
   return (
-    <section className="staff-inventory__overview" aria-labelledby="staff-inventory-overview-title">
-      <div className="staff-inventory__overview-heading">
+    <section className={staffClass('staff-inventory__overview')} aria-labelledby="staff-inventory-overview-title">
+      <div className={staffClass('staff-inventory__overview-heading')}>
         <div>
           <h2 id="staff-inventory-overview-title">{roomTypeName}</h2>
         </div>
-        <span className="staff-inventory__night-count">
+        <span className={staffClass('staff-inventory__night-count')}>
           {formatPersianInteger(inventory.nights.length)} شب
         </span>
       </div>
 
-      <div className="staff-inventory__table-scroll">
+      <div className={staffClass('staff-inventory__table-scroll')}>
         <table aria-label="وضعیت ظرفیت و نرخ هر شب">
           <thead>
             <tr>
@@ -340,12 +342,12 @@ function InventoryOverview({
         </table>
       </div>
 
-      <div className="staff-inventory__night-cards" aria-label="وضعیت هر شب">
+      <div className={staffClass('staff-inventory__night-cards')} aria-label="وضعیت هر شب">
         {inventory.nights.map((night) => (
-          <article className="staff-inventory__night-card" key={night.stayDate}>
+          <article className={staffClass('staff-inventory__night-card')} key={night.stayDate}>
             <h3>
               <time dateTime={night.stayDate}>{formatNightDate(night.stayDate)}</time>
-              <span className="staff-inventory__capacity-source">{capacitySourceLabel(night)}</span>
+              <span className={staffClass('staff-inventory__capacity-source')}>{capacitySourceLabel(night)}</span>
             </h3>
             <dl>
               <div>
@@ -418,11 +420,11 @@ function InventoryEditForm({
   return (
     <form
       id="staff-inventory-rate-form"
-      className="staff-inventory__edit-form"
+      className={staffClass('staff-inventory__edit-form')}
       onSubmit={onSaveRange}
       aria-label="ویرایش نرخ بازه"
     >
-      <div className="staff-inventory__edit-heading">
+      <div className={staffClass('staff-inventory__edit-heading')}>
         <div>
           <h2>تنظیم نرخ شبانه</h2>
         </div>
@@ -432,12 +434,12 @@ function InventoryEditForm({
       </div>
 
       {historicalRange ? (
-        <p className="staff-inventory__historical-rate-note" role="status">
+        <p className={staffClass('staff-inventory__historical-rate-note')} role="status">
           نرخ شب‌های گذشته قابل ویرایش نیست. بازه‌ای از امروز یا بعد از آن انتخاب کنید.
         </p>
       ) : null}
 
-      <div className="staff-inventory__edit-fields">
+      <div className={staffClass('staff-inventory__edit-fields')}>
         <NumericField
           id="staff-inventory-nightly-price"
           label="نرخ یک شب (تومان)"
@@ -448,7 +450,7 @@ function InventoryEditForm({
         />
 
         <Button
-          className="staff-inventory__save"
+          className={staffClass('staff-inventory__save')}
           size="lg"
           type="submit"
           disabled={isSaving || isLoadingRange || historicalRange}
@@ -457,25 +459,25 @@ function InventoryEditForm({
         </Button>
       </div>
       {rangeTotal !== null ? (
-        <p className="staff-inventory__rate-impact" aria-live="polite" dir="rtl">
-          <span className="staff-inventory__rate-impact-label">جمع نرخ بازه</span>
-          <span className="staff-inventory__rate-equation" dir="rtl">
-            <span className="staff-inventory__money" dir="rtl">
-              <bdi className="staff-inventory__money-amount" dir="ltr">
+        <p className={staffClass('staff-inventory__rate-impact')} aria-live="polite" dir="rtl">
+          <span className={staffClass('staff-inventory__rate-impact-label')}>جمع نرخ بازه</span>
+          <span className={staffClass('staff-inventory__rate-equation')} dir="rtl">
+            <span className={staffClass('staff-inventory__money')} dir="rtl">
+              <bdi className={staffClass('staff-inventory__money-amount')} dir="ltr">
                 {formatPersianInteger(BigInt(parsedNightlyPrice!))}
               </bdi>{' '}
-              <span className="staff-inventory__money-unit">تومان</span>
+              <span className={staffClass('staff-inventory__money-unit')}>تومان</span>
             </span>{' '}
-            <span className="staff-inventory__equation-token">×</span>{' '}
-            <span className="staff-inventory__equation-token">
+            <span className={staffClass('staff-inventory__equation-token')}>×</span>{' '}
+            <span className={staffClass('staff-inventory__equation-token')}>
               {formatPersianInteger(rangeNightCount)} شب
             </span>{' '}
-            <span className="staff-inventory__equation-token">=</span>{' '}
-            <span className="staff-inventory__money" dir="rtl">
-              <bdi className="staff-inventory__money-amount" dir="ltr">
+            <span className={staffClass('staff-inventory__equation-token')}>=</span>{' '}
+            <span className={staffClass('staff-inventory__money')} dir="rtl">
+              <bdi className={staffClass('staff-inventory__money-amount')} dir="ltr">
                 {formatPersianInteger(rangeTotal)}
               </bdi>{' '}
-              <span className="staff-inventory__money-unit">تومان</span>
+              <span className={staffClass('staff-inventory__money-unit')}>تومان</span>
             </span>
           </span>
         </p>
@@ -495,7 +497,7 @@ export function StaffInventoryEditor(props: StaffInventoryEditorProps) {
       <EditorMessages {...props} />
       {props.inventory ? (
         <>
-          <details className="staff-inventory__rate-disclosure">
+          <details className={staffClass('staff-inventory__rate-disclosure')}>
             <summary aria-controls="staff-inventory-rate-form">
               <span>تنظیم نرخ شبانه</span>
               <svg viewBox="0 0 20 20" fill="none" aria-hidden="true">

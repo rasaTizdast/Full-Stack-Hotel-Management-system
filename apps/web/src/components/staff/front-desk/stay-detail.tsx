@@ -1,10 +1,11 @@
+import { Input } from '@/components/ui/input';
 import type { FormEvent } from 'react';
 import Link from 'next/link';
 import type { StaffBookingDetail } from '@/lib/staff-bookings-api';
 import { formatPersianInteger, toGregorianIso } from '@/lib/jalali-date';
 import { dateLabel } from './front-desk-domain';
 import type { AmendmentDraft } from './front-desk-types';
-import styles from './staff-front-desk.module.css';
+import { frontDeskClasses as styles } from '../tailwind-classes';
 
 interface StayDetailProps {
   id: string;
@@ -129,14 +130,14 @@ function AmendmentForm({
     <form className={styles.formGrid} onSubmit={onSubmit}>
       <label>
         نام مهمان
-        <input
+        <Input
           value={draft.guestName}
           onChange={(event) => onDraftChange('guestName', event.target.value)}
         />
       </label>
       <label>
         شماره تماس
-        <input
+        <Input
           dir="ltr"
           value={draft.guestPhone}
           onChange={(event) => onDraftChange('guestPhone', event.target.value)}
@@ -144,7 +145,7 @@ function AmendmentForm({
       </label>
       <label>
         رایانامه
-        <input
+        <Input
           type="email"
           dir="ltr"
           value={draft.guestEmail}
@@ -153,7 +154,7 @@ function AmendmentForm({
       </label>
       <label>
         تعداد مهمانان
-        <input
+        <Input
           type="number"
           min="1"
           max="20"
@@ -164,7 +165,7 @@ function AmendmentForm({
       </label>
       <label>
         تعداد اتاق
-        <input
+        <Input
           type="number"
           min="1"
           max="20"
@@ -175,7 +176,7 @@ function AmendmentForm({
       </label>
       <label>
         ورود
-        <input
+        <Input
           inputMode="numeric"
           value={draft.checkIn}
           onChange={(event) => onDraftChange('checkIn', event.target.value)}
@@ -183,7 +184,7 @@ function AmendmentForm({
       </label>
       <label>
         خروج
-        <input
+        <Input
           inputMode="numeric"
           value={draft.checkOut}
           onChange={(event) => onDraftChange('checkOut', event.target.value)}

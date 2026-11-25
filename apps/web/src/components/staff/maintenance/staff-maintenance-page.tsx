@@ -1,4 +1,7 @@
 'use client';
+import { NativeSelect } from '@/components/ui/select';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
 
 import { useCallback, useEffect, useMemo, useState, type FormEvent } from 'react';
 import { StaffApiError, type StaffRole } from '@/lib/staff-api';
@@ -22,7 +25,7 @@ import {
   type StaffRoomBlockStatus,
 } from '@/lib/staff-maintenance-api';
 import { useStaffSession } from '../staff-session-provider';
-import styles from './maintenance.module.css';
+import { maintenanceClasses as styles } from '../tailwind-classes';
 
 const VIEW_ROLES: StaffRole[] = ['ADMIN', 'MANAGER', 'RECEPTIONIST'];
 const CREATE_ROLES: StaffRole[] = [...VIEW_ROLES, 'HOUSEKEEPER'];
@@ -155,7 +158,7 @@ function DateInput({
   return (
     <label className={styles.field} htmlFor={id}>
       <span>{label}</span>
-      <input
+      <Input
         id={id}
         aria-label={label}
         inputMode="numeric"
@@ -184,14 +187,14 @@ function RoomSelect({
   return (
     <label className={styles.field} htmlFor={id}>
       <span>{label}</span>
-      <select id={id} value={value} onChange={(event) => onChange(event.target.value)}>
+      <NativeSelect id={id} value={value} onChange={(event) => onChange(event.target.value)}>
         <option value="">انتخاب اتاق</option>
         {rooms.map((room) => (
           <option value={room.id} key={room.id}>
             {roomLabel(room.roomNumber, room.floor)} · {room.roomTypeName}
           </option>
         ))}
-      </select>
+      </NativeSelect>
     </label>
   );
 }
@@ -526,7 +529,7 @@ export function StaffMaintenancePage() {
           />
           <label className={styles.field} htmlFor="maintenance-request-category">
             <span>نوع تعمیر</span>
-            <select
+            <NativeSelect
               id="maintenance-request-category"
               value={requestForm.category}
               onChange={(event) =>
@@ -541,11 +544,11 @@ export function StaffMaintenancePage() {
                   {label}
                 </option>
               ))}
-            </select>
+            </NativeSelect>
           </label>
           <label className={styles.field} htmlFor="maintenance-request-priority">
             <span>اولویت رسیدگی</span>
-            <select
+            <NativeSelect
               id="maintenance-request-priority"
               value={requestForm.priority}
               onChange={(event) =>
@@ -560,7 +563,7 @@ export function StaffMaintenancePage() {
                   {label}
                 </option>
               ))}
-            </select>
+            </NativeSelect>
           </label>
           <DateInput
             id="maintenance-request-date"
@@ -573,7 +576,7 @@ export function StaffMaintenancePage() {
             htmlFor="maintenance-request-description"
           >
             <span>شرح مشکل</span>
-            <textarea
+            <Textarea
               id="maintenance-request-description"
               minLength={3}
               maxLength={1000}
@@ -622,7 +625,7 @@ export function StaffMaintenancePage() {
             />
             <label className={styles.field} htmlFor="maintenance-block-kind">
               <span>نوع انسداد</span>
-              <select
+              <NativeSelect
                 id="maintenance-block-kind"
                 value={blockForm.kind}
                 onChange={(event) =>
@@ -637,7 +640,7 @@ export function StaffMaintenancePage() {
                     {label}
                   </option>
                 ))}
-              </select>
+              </NativeSelect>
             </label>
             <DateInput
               id="maintenance-block-start"
@@ -664,7 +667,7 @@ export function StaffMaintenancePage() {
               htmlFor="maintenance-block-reason"
             >
               <span>دلیل انسداد</span>
-              <textarea
+              <Textarea
                 id="maintenance-block-reason"
                 minLength={3}
                 maxLength={500}
@@ -708,7 +711,7 @@ export function StaffMaintenancePage() {
               />
               <label className={styles.field} htmlFor="maintenance-filter-floor">
                 <span>طبقه</span>
-                <input
+                <Input
                   id="maintenance-filter-floor"
                   value={filters.floor}
                   onChange={(event) => changeFilter('floor', event.target.value)}
@@ -716,7 +719,7 @@ export function StaffMaintenancePage() {
               </label>
               <label className={styles.field} htmlFor="maintenance-filter-category">
                 <span>دسته تعمیر</span>
-                <select
+                <NativeSelect
                   id="maintenance-filter-category"
                   value={filters.category}
                   onChange={(event) => changeFilter('category', event.target.value)}
@@ -727,11 +730,11 @@ export function StaffMaintenancePage() {
                       {label}
                     </option>
                   ))}
-                </select>
+                </NativeSelect>
               </label>
               <label className={styles.field} htmlFor="maintenance-filter-request-status">
                 <span>وضعیت درخواست</span>
-                <select
+                <NativeSelect
                   id="maintenance-filter-request-status"
                   value={filters.requestStatus}
                   onChange={(event) => changeFilter('requestStatus', event.target.value)}
@@ -739,11 +742,11 @@ export function StaffMaintenancePage() {
                   <option value="">همه درخواست‌ها</option>
                   <option value="OPEN">در انتظار رسیدگی</option>
                   <option value="RESOLVED">برطرف‌شده</option>
-                </select>
+                </NativeSelect>
               </label>
               <label className={styles.field} htmlFor="maintenance-filter-block-status">
                 <span>وضعیت انسداد</span>
-                <select
+                <NativeSelect
                   id="maintenance-filter-block-status"
                   value={filters.blockStatus}
                   onChange={(event) => changeFilter('blockStatus', event.target.value)}
@@ -752,7 +755,7 @@ export function StaffMaintenancePage() {
                   <option value="ACTIVE">فعال</option>
                   <option value="EXPIRED">پایان‌یافته</option>
                   <option value="RESTORED">ظرفیت بازگشته</option>
-                </select>
+                </NativeSelect>
               </label>
               <DateInput
                 id="maintenance-filter-date"
@@ -774,7 +777,7 @@ export function StaffMaintenancePage() {
               />
               <label className={styles.field} htmlFor="maintenance-filter-assignee">
                 <span>مسئول رسیدگی</span>
-                <select
+                <NativeSelect
                   id="maintenance-filter-assignee"
                   value={filters.assigneeStaffUserId}
                   onChange={(event) => changeFilter('assigneeStaffUserId', event.target.value)}
@@ -786,11 +789,11 @@ export function StaffMaintenancePage() {
                       {assignee.username}
                     </option>
                   ))}
-                </select>
+                </NativeSelect>
               </label>
               <label className={styles.field} htmlFor="maintenance-filter-reason">
                 <span>دلیل انسداد</span>
-                <input
+                <Input
                   id="maintenance-filter-reason"
                   value={filters.reason}
                   onChange={(event) => changeFilter('reason', event.target.value)}
@@ -878,7 +881,7 @@ export function StaffMaintenancePage() {
                             htmlFor={`maintenance-assignee-${item.id}`}
                           >
                             <span>واگذاری به</span>
-                            <select
+                            <NativeSelect
                               id={`maintenance-assignee-${item.id}`}
                               value={assigneeDrafts[item.id] ?? item.assignee?.id ?? ''}
                               onChange={(event) =>
@@ -894,7 +897,7 @@ export function StaffMaintenancePage() {
                                   {assignee.username}
                                 </option>
                               ))}
-                            </select>
+                            </NativeSelect>
                           </label>
                           <button
                             className={styles.secondaryButton}
@@ -910,7 +913,7 @@ export function StaffMaintenancePage() {
                             htmlFor={`maintenance-resolution-${item.id}`}
                           >
                             <span>یادداشت رفع مشکل</span>
-                            <input
+                            <Input
                               id={`maintenance-resolution-${item.id}`}
                               value={resolutionDrafts[item.id] ?? ''}
                               onChange={(event) =>
@@ -1008,7 +1011,7 @@ export function StaffMaintenancePage() {
                             htmlFor={`maintenance-restore-${item.id}`}
                           >
                             <span>دلیل بازگردانی</span>
-                            <input
+                            <Input
                               id={`maintenance-restore-${item.id}`}
                               value={restoreDrafts[item.id] ?? ''}
                               onChange={(event) =>
